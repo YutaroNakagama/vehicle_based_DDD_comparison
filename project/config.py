@@ -1,9 +1,11 @@
 import numpy as np
 
 # File paths
-SUBJECT_LIST_PATH   = './data/external/Aygun2024/subject_list_temp.txt'
+#SUBJECT_LIST_PATH   = './data/external/Aygun2024/subject_list_temp.txt'
+SUBJECT_LIST_PATH   = '../../dataset/mdapbe/subject_list_temp.txt'
 #SUBJECT_LIST_PATH   = './data/Aygun2024/subject_list_temp_ori.txt'
-DATASET_PATH        = './data/external/Aygun2024/physio'
+#DATASET_PATH        = './data/external/Aygun2024/physio'
+DATASET_PATH        = '../../dataset/mdapbe/physio'
 #OUTPUT_CSV_PATH     = './output/csv'
 INTRIM_CSV_PATH     = './data/interim'
 PROCESS_CSV_PATH    = './data/processed'

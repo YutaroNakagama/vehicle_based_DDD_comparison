@@ -1,6 +1,8 @@
 
-import numpy as np
+import matplotlib
+matplotlib.use('TkAgg')  # GUIバックエンドに変更
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
 import logging
 
