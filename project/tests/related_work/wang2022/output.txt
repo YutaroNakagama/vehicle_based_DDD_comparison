@@ -1,0 +1,10 @@
+Results for batch size = 32, epochs = 20:
+  Accuracy: 75.83%
+  Precision: 75.83%
+  Recall: 100.00%
+  F1 Score: 86.26%
+  AUC: 50.00%
+  Running Time: 2942737.62 ms
+
+Best batch size: 32, Best epochs: 20
+Best accuracy: 75.83%
