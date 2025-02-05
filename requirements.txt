@@ -4,7 +4,6 @@ scipy
 scikit-learn
 matplotlib
 seaborn
-logging
 xgboost
 lightgbm
 pyswarm
