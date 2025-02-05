@@ -11,18 +11,21 @@ We utilize the **open dataset** from _Multi-modal Data Acquisition Platform for 
 - Labels for driver drowsiness states
 
 **DOI:** [10.7910/DVN/HMZ5RG](https://doi.org/10.7910/DVN/HMZ5RG)
+<!-- need to explain how to download complete dataset via API -->
 
 ### Preprocessing
 - Vehicle-based signals are filtered and normalized.
 - EEG data is transformed into meaningful frequency components.
 - Labels are categorized into drowsiness levels based on predefined thresholds.
 
+<!--
 ## ⚙️ Setup
 To set up the environment, install the required dependencies:
 
 ```sh
 pip install -r requirements.txt
 ```
+-->
 
 Recommended Python version: **3.8+**
 
