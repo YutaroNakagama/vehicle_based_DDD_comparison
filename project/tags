@@ -392,6 +392,7 @@ load_veh_eeg_yn_feat_Aref	.\archive\module\dataset.py	/^    def load_veh_eeg_yn_
 load_veh_yn	.\archive\module\dataset.py	/^    def load_veh_yn(self, output_type="full", filt=False):$/;"	m	class:Datasets
 main	.\archive\rls_main.py	/^def main():$/;"	f
 main	.\main.py	/^def main():$/;"	f
+main	.\script\main.py	/^def main():$/;"	f
 main_pipeline	.\src\data_processing\processing_pipeline.py	/^def main_pipeline():$/;"	f
 main_pipeline	.\src\models\model_pipeline.py	/^def main_pipeline():$/;"	f
 make_aic_and_bic	.\archive\local_lib\preprocess.py	/^def make_aic_and_bic($/;"	f
