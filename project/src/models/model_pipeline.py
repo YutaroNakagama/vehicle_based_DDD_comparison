@@ -37,7 +37,7 @@ from tensorflow.keras.layers import Dense, Dropout
 iteration_counter = 0
 previous_score = float('inf') # Initially set to a very high value
 no_improvement_counter = 0
-early_stopping_threshold = 10 # Threshold for the number of iterations without improvement
+early_stopping_threshold = 1 # Threshold for the number of iterations without improvement
 optimization_results = {}
 dfs = []
 
@@ -71,7 +71,7 @@ def objective_function_with_progress(params):
     train_accuracy = accuracy_score(y_train_binary, y_train_pred)
 
     # Output progress
-    print(f"Training Accuracy for {name}: {train_accuracy:.4f}")
+    #print(f"Training Accuracy for {name}: {train_accuracy:.4f}")
 
     y_pred = clf.predict(X_test_scaled)
 
@@ -196,11 +196,11 @@ def main_pipeline():
     classifiers = {
         # 1. Tree-based algorithms
         #"Decision Tree": DecisionTreeClassifier(random_state=42),
-        #"Random Forest": RandomForestClassifier(random_state=42),
+        "Random Forest": RandomForestClassifier(random_state=42),
         #"AdaBoost": AdaBoostClassifier(random_state=42),
         #"Gradient Boosting": GradientBoostingClassifier(random_state=42),
         #"XGBoost": xgb.XGBClassifier(use_label_encoder=False, eval_metric="logloss", random_state=42),
-        "LightGBM": lgb.LGBMClassifier(random_state=42),
+        #"LightGBM": lgb.LGBMClassifier(random_state=42),
         #"CatBoost": CatBoostClassifier(verbose=0, random_state=42),
     
         # 2. Linear models
@@ -208,11 +208,11 @@ def main_pipeline():
         #"Perceptron": Perceptron(max_iter=1000, random_state=42),
     
         # 3. SVM (Support Vector Machines)
-        "SVM (Linear Kernel)": SVC(kernel="linear", probability=True, random_state=42),
-        "SVM (RBF Kernel)": SVC(kernel="rbf", probability=True, random_state=42),
+        #"SVM (Linear Kernel)": SVC(kernel="linear", probability=True, random_state=42),
+        #"SVM (RBF Kernel)": SVC(kernel="rbf", probability=True, random_state=42),
     
         # 4. k-Nearest Neighbours
-        "K-Nearest Neighbors": KNeighborsClassifier(),
+        #"K-Nearest Neighbors": KNeighborsClassifier(),
     
         # 5. Neural Networks
         #"MLP (Neural Network)": MLPClassifier(max_iter=500, random_state=42),
