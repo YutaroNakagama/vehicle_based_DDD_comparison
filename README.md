@@ -48,26 +48,29 @@ We compare our models against the following established DDD methods:
 3. **Wang et al. (2022)** - Driver distraction detection based on vehicle dynamics using naturalistic driving data. [DOI: 10.1016/j.trc.2022.103561]
 
 ## Usage
+### Install dependencies
+Make sure you have Python 3.10 installed. Then, install the required packages:
+```sh
+pip install -r requirements.txt
+```
+### Prepare data
+Modify configure.py for dataset directory. Run preprocessing:
+```sh
+python scripts/run_preprocessing.py
+```
 ### Training a Model
 ```sh
-python train.py --model pruned_dnn --epochs 50
+python scripts/run_training.py --model RF
 ```
-
 ### Evaluating a Model
 ```sh
-python evaluate.py --model pruned_dnn
+python scripts/run_evaluation.py --model RF
 ```
-
-### Running Inference
-```sh
-python infer.py --input sample_data.csv
-```
-
 ## Results & Visualization
 The model performance is evaluated using **AUC, accuracy, and inference time**. Results are plotted for better interpretability.
 
 ```sh
-python plot_results.py
+python scripts/plot_results.py
 ```
 
 <!--
