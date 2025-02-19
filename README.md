@@ -1,9 +1,9 @@
 # Lightweight Vehicle-Based DDD Model Comparison
 
-## 🚗 Overview
+## Overview
 This repository focuses on benchmarking **lightweight Driver Drowsiness Detection (DDD) models** using **vehicle-based features**. The goal is to compare the efficiency and performance of various lightweight ML models, optimized through **pruning, quantization, and other techniques**.
 
-## 📂 Dataset
+## Dataset
 We utilize the **open dataset** from _Multi-modal Data Acquisition Platform for Behavioral Evaluation_ (Aygun et al., 2024). The dataset contains:
 - Vehicle-based features (steering, acceleration, etc.)
 - EEG signals
@@ -29,7 +29,7 @@ pip install -r requirements.txt
 
 Recommended Python version: **3.8+**
 
-## 🧠 Model Comparison
+## Model Comparison
 We compare different lightweight models optimized for efficiency:
 
 <!--
@@ -47,7 +47,7 @@ We compare our models against the following established DDD methods:
 2. **Zhao et al. (2009)** - Detecting driver’s drowsiness using multiwavelet packet energy spectrum. 
 3. **Wang et al. (2022)** - Driver distraction detection based on vehicle dynamics using naturalistic driving data. [DOI: 10.1016/j.trc.2022.103561]
 
-## 🚀 Usage
+## Usage
 ### Training a Model
 ```sh
 python train.py --model pruned_dnn --epochs 50
@@ -63,7 +63,7 @@ python evaluate.py --model pruned_dnn
 python infer.py --input sample_data.csv
 ```
 
-## 📊 Results & Visualization
+## Results & Visualization
 The model performance is evaluated using **AUC, accuracy, and inference time**. Results are plotted for better interpretability.
 
 ```sh
@@ -75,7 +75,7 @@ python plot_results.py
 This project is released under the **MIT License**.
 -->
 
-## ✨ Credits
+## Credits
 - Open dataset by Aygun et al. (2024) [DOI: 10.7910/DVN/HMZ5RG]
 - Developed for research on efficient DDD models
 - Compared with existing DDD methods by Arefnezhad et al. (2019), Zhao et al. (2009), and Wang et al. (2022)
