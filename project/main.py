@@ -4,7 +4,7 @@ import src.models.model_pipeline as mp
 def main():
 
     # data processing 
-    dp.main_pipeline()
+    #dp.main_pipeline()
 
     # model training and evaluation
     mp.main_pipeline()
