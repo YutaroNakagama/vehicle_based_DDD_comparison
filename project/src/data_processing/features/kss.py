@@ -79,9 +79,9 @@ def remove_outliers(data, threshold=3):
     upper_bound = mean + threshold * std_dev
     return data[(data >= lower_bound) & (data <= upper_bound)]
 
-def kss_process(subject):
+def kss_process(subject, model):
     subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
-    file_path = f'{INTRIM_CSV_PATH}/merged/merged_{subject_id}_{version}.csv'
+    file_path = f'{INTRIM_CSV_PATH}/merged/{model}/merged_{subject_id}_{version}.csv'
     
     # CSVデータを読み込み
     try:
@@ -111,13 +111,14 @@ def kss_process(subject):
                 kss_scores = kss_scores[:len(data)]
 
             data['KSS_Theta_Alpha_Beta'] = kss_scores
-            plot_custom_colored_distribution(theta_alpha_beta_ratios)
+            #plot_custom_colored_distribution(theta_alpha_beta_ratios)
             
             
             # 新しいファイルとして保存
-            output_file_path = f'{PROCESS_CSV_PATH}/processed_{subject_id}_{version}.csv'
-            data.to_csv(output_file_path, index=False)
-            print(f"Processed and saved: {output_file_path}")
+            #output_file_path = f'{PROCESS_CSV_PATH}/{model}/processed_{subject_id}_{version}.csv'
+            #data.to_csv(output_file_path, index=False)
+            save_csv(data, subject_id, version, 'processed', model)
+            #print(f"Processed and saved: {output_file_path}")
             
     except FileNotFoundError:
         print(f"File not found: {file_path}")

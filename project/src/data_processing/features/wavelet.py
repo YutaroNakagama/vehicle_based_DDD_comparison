@@ -57,7 +57,7 @@ def generate_decomposition_signals(coeffs):
 def calculate_power(signal):
     return np.sum(np.square(signal)) / len(signal)
 
-def wavelet_process(subject):
+def wavelet_process(subject, model):
     subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
     # 処理を行うファイルのリストを作成
     #mat_file_path = [os.path.join(DATASET_PATH + '/', subject.replace('/', '/SIMlsl_') + '.mat') for subject in subjects]
@@ -135,5 +135,5 @@ def wavelet_process(subject):
     df = pd.DataFrame(all_powers, columns=column_names)
     df.insert(0, 'Timestamp', all_timestamps)
 
-    save_csv(df, subject_id, version, 'wavelet') 
+    save_csv(df, subject_id, version, 'wavelet', model) 
 

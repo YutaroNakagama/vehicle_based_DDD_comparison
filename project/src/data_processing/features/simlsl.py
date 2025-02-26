@@ -117,7 +117,7 @@ def extract_features(data):
     return features
 
 ## Main function to process each MAT file and save results to CSV
-def smooth_std_pe_process(subject):
+def smooth_std_pe_process(subject, model):
     subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
     file_path = f"{DATASET_PATH}/{subject_id}/SIMlsl_{subject_id}_{version}.mat"
     # Load the MAT file
@@ -170,13 +170,13 @@ def smooth_std_pe_process(subject):
         # Convert to DataFrame
         all_features_df = pd.DataFrame(all_features)
 
-        save_csv(all_features_df, subject_id, version, 'smooth_std_pe')
+        save_csv(all_features_df, subject_id, version, 'smooth_std_pe', model)
 
     else:
         #print(f"The data structure in {file_path} is invalid or does not contain the required rows.")
         logging.warning(f"The data structure in {file_path} is invalid or does not contain the required rows.")
 
-def time_freq_domain_process(subject): 
+def time_freq_domain_process(subject, model): 
     subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
     eeg_file = f"{DATASET_PATH}/{subject_id}/EEG_{subject_id}_{version}.mat"
     simlsl_file = f"{DATASET_PATH}/{subject_id}/SIMlsl_{subject_id}_{version}.mat"
@@ -209,12 +209,11 @@ def time_freq_domain_process(subject):
         combined_df = pd.concat([steering_features_df, lat_accel_features_df, lane_offset_features_df, long_accel_features_df], axis=1)
 
         combined_df.insert(0, 'Timestamp', resampled_timestamps)
-        save_csv(combined_df, subject_id, version, 'time_freq_domain')
+        save_csv(combined_df, subject_id, version, 'time_freq_domain', model)
     else:
-        # サンプル数が一致しない場合は個別のCSVファイルとして保存
-        steering_features_df.to_csv(f"{INTRIM_CSV_PATH}/time_freq_domain/{subject_id}_{version}_Steering_Wheel.csv", index=False)
-        lat_accel_features_df.to_csv(f"{INTRIM_CSV_PATH}/time_freq_domain/{subject_id}_{version}_Lateral_Acceleration.csv", index=False)
-        lane_offset_features_df.to_csv(f"{INTRIM_CSV_PATH}/time_freq_domain/{subject_id}_{version}_Lane_Offset.csv", index=False)
-        long_accel_features_df.to_csv(f"{INTRIM_CSV_PATH}/time_freq_domain/{subject_id}_{version}_Longitudinal_Acceleration.csv", index=False)
-        #print(f"Data for {subject_id}_{version} saved as separate CSV files due to sample count mismatch.")
         logging.warning(f"Data for {subject_id}_{version} saved as separate CSV files due to sample count mismatch.")
+        # サンプル数が一致しない場合は個別のCSVファイルとして保存
+#        steering_features_df.to_csv(f"{INTRIM_CSV_PATH}/time_freq_domain/{model}/{subject_id}_{version}_Steering_Wheel.csv", index=False)
+#        lat_accel_features_df.to_csv(f"{INTRIM_CSV_PATH}/time_freq_domain/{model}/{subject_id}_{version}_Lateral_Acceleration.csv", index=False)
+#        lane_offset_features_df.to_csv(f"{INTRIM_CSV_PATH}/time_freq_domain/{model}/{subject_id}_{version}_Lane_Offset.csv", index=False)
+#        long_accel_features_df.to_csv(f"{INTRIM_CSV_PATH}/time_freq_domain/{model}/{subject_id}_{version}_Longitudinal_Acceleration.csv", index=False)
