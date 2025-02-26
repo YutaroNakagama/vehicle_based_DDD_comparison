@@ -153,7 +153,7 @@ draw_fig_fft_filt	.\archive\local_lib\preprocess.py	/^                      idx_
 draw_fig_rnn	.\archive\rnn_optuna_main.py	/^                 rnn_type, freq_th, eeg_high_th_str, NUM_DIM, n_batch, data_type):$/;"	f
 draw_fig_rnn	.\archive\xgb_optuna_main.py	/^                 rnn_type, freq_th, eeg_high_th_str, NUM_DIM, n_batch, data_type):$/;"	f
 draw_pzmap	.\archive\local_lib\preprocess.py	/^def draw_pzmap($/;"	f
-eeg_process	.\src\data_processing\features\eeg.py	/^def eeg_process(subject):$/;"	f
+eeg_process	.\src\data_processing\features\eeg.py	/^def eeg_process(subject, model):$/;"	f
 es_	.\archive\ddd_Wang2022.py	/^    fpr, tpr, _ = roc_curve(y_test, y_pred) #, pos_label=clf.classes_[1])$/;"	c	class:ify_model
 es_	.\archive\ddd_svm_yn.py	/^    fpr, tpr, _ = roc_curve(y_test, y_score, pos_label=clf.classes_[1])$/;"	c
 es_	.\archive\ddd_svm_yn.py	/^    prec, recall, _ = precision_recall_curve(y_test, y_score, pos_label=clf.classes_[1])$/;"	c
@@ -365,7 +365,7 @@ ifiers	.\src\models\model_pipeline.py	/^    for name, clf in classifiers.items()
 ify_model	.\archive\ddd_Arefnezhad2019.py	/^from module.classify_model import get_result_svm$/;"	c
 ify_model	.\archive\ddd_Wang2022.py	/^from module.classify_model import model_Wang2022$/;"	c
 ify_model	.\archive\ddd_Zhao2009.py	/^from module.classify_model import get_result_svm$/;"	c
-kss_process	.\src\data_processing\features\kss.py	/^def kss_process(subject):$/;"	f
+kss_process	.\src\data_processing\features\kss.py	/^def kss_process(subject, model):$/;"	f
 label_arousal_state	.\archive\gpt\nakagama\archive\20241029_3_data.py	/^def label_arousal_state(eeg_data, fs):$/;"	f
 label_arousal_state	.\archive\gpt\nakagama\archive\20241029_all_class.py	/^def label_arousal_state(eeg_data, fs):$/;"	f
 label_arousal_state	.\archive\gpt\nakagama\archive\20241029_all_class_para_apt.py	/^def label_arousal_state(eeg_data, fs):$/;"	f
@@ -396,7 +396,7 @@ make_aic_and_bic	.\archive\local_lib\preprocess.py	/^def make_aic_and_bic($/;"	f
 make_dataset	.\archive\module\dataset.py	/^    def make_dataset(self, threshold):$/;"	m	class:Datasets
 make_dataset	.\archive\module\train.py	/^    def make_dataset(self, dataset_num, sequence_length, t_start, dataset, max_diff=10):$/;"	m	class:Train
 make_train_dataset	.\archive\local_lib\preprocess.py	/^def make_train_dataset(NUM_DATA, NUM_RNN, yawrate_i_filt, yawrate_a_filt):$/;"	f
-merge_process	.\src\utils\merge.py	/^def merge_process(subject):$/;"	f
+merge_process	.\src\utils\merge.py	/^def merge_process(subject, model):$/;"	f
 model_Wang2022	.\archive\module\classify_model.py	/^def model_Wang2022(feats):$/;"	f
 non_overlapping_average	.\archive\gpt\nakagama\ddd_nakagama2024.py	/^def non_overlapping_average(data, window_size):$/;"	f
 non_overlapping_average	.\src\data_processing\features\physio.py	/^def non_overlapping_average(data, window_size):$/;"	f
@@ -466,7 +466,7 @@ rnn_predict	.\archive\rnn_optuna_main.py	/^def rnn_predict(NUM_DATA_local, yawra
 safe_load_mat	.\src\utils\loaders.py	/^def safe_load_mat(file_path):$/;"	f
 sample_entropy	.\archive\gpt\nakagama\ddd_nakagama2024.py	/^def sample_entropy(signal, m=2, r=None):$/;"	f
 save_aic_and_bic	.\archive\local_lib\preprocess.py	/^def save_aic_and_bic($/;"	f
-save_csv	.\src\utils\loaders.py	/^def save_csv(df, subject_id, version, feat):$/;"	f
+save_csv	.\src\utils\loaders.py	/^def save_csv(df, subject_id, version, feat, model):$/;"	f
 save_dataset_csv	.\archive\local_lib\preprocess.py	/^def save_dataset_csv(time_curve_local, r_input_local, yawrate_a_filt_local, yH_local, curve_cnt): $/;"	f
 save_rmse_csv	.\archive\local_lib\preprocess.py	/^def save_rmse_csv(idx_start,y_train,yH,freq_th,eeg_high_th_str,curve_cnt,time_str,drowsiness_flg,input_omega,step):$/;"	f
 save_roc_data	.\archive\tests\related_work\arefnezhad2019\ddd_Aref2019_PSO.py	/^def save_roc_data(file_name, y_true, y_scores):$/;"	f
@@ -486,7 +486,7 @@ set_parameters	.\archive\gpt\nakagama\csv\archiv\all_feat\ddd_svm_correct_anfis.
 show_result	.\src\models\output.py	/^def show_result(name,result):$/;"	f
 siglist	.\archive\module\feat\feat_sel.py	/^    def siglist(r,p,alpha=0.05):$/;"	m	class:CorrelationAnalysis
 significants	.\archive\module\feat\feat_sel.py	/^    def significants(self):$/;"	m	class:CorrelationAnalysis
-smooth_std_pe_process	.\src\data_processing\features\simlsl.py	/^def smooth_std_pe_process(subject):$/;"	f
+smooth_std_pe_process	.\src\data_processing\features\simlsl.py	/^def smooth_std_pe_process(subject, model):$/;"	f
 spectral_average	.\archive\module\feat\feat_extract.py	/^    def spectral_average(x, samplerate=sampling_freq_simlsl):$/;"	f	function:feat_Arefnezhad2019
 spectral_centroid	.\archive\module\feat\feat_extract.py	/^    def spectral_centroid(x, samplerate=sampling_freq_simlsl):$/;"	f	function:feat_Arefnezhad2019
 spectral_variance	.\archive\module\feat\feat_extract.py	/^    def spectral_variance(x, samplerate=sampling_freq_simlsl):$/;"	f	function:feat_Arefnezhad2019
@@ -496,7 +496,7 @@ test_datasets	.\archive\xgb_optuna_main.py	/^def test_datasets(best_regressor,fr
 test_step	.\archive\module\train.py	/^    def test_step(self, inputs, labels):$/;"	m	class:Train
 theta_beta_ratio	.\archive\gpt\nakagama\ddd_nakagama2024.py	/^def theta_beta_ratio(signal, fs):$/;"	f
 theta_beta_ratio	.\src\data_processing\features\eeg.py	/^def theta_beta_ratio(signal, fs):$/;"	f
-time_freq_domain_process	.\src\data_processing\features\simlsl.py	/^def time_freq_domain_process(subject): $/;"	f
+time_freq_domain_process	.\src\data_processing\features\simlsl.py	/^def time_freq_domain_process(subject, model): $/;"	f
 train	.\archive\module\train.py	/^              epochs, batch_size, sequence_length, input_size, plot=False):$/;"	m	class:Train
 train_and_evaluate_classifier	.\archive\gpt\nakagama\archive\20241029_all_class.py	/^def train_and_evaluate_classifier(classifier, classifier_name):$/;"	f
 train_and_evaluate_classifier	.\archive\gpt\nakagama\archive\20241029_all_class_para_apt.py	/^def train_and_evaluate_classifier(classifier, classifier_name):$/;"	f
@@ -516,5 +516,5 @@ wavelet_packet_decompose	.\archive\tests\related_work\zhao2009\ddd_Zhao09_roc_op
 wavelet_packet_decompose	.\archive\tests\related_work\zhao2009\ddd_Zhao09_roc_rev.py	/^def wavelet_packet_decompose(data, lowpass_filter, highpass_filter):$/;"	f
 wavelet_packet_decompose	.\archive\tests\related_work\zhao2009\ddd_Zhao09_roc_rev2.py	/^def wavelet_packet_decompose(data, lowpass_filter, highpass_filter):$/;"	f
 wavelet_packet_decompose	.\archive\tests\related_work\zhao2009\ddd_Zhao09_roc_time_window.py	/^def wavelet_packet_decompose(data, lowpass_filter, highpass_filter):$/;"	f
-wavelet_process	.\src\data_processing\features\wavelet.py	/^def wavelet_process(subject):$/;"	f
+wavelet_process	.\src\data_processing\features\wavelet.py	/^def wavelet_process(subject, model):$/;"	f
 xgb_predict	.\archive\xgb_optuna_main.py	/^def xgb_predict(NUM_DATA_local, yawrate_i_filt_local, yawrate_a_filt_local, NUM_RNN_local, regressor_local):$/;"	f

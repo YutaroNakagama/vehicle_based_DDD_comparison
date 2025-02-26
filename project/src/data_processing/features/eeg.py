@@ -61,7 +61,7 @@ def theta_beta_ratio(signal, fs):
     beta_power = bandpower(signal, beta_band)
     return theta_power / beta_power if beta_power != 0 else 0
 
-def eeg_process(subject):
+def eeg_process(subject, model):
     subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
     frequency_bands = {
         "Delta (0.5-4 Hz)": (0.5, 4),
@@ -113,7 +113,7 @@ def eeg_process(subject):
                 data_for_csv[column_name] = channel_band_powers[ch][band_name]
         df_results = pd.DataFrame(data_for_csv)
         
-        save_csv(df_results, subject_id, version, 'eeg')
+        save_csv(df_results, subject_id, version, 'eeg', model)
         
     except Exception as e:
         #print(f"Failed to process {subject_name_version}: {e}")

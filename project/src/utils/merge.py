@@ -20,16 +20,33 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 dfs = []
 
-def merge_process(subject):
+def merge_process(subject, model):
     subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
-    features = {
-        "time_freq_domain": "Time (seconds)",
-        "smooth_std_pe": "Timestamp",
-        "wavelet": "Timestamp",
-        #"perclos": "Timestamp_x",
-        #"pupil": "Timestamp_2D",
-        "eeg": "Timestamp"
-    }
+
+    if model == 'common':
+        features = {
+            "time_freq_domain": "Time (seconds)",
+            "smooth_std_pe": "Timestamp",
+            "wavelet": "Timestamp",
+            #"perclos": "Timestamp_x",
+            #"pupil": "Timestamp_2D",
+            "eeg": "Timestamp"
+        }
+    elif model == 'SvmA': 
+        features = {
+            "time_freq_domain": "Time (seconds)",
+            "eeg": "Timestamp"
+        }
+    elif model == 'SvmW': 
+        features = {
+            "wavelet": "Timestamp",
+            "eeg": "Timestamp"
+        }
+    elif model == 'SvmA': 
+        features = {
+            "smooth_std_pe": "Timestamp",
+            "eeg": "Timestamp"
+        }
 
     # Initialize an empty DataFrame for merging results
     merged_df = pd.DataFrame()
@@ -37,7 +54,7 @@ def merge_process(subject):
     # Process each feature for the current subject
     for feature, timestamp_col in features.items():
         # Construct the file path for each feature CSV
-        file_path = f"{INTRIM_CSV_PATH}/{feature}/{feature}_{subject_id}_{version}.csv"
+        file_path = f"{INTRIM_CSV_PATH}/{feature}/{model}/{feature}_{subject_id}_{version}.csv"
         
         # Check if the file exists
         if os.path.exists(file_path):
@@ -58,7 +75,7 @@ def merge_process(subject):
             #print(f"File not found: {file_path}")
             logging.warning(f"File not found: {file_path}")
     
-    save_csv(merged_df, subject_id, version, 'merged') 
+    save_csv(merged_df, subject_id, version, 'merged', model) 
 #    # Save the merged result for the current subject
 #    output_file = f"{INTRIM_CSV_PATH}/{subject_id}_{version}_merged_data.csv"
 #    merged_df.to_csv(output_file, index=False)
