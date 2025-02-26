@@ -14,27 +14,29 @@ def main_pipeline(model):
     
     for subject in subject_list:
 
-        # wavelet process
-        wavelet_process(subject)
-
-        # smoothing std deviation PE process
-        time_freq_domain_process(subject)
-
-        # smoothing std deviation PE process
-        smooth_std_pe_process(subject)
+        if model == "common":
+            time_freq_domain_process(subject, model) # smoothing std deviation PE process
+            wavelet_process(subject, model) # wavelet process
+            smooth_std_pe_process(subject, model) # smoothing std deviation PE process
+        elif model == "LstmA":
+            time_freq_domain_process(subject, model) # smoothing std deviation PE process
+        elif model == "SvmW":
+            wavelet_process(subject, model) # wavelet process
+        elif model == "Lstm":
+            smooth_std_pe_process(subject, model) # smoothing std deviation PE process
 
         # EEG process
-        eeg_process(subject)
+        eeg_process(subject, model)
 
         # pupil process
-        #pupil_process(subject)
+        #pupil_process(subject, model)
 
         # perclos process
-        #perclos_process(subject)
+        #perclos_process(subject, model)
         
         # merge process 
-        merge_process(subject)
+        merge_process(subject, model)
 
         # kss process
-        kss_process(subject)
+        kss_process(subject, model)
 
