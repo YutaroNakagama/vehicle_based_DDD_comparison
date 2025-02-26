@@ -57,7 +57,11 @@ def read_subject_list():
     with open(SUBJECT_LIST_PATH, 'r') as file:
         return file.read().splitlines()
 
-def save_csv(df, subject_id, version, feat):
-    output_fp = f'{INTRIM_CSV_PATH}/{feat}/{feat}_{subject_id}_{version}.csv'
+def save_csv(df, subject_id, version, feat, model):
+    if feat == 'processed':
+        output_fp = f'{PROCESS_CSV_PATH}/{model}/processed_{subject_id}_{version}.csv'
+    else:
+        output_fp = f'{INTRIM_CSV_PATH}/{feat}/{model}/{feat}_{subject_id}_{version}.csv'
+
     df.to_csv(output_fp, index=False)
     logging.info(f"CSV file has been saved at: {output_fp}")
