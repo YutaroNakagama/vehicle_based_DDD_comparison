@@ -1,4 +1,4 @@
-from config import (
+from src.config import (
         WINDOW_SIZE_SEC, 
         STEP_SIZE_SEC,
         SAMPLE_RATE_EEG,
