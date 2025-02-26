@@ -1,5 +1,5 @@
 # simlsl_features.py: SIM_lslデータの特徴量抽出
-from config import (
+from src.config import (
     DATASET_PATH, 
     INTRIM_CSV_PATH, 
     SAMPLE_RATE_SIMLSL,

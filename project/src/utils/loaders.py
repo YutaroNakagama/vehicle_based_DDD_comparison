@@ -1,7 +1,5 @@
-# mat_loader.py: MATファイルの読み込みとエラーハンドリング
-
 # Local application imports
-from config import (
+from src.config import (
     SUBJECT_LIST_PATH, 
     DATASET_PATH, 
     INTRIM_CSV_PATH, 
