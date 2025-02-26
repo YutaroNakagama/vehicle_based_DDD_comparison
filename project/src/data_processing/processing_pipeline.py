@@ -7,7 +7,7 @@ from src.data_processing.features.kss import kss_process
 from src.utils.loaders import read_subject_list
 from src.utils.merge import merge_process
 
-def main_pipeline():
+def main_pipeline(model):
 
     # load subject list
     subject_list = read_subject_list()
