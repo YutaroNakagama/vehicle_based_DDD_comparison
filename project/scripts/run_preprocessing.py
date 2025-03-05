@@ -11,7 +11,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Select a model to run.")
     parser.add_argument(
         "--model", 
-        choices=src.config.MODEL_CHOICES, 
+        choices=src.config.DATA_PROCESS_CHOICES, 
         required=True, 
         help="Choose a model from: {', '.join(config.MODEL_CHOICES)}"
         )
