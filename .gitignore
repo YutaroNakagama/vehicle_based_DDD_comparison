@@ -1,3 +1,5 @@
 *.csv
 *.ps1
+*.pkl
+*.npy
 **/__pycache__/
