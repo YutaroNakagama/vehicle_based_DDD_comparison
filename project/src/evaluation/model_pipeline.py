@@ -237,8 +237,6 @@ def eval_pipeline(model):
 
     model_filename = f"{MODEL_PKL_PATH}/{model}.pkl"
     feat_filename = f"{MODEL_PKL_PATH}/{model}_feat.npy"
-#    with open(model_filename, "wb") as f:
-#        pickle.dump(clf, f)
 
     with open(model_filename, "rb") as f:
         clf = pickle.load(f)
