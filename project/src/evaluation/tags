@@ -4,15 +4,12 @@
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.7	//
-calculate_feature_indices	.\index.py	/^def calculate_feature_indices(X, y):$/;"	f
-calculate_id	.\anfis.py	/^def calculate_id(indices, params):$/;"	f
-combine_file	.\model_pipeline.py	/^def combine_file(subject):$/;"	f
-gaussian_membership	.\anfis.py	/^def gaussian_membership(x, c, s):$/;"	f
+combine_file	.\model_pipeline.py	/^def combine_file(subject, model):$/;"	f
+eval_pipeline	.\model_pipeline.py	/^def eval_pipeline(model):$/;"	f
+ification_report	.\model_pipeline.py	/^    report = classification_report(y_test_binary, y_pred)$/;"	c	function:eval_pipeline
 ification_report	.\model_pipeline.py	/^    report = classification_report(y_test_binary, y_pred)$/;"	c	function:optimizar
 ification_report	.\model_pipeline.py	/^from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_curve, auc, mean_squared_error, mutual_info_score$/;"	c
-ifiers	.\model_pipeline.py	/^    classifiers = {$/;"	c	function:main_pipeline
-ifiers	.\model_pipeline.py	/^    for name, clf in classifiers.items():$/;"	c	function:main_pipeline
-main_pipeline	.\model_pipeline.py	/^def main_pipeline():$/;"	f
+ifiers	.\model_pipeline.py	/^    classifiers = {$/;"	c	function:eval_pipeline
 objective_function_with_progress	.\model_pipeline.py	/^def objective_function_with_progress(params):$/;"	f
-optimizar	.\model_pipeline.py	/^def optimizar(name,clf):$/;"	f
-show_result	.\output.py	/^def show_result(name,result):$/;"	f
+optimizar	.\model_pipeline.py	/^def optimizar(name,clf,model):$/;"	f
+show_result	.\model_pipeline.py	/^def show_result(name,result):$/;"	f
