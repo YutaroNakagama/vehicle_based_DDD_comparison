@@ -109,13 +109,13 @@ calculate_feature_indices	.\archive\gpt\ddd_Aref2019_PSO.py	/^def calculate_feat
 calculate_feature_indices	.\archive\tests\related_work\arefnezhad2019\ddd_Aref2019.py	/^def calculate_feature_indices(features_df, label_df):$/;"	f
 calculate_feature_indices	.\archive\tests\related_work\arefnezhad2019\ddd_Aref2019_PSO.py	/^def calculate_feature_indices(features_df, label_df):$/;"	f
 calculate_feature_indices	.\archive\tests\related_work\arefnezhad2019\ddd_Aref2019_PSO_rev1.py	/^def calculate_feature_indices(features_df, label_df):$/;"	f
-calculate_feature_indices	.\src\models\index.py	/^def calculate_feature_indices(X, y):$/;"	f
+calculate_feature_indices	.\src\train\index.py	/^def calculate_feature_indices(X, y):$/;"	f
 calculate_features_for_signals	.\archive\gpt\ddd_Aref2019.py	/^def calculate_features_for_signals(angle_window, speed_window):$/;"	f
 calculate_features_for_signals	.\archive\gpt\ddd_Aref2019_PSO.py	/^def calculate_features_for_signals(angle_window, speed_window):$/;"	f
 calculate_features_for_signals	.\archive\tests\related_work\arefnezhad2019\ddd_Aref2019.py	/^def calculate_features_for_signals(angle_window, speed_window):$/;"	f
 calculate_features_for_signals	.\archive\tests\related_work\arefnezhad2019\ddd_Aref2019_PSO.py	/^def calculate_features_for_signals(angle_window, speed_window):$/;"	f
 calculate_features_for_signals	.\archive\tests\related_work\arefnezhad2019\ddd_Aref2019_PSO_rev1.py	/^def calculate_features_for_signals(angle_window, speed_window):$/;"	f
-calculate_id	.\src\models\anfis.py	/^def calculate_id(indices, params):$/;"	f
+calculate_id	.\src\train\anfis.py	/^def calculate_id(indices, params):$/;"	f
 calculate_importance_degree	.\archive\gpt\ddd_Aref2019.py	/^def calculate_importance_degree(params, indices_df):$/;"	f
 calculate_importance_degree	.\archive\gpt\ddd_Aref2019_PSO.py	/^def calculate_importance_degree(params, indices_df):$/;"	f
 calculate_importance_degree	.\archive\tests\related_work\arefnezhad2019\ddd_Aref2019.py	/^def calculate_importance_degree(params, indices_df):$/;"	f
@@ -135,7 +135,8 @@ call	.\archive\tests\related_work\wang2022\ddd_Wang22_ROC_rev1.py	/^    def call
 call	.\archive\tests\related_work\wang2022\ddd_Wang22_ROC_rev1.py	/^    def call(self, x):$/;"	m	class:AttentionLayer
 call	.\archive\tests\related_work\wang2022\ddd_Wang22_ROC_rev2.py	/^    def call(self, inputs):$/;"	m	class:ExpandDimsLayer
 call	.\archive\tests\related_work\wang2022\ddd_Wang22_ROC_rev2.py	/^    def call(self, x):$/;"	m	class:AttentionLayer
-combine_file	.\src\models\model_pipeline.py	/^def combine_file(subject, model):$/;"	f
+combine_file	.\src\evaluation\model_pipeline.py	/^def combine_file(subject, model):$/;"	f
+combine_file	.\src\train\model_pipeline.py	/^def combine_file(subject, model):$/;"	f
 combine_file	.\src\utils\merge.py	/^def combine_file(subject):$/;"	f
 convert_perclos_to_kss	.\archive\gpt\nakagama\ddd_nakagama2024.py	/^def convert_perclos_to_kss(perclos):$/;"	f
 convert_perclos_to_kss	.\src\data_processing\features\kss.py	/^def convert_perclos_to_kss(perclos):$/;"	f
@@ -159,6 +160,7 @@ es_	.\archive\ddd_svm_yn.py	/^    fpr, tpr, _ = roc_curve(y_test, y_score, pos_l
 es_	.\archive\ddd_svm_yn.py	/^    prec, recall, _ = precision_recall_curve(y_test, y_score, pos_label=clf.classes_[1])$/;"	c
 es_	.\archive\module\classify_model.py	/^    fpr, tpr, _ = roc_curve(y_test, y_score, pos_label=clf.classes_[1])$/;"	c	function:get_result_svm
 es_	.\archive\module\classify_model.py	/^    prec, recall, _ = precision_recall_curve(y_test, y_score, pos_label=clf.classes_[1])$/;"	c	function:get_result_svm
+eval_pipeline	.\src\evaluation\model_pipeline.py	/^def eval_pipeline(model):$/;"	f
 execute_regression	.\archive\local_lib\preprocess.py	/^def execute_regression($/;"	f
 extract_aref_features	.\src\data_processing\features\simlsl.py	/^def extract_aref_features(signal, prefix=""):$/;"	f
 extract_features	.\archive\gpt\nakagama\archive\20241029_all_class_para_apt_loop_LSTM_Aref.py	/^def extract_features(signal):$/;"	f
@@ -184,7 +186,7 @@ forward	.\archive\gpt\nakagama\csv\archiv\all_feat\ddd_svm_correct_anfis.py	/^  
 forward	.\archive\module\train.py	/^    def forward(self, inputs):$/;"	m	class:PredictSimpleFormulaNet
 gaussian_membership	.\archive\gpt\nakagama\csv\archiv\all_feat\ddd_svm_anfis.py	/^def gaussian_membership(x, c, s):$/;"	f
 gaussian_membership	.\archive\gpt\nakagama\csv\archiv\all_feat\ddd_svm_fuzzy.py	/^def gaussian_membership(x, c, s):$/;"	f
-gaussian_membership	.\src\models\anfis.py	/^def gaussian_membership(x, c, s):$/;"	f
+gaussian_membership	.\src\train\anfis.py	/^def gaussian_membership(x, c, s):$/;"	f
 gaussian_mf	.\archive\gpt\nakagama\csv\archiv\all_feat\ddd_non_lin_svm_correct_anfis.py	/^def gaussian_mf(x, mean, sigma):$/;"	f
 gaussian_mf	.\archive\gpt\nakagama\csv\archiv\all_feat\ddd_non_lin_svm_correct_anfis_all_subj.py	/^def gaussian_mf(x, mean, sigma):$/;"	f
 gaussian_mf	.\archive\gpt\nakagama\csv\archiv\all_feat\ddd_svm_anfis.py	/^def gaussian_mf(x, mean, sigma):$/;"	f
@@ -290,8 +292,11 @@ ification_report	.\archive\tests\related_work\zhao2009\ddd_Zhao09_roc_time_windo
 ification_report	.\archive\tests\related_work\zhao2009\ddd_Zhao09_roc_time_window.py	/^precision = classification_report(y_val, val_predictions, output_dict=True)['weighted avg']['precision']$/;"	c
 ification_report	.\archive\tests\related_work\zhao2009\ddd_Zhao09_roc_time_window.py	/^print("Validation Classification Report:\\n", classification_report(y_val, val_predictions))$/;"	c
 ification_report	.\archive\tests\related_work\zhao2009\ddd_Zhao09_roc_time_window.py	/^recall = classification_report(y_val, val_predictions, output_dict=True)['weighted avg']['recall']$/;"	c
-ification_report	.\src\models\model_pipeline.py	/^    report = classification_report(y_test_binary, y_pred)$/;"	c	function:optimizar
-ification_report	.\src\models\model_pipeline.py	/^from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_curve, auc, mean_squared_error, mutual_info_score$/;"	c
+ification_report	.\src\evaluation\model_pipeline.py	/^    report = classification_report(y_test_binary, y_pred)$/;"	c	function:eval_pipeline
+ification_report	.\src\evaluation\model_pipeline.py	/^    report = classification_report(y_test_binary, y_pred)$/;"	c	function:optimizar
+ification_report	.\src\evaluation\model_pipeline.py	/^from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_curve, auc, mean_squared_error, mutual_info_score$/;"	c
+ification_report	.\src\train\model_pipeline.py	/^    report = classification_report(y_test_binary, y_pred)$/;"	c	function:optimizar
+ification_report	.\src\train\model_pipeline.py	/^from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_curve, auc, mean_squared_error, mutual_info_score$/;"	c
 ification_report_imp	.\archive\gpt\nakagama\csv\archiv\all_feat\ddd_svm_fuzzy.py	/^classification_report_imp = classification_report(y_test_imp, y_pred_imp, target_names=['Low', 'High'])$/;"	c
 ification_report_imp	.\archive\gpt\nakagama\csv\archiv\all_feat\ddd_svm_fuzzy.py	/^print("\\nClassification Report:\\n", classification_report_imp)$/;"	c
 ification_report_knn	.\archive\gpt\nakagama\csv\archiv\all_feat\ddd_svm_anfis.py	/^classification_report_knn = classification_report(y_test, y_pred_knn, target_names=['Low', 'High'])$/;"	c
@@ -360,8 +365,9 @@ ifiers	.\archive\gpt\nakagama\archive\20241029_all_class_para_apt_loop_LSTM_Aref
 ifiers	.\archive\gpt\nakagama\archive\20241029_all_class_para_apt_loop_LSTM_Aref.py	/^for clf, name in classifiers:$/;"	c
 ifiers	.\archive\gpt\nakagama\classifier.py	/^classifiers = {$/;"	c
 ifiers	.\archive\gpt\nakagama\classifier.py	/^for name, clf in classifiers.items():$/;"	c
-ifiers	.\src\models\model_pipeline.py	/^    classifiers = {$/;"	c	function:train_pipeline
-ifiers	.\src\models\model_pipeline.py	/^    for name, clf in classifiers.items():$/;"	c	function:train_pipeline
+ifiers	.\src\evaluation\model_pipeline.py	/^    classifiers = {$/;"	c	function:eval_pipeline
+ifiers	.\src\train\model_pipeline.py	/^    classifiers = {$/;"	c	function:train_pipeline
+ifiers	.\src\train\model_pipeline.py	/^    for name, clf in classifiers.items():$/;"	c	function:train_pipeline
 ify_model	.\archive\ddd_Arefnezhad2019.py	/^from module.classify_model import get_result_svm$/;"	c
 ify_model	.\archive\ddd_Wang2022.py	/^from module.classify_model import model_Wang2022$/;"	c
 ify_model	.\archive\ddd_Zhao2009.py	/^from module.classify_model import get_result_svm$/;"	c
@@ -388,7 +394,6 @@ load_veh_eeg_ppb	.\archive\module\dataset.py	/^    def load_veh_eeg_ppb(self, da
 load_veh_eeg_yn	.\archive\module\dataset.py	/^    def load_veh_eeg_yn(self, data_type="full", filt=False):$/;"	m	class:Datasets
 load_veh_eeg_yn_feat_Aref	.\archive\module\dataset.py	/^    def load_veh_eeg_yn_feat_Aref(self, data_type="full", filt=False):$/;"	m	class:Datasets
 load_veh_yn	.\archive\module\dataset.py	/^    def load_veh_yn(self, output_type="full", filt=False):$/;"	m	class:Datasets
-main	.\scripts\run_evaluation.py	/^def main():$/;"	f
 main_pipeline	.\src\data_processing\processing_pipeline.py	/^def main_pipeline(model):$/;"	f
 make_aic_and_bic	.\archive\local_lib\preprocess.py	/^def make_aic_and_bic($/;"	f
 make_dataset	.\archive\module\dataset.py	/^    def make_dataset(self, threshold):$/;"	m	class:Datasets
@@ -414,8 +419,10 @@ objective_function_pso	.\archive\gpt\nakagama\csv\archiv\all_feat\ddd_non_lin_sv
 objective_function_pso	.\archive\gpt\nakagama\csv\archiv\all_feat\ddd_non_lin_svm_correct_anfis_all_subj.py	/^def objective_function_pso(anfis, X_features, y_labels):$/;"	f
 objective_function_pso	.\archive\gpt\nakagama\csv\archiv\all_feat\ddd_svm_anfis_1.py	/^def objective_function_pso(anfis, X_features, y_labels):$/;"	f
 objective_function_pso	.\archive\gpt\nakagama\csv\archiv\all_feat\ddd_svm_correct_anfis.py	/^def objective_function_pso(anfis, X_features, y_labels):$/;"	f
-objective_function_with_progress	.\src\models\model_pipeline.py	/^def objective_function_with_progress(params):$/;"	f
-optimizar	.\src\models\model_pipeline.py	/^def optimizar(name,clf):$/;"	f
+objective_function_with_progress	.\src\evaluation\model_pipeline.py	/^def objective_function_with_progress(params):$/;"	f
+objective_function_with_progress	.\src\train\model_pipeline.py	/^def objective_function_with_progress(params):$/;"	f
+optimizar	.\src\evaluation\model_pipeline.py	/^def optimizar(name,clf,model):$/;"	f
+optimizar	.\src\train\model_pipeline.py	/^def optimizar(name,clf,model):$/;"	f
 optimize_anfis_svm	.\archive\gpt\ddd_Aref2019.py	/^def optimize_anfis_svm(X, y):$/;"	f
 optimize_anfis_svm	.\archive\tests\related_work\arefnezhad2019\ddd_Aref2019.py	/^def optimize_anfis_svm(X, y):$/;"	f
 optimize_anfis_svm_for_val_accuracy_adjusted	.\archive\gpt\ddd_Aref2019.py	/^def optimize_anfis_svm_for_val_accuracy_adjusted(X_train, y_train, X_val, y_val):$/;"	f
@@ -481,7 +488,8 @@ set_parameters	.\archive\gpt\nakagama\csv\archiv\all_feat\ddd_non_lin_svm_correc
 set_parameters	.\archive\gpt\nakagama\csv\archiv\all_feat\ddd_svm_anfis.py	/^    def set_parameters(self, means, sigmas, consequents):$/;"	m	class:SimpleANFIS
 set_parameters	.\archive\gpt\nakagama\csv\archiv\all_feat\ddd_svm_anfis_1.py	/^    def set_parameters(self, means, sigmas, consequents):$/;"	m	class:ANFISForID
 set_parameters	.\archive\gpt\nakagama\csv\archiv\all_feat\ddd_svm_correct_anfis.py	/^    def set_parameters(self, means, sigmas, consequents):$/;"	m	class:ANFISForID
-show_result	.\src\models\output.py	/^def show_result(name,result):$/;"	f
+show_result	.\src\evaluation\model_pipeline.py	/^def show_result(name,result):$/;"	f
+show_result	.\src\train\output.py	/^def show_result(name,result):$/;"	f
 siglist	.\archive\module\feat\feat_sel.py	/^    def siglist(r,p,alpha=0.05):$/;"	m	class:CorrelationAnalysis
 significants	.\archive\module\feat\feat_sel.py	/^    def significants(self):$/;"	m	class:CorrelationAnalysis
 smooth_std_pe_process	.\src\data_processing\features\simlsl.py	/^def smooth_std_pe_process(subject, model):$/;"	f
@@ -503,7 +511,7 @@ train_and_evaluate_classifier	.\archive\gpt\nakagama\archive\20241029_all_class_
 train_and_evaluate_classifier	.\archive\gpt\nakagama\archive\20241029_all_class_para_apt_loop_LSTM_Aref.py	/^def train_and_evaluate_classifier(classifier, classifier_name):$/;"	f
 train_focused_data	.\archive\rnn_optuna_main.py	/^def train_focused_data(NUM_DIM,rnn_type,n_batch,freq_th):$/;"	f
 train_focused_data	.\archive\xgb_optuna_main.py	/^def train_focused_data(regressor, freq_th):$/;"	f
-train_pipeline	.\src\models\model_pipeline.py	/^def train_pipeline(model):$/;"	f
+train_pipeline	.\src\train\model_pipeline.py	/^def train_pipeline(model):$/;"	f
 train_step	.\archive\module\train.py	/^    def train_step(self, inputs, labels):$/;"	m	class:Train
 trim_idx	.\archive\local_lib\preprocess.py	/^def trim_idx(time_str,yawrate_i,yawrate_a,idx_start,idx_end):$/;"	f
 trim_mean	.\archive\local_lib\preprocess.py	/^def trim_mean(alpha_local, beta_local, beta_alpha_local, time_str, idx_start, idx_end):$/;"	f

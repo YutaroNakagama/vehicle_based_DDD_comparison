@@ -9,6 +9,7 @@ DATASET_PATH        = '../../dataset/mdapbe/physio'
 #OUTPUT_CSV_PATH     = './output/csv'
 INTRIM_CSV_PATH     = './data/interim'
 PROCESS_CSV_PATH    = './data/processed'
+MODEL_PKL_PATH    = './model/'
 OUTPUT_SVG_PATH     = './output/svg'
 
 DATA_PROCESS_CHOICES = ["SvmA", "SvmW", "Lstm", "common"]  # ここでモデルの候補を定義
