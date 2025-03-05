@@ -1,18 +1,24 @@
 import sys
 import os
+import argparse
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import src.data_processing.processing_pipeline as dp
+import src.config
+#import src.data_processing.processing_pipeline as dp
 import src.models.model_pipeline as mp
 
-def main():
-
-    # data processing 
-    #dp.main_pipeline()
-
-    # model training and evaluation
-    mp.main_pipeline()
-    
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="Select a model to run.")
+    parser.add_argument(
+        "--model", 
+        choices=src.config.MODEL_CHOICES, 
+        required=True, 
+        help="Choose a model from: {', '.join(config.MODEL_CHOICES)}"
+        )
+
+    args = parser.parse_args()
+
+    print(f"Running '{args.model}' model...")
+
+    mp.train_pipeline(args.model)

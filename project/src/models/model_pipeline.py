@@ -1,4 +1,4 @@
-from config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, OUTPUT_SVG_PATH
+from src.config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, OUTPUT_SVG_PATH
 from src.utils.loaders import read_subject_list
 #from src.utils.merge import combine_file
 from src.models.index import calculate_feature_indices
@@ -90,13 +90,14 @@ def objective_function_with_progress(params):
 #    print(f"Classification Report:\n{result['classification_report']}")
 #    print(f"ROC AUC: {result['roc_auc']:.2f}")
 
-def combine_file(subject):
+def combine_file(subject, model):
     subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
     #subject_id, version = subject
     file_name = f'processed_{subject_id}_{version}.csv'
     try:
-        df = pd.read_csv(f'{PROCESS_CSV_PATH}/{file_name}')
+        df = pd.read_csv(f'{PROCESS_CSV_PATH}/{model}/{file_name}')
         dfs.append(df)
+        print(f"File found: {file_name}")
     except FileNotFoundError:
         print(f"File not found: {file_name}")
 
@@ -161,7 +162,7 @@ def optimizar(name,clf):
         "roc_auc": roc_auc
     }
 
-def main_pipeline():
+def train_pipeline(model):
     global X_train, X_test, y_train, y_test, y_train_binary, y_test_binary
     global clf, name
     global feature_indices
@@ -172,8 +173,9 @@ def main_pipeline():
 
     subject_list = read_subject_list()
     # Create dataframe list and read csv file
+    data_model = model if model in {"SvmW", "SvmA", "Lstm"} else "common"
     for subject in subject_list:
-        combine_file(subject)
+        combine_file(subject, data_model)
 
     # Combine the data and filter for classes 4 and 8
     all_data = pd.concat(dfs, ignore_index=True)
