@@ -2,4 +2,6 @@
 *.ps1
 *.pkl
 *.npy
+**/tags
 **/__pycache__/
+
