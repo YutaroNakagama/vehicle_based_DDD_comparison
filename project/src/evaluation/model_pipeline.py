@@ -85,8 +85,6 @@ def objective_function_with_progress(params):
 
 def show_result(name,result):
     print(f"\nClassifier: {name}")
-    #print(f"Optimized Parameters: {result['optimized_params']}")
-    #print(f"Selected Features: {result['selected_features']}")
     print(f"Mean Squared Error: {result['mse']}")
     print(f"Classification Report:\n{result['classification_report']}")
     print(f"ROC AUC: {result['roc_auc']:.2f}")
@@ -236,9 +234,6 @@ def eval_pipeline(model):
 
     selected_features = np.load(feat_filename, allow_pickle=True)
 
-    # 訓練データでの予測と精度計算
-    #y_train_pred = clf.predict(X_train_scaled)
-    #train_accuracy = accuracy_score(y_train_binary, y_train_pred) 
 
     # Display training accuracy
     X_selected_train = X_train[selected_features]
