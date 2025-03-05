@@ -135,7 +135,7 @@ call	.\archive\tests\related_work\wang2022\ddd_Wang22_ROC_rev1.py	/^    def call
 call	.\archive\tests\related_work\wang2022\ddd_Wang22_ROC_rev1.py	/^    def call(self, x):$/;"	m	class:AttentionLayer
 call	.\archive\tests\related_work\wang2022\ddd_Wang22_ROC_rev2.py	/^    def call(self, inputs):$/;"	m	class:ExpandDimsLayer
 call	.\archive\tests\related_work\wang2022\ddd_Wang22_ROC_rev2.py	/^    def call(self, x):$/;"	m	class:AttentionLayer
-combine_file	.\src\models\model_pipeline.py	/^def combine_file(subject):$/;"	f
+combine_file	.\src\models\model_pipeline.py	/^def combine_file(subject, model):$/;"	f
 combine_file	.\src\utils\merge.py	/^def combine_file(subject):$/;"	f
 convert_perclos_to_kss	.\archive\gpt\nakagama\ddd_nakagama2024.py	/^def convert_perclos_to_kss(perclos):$/;"	f
 convert_perclos_to_kss	.\src\data_processing\features\kss.py	/^def convert_perclos_to_kss(perclos):$/;"	f
@@ -360,8 +360,8 @@ ifiers	.\archive\gpt\nakagama\archive\20241029_all_class_para_apt_loop_LSTM_Aref
 ifiers	.\archive\gpt\nakagama\archive\20241029_all_class_para_apt_loop_LSTM_Aref.py	/^for clf, name in classifiers:$/;"	c
 ifiers	.\archive\gpt\nakagama\classifier.py	/^classifiers = {$/;"	c
 ifiers	.\archive\gpt\nakagama\classifier.py	/^for name, clf in classifiers.items():$/;"	c
-ifiers	.\src\models\model_pipeline.py	/^    classifiers = {$/;"	c	function:main_pipeline
-ifiers	.\src\models\model_pipeline.py	/^    for name, clf in classifiers.items():$/;"	c	function:main_pipeline
+ifiers	.\src\models\model_pipeline.py	/^    classifiers = {$/;"	c	function:train_pipeline
+ifiers	.\src\models\model_pipeline.py	/^    for name, clf in classifiers.items():$/;"	c	function:train_pipeline
 ify_model	.\archive\ddd_Arefnezhad2019.py	/^from module.classify_model import get_result_svm$/;"	c
 ify_model	.\archive\ddd_Wang2022.py	/^from module.classify_model import model_Wang2022$/;"	c
 ify_model	.\archive\ddd_Zhao2009.py	/^from module.classify_model import get_result_svm$/;"	c
@@ -389,9 +389,7 @@ load_veh_eeg_yn	.\archive\module\dataset.py	/^    def load_veh_eeg_yn(self, data
 load_veh_eeg_yn_feat_Aref	.\archive\module\dataset.py	/^    def load_veh_eeg_yn_feat_Aref(self, data_type="full", filt=False):$/;"	m	class:Datasets
 load_veh_yn	.\archive\module\dataset.py	/^    def load_veh_yn(self, output_type="full", filt=False):$/;"	m	class:Datasets
 main	.\scripts\run_evaluation.py	/^def main():$/;"	f
-main	.\scripts\run_training.py	/^def main():$/;"	f
 main_pipeline	.\src\data_processing\processing_pipeline.py	/^def main_pipeline(model):$/;"	f
-main_pipeline	.\src\models\model_pipeline.py	/^def main_pipeline():$/;"	f
 make_aic_and_bic	.\archive\local_lib\preprocess.py	/^def make_aic_and_bic($/;"	f
 make_dataset	.\archive\module\dataset.py	/^    def make_dataset(self, threshold):$/;"	m	class:Datasets
 make_dataset	.\archive\module\train.py	/^    def make_dataset(self, dataset_num, sequence_length, t_start, dataset, max_diff=10):$/;"	m	class:Train
@@ -505,6 +503,7 @@ train_and_evaluate_classifier	.\archive\gpt\nakagama\archive\20241029_all_class_
 train_and_evaluate_classifier	.\archive\gpt\nakagama\archive\20241029_all_class_para_apt_loop_LSTM_Aref.py	/^def train_and_evaluate_classifier(classifier, classifier_name):$/;"	f
 train_focused_data	.\archive\rnn_optuna_main.py	/^def train_focused_data(NUM_DIM,rnn_type,n_batch,freq_th):$/;"	f
 train_focused_data	.\archive\xgb_optuna_main.py	/^def train_focused_data(regressor, freq_th):$/;"	f
+train_pipeline	.\src\models\model_pipeline.py	/^def train_pipeline(model):$/;"	f
 train_step	.\archive\module\train.py	/^    def train_step(self, inputs, labels):$/;"	m	class:Train
 trim_idx	.\archive\local_lib\preprocess.py	/^def trim_idx(time_str,yawrate_i,yawrate_a,idx_start,idx_end):$/;"	f
 trim_mean	.\archive\local_lib\preprocess.py	/^def trim_mean(alpha_local, beta_local, beta_alpha_local, time_str, idx_start, idx_end):$/;"	f

@@ -5,5 +5,3 @@
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.7	//
 main	.\run_evaluation.py	/^def main():$/;"	f
-main	.\run_preprocessing.py	/^def main():$/;"	f
-main	.\run_training.py	/^def main():$/;"	f

@@ -11,7 +11,8 @@ INTRIM_CSV_PATH     = './data/interim'
 PROCESS_CSV_PATH    = './data/processed'
 OUTPUT_SVG_PATH     = './output/svg'
 
-MODEL_CHOICES = ["SvmA", "SvmW", "Lstm", "common"]  # ここでモデルの候補を定義
+DATA_PROCESS_CHOICES = ["SvmA", "SvmW", "Lstm", "common"]  # ここでモデルの候補を定義
+MODEL_CHOICES = ["SvmA", "SvmW", "Lstm", "RF"]  # ここでモデルの候補を定義
 
 # Data process parameters
 WINDOW_SIZE_SEC = 3   # Time window size in seconds
