@@ -282,14 +282,3 @@ def eval_pipeline(model):
     print('report',report)
     print('roc_auc',roc_auc)
     
-#    # Save the results
-#    optimization_results = {
-#        #"optimized_params": optimized_params,
-#        #"selected_features": selected_features.tolist(),
-#        "mse": mse,
-#        "classification_report": report,
-#        "roc_auc": roc_auc
-#    }
-#
-#    for name, result in optimization_results.items():
-#        show_result(name,result)
