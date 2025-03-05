@@ -1,7 +1,7 @@
-*.csv
-*.ps1
-*.pkl
-*.npy
+**/*.csv
+**/*.ps1
+**/*.pkl
+**/*.npy
 **/tags
 **/__pycache__/
 
