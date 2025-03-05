@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import src.config
 #import src.data_processing.processing_pipeline as dp
-import src.models.model_pipeline as mp
+import src.train.model_pipeline as mp
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Select a model to run.")
