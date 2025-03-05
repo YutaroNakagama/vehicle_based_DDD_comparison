@@ -227,13 +227,6 @@ def eval_pipeline(model):
         #"MLP (Neural Network)": MLPClassifier(max_iter=500, random_state=42),
     }
 
-#
-#    for name, clf in classifiers.items():
-#        optimizar(name,clf,model)
-#
-#    # Display the final results
-#    for name, result in optimization_results.items():
-#        show_result(name,result)
 
     model_filename = f"{MODEL_PKL_PATH}/{model}.pkl"
     feat_filename = f"{MODEL_PKL_PATH}/{model}_feat.npy"
