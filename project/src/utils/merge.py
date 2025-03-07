@@ -42,7 +42,7 @@ def merge_process(subject, model):
             "wavelet": "Timestamp",
             "eeg": "Timestamp"
         }
-    elif model == 'SvmA': 
+    elif model == 'Lstm': 
         features = {
             "smooth_std_pe": "Timestamp",
             "eeg": "Timestamp"
