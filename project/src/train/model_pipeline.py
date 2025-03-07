@@ -3,6 +3,7 @@ from src.utils.loaders import read_subject_list
 #from src.utils.merge import combine_file
 from src.train.index import calculate_feature_indices
 from src.train.anfis import calculate_id
+from src.train.lstm import lstm_train
 from src.train.output import show_result
 
 import pandas as pd
@@ -195,53 +196,57 @@ def train_pipeline(model):
     X = filtered_data.iloc[:, 1:46].dropna()
     y = filtered_data["KSS_Theta_Alpha_Beta"].loc[X.index]
 
-    # Split the data into training and test sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    if model == 'Lstm':
+        lstm_train(X,y)
 
-    # Convert target variable into binary classes (4 -> 0, 8 -> 1)
-    y_train_binary = y_train.replace({**dict.fromkeys([1, 2], 0), **dict.fromkeys([8, 9], 1)})
-    y_test_binary = y_test.replace({**dict.fromkeys([1, 2], 0), **dict.fromkeys([8, 9], 1)})
-
-    feature_indices = calculate_feature_indices(X_train, y_train_binary)
-
-    if model == 'RF':
-        # Define multiple classifiers
-        classifiers = {
-            # 1. Tree-based algorithms
-            #"Decision Tree": DecisionTreeClassifier(random_state=42),
-            "Random Forest": RandomForestClassifier(random_state=42),
-            #"AdaBoost": AdaBoostClassifier(random_state=42),
-            #"Gradient Boosting": GradientBoostingClassifier(random_state=42),
-            #"XGBoost": xgb.XGBClassifier(use_label_encoder=False, eval_metric="logloss", random_state=42),
-            #"LightGBM": lgb.LGBMClassifier(random_state=42),
-            #"CatBoost": CatBoostClassifier(verbose=0, random_state=42),
-        
-            # 2. Linear models
-            #"Logistic Regression": LogisticRegression(max_iter=1000, random_state=42),
-            #"Perceptron": Perceptron(max_iter=1000, random_state=42),
-        
-            # 3. SVM (Support Vector Machines)
-            #"SVM (Linear Kernel)": SVC(kernel="linear", probability=True, random_state=42),
-            #"SVM (RBF Kernel)": SVC(kernel="rbf", probability=True, random_state=42),
-        
-            # 4. k-Nearest Neighbours
-            #"K-Nearest Neighbors": KNeighborsClassifier(),
-        
-            # 5. Neural Networks
-            #"MLP (Neural Network)": MLPClassifier(max_iter=500, random_state=42),
-        }
-    elif model == 'SvmW':
-        classifiers = {
-            # 3. SVM (Support Vector Machines)
-            #"SVM (Linear Kernel)": SVC(kernel="linear", probability=True, random_state=42),
-            "SVM (RBF Kernel)": SVC(kernel="rbf", probability=True, random_state=42),
-        }
-
-
-
-    for name, clf in classifiers.items():
-        optimizar(name,clf,model)
-
-#    # Display the final results
-#    for name, result in optimization_results.items():
-#        show_result(name,result)
+    else:
+        # Split the data into training and test sets
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    
+        # Convert target variable into binary classes (4 -> 0, 8 -> 1)
+        y_train_binary = y_train.replace({**dict.fromkeys([1, 2], 0), **dict.fromkeys([8, 9], 1)})
+        y_test_binary = y_test.replace({**dict.fromkeys([1, 2], 0), **dict.fromkeys([8, 9], 1)})
+    
+        feature_indices = calculate_feature_indices(X_train, y_train_binary)
+    
+        if model == 'RF':
+            # Define multiple classifiers
+            classifiers = {
+                # 1. Tree-based algorithms
+                #"Decision Tree": DecisionTreeClassifier(random_state=42),
+                "Random Forest": RandomForestClassifier(random_state=42),
+                #"AdaBoost": AdaBoostClassifier(random_state=42),
+                #"Gradient Boosting": GradientBoostingClassifier(random_state=42),
+                #"XGBoost": xgb.XGBClassifier(use_label_encoder=False, eval_metric="logloss", random_state=42),
+                #"LightGBM": lgb.LGBMClassifier(random_state=42),
+                #"CatBoost": CatBoostClassifier(verbose=0, random_state=42),
+            
+                # 2. Linear models
+                #"Logistic Regression": LogisticRegression(max_iter=1000, random_state=42),
+                #"Perceptron": Perceptron(max_iter=1000, random_state=42),
+            
+                # 3. SVM (Support Vector Machines)
+                #"SVM (Linear Kernel)": SVC(kernel="linear", probability=True, random_state=42),
+                #"SVM (RBF Kernel)": SVC(kernel="rbf", probability=True, random_state=42),
+            
+                # 4. k-Nearest Neighbours
+                #"K-Nearest Neighbors": KNeighborsClassifier(),
+            
+                # 5. Neural Networks
+                #"MLP (Neural Network)": MLPClassifier(max_iter=500, random_state=42),
+            }
+        elif model == 'SvmW':
+            classifiers = {
+                # 3. SVM (Support Vector Machines)
+                #"SVM (Linear Kernel)": SVC(kernel="linear", probability=True, random_state=42),
+                "SVM (RBF Kernel)": SVC(kernel="rbf", probability=True, random_state=42),
+            }
+    
+    
+    
+        for name, clf in classifiers.items():
+            optimizar(name,clf,model)
+    
+    #    # Display the final results
+    #    for name, result in optimization_results.items():
+    #        show_result(name,result)

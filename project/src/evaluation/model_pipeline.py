@@ -3,6 +3,7 @@ from src.utils.loaders import read_subject_list
 #from src.utils.merge import combine_file
 from src.train.index import calculate_feature_indices
 from src.train.anfis import calculate_id
+from src.evaluation.lstm import lstm_eval
 from src.train.output import show_result
 
 import pandas as pd
@@ -197,74 +198,77 @@ def eval_pipeline(model):
     y_train_binary = y_train.replace({**dict.fromkeys([1, 2], 0), **dict.fromkeys([8, 9], 1)})
     y_test_binary = y_test.replace({**dict.fromkeys([1, 2], 0), **dict.fromkeys([8, 9], 1)})
 
-    feature_indices = calculate_feature_indices(X_train, y_train_binary)
-
-    # Define multiple classifiers
-    classifiers = {
-        # 1. Tree-based algorithms
-        #"Decision Tree": DecisionTreeClassifier(random_state=42),
-        "Random Forest": RandomForestClassifier(random_state=42),
-        #"AdaBoost": AdaBoostClassifier(random_state=42),
-        #"Gradient Boosting": GradientBoostingClassifier(random_state=42),
-        #"XGBoost": xgb.XGBClassifier(use_label_encoder=False, eval_metric="logloss", random_state=42),
-        #"LightGBM": lgb.LGBMClassifier(random_state=42),
-        #"CatBoost": CatBoostClassifier(verbose=0, random_state=42),
+    if model == 'Lstm':
+        lstm_eval(X_test, y_test_binary)
+    else:
+        feature_indices = calculate_feature_indices(X_train, y_train_binary)
     
-        # 2. Linear models
-        #"Logistic Regression": LogisticRegression(max_iter=1000, random_state=42),
-        #"Perceptron": Perceptron(max_iter=1000, random_state=42),
+        # Define multiple classifiers
+        classifiers = {
+            # 1. Tree-based algorithms
+            #"Decision Tree": DecisionTreeClassifier(random_state=42),
+            "Random Forest": RandomForestClassifier(random_state=42),
+            #"AdaBoost": AdaBoostClassifier(random_state=42),
+            #"Gradient Boosting": GradientBoostingClassifier(random_state=42),
+            #"XGBoost": xgb.XGBClassifier(use_label_encoder=False, eval_metric="logloss", random_state=42),
+            #"LightGBM": lgb.LGBMClassifier(random_state=42),
+            #"CatBoost": CatBoostClassifier(verbose=0, random_state=42),
+        
+            # 2. Linear models
+            #"Logistic Regression": LogisticRegression(max_iter=1000, random_state=42),
+            #"Perceptron": Perceptron(max_iter=1000, random_state=42),
+        
+            # 3. SVM (Support Vector Machines)
+            #"SVM (Linear Kernel)": SVC(kernel="linear", probability=True, random_state=42),
+            #"SVM (RBF Kernel)": SVC(kernel="rbf", probability=True, random_state=42),
+        
+            # 4. k-Nearest Neighbours
+            #"K-Nearest Neighbors": KNeighborsClassifier(),
+        
+            # 5. Neural Networks
+            #"MLP (Neural Network)": MLPClassifier(max_iter=500, random_state=42),
+        }
     
-        # 3. SVM (Support Vector Machines)
-        #"SVM (Linear Kernel)": SVC(kernel="linear", probability=True, random_state=42),
-        #"SVM (RBF Kernel)": SVC(kernel="rbf", probability=True, random_state=42),
     
-        # 4. k-Nearest Neighbours
-        #"K-Nearest Neighbors": KNeighborsClassifier(),
+        model_filename = f"{MODEL_PKL_PATH}/{model}.pkl"
+        feat_filename = f"{MODEL_PKL_PATH}/{model}_feat.npy"
     
-        # 5. Neural Networks
-        #"MLP (Neural Network)": MLPClassifier(max_iter=500, random_state=42),
-    }
-
-
-    model_filename = f"{MODEL_PKL_PATH}/{model}.pkl"
-    feat_filename = f"{MODEL_PKL_PATH}/{model}_feat.npy"
-
-    with open(model_filename, "rb") as f:
-        clf = pickle.load(f)
-
-    selected_features = np.load(feat_filename, allow_pickle=True)
-
-
-    # Display training accuracy
-    X_selected_train = X_train[selected_features]
-    X_selected_test = X_test[selected_features]
-
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_selected_train)
-    X_test_scaled = scaler.transform(X_selected_test)
-
-    y_pred = clf.predict(X_test_scaled)
-
-    try:
-        if hasattr(clf, "predict_proba"):
-            y_pred_proba = clf.predict_proba(X_test_scaled)[:, 1]  # 確率スコア
-        elif hasattr(clf, "decision_function"):
-            y_pred_proba = clf.decision_function(X_test_scaled)  # 決定関数
-        else:
-            raise AttributeError(f"{name} does not support probability or decision score output.")
+        with open(model_filename, "rb") as f:
+            clf = pickle.load(f)
     
-        # Calculate ROC curve and AUC score
-        fpr, tpr, _ = roc_curve(y_test_binary, y_pred_proba)
-        roc_auc = auc(fpr, tpr)
-
-    except AttributeError as e:
-        print(f"Skipping ROC and AUC calculation for {name}: {str(e)}")
-        roc_auc = 0
-
-    mse = mean_squared_error(y_test_binary, y_pred)
-    report = classification_report(y_test_binary, y_pred)
-
-    print('mse',mse)
-    print('report',report)
-    print('roc_auc',roc_auc)
+        selected_features = np.load(feat_filename, allow_pickle=True)
     
+    
+        # Display training accuracy
+        X_selected_train = X_train[selected_features]
+        X_selected_test = X_test[selected_features]
+    
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_selected_train)
+        X_test_scaled = scaler.transform(X_selected_test)
+    
+        y_pred = clf.predict(X_test_scaled)
+    
+        try:
+            if hasattr(clf, "predict_proba"):
+                y_pred_proba = clf.predict_proba(X_test_scaled)[:, 1]  # 確率スコア
+            elif hasattr(clf, "decision_function"):
+                y_pred_proba = clf.decision_function(X_test_scaled)  # 決定関数
+            else:
+                raise AttributeError(f"{name} does not support probability or decision score output.")
+        
+            # Calculate ROC curve and AUC score
+            fpr, tpr, _ = roc_curve(y_test_binary, y_pred_proba)
+            roc_auc = auc(fpr, tpr)
+    
+        except AttributeError as e:
+            print(f"Skipping ROC and AUC calculation for {name}: {str(e)}")
+            roc_auc = 0
+    
+        mse = mean_squared_error(y_test_binary, y_pred)
+        report = classification_report(y_test_binary, y_pred)
+    
+        print('mse',mse)
+        print('report',report)
+        print('roc_auc',roc_auc)
+        
