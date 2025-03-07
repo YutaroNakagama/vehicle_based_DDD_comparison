@@ -204,31 +204,39 @@ def train_pipeline(model):
 
     feature_indices = calculate_feature_indices(X_train, y_train_binary)
 
-    # Define multiple classifiers
-    classifiers = {
-        # 1. Tree-based algorithms
-        #"Decision Tree": DecisionTreeClassifier(random_state=42),
-        "Random Forest": RandomForestClassifier(random_state=42),
-        #"AdaBoost": AdaBoostClassifier(random_state=42),
-        #"Gradient Boosting": GradientBoostingClassifier(random_state=42),
-        #"XGBoost": xgb.XGBClassifier(use_label_encoder=False, eval_metric="logloss", random_state=42),
-        #"LightGBM": lgb.LGBMClassifier(random_state=42),
-        #"CatBoost": CatBoostClassifier(verbose=0, random_state=42),
-    
-        # 2. Linear models
-        #"Logistic Regression": LogisticRegression(max_iter=1000, random_state=42),
-        #"Perceptron": Perceptron(max_iter=1000, random_state=42),
-    
-        # 3. SVM (Support Vector Machines)
-        #"SVM (Linear Kernel)": SVC(kernel="linear", probability=True, random_state=42),
-        #"SVM (RBF Kernel)": SVC(kernel="rbf", probability=True, random_state=42),
-    
-        # 4. k-Nearest Neighbours
-        #"K-Nearest Neighbors": KNeighborsClassifier(),
-    
-        # 5. Neural Networks
-        #"MLP (Neural Network)": MLPClassifier(max_iter=500, random_state=42),
-    }
+    if model == 'RF':
+        # Define multiple classifiers
+        classifiers = {
+            # 1. Tree-based algorithms
+            #"Decision Tree": DecisionTreeClassifier(random_state=42),
+            "Random Forest": RandomForestClassifier(random_state=42),
+            #"AdaBoost": AdaBoostClassifier(random_state=42),
+            #"Gradient Boosting": GradientBoostingClassifier(random_state=42),
+            #"XGBoost": xgb.XGBClassifier(use_label_encoder=False, eval_metric="logloss", random_state=42),
+            #"LightGBM": lgb.LGBMClassifier(random_state=42),
+            #"CatBoost": CatBoostClassifier(verbose=0, random_state=42),
+        
+            # 2. Linear models
+            #"Logistic Regression": LogisticRegression(max_iter=1000, random_state=42),
+            #"Perceptron": Perceptron(max_iter=1000, random_state=42),
+        
+            # 3. SVM (Support Vector Machines)
+            #"SVM (Linear Kernel)": SVC(kernel="linear", probability=True, random_state=42),
+            #"SVM (RBF Kernel)": SVC(kernel="rbf", probability=True, random_state=42),
+        
+            # 4. k-Nearest Neighbours
+            #"K-Nearest Neighbors": KNeighborsClassifier(),
+        
+            # 5. Neural Networks
+            #"MLP (Neural Network)": MLPClassifier(max_iter=500, random_state=42),
+        }
+    elif model == 'SvmW':
+        classifiers = {
+            # 3. SVM (Support Vector Machines)
+            #"SVM (Linear Kernel)": SVC(kernel="linear", probability=True, random_state=42),
+            "SVM (RBF Kernel)": SVC(kernel="rbf", probability=True, random_state=42),
+        }
+
 
 
     for name, clf in classifiers.items():
