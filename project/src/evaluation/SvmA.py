@@ -181,7 +181,7 @@ def optimize_anfis_svm_with_pso(X_train, y_train, X_val, y_val, indices_df):
 #X_train, X_temp, y_train, y_temp = train_test_split(features_only_df, label_df, test_size=0.4, random_state=42)
 #X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42)
 
-def SvmA_train(X_train, X_val, y_train, y_val, indices_df):
+def SvmA_eval(X_train, X_val, y_train, y_val, indices_df):
     # 最適化実行
     print('get optiomal paras')
     optimal_params = optimize_anfis_svm_with_pso(X_train, y_train, X_val, y_val, indices_df)
