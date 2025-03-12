@@ -4,6 +4,7 @@ from src.utils.loaders import read_subject_list
 from src.train.index import calculate_feature_indices
 from src.train.anfis import calculate_id
 from src.train.lstm import lstm_train
+from src.train.SvmA import SvmA_train
 from src.train.output import show_result
 
 import pandas as pd
@@ -209,44 +210,47 @@ def train_pipeline(model):
     
         feature_indices = calculate_feature_indices(X_train, y_train_binary)
     
-        if model == 'RF':
-            # Define multiple classifiers
-            classifiers = {
-                # 1. Tree-based algorithms
-                #"Decision Tree": DecisionTreeClassifier(random_state=42),
-                "Random Forest": RandomForestClassifier(random_state=42),
-                #"AdaBoost": AdaBoostClassifier(random_state=42),
-                #"Gradient Boosting": GradientBoostingClassifier(random_state=42),
-                #"XGBoost": xgb.XGBClassifier(use_label_encoder=False, eval_metric="logloss", random_state=42),
-                #"LightGBM": lgb.LGBMClassifier(random_state=42),
-                #"CatBoost": CatBoostClassifier(verbose=0, random_state=42),
-            
-                # 2. Linear models
-                #"Logistic Regression": LogisticRegression(max_iter=1000, random_state=42),
-                #"Perceptron": Perceptron(max_iter=1000, random_state=42),
-            
-                # 3. SVM (Support Vector Machines)
-                #"SVM (Linear Kernel)": SVC(kernel="linear", probability=True, random_state=42),
-                #"SVM (RBF Kernel)": SVC(kernel="rbf", probability=True, random_state=42),
-            
-                # 4. k-Nearest Neighbours
-                #"K-Nearest Neighbors": KNeighborsClassifier(),
-            
-                # 5. Neural Networks
-                #"MLP (Neural Network)": MLPClassifier(max_iter=500, random_state=42),
-            }
-        elif model == 'SvmW':
-            classifiers = {
-                # 3. SVM (Support Vector Machines)
-                #"SVM (Linear Kernel)": SVC(kernel="linear", probability=True, random_state=42),
-                "SVM (RBF Kernel)": SVC(kernel="rbf", probability=True, random_state=42),
-            }
-    
-    
-    
-        for name, clf in classifiers.items():
-            optimizar(name,clf,model)
-    
-    #    # Display the final results
-    #    for name, result in optimization_results.items():
-    #        show_result(name,result)
+        if model == 'SvmA':
+            SvmA_train(X_train, X_test, y_train, y_test, feature_indices)
+        else:
+            if model == 'RF':
+                # Define multiple classifiers
+                classifiers = {
+                    # 1. Tree-based algorithms
+                    #"Decision Tree": DecisionTreeClassifier(random_state=42),
+                    "Random Forest": RandomForestClassifier(random_state=42),
+                    #"AdaBoost": AdaBoostClassifier(random_state=42),
+                    #"Gradient Boosting": GradientBoostingClassifier(random_state=42),
+                    #"XGBoost": xgb.XGBClassifier(use_label_encoder=False, eval_metric="logloss", random_state=42),
+                    #"LightGBM": lgb.LGBMClassifier(random_state=42),
+                    #"CatBoost": CatBoostClassifier(verbose=0, random_state=42),
+                
+                    # 2. Linear models
+                    #"Logistic Regression": LogisticRegression(max_iter=1000, random_state=42),
+                    #"Perceptron": Perceptron(max_iter=1000, random_state=42),
+                
+                    # 3. SVM (Support Vector Machines)
+                    #"SVM (Linear Kernel)": SVC(kernel="linear", probability=True, random_state=42),
+                    #"SVM (RBF Kernel)": SVC(kernel="rbf", probability=True, random_state=42),
+                
+                    # 4. k-Nearest Neighbours
+                    #"K-Nearest Neighbors": KNeighborsClassifier(),
+                
+                    # 5. Neural Networks
+                    #"MLP (Neural Network)": MLPClassifier(max_iter=500, random_state=42),
+                }
+            elif model == 'SvmW':
+                classifiers = {
+                    # 3. SVM (Support Vector Machines)
+                    #"SVM (Linear Kernel)": SVC(kernel="linear", probability=True, random_state=42),
+                    "SVM (RBF Kernel)": SVC(kernel="rbf", probability=True, random_state=42),
+                }
+        
+        
+        
+            for name, clf in classifiers.items():
+                optimizar(name,clf,model)
+        
+        #    # Display the final results
+        #    for name, result in optimization_results.items():
+        #        show_result(name,result)
