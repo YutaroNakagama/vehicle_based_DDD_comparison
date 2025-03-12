@@ -101,6 +101,7 @@ def optimize_anfis_svm_with_pso(X_train, y_train, X_val, y_val, indices_df):
         importance_degree = calculate_importance_degree(anfis_params, indices_df)
         selected_features_train = select_features_by_importance(importance_degree, X_train)
         selected_features_val = select_features_by_importance(importance_degree, X_val)
+        print(params)
         
         if selected_features_train.shape[1] > 0 and selected_features_val.shape[1] > 0:
             svm_model = SVC(kernel='rbf', C=C, gamma=gamma)
@@ -108,14 +109,15 @@ def optimize_anfis_svm_with_pso(X_train, y_train, X_val, y_val, indices_df):
             val_accuracy = accuracy_score(y_val, svm_model.predict(selected_features_val))
             return -val_accuracy
         else:
-            return float('inf')
+            return 1.0 #float('inf')
 
     # パラメータの範囲設定
     lb = [0, 0, 0, 0, 0.1, 0.001]
     ub = [1, 1, 1, 1, 10, 1]
 
     # PSOの実行
-    best_params, _ = pso(objective, lb, ub, swarmsize=50, maxiter=100)
+    print('run pso')
+    best_params, _ = pso(objective, lb, ub, swarmsize=3, maxiter=3)
 
 #    # tqdmで進捗バーを管理
 #    max_iterations = 100
@@ -181,6 +183,7 @@ def optimize_anfis_svm_with_pso(X_train, y_train, X_val, y_val, indices_df):
 
 def SvmA_train(X_train, X_val, y_train, y_val, indices_df):
     # 最適化実行
+    print('get optiomal paras')
     optimal_params = optimize_anfis_svm_with_pso(X_train, y_train, X_val, y_val, indices_df)
     
     # 最適化されたパラメータでANFISとSVMを設定

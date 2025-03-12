@@ -183,12 +183,14 @@ def train_pipeline(model):
     #with open(SUBJECT_LIST_PATH, 'r') as file:
     #    subjects = [line.strip().split('/') for line in file.readlines()]
 
+    print("read subject list")
     subject_list = read_subject_list()
     # Create dataframe list and read csv file
     data_model = model if model in {"SvmW", "SvmA", "Lstm"} else "common"
     for subject in subject_list:
         combine_file(subject, data_model)
 
+    print("conbine data")
     # Combine the data and filter for classes 4 and 8
     all_data = pd.concat(dfs, ignore_index=True)
     filtered_data = all_data[all_data["KSS_Theta_Alpha_Beta"].isin([1,2,8,9])]
@@ -201,6 +203,7 @@ def train_pipeline(model):
         lstm_train(X,y)
 
     else:
+        print("data split")
         # Split the data into training and test sets
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
     
@@ -211,6 +214,7 @@ def train_pipeline(model):
         feature_indices = calculate_feature_indices(X_train, y_train_binary)
     
         if model == 'SvmA':
+            print("call svmA train")
             SvmA_train(X_train, X_test, y_train, y_test, feature_indices)
         else:
             if model == 'RF':
