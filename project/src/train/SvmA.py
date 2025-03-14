@@ -223,11 +223,11 @@ def SvmA_train(X_train, X_val, y_train, y_val, indices_df):
     #print("test_conf    \n",test_conf)
     
     # AUCの計算
-    train_auc = roc_auc_score(y_train, svm_model_final.predict(selected_features_train))
-    val_auc = roc_auc_score(y_val, svm_model_final.predict(selected_features_val))
+    #train_auc = roc_auc_score(y_train, svm_model_final.predict(selected_features_train))
+    #val_auc = roc_auc_score(y_val, svm_model_final.predict(selected_features_val))
     #test_auc = roc_auc_score(y_test, svm_model_final.predict(selected_features_test))
-    print(f"AUC_train   : {train_auc:.3f}")
-    print(f"AUC_val     : {val_auc:.3f}")
+    #print(f"AUC_train   : {train_auc:.3f}")
+    #print(f"AUC_val     : {val_auc:.3f}")
     #print(f"AUC_test    : {test_auc:.3f}")
     
     # 結果の表示
@@ -236,7 +236,7 @@ def SvmA_train(X_train, X_val, y_train, y_val, indices_df):
         "Best SVM Parameters (C, gamma)": (best_C, best_gamma),
         "Train Accuracy": train_accuracy,
         "Validation Accuracy": val_accuracy,
-        "Test Accuracy": test_accuracy,
+        #"Test Accuracy": test_accuracy,
     }
     
     # 結果の表示
@@ -246,7 +246,7 @@ def SvmA_train(X_train, X_val, y_train, y_val, indices_df):
             "\nBest SVM Parameters (C, gamma) :", (best_C, best_gamma),
             "\nTrain Accuracy                 :", train_accuracy,
             "\nValidation Accuracy            :", val_accuracy,
-            "\nTest Accuracy                  :", test_accuracy,
+            #"\nTest Accuracy                  :", test_accuracy,
     )
     
     import csv
@@ -263,9 +263,9 @@ def SvmA_train(X_train, X_val, y_train, y_val, indices_df):
                 writer.writerow([fpr[i], tpr[i], thresholds[i]])
     
     # データの保存
-    save_roc_data('roc_train.csv', y_train, svm_model_final.decision_function(selected_features_train))
-    save_roc_data('roc_val.csv', y_val, svm_model_final.decision_function(selected_features_val))
-    save_roc_data('roc_test.csv', y_test, svm_model_final.decision_function(selected_features_test))
+    #save_roc_data('roc_train.csv', y_train, svm_model_final.decision_function(selected_features_train))
+    #save_roc_data('roc_val.csv', y_val, svm_model_final.decision_function(selected_features_val))
+    #save_roc_data('roc_test.csv', y_test, svm_model_final.decision_function(selected_features_test))
     
     #
     ## ROC曲線を描画する関数
@@ -301,14 +301,17 @@ def SvmA_train(X_train, X_val, y_train, y_val, indices_df):
     # 各データセットの予測結果を取得
     train_pred = svm_model_final.predict(selected_features_train)
     val_pred = svm_model_final.predict(selected_features_val)
-    test_pred = svm_model_final.predict(selected_features_test)
+    #test_pred = svm_model_final.predict(selected_features_test)
     
     # 指標の計算
     def calculate_metrics(y_true, y_pred):
         accuracy = accuracy_score(y_true, y_pred)
-        precision = precision_score(y_true, y_pred, average='binary')  # 'binary' for binary classification
-        recall = recall_score(y_true, y_pred, average='binary')
-        f1 = f1_score(y_true, y_pred, average='binary')
+#        precision = precision_score(y_true, y_pred, average='binary')  # 'binary' for binary classification
+#        recall = recall_score(y_true, y_pred, average='binary')
+#        f1 = f1_score(y_true, y_pred, average='binary')
+        precision = precision_score(y_true, y_pred, average=None)  # 'binary' for binary classification
+        recall = recall_score(y_true, y_pred, average=None)
+        f1 = f1_score(y_true, y_pred, average=None)
         return accuracy, precision, recall, f1
     
     # Training metrics
@@ -318,26 +321,26 @@ def SvmA_train(X_train, X_val, y_train, y_val, indices_df):
     val_accuracy, val_precision, val_recall, val_f1 = calculate_metrics(y_val, val_pred)
     
     # Test metrics
-    test_accuracy, test_precision, test_recall, test_f1 = calculate_metrics(y_test, test_pred)
+    #test_accuracy, test_precision, test_recall, test_f1 = calculate_metrics(y_test, test_pred)
     
     # 結果の表示
     print("\n=== Training Metrics ===")
-    print(f"Accuracy : {train_accuracy:.3f}")
-    print(f"Precision: {train_precision:.3f}")
-    print(f"Recall   : {train_recall:.3f}")
-    print(f"F1 Score : {train_f1:.3f}")
+    print(f"Accuracy : {train_accuracy}")
+    print(f"Precision: {train_precision}")
+    print(f"Recall   : {train_recall}")
+    print(f"F1 Score : {train_f1}")
     
     print("\n=== Validation Metrics ===")
-    print(f"Accuracy : {val_accuracy:.3f}")
-    print(f"Precision: {val_precision:.3f}")
-    print(f"Recall   : {val_recall:.3f}")
-    print(f"F1 Score : {val_f1:.3f}")
+    print(f"Accuracy : {val_accuracy}")
+    print(f"Precision: {val_precision}")
+    print(f"Recall   : {val_recall}")
+    print(f"F1 Score : {val_f1}")
     
-    print("\n=== Test Metrics ===")
-    print(f"Accuracy : {test_accuracy:.3f}")
-    print(f"Precision: {test_precision:.3f}")
-    print(f"Recall   : {test_recall:.3f}")
-    print(f"F1 Score : {test_f1:.3f}")
+#    print("\n=== Test Metrics ===")
+#    print(f"Accuracy : {test_accuracy:.3f}")
+#    print(f"Precision: {test_precision:.3f}")
+#    print(f"Recall   : {test_recall:.3f}")
+#    print(f"F1 Score : {test_f1:.3f}")
     
     
-    print("elaped time:", time.time()-start_time)
+    #print("elaped time:", time.time()-start_time)
