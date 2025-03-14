@@ -5,6 +5,7 @@ warnings.filterwarnings("ignore")
 import time
 import pandas as pd
 import numpy as np
+import joblib
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
@@ -181,71 +182,79 @@ def optimize_anfis_svm_with_pso(X_train, y_train, X_val, y_val, indices_df):
 #X_train, X_temp, y_train, y_temp = train_test_split(features_only_df, label_df, test_size=0.4, random_state=42)
 #X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42)
 
-def SvmA_eval(X_train, X_val, y_train, y_val, indices_df):
+def SvmA_eval(X_test, X_train, y_test, y_train, indices_df):
     # 最適化実行
     print('get optiomal paras')
-    optimal_params = optimize_anfis_svm_with_pso(X_train, y_train, X_val, y_val, indices_df)
+    #optimal_params = optimize_anfis_svm_with_pso(X_train, y_train, X_val, y_val, indices_df)
     
     # 最適化されたパラメータでANFISとSVMを設定
-    best_anfis_params = optimal_params[:4]
-    best_C, best_gamma = optimal_params[4], optimal_params[5]
-    importance_degree = calculate_importance_degree(best_anfis_params, indices_df)
+    #best_anfis_params = optimal_params[:4]
+    #best_C, best_gamma = optimal_params[4], optimal_params[5]
+    #importance_degree = calculate_importance_degree(best_anfis_params, indices_df)
     
     # 選択された特徴量で再度評価
-    selected_features_train = select_features_by_importance(importance_degree, X_train)
-    selected_features_val = select_features_by_importance(importance_degree, X_val)
+    #selected_features_train = select_features_by_importance(importance_degree, X_train)
+    #selected_features_val = select_features_by_importance(importance_degree, X_val)
     #selected_features_test = select_features_by_importance(importance_degree, X_test)
+
+    # モデルを読み込む
+    svm_model_final = joblib.load('model/svm_model_final.pkl')
+
+    # 訓練用の特徴量データを読み込む
+    selected_features_test = joblib.load('model/selected_features_train.pkl')
+
+    print("SVMモデルと訓練データの特徴量を読み込みました。")
     
-    print(selected_features_train.columns.tolist())
-    print(selected_features_val.columns.tolist())
-    #print(selected_features_test.columns.tolist())
+    #print(selected_features_train.columns.tolist())
+    #print(selected_features_val.columns.tolist())
+    print(selected_features_test.columns.tolist())
     
     # SVMモデルの訓練と評価
     #svm_model_final = SVC(kernel='rbf', C=best_C, gamma=best_gamma, probability=True)
-    svm_model_final = SVC(kernel='rbf', C=best_C, gamma=best_gamma)
-    svm_model_final.fit(selected_features_train, y_train)
+    #svm_model_final = SVC(kernel='rbf', C=best_C, gamma=best_gamma)
+    #svm_model_final.fit(selected_features_train, y_train)
     
     # 各セットでの精度を計算
-    train_accuracy = accuracy_score(y_train, svm_model_final.predict(selected_features_train))
-    val_accuracy = accuracy_score(y_val, svm_model_final.predict(selected_features_val))
-    #test_accuracy = accuracy_score(y_test, svm_model_final.predict(selected_features_test))
+    #train_accuracy = accuracy_score(y_train, svm_model_final.predict(selected_features_train))
+    #val_accuracy = accuracy_score(y_val, svm_model_final.predict(selected_features_val))
+    test_accuracy = accuracy_score(y_test, svm_model_final.predict(selected_features_test))
     
     # テストデータでの予測確率を取得
     #y_test_prob = svm_model_final.predict_proba(X_test)[:, 1]
     
     # テストデータでの予測結果を取得して、混同行列を計算
-    train_conf = confusion_matrix(y_train, svm_model_final.predict(selected_features_train))
-    val_conf = confusion_matrix(y_val, svm_model_final.predict(selected_features_val))
-    #test_conf = confusion_matrix(y_test, svm_model_final.predict(selected_features_test))
+    #train_conf = confusion_matrix(y_train, svm_model_final.predict(selected_features_train))
+    #val_conf = confusion_matrix(y_val, svm_model_final.predict(selected_features_val))
+    test_conf = confusion_matrix(y_test, svm_model_final.predict(selected_features_test))
     
-    print("train_conf   \n",train_conf)
-    print("val_conf     \n",val_conf)
-    #print("test_conf    \n",test_conf)
+    #print("train_conf   \n",train_conf)
+    #print("val_conf     \n",val_conf)
+    print("test_conf    \n",test_conf)
     
     # AUCの計算
-    train_auc = roc_auc_score(y_train, svm_model_final.predict(selected_features_train))
-    val_auc = roc_auc_score(y_val, svm_model_final.predict(selected_features_val))
+    #train_auc = roc_auc_score(y_train, svm_model_final.predict(selected_features_train))
+    #val_auc = roc_auc_score(y_val, svm_model_final.predict(selected_features_val))
     #test_auc = roc_auc_score(y_test, svm_model_final.predict(selected_features_test))
-    print(f"AUC_train   : {train_auc:.3f}")
-    print(f"AUC_val     : {val_auc:.3f}")
+    #print(f"AUC_train   : {train_auc:.3f}")
+    #print(f"AUC_val     : {val_auc:.3f}")
     #print(f"AUC_test    : {test_auc:.3f}")
     
-    # 結果の表示
-    {
-        "Best ANFIS Parameters (Weights)": best_anfis_params,
-        "Best SVM Parameters (C, gamma)": (best_C, best_gamma),
-        "Train Accuracy": train_accuracy,
-        "Validation Accuracy": val_accuracy,
-        "Test Accuracy": test_accuracy,
-    }
-    
+#    # 結果の表示
+#    {
+#        "Best ANFIS Parameters (Weights)": best_anfis_params,
+#        "Best SVM Parameters (C, gamma)": (best_C, best_gamma),
+#        "Train Accuracy": train_accuracy,
+#        "Validation Accuracy": val_accuracy,
+#        "Test Accuracy": test_accuracy,
+#    }
+#    
     # 結果の表示
     print(
             "results",
-            "\nBest ANFIS Parameters (Weights):", best_anfis_params,
-            "\nBest SVM Parameters (C, gamma) :", (best_C, best_gamma),
-            "\nTrain Accuracy                 :", train_accuracy,
-            "\nValidation Accuracy            :", val_accuracy,
+            #"\nBest ANFIS Parameters (Weights):", best_anfis_params,
+            #"\nBest SVM Parameters (C, gamma) :", (best_C, best_gamma),
+            #"\nTrain Accuracy                 :", train_accuracy,
+            #"\nValidation Accuracy            :", val_accuracy,
             "\nTest Accuracy                  :", test_accuracy,
     )
     
@@ -263,9 +272,9 @@ def SvmA_eval(X_train, X_val, y_train, y_val, indices_df):
                 writer.writerow([fpr[i], tpr[i], thresholds[i]])
     
     # データの保存
-    save_roc_data('roc_train.csv', y_train, svm_model_final.decision_function(selected_features_train))
-    save_roc_data('roc_val.csv', y_val, svm_model_final.decision_function(selected_features_val))
-    save_roc_data('roc_test.csv', y_test, svm_model_final.decision_function(selected_features_test))
+    #save_roc_data('roc_train.csv', y_train, svm_model_final.decision_function(selected_features_train))
+    #save_roc_data('roc_val.csv', y_val, svm_model_final.decision_function(selected_features_val))
+    #save_roc_data('roc_test.csv', y_test, svm_model_final.decision_function(selected_features_test))
     
     #
     ## ROC曲線を描画する関数
@@ -299,45 +308,45 @@ def SvmA_eval(X_train, X_val, y_train, y_val, indices_df):
     from sklearn.metrics import precision_score, recall_score, f1_score
     
     # 各データセットの予測結果を取得
-    train_pred = svm_model_final.predict(selected_features_train)
-    val_pred = svm_model_final.predict(selected_features_val)
+    #train_pred = svm_model_final.predict(selected_features_train)
+    #val_pred = svm_model_final.predict(selected_features_val)
     test_pred = svm_model_final.predict(selected_features_test)
     
     # 指標の計算
     def calculate_metrics(y_true, y_pred):
         accuracy = accuracy_score(y_true, y_pred)
-        precision = precision_score(y_true, y_pred, average='binary')  # 'binary' for binary classification
-        recall = recall_score(y_true, y_pred, average='binary')
-        f1 = f1_score(y_true, y_pred, average='binary')
+        precision = precision_score(y_true, y_pred, average=None)  # 'binary' for binary classification
+        recall = recall_score(y_true, y_pred, average=None)
+        f1 = f1_score(y_true, y_pred, average=None)
         return accuracy, precision, recall, f1
     
     # Training metrics
-    train_accuracy, train_precision, train_recall, train_f1 = calculate_metrics(y_train, train_pred)
+    #train_accuracy, train_precision, train_recall, train_f1 = calculate_metrics(y_train, train_pred)
     
     # Validation metrics
-    val_accuracy, val_precision, val_recall, val_f1 = calculate_metrics(y_val, val_pred)
+    #val_accuracy, val_precision, val_recall, val_f1 = calculate_metrics(y_val, val_pred)
     
     # Test metrics
     test_accuracy, test_precision, test_recall, test_f1 = calculate_metrics(y_test, test_pred)
     
     # 結果の表示
-    print("\n=== Training Metrics ===")
-    print(f"Accuracy : {train_accuracy:.3f}")
-    print(f"Precision: {train_precision:.3f}")
-    print(f"Recall   : {train_recall:.3f}")
-    print(f"F1 Score : {train_f1:.3f}")
-    
-    print("\n=== Validation Metrics ===")
-    print(f"Accuracy : {val_accuracy:.3f}")
-    print(f"Precision: {val_precision:.3f}")
-    print(f"Recall   : {val_recall:.3f}")
-    print(f"F1 Score : {val_f1:.3f}")
+#    print("\n=== Training Metrics ===")
+#    print(f"Accuracy : {train_accuracy:.3f}")
+#    print(f"Precision: {train_precision:.3f}")
+#    print(f"Recall   : {train_recall:.3f}")
+#    print(f"F1 Score : {train_f1:.3f}")
+#    
+#    print("\n=== Validation Metrics ===")
+#    print(f"Accuracy : {val_accuracy:.3f}")
+#    print(f"Precision: {val_precision:.3f}")
+#    print(f"Recall   : {val_recall:.3f}")
+#    print(f"F1 Score : {val_f1:.3f}")
     
     print("\n=== Test Metrics ===")
-    print(f"Accuracy : {test_accuracy:.3f}")
-    print(f"Precision: {test_precision:.3f}")
-    print(f"Recall   : {test_recall:.3f}")
-    print(f"F1 Score : {test_f1:.3f}")
+    print(f"Accuracy : {test_accuracy}")
+    print(f"Precision: {test_precision}")
+    print(f"Recall   : {test_recall}")
+    print(f"F1 Score : {test_f1}")
     
     
-    print("elaped time:", time.time()-start_time)
+    #print("elaped time:", time.time()-start_time)
