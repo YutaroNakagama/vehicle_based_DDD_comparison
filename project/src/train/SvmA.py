@@ -5,6 +5,7 @@ warnings.filterwarnings("ignore")
 import time
 import pandas as pd
 import numpy as np
+import joblib
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
@@ -204,6 +205,15 @@ def SvmA_train(X_train, X_val, y_train, y_val, indices_df):
     #svm_model_final = SVC(kernel='rbf', C=best_C, gamma=best_gamma, probability=True)
     svm_model_final = SVC(kernel='rbf', C=best_C, gamma=best_gamma)
     svm_model_final.fit(selected_features_train, y_train)
+
+
+    # SVMモデルを保存
+    joblib.dump(svm_model_final, 'model/svm_model_final.pkl')
+
+    # 訓練用の特徴量データを保存
+    joblib.dump(selected_features_train, 'model/selected_features_train.pkl')
+
+    print("SVMモデルと訓練データの特徴量を保存しました。")
     
     # 各セットでの精度を計算
     train_accuracy = accuracy_score(y_train, svm_model_final.predict(selected_features_train))
