@@ -1,4 +1,4 @@
-# Lightweight Vehicle-Based DDD Model Comparison
+# Vehicle-Based DDD Comparison
 
 ## Overview
 This repository focuses on benchmarking **lightweight Driver Drowsiness Detection (DDD) models** using **vehicle-based features**. The goal is to compare the efficiency and performance of various lightweight ML models, optimized through **pruning, quantization, and other techniques**.
