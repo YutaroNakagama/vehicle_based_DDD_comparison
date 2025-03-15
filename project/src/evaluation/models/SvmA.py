@@ -120,82 +120,12 @@ def optimize_anfis_svm_with_pso(X_train, y_train, X_val, y_val, indices_df):
     print('run pso')
     best_params, _ = pso(objective, lb, ub, swarmsize=3, maxiter=3)
 
-#    # tqdmで進捗バーを管理
-#    max_iterations = 100
-#    progress_bar = tqdm(total=max_iterations, desc="PSO Progress")
-#
-#    # カスタムPSO関数で進捗を追跡
-#    def custom_pso(*args, **kwargs):
-#        def wrapped_func(*wrapped_args, **wrapped_kwargs):
-#            progress_bar.update(1)  # 各イテレーションごとに進捗を進める
-#            return objective(*wrapped_args, **wrapped_kwargs)
-#        
-#        # 元のPSO関数を呼び出す
-#        return pso(wrapped_func, *args, **kwargs)
-#    
-#    # 実行
-#    best_params, _ = pso(
-#        objective=lambda x: progress_bar.update(1) or objective(x),  # 進捗を更新しつつ目的関数を評価
-#        lb=lb,
-#        ub=ub,
-#        swarmsize=50,
-#        maxiter=max_iterations,
-#        debug=False
-#    )
-#    
-#    progress_bar.close()
-
     return best_params
 
-#start_time = time.time()
-## データの読み込み
-#file_path = '../dataset/data_feat_Arefnezhad2019_all.csv'
-##file_path = './dataset/data_raw_all_12.csv'
-#data_new = pd.read_csv(file_path)
-#
-## ステアリング速度の計算
-#time_diffs = data_new['row LSL time'].diff().dropna()
-#sampling_rate = 1 / time_diffs.mean()
-#print("sampling_rate",sampling_rate)
-#data_new['Steering_Speed'] = data_new['Steering_Wheel_Pos'].diff().fillna(0) * sampling_rate
-#
-## 3秒間の時間窓で特徴量を抽出
-#window_size = int(3 * sampling_rate)
-#num_windows = len(data_new) // window_size
-#features_list = []
-#for i in tqdm(range(num_windows)):
-#    angle_window = data_new['Steering_Wheel_Pos'][i*window_size:(i+1)*window_size]
-#    speed_window = data_new['Steering_Speed'][i*window_size:(i+1)*window_size]
-#    features = calculate_features_for_signals(angle_window, speed_window)
-#    features_list.append(features)
-#features_df = pd.DataFrame(features_list)
-#features_df['drowsy'] = data_new['drowsy'][:num_windows * window_size:window_size].reset_index(drop=True)
-#
-#
-## インデックスの計算とクリーンアップ
-#label_df = features_df['drowsy']
-#features_only_df = features_df.drop(columns=['drowsy']).replace([np.inf, -np.inf, np.nan], 0)
-#indices_df = calculate_feature_indices(features_only_df, label_df)
-#
-#
-## 訓練と検証データでの最適化実行
-#X_train, X_temp, y_train, y_temp = train_test_split(features_only_df, label_df, test_size=0.4, random_state=42)
-#X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42)
 
 def SvmA_eval(X_test, X_train, y_test, y_train, indices_df):
     # 最適化実行
     print('get optiomal paras')
-    #optimal_params = optimize_anfis_svm_with_pso(X_train, y_train, X_val, y_val, indices_df)
-    
-    # 最適化されたパラメータでANFISとSVMを設定
-    #best_anfis_params = optimal_params[:4]
-    #best_C, best_gamma = optimal_params[4], optimal_params[5]
-    #importance_degree = calculate_importance_degree(best_anfis_params, indices_df)
-    
-    # 選択された特徴量で再度評価
-    #selected_features_train = select_features_by_importance(importance_degree, X_train)
-    #selected_features_val = select_features_by_importance(importance_degree, X_val)
-    #selected_features_test = select_features_by_importance(importance_degree, X_test)
 
     # モデルを読み込む
     svm_model_final = joblib.load('model/svm_model_final.pkl')
@@ -205,56 +135,20 @@ def SvmA_eval(X_test, X_train, y_test, y_train, indices_df):
 
     print("SVMモデルと訓練データの特徴量を読み込みました。")
     
-    #print(selected_features_train.columns.tolist())
-    #print(selected_features_val.columns.tolist())
     print(selected_features_test.columns.tolist())
     
-    # SVMモデルの訓練と評価
-    #svm_model_final = SVC(kernel='rbf', C=best_C, gamma=best_gamma, probability=True)
-    #svm_model_final = SVC(kernel='rbf', C=best_C, gamma=best_gamma)
-    #svm_model_final.fit(selected_features_train, y_train)
-    
     # 各セットでの精度を計算
-    #train_accuracy = accuracy_score(y_train, svm_model_final.predict(selected_features_train))
-    #val_accuracy = accuracy_score(y_val, svm_model_final.predict(selected_features_val))
     test_accuracy = accuracy_score(y_test, svm_model_final.predict(selected_features_test))
     
-    # テストデータでの予測確率を取得
-    #y_test_prob = svm_model_final.predict_proba(X_test)[:, 1]
     
     # テストデータでの予測結果を取得して、混同行列を計算
-    #train_conf = confusion_matrix(y_train, svm_model_final.predict(selected_features_train))
-    #val_conf = confusion_matrix(y_val, svm_model_final.predict(selected_features_val))
     test_conf = confusion_matrix(y_test, svm_model_final.predict(selected_features_test))
     
-    #print("train_conf   \n",train_conf)
-    #print("val_conf     \n",val_conf)
     print("test_conf    \n",test_conf)
     
-    # AUCの計算
-    #train_auc = roc_auc_score(y_train, svm_model_final.predict(selected_features_train))
-    #val_auc = roc_auc_score(y_val, svm_model_final.predict(selected_features_val))
-    #test_auc = roc_auc_score(y_test, svm_model_final.predict(selected_features_test))
-    #print(f"AUC_train   : {train_auc:.3f}")
-    #print(f"AUC_val     : {val_auc:.3f}")
-    #print(f"AUC_test    : {test_auc:.3f}")
-    
-#    # 結果の表示
-#    {
-#        "Best ANFIS Parameters (Weights)": best_anfis_params,
-#        "Best SVM Parameters (C, gamma)": (best_C, best_gamma),
-#        "Train Accuracy": train_accuracy,
-#        "Validation Accuracy": val_accuracy,
-#        "Test Accuracy": test_accuracy,
-#    }
-#    
     # 結果の表示
     print(
             "results",
-            #"\nBest ANFIS Parameters (Weights):", best_anfis_params,
-            #"\nBest SVM Parameters (C, gamma) :", (best_C, best_gamma),
-            #"\nTrain Accuracy                 :", train_accuracy,
-            #"\nValidation Accuracy            :", val_accuracy,
             "\nTest Accuracy                  :", test_accuracy,
     )
     
@@ -271,45 +165,9 @@ def SvmA_eval(X_test, X_train, y_test, y_train, indices_df):
             for i in range(len(fpr)):
                 writer.writerow([fpr[i], tpr[i], thresholds[i]])
     
-    # データの保存
-    #save_roc_data('roc_train.csv', y_train, svm_model_final.decision_function(selected_features_train))
-    #save_roc_data('roc_val.csv', y_val, svm_model_final.decision_function(selected_features_val))
-    #save_roc_data('roc_test.csv', y_test, svm_model_final.decision_function(selected_features_test))
-    
-    #
-    ## ROC曲線を描画する関数
-    #def plot_roc_curve(y_true, y_scores, label):
-    #    fpr, tpr, _ = roc_curve(y_true, y_scores)
-    #    plt.plot(fpr, tpr, label=f"{label} (AUC: {roc_auc_score(y_true, y_scores):.3f})")
-    #
-    ## 訓練、検証、テストデータセットのROC曲線を描画
-    #plt.figure(figsize=(10, 8))
-    #
-    ## 訓練セット
-    #train_scores = svm_model_final.decision_function(selected_features_train)
-    #plot_roc_curve(y_train, train_scores, "Train")
-    #
-    ## 検証セット
-    #val_scores = svm_model_final.decision_function(selected_features_val)
-    #plot_roc_curve(y_val, val_scores, "Validation")
-    #
-    ## テストセット
-    #test_scores = svm_model_final.decision_function(selected_features_test)
-    #plot_roc_curve(y_test, test_scores, "Test")
-    #
-    ## グラフの装飾
-    #plt.plot([0, 1], [0, 1], linestyle='--', color='gray', label='Chance')
-    #plt.title("ROC Curve", fontsize=16)
-    #plt.xlabel("False Positive Rate", fontsize=14)
-    #plt.ylabel("True Positive Rate", fontsize=14)
-    #plt.legend(fontsize=12)
-    #plt.grid()
-    #plt.show()
     from sklearn.metrics import precision_score, recall_score, f1_score
     
     # 各データセットの予測結果を取得
-    #train_pred = svm_model_final.predict(selected_features_train)
-    #val_pred = svm_model_final.predict(selected_features_val)
     test_pred = svm_model_final.predict(selected_features_test)
     
     # 指標の計算
@@ -320,28 +178,10 @@ def SvmA_eval(X_test, X_train, y_test, y_train, indices_df):
         f1 = f1_score(y_true, y_pred, average=None)
         return accuracy, precision, recall, f1
     
-    # Training metrics
-    #train_accuracy, train_precision, train_recall, train_f1 = calculate_metrics(y_train, train_pred)
-    
-    # Validation metrics
-    #val_accuracy, val_precision, val_recall, val_f1 = calculate_metrics(y_val, val_pred)
-    
     # Test metrics
     test_accuracy, test_precision, test_recall, test_f1 = calculate_metrics(y_test, test_pred)
     
     # 結果の表示
-#    print("\n=== Training Metrics ===")
-#    print(f"Accuracy : {train_accuracy:.3f}")
-#    print(f"Precision: {train_precision:.3f}")
-#    print(f"Recall   : {train_recall:.3f}")
-#    print(f"F1 Score : {train_f1:.3f}")
-#    
-#    print("\n=== Validation Metrics ===")
-#    print(f"Accuracy : {val_accuracy:.3f}")
-#    print(f"Precision: {val_precision:.3f}")
-#    print(f"Recall   : {val_recall:.3f}")
-#    print(f"F1 Score : {val_f1:.3f}")
-    
     print("\n=== Test Metrics ===")
     print(f"Accuracy : {test_accuracy}")
     print(f"Precision: {test_precision}")
@@ -349,4 +189,3 @@ def SvmA_eval(X_test, X_train, y_test, y_train, indices_df):
     print(f"F1 Score : {test_f1}")
     
     
-    #print("elaped time:", time.time()-start_time)
