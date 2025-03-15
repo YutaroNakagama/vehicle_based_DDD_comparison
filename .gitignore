@@ -2,6 +2,7 @@
 **/*.ps1
 **/*.pkl
 **/*.npy
+**/*.keras
 **/tags
 **/__pycache__/
 
