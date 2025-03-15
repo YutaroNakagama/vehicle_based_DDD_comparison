@@ -212,8 +212,3 @@ def time_freq_domain_process(subject, model):
         save_csv(combined_df, subject_id, version, 'time_freq_domain', model)
     else:
         logging.warning(f"Data for {subject_id}_{version} saved as separate CSV files due to sample count mismatch.")
-        # サンプル数が一致しない場合は個別のCSVファイルとして保存
-#        steering_features_df.to_csv(f"{INTRIM_CSV_PATH}/time_freq_domain/{model}/{subject_id}_{version}_Steering_Wheel.csv", index=False)
-#        lat_accel_features_df.to_csv(f"{INTRIM_CSV_PATH}/time_freq_domain/{model}/{subject_id}_{version}_Lateral_Acceleration.csv", index=False)
-#        lane_offset_features_df.to_csv(f"{INTRIM_CSV_PATH}/time_freq_domain/{model}/{subject_id}_{version}_Lane_Offset.csv", index=False)
-#        long_accel_features_df.to_csv(f"{INTRIM_CSV_PATH}/time_freq_domain/{model}/{subject_id}_{version}_Longitudinal_Acceleration.csv", index=False)
