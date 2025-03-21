@@ -1,13 +1,11 @@
-
-from src.utils.io.loaders import safe_load_mat, save_csv
-
 import os
 import pandas as pd
 import numpy as np
 import logging
 from scipy.signal import lfilter
 
-# Local application imports
+from src.utils.io.loaders import safe_load_mat, save_csv
+
 from src.config import (
     SUBJECT_LIST_PATH, 
     DATASET_PATH, 

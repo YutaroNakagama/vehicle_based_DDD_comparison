@@ -1,4 +1,14 @@
-# simlsl_features.py: SIM_lslデータの特徴量抽出
+import numpy as np
+import pandas as pd
+import os
+import logging
+from scipy.fft import fft, fftfreq
+from scipy.stats import skew, kurtosis
+from scipy.interpolate import interp1d
+from scipy.signal import lfilter
+
+from src.utils.io.loaders import safe_load_mat, save_csv
+
 from src.config import (
     DATASET_PATH, 
     INTRIM_CSV_PATH, 
@@ -8,17 +18,6 @@ from src.config import (
     WINDOW_SIZE_SAMPLE_SIMLSL,
     STEP_SIZE_SAMPLE_SIMLSL,
 )
-
-from src.utils.io.loaders import safe_load_mat, save_csv
-
-import numpy as np
-import pandas as pd
-import os
-import logging
-from scipy.fft import fft, fftfreq
-from scipy.stats import skew, kurtosis
-from scipy.interpolate import interp1d
-from scipy.signal import lfilter
 
 def extract_aref_features(signal, prefix=""):
     features = {}

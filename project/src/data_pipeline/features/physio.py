@@ -1,12 +1,10 @@
-from src.utils.io.loaders import safe_load_mat, save_csv
-
-# Third-party imports
 import pandas as pd
 import numpy as np
 import logging
 from scipy.interpolate import interp1d
 
-# Local application imports
+from src.utils.io.loaders import safe_load_mat, save_csv
+
 from src.config import (
     SUBJECT_LIST_PATH, 
     DATASET_PATH, 
