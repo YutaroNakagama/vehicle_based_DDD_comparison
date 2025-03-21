@@ -1,17 +1,15 @@
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import KFold
-from tensorflow.keras.models import Sequential, load_model
-from tensorflow.keras.layers import Dense, Flatten, Bidirectional, LSTM, Layer, Input, Activation
-from tensorflow.keras import Model
-from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.callbacks import EarlyStopping
+import logging
+from tensorflow.keras.models import load_model
+from tensorflow.keras.layers import Layer
 import tensorflow as tf
+from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
 
 from src.config import MODEL_PKL_PATH
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# Attention Layerの定義
 class AttentionLayer(Layer):
     def __init__(self, **kwargs):
         super(AttentionLayer, self).__init__(**kwargs)
@@ -27,29 +25,48 @@ class AttentionLayer(Layer):
         output = x * a
         return tf.keras.backend.sum(output, axis=1)
 
-def lstm_eval(X,y,model_name):
-    # データの読み込み
-    X_test = X
-    y_test = y
-    
-    # ラベルを2値ラベル（1次元）に変換
+def lstm_eval(X_test, y_test, model_name, fold_to_test=1):
+    """
+    Evaluate the LSTM model on test data.
+
+    Parameters:
+    - X_test: Test features as a DataFrame
+    - y_test: Test labels as a Series
+    - model_name: Name of the model for loading the saved model
+    - fold_to_test: The fold number of the trained model to evaluate
+    """
+
+    # Convert labels to a flat numpy array
     y_test = y_test.values.flatten()
-    
-    # LSTM用にデータを3Dに変換 (サンプル数, タイムステップ数, 特徴量数)
+
+    # Reshape features for LSTM input: (samples, time_steps, features)
     X_test_3d = np.expand_dims(X_test.values, axis=1)
 
-    # どのfoldのモデルを使うか（例: fold1 のモデルを使用）
-    fold_to_test = 1  # 任意のfold番号を設定
+    # Load the pre-trained model
+    model_path = f'{MODEL_PKL_PATH}/{model_name}/lstm_model_fold{fold_to_test}.keras'
+    model = load_model(model_path, custom_objects={'AttentionLayer': AttentionLayer})
 
-    # 保存したモデルをロード
-    model = load_model(f'{MODEL_PKL_PATH}/{model_name}/lstm_model_fold{fold_to_test}.keras',
-                        custom_objects={'AttentionLayer': AttentionLayer})
+    logging.info(f"Model '{model_path}' loaded successfully.")
 
-    print(f"Model lstm_model_fold{fold_to_test}.keras loaded successfully.")
+    # Evaluate the model
+    loss, accuracy = model.evaluate(X_test_3d, y_test, verbose=0)
+    logging.info(f"Evaluation Results - Loss: {loss:.4f}, Accuracy: {accuracy:.4f}")
 
-    # モデルをテストデータで評価
-    scores = model.evaluate(X_test_3d, y_test, verbose=0)
+    # Generate predictions and additional metrics
+    y_pred_prob = model.predict(X_test_3d)
+    y_pred = (y_pred_prob > 0.5).astype(int).flatten()
 
-    # 結果を表示
-    print(f'Loaded Model (Fold {fold_to_test}) - Loss: {scores[0]}, Accuracy: {scores[1]}')
-    
+    # Detailed metrics
+    report = classification_report(y_test, y_pred)
+    conf_matrix = confusion_matrix(y_test, y_pred)
+
+    logging.info("Classification Report:\n" + report)
+    logging.info("Confusion Matrix:\n" + str(conf_matrix))
+
+    return {
+        'loss': loss,
+        'accuracy': accuracy,
+        'classification_report': report,
+        'confusion_matrix': conf_matrix
+    }
+
