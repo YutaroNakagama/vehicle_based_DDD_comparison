@@ -27,7 +27,7 @@ class AttentionLayer(Layer):
         output = x * a
         return tf.keras.backend.sum(output, axis=1)
 
-def lstm_eval(X,y):
+def lstm_eval(X,y,model_name):
     # データの読み込み
     X_test = X
     y_test = y
@@ -42,7 +42,7 @@ def lstm_eval(X,y):
     fold_to_test = 1  # 任意のfold番号を設定
 
     # 保存したモデルをロード
-    model = load_model(f'{MODEL_PKL_PATH}/lstm_model_fold{fold_to_test}.keras',
+    model = load_model(f'{MODEL_PKL_PATH}/{model_name}/lstm_model_fold{fold_to_test}.keras',
                         custom_objects={'AttentionLayer': AttentionLayer})
 
     print(f"Model lstm_model_fold{fold_to_test}.keras loaded successfully.")
