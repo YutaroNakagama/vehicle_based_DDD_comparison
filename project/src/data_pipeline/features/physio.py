@@ -1,4 +1,4 @@
-from src.utils.loaders import safe_load_mat, save_csv
+from src.utils.io.loaders import safe_load_mat, save_csv
 
 # Third-party imports
 import pandas as pd

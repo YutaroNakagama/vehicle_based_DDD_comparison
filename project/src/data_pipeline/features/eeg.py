@@ -6,7 +6,8 @@ from src.config import (
         STEP_SIZE_SAMPLE_EEG,
         DATASET_PATH,
         )
-from src.utils.loaders import safe_load_mat, save_csv
+
+from src.utils.io.loaders import safe_load_mat, save_csv
 
 import numpy as np
 import pandas as pd
