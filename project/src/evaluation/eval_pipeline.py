@@ -1,11 +1,11 @@
 from src.config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, MODEL_PKL_PATH, OUTPUT_SVG_PATH
-from src.utils.loaders import read_subject_list
+from src.utils.io.loaders import read_subject_list
 #from src.utils.merge import combine_file
-from src.train.index import calculate_feature_indices
-from src.train.anfis import calculate_id
-from src.evaluation.lstm import lstm_eval
-from src.evaluation.SvmA import SvmA_eval
-from src.train.output import show_result
+from src.models.feature_selection.index import calculate_feature_indices
+from src.models.feature_selection.anfis import calculate_id
+from src.evaluation.models.lstm import lstm_eval
+from src.evaluation.models.SvmA import SvmA_eval
+from src.models.output import show_result
 
 import pandas as pd
 import numpy as np
@@ -180,9 +180,9 @@ def eval_pipeline(model):
 
     subject_list = read_subject_list()
     # Create dataframe list and read csv file
-    data_model = model if model in {"SvmW", "SvmA", "Lstm"} else "common"
+    model_type = model if model in {"SvmW", "SvmA", "Lstm"} else "common"
     for subject in subject_list:
-        combine_file(subject, data_model)
+        combine_file(subject, model_type)
 
     # Combine the data and filter for classes 4 and 8
     all_data = pd.concat(dfs, ignore_index=True)
@@ -200,14 +200,14 @@ def eval_pipeline(model):
     y_test_binary = y_test.replace({**dict.fromkeys([1, 2], 0), **dict.fromkeys([8, 9], 1)})
 
     if model == 'Lstm':
-        lstm_eval(X_test, y_test_binary)
+        lstm_eval(X_test, y_test_binary, model_type)
     else:
         feature_indices = calculate_feature_indices(X_train, y_train_binary)
     
         # Define multiple classifiers
         if model == 'SvmA':
             print("call svmA train")
-            SvmA_eval(X_train, X_test, y_train, y_test, feature_indices)
+            SvmA_eval(X_train, X_test, y_train, y_test, feature_indices, model)
         else:
             if model == 'RF':
                 classifiers = {
@@ -236,8 +236,8 @@ def eval_pipeline(model):
                 }
             
             
-                model_filename = f"{MODEL_PKL_PATH}/{model}.pkl"
-                feat_filename = f"{MODEL_PKL_PATH}/{model}_feat.npy"
+                model_filename = f"{MODEL_PKL_PATH}/{model_type}/{model}.pkl"
+                feat_filename = f"{MODEL_PKL_PATH}/{model_type}/{model}_feat.npy"
             
                 with open(model_filename, "rb") as f:
                     clf = pickle.load(f)
