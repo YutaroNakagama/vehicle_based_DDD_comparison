@@ -5,7 +5,7 @@ import argparse
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import src.config
-import src.data_processing.processing_pipeline as dp
+import src.data_pipeline.processing_pipeline as dp
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Select a model to run.")

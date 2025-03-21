@@ -1,5 +1,5 @@
 
-from src.utils.loaders import safe_load_mat, save_csv
+from src.utils.io.loaders import safe_load_mat, save_csv
 
 import os
 import pandas as pd
