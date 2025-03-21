@@ -1,4 +1,3 @@
-
 import numpy as np
 
 # Gaussian membership function
@@ -11,5 +10,5 @@ def calculate_id(indices, params):
     ids = []
     for i, col in enumerate(indices.columns):
         membership = [gaussian_membership(indices[col], c[j], s[j]) for j in range(3)]  # L, M, H
-        ids.append(np.max(membership, axis=0))  # 最大のメンバーシップ値
+        ids.append(np.max(membership, axis=0)) 
     return np.array(ids)

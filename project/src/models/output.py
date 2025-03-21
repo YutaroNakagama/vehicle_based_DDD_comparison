@@ -1,4 +1,3 @@
-
 def show_result(name,result):
     print(f"\nClassifier: {name}")
     print(f"Optimized Parameters: {result['optimized_params']}")
