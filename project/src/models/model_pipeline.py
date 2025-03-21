@@ -1,11 +1,11 @@
 from src.config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, MODEL_PKL_PATH, OUTPUT_SVG_PATH
-from src.utils.loaders import read_subject_list
+from src.utils.io.loaders import read_subject_list
 #from src.utils.merge import combine_file
-from src.train.index import calculate_feature_indices
-from src.train.anfis import calculate_id
-from src.train.lstm import lstm_train
-from src.train.SvmA import SvmA_train
-from src.train.output import show_result
+from src.models.feature_selection.index import calculate_feature_indices
+from src.models.feature_selection.anfis import calculate_id
+from src.models.architectures.lstm import lstm_train
+from src.models.architectures.SvmA import SvmA_train
+from src.models.output import show_result
 
 import pandas as pd
 import numpy as np
@@ -104,7 +104,7 @@ def combine_file(subject, model):
     except FileNotFoundError:
         print(f"File not found: {file_name}")
 
-def optimizar(name,clf,model):
+def optimizar(name,clf,model,model_type):
     print(f"Optimizing for classifier: {name}")
 
     # Optimise using PSO
@@ -128,11 +128,11 @@ def optimizar(name,clf,model):
 
     clf.fit(X_train_scaled, y_train_binary)
 
-    model_filename = f"{MODEL_PKL_PATH}/{model}.pkl"
+    model_filename = f"{MODEL_PKL_PATH}/{model_type}/{model}.pkl"
     with open(model_filename, "wb") as f:
         pickle.dump(clf, f)
 
-    feat_filename = f"{MODEL_PKL_PATH}/{model}_feat.npy"
+    feat_filename = f"{MODEL_PKL_PATH}/{model_type}/{model}_feat.npy"
     np.save(feat_filename, selected_features)
 
     sys.exit()
@@ -186,9 +186,9 @@ def train_pipeline(model):
     print("read subject list")
     subject_list = read_subject_list()
     # Create dataframe list and read csv file
-    data_model = model if model in {"SvmW", "SvmA", "Lstm"} else "common"
+    model_type = model if model in {"SvmW", "SvmA", "Lstm"} else "common"
     for subject in subject_list:
-        combine_file(subject, data_model)
+        combine_file(subject, model_type)
 
     print("conbine data")
     # Combine the data and filter for classes 4 and 8
@@ -253,7 +253,7 @@ def train_pipeline(model):
         
         
             for name, clf in classifiers.items():
-                optimizar(name,clf,model)
+                optimizar(name,clf,model,model_type)
         
         #    # Display the final results
         #    for name, result in optimization_results.items():
