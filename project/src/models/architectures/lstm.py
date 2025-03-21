@@ -27,7 +27,7 @@ class AttentionLayer(Layer):
         output = x * a
         return tf.keras.backend.sum(output, axis=1)
 
-def lstm_train(X,y):
+def lstm_train(X,y,model_name):
     # データの読み込み
 #    X_data = pd.read_csv('../X.csv').drop(columns=['Unnamed: 0'])
 #    y_data = pd.read_csv('../y.csv').drop(columns=['Unnamed: 0'])
@@ -76,7 +76,7 @@ def lstm_train(X,y):
         print(f'Fold {fold_no} - Loss: {scores[0]}, Accuracy: {scores[1]}')
         accuracy_per_fold.append(scores[1])
 
-        model.save(f'{MODEL_PKL_PATH}/lstm_model_fold{fold_no}.keras')
+        model.save(f'{MODEL_PKL_PATH}/{model_name}/lstm_model_fold{fold_no}.keras')
         print(f'Model for fold {fold_no} saved as lstm_model_fold{fold_no}.h5')
 
         fold_no += 1
