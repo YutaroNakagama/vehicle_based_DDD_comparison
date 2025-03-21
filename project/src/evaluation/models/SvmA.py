@@ -123,15 +123,15 @@ def optimize_anfis_svm_with_pso(X_train, y_train, X_val, y_val, indices_df):
     return best_params
 
 
-def SvmA_eval(X_test, X_train, y_test, y_train, indices_df):
+def SvmA_eval(X_test, X_train, y_test, y_train, indices_df, model):
     # 最適化実行
     print('get optiomal paras')
 
     # モデルを読み込む
-    svm_model_final = joblib.load('model/svm_model_final.pkl')
+    svm_model_final = joblib.load(f'model/{model}/svm_model_final.pkl')
 
     # 訓練用の特徴量データを読み込む
-    selected_features_test = joblib.load('model/selected_features_train.pkl')
+    selected_features_test = joblib.load(f'model/{model}/selected_features_train.pkl')
 
     print("SVMモデルと訓練データの特徴量を読み込みました。")
     
