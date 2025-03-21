@@ -2,122 +2,106 @@ import os
 import pandas as pd
 import numpy as np
 import logging
-from scipy.signal import lfilter
 
 from src.utils.io.loaders import save_csv
 from src.utils.visualization.visualization import plot_custom_colored_distribution
 
 from src.config import (
-    SUBJECT_LIST_PATH, 
-    DATASET_PATH, 
-    INTRIM_CSV_PATH, 
-    PROCESS_CSV_PATH, 
-    WINDOW_SIZE_SEC, 
-    STEP_SIZE_SEC,
-    SCALING_FILTER,
-    WAVELET_FILTER,
+    INTRIM_CSV_PATH,
+    PROCESS_CSV_PATH,
 )
 
-def convert_theta_alpha_to_kss_dynamic_from_data(theta_alpha_ratios):
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+
+def convert_theta_alpha_to_kss(theta_alpha_ratios):
     """
-    Theta/Alpha比の最小値と最大値をデータ全体から算出してKSSスコアを割り当てる関数
+    Assign KSS scores (1-9) based on the dynamic range of Theta/Alpha ratios.
 
     Parameters:
-        theta_alpha_ratios (np.ndarray or list): Theta/Alpha比の全データ
+        theta_alpha_ratios (np.ndarray): Theta/Alpha ratio data.
 
     Returns:
-        list: 割り当てられたKSSスコア（1～9）のリスト
+        list: Assigned KSS scores.
     """
-    # データ全体の最小値と最大値を取得
-    min_value = np.min(theta_alpha_ratios)
-    max_value = np.max(theta_alpha_ratios)
+    min_value, max_value = np.min(theta_alpha_ratios), np.max(theta_alpha_ratios)
+    thresholds = np.linspace(min_value, max_value, 10)
 
-    # 最小値と最大値を9等分する閾値を計算
-    thresholds = np.linspace(min_value, max_value, 10)  # 境界は9個の範囲を作る10個の値
-
-    # 各Theta/Alpha比を対応するKSSスコアに割り当て
     kss_scores = []
     for ratio in theta_alpha_ratios:
-        for kss_level in range(1, 10):  # KSSスコアは1～9
+        for kss_level in range(1, 10):
             if thresholds[kss_level - 1] <= ratio < thresholds[kss_level]:
                 kss_scores.append(kss_level)
                 break
         else:
-            # 最大値以上の場合はKSS=9
             kss_scores.append(9)
 
     return kss_scores
 
 
-# KSS変換関数を定義
-def convert_perclos_to_kss(perclos):
-    if perclos < 10:
-        return 2  # KSS 1-3 (Awake state)
-    elif 10 <= perclos < 20:
-        return 4  # KSS 4-5 (Mild sleepiness)
-    elif 20 <= perclos < 30:
-        return 6  # KSS 6-7 (Moderate sleepiness)
-    else:
-        return 8  # KSS 8-9 (Strong sleepiness)
-
 def remove_outliers(data, threshold=3):
     """
-    外れ値を除外する関数
+    Remove outliers based on the specified standard deviation threshold.
 
     Parameters:
-        data (np.ndarray or list): データ配列
-        threshold (float): 標準偏差の閾値
+        data (np.ndarray): Data array.
+        threshold (float): Standard deviation threshold.
 
     Returns:
-        np.ndarray: 外れ値を除外したデータ
+        np.ndarray: Data without outliers.
     """
-    data = np.array(data)
-    mean = np.mean(data)
-    std_dev = np.std(data)
-    lower_bound = mean - threshold * std_dev
-    upper_bound = mean + threshold * std_dev
+    mean, std_dev = np.mean(data), np.std(data)
+    lower_bound, upper_bound = mean - threshold * std_dev, mean + threshold * std_dev
     return data[(data >= lower_bound) & (data <= upper_bound)]
+
+
+def adjust_scores_length(scores, target_length):
+    """
+    Adjust the length of scores to match the target length.
+
+    Parameters:
+        scores (list): List of scores.
+        target_length (int): Desired length.
+
+    Returns:
+        list: Adjusted scores list.
+    """
+    if len(scores) < target_length:
+        scores.extend([np.nan] * (target_length - len(scores)))
+    elif len(scores) > target_length:
+        scores = scores[:target_length]
+    return scores
+
 
 def kss_process(subject, model):
     subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
-    file_path = f'{INTRIM_CSV_PATH}/merged/{model}/merged_{subject_id}_{version}.csv'
-    
-    # CSVデータを読み込み
+    file_path = os.path.join(INTRIM_CSV_PATH, 'merged', model, f'merged_{subject_id}_{version}.csv')
+
     try:
         data = pd.read_csv(file_path)
-        
-        # PERCLOSおよびEEGデータが存在する場合のみ処理
-        if not data.filter(regex='Theta \(4-8 Hz\)').empty and not data.filter(regex='Alpha \(8-13 Hz\)').empty:
-            # PERCLOSに基づくKSSを計算
-            #data['KSS_PERCLOS'] = data['PERCLOS'].apply(convert_perclos_to_kss)
-            
-            # Theta/Alpha比に基づくKSSを計算
-            theta_mean = data.filter(regex='Theta \(4-8 Hz\)').mean(axis=1)
-            alpha_mean = data.filter(regex='Alpha \(8-13 Hz\)').mean(axis=1).replace(0, 1e-10)  # ゼロ除算を避ける
-            beta_mean  = data.filter(regex='Beta \(13-30 Hz\)').mean(axis=1).replace(0, 1e-10)  # ゼロ除算を避ける
-            theta_alpha_ratio = theta_mean / alpha_mean
-            theta_alpha_beta_ratio = (theta_mean + alpha_mean) / beta_mean
-            theta_alpha_beta_ratios = remove_outliers(theta_alpha_beta_ratio)
-            #theta_alpha_beta_ratio = pd.Series(theta_alpha_beta_ratio)
-            kss_scores = convert_theta_alpha_to_kss_dynamic_from_data(theta_alpha_beta_ratios)
 
-            # 長さの調整
-            if len(kss_scores) < len(data):
-                # スコアが少ない場合、NaNで埋める
-                kss_scores.extend([np.nan] * (len(data) - len(kss_scores)))
-            elif len(kss_scores) > len(data):
-                # スコアが多い場合、切り詰める
-                kss_scores = kss_scores[:len(data)]
+        theta_columns = data.filter(regex='Theta \(4-8 Hz\)')
+        alpha_columns = data.filter(regex='Alpha \(8-13 Hz\)')
+        beta_columns = data.filter(regex='Beta \(13-30 Hz\)')
+
+        if not theta_columns.empty and not alpha_columns.empty and not beta_columns.empty:
+            theta_mean = theta_columns.mean(axis=1)
+            alpha_mean = alpha_columns.mean(axis=1).replace(0, 1e-10)
+            beta_mean = beta_columns.mean(axis=1).replace(0, 1e-10)
+
+            theta_alpha_beta_ratio = (theta_mean + alpha_mean) / beta_mean
+            clean_ratios = remove_outliers(theta_alpha_beta_ratio)
+            kss_scores = convert_theta_alpha_to_kss(clean_ratios)
+
+            kss_scores = adjust_scores_length(kss_scores, len(data))
 
             data['KSS_Theta_Alpha_Beta'] = kss_scores
-            #plot_custom_colored_distribution(theta_alpha_beta_ratios)
-            
-            
-            # 新しいファイルとして保存
-            #output_file_path = f'{PROCESS_CSV_PATH}/{model}/processed_{subject_id}_{version}.csv'
-            #data.to_csv(output_file_path, index=False)
+            # Optional visualization
+            # plot_custom_colored_distribution(clean_ratios)
+
             save_csv(data, subject_id, version, 'processed', model)
-            #print(f"Processed and saved: {output_file_path}")
-            
+            logging.info(f"Processed and saved KSS data for {subject_id}_{version} [{model}].")
+
     except FileNotFoundError:
-        print(f"File not found: {file_path}")
+        logging.error(f"File not found: {file_path}")
+
