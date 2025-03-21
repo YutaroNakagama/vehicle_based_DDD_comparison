@@ -9,21 +9,16 @@ from src.utils.io.merge import merge_process
 
 def main_pipeline(model):
 
-    # load subject list
     subject_list = read_subject_list()
     
     for subject in subject_list:
 
-        if model == "common":
-            time_freq_domain_process(subject, model) # smoothing std deviation PE process
-            wavelet_process(subject, model) # wavelet process
-            smooth_std_pe_process(subject, model) # smoothing std deviation PE process
-        elif model == "LstmA":
-            time_freq_domain_process(subject, model) # smoothing std deviation PE process
-        elif model == "SvmW":
-            wavelet_process(subject, model) # wavelet process
-        elif model == "Lstm":
-            smooth_std_pe_process(subject, model) # smoothing std deviation PE process
+        if model in ["common", "LstmA"]:
+            time_freq_domain_process(subject, model)
+        if model in ["common", "SvmW"]:
+            wavelet_process(subject, model)
+        if model in ["common", "Lstm"]:
+            smooth_std_pe_process(subject, model)
 
         # EEG process
         eeg_process(subject, model)
