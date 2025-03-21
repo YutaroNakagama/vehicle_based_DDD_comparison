@@ -200,7 +200,7 @@ def train_pipeline(model):
     y = filtered_data["KSS_Theta_Alpha_Beta"].loc[X.index]
 
     if model == 'Lstm':
-        lstm_train(X,y)
+        lstm_train(X,y,model)
 
     else:
         print("data split")
@@ -215,7 +215,7 @@ def train_pipeline(model):
     
         if model == 'SvmA':
             print("call svmA train")
-            SvmA_train(X_train, X_test, y_train, y_test, feature_indices)
+            SvmA_train(X_train, X_test, y_train, y_test, feature_indices, model)
         else:
             if model == 'RF':
                 # Define multiple classifiers
