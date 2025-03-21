@@ -1,13 +1,12 @@
-from src.utils.io.loaders import save_csv
-from src.utils.visualization.visualization import plot_custom_colored_distribution
-
 import os
 import pandas as pd
 import numpy as np
 import logging
 from scipy.signal import lfilter
 
-# Local application imports
+from src.utils.io.loaders import save_csv
+from src.utils.visualization.visualization import plot_custom_colored_distribution
+
 from src.config import (
     SUBJECT_LIST_PATH, 
     DATASET_PATH, 
