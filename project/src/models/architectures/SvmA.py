@@ -124,7 +124,7 @@ def optimize_anfis_svm_with_pso(X_train, y_train, X_val, y_val, indices_df):
     return best_params
 
 
-def SvmA_train(X_train, X_val, y_train, y_val, indices_df):
+def SvmA_train(X_train, X_val, y_train, y_val, indices_df, model):
     # 最適化実行
     print('get optiomal paras')
     optimal_params = optimize_anfis_svm_with_pso(X_train, y_train, X_val, y_val, indices_df)
@@ -150,10 +150,10 @@ def SvmA_train(X_train, X_val, y_train, y_val, indices_df):
 
 
     # SVMモデルを保存
-    joblib.dump(svm_model_final, 'model/svm_model_final.pkl')
+    joblib.dump(svm_model_final, f'model/{model}/svm_model_final.pkl')
 
     # 訓練用の特徴量データを保存
-    joblib.dump(selected_features_train, 'model/selected_features_train.pkl')
+    joblib.dump(selected_features_train, f'model/{model}/selected_features_train.pkl')
 
     print("SVMモデルと訓練データの特徴量を保存しました。")
     
