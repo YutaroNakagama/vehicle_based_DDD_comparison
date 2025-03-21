@@ -1,4 +1,4 @@
-from src.utils.loaders import save_csv
+from src.utils.io.loaders import save_csv
 
 import os
 import pandas as pd

@@ -1,5 +1,5 @@
-from src.utils.loaders import save_csv
-from src.utils.visualization import plot_custom_colored_distribution
+from src.utils.io.loaders import save_csv
+from src.utils.visualization.visualization import plot_custom_colored_distribution
 
 import os
 import pandas as pd

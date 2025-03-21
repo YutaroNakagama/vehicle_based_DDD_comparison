@@ -1,11 +1,11 @@
-from src.data_processing.features.simlsl import time_freq_domain_process, smooth_std_pe_process
-from src.data_processing.features.wavelet import wavelet_process 
-from src.data_processing.features.physio import perclos_process, pupil_process
-from src.data_processing.features.eeg import eeg_process
-from src.data_processing.features.kss import kss_process 
+from src.data_pipeline.features.simlsl import time_freq_domain_process, smooth_std_pe_process
+from src.data_pipeline.features.wavelet import wavelet_process 
+from src.data_pipeline.features.physio import perclos_process, pupil_process
+from src.data_pipeline.features.eeg import eeg_process
+from src.data_pipeline.features.kss import kss_process 
 
-from src.utils.loaders import read_subject_list
-from src.utils.merge import merge_process
+from src.utils.io.loaders import read_subject_list
+from src.utils.io.merge import merge_process
 
 def main_pipeline(model):
 
