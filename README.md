@@ -53,8 +53,11 @@ Make sure you have Python 3.10 installed. Then, install the required packages:
 ```sh
 pip install -r requirements.txt
 ```
+### Go to Project directory
+```sh
+cd project
+```
 ### Prepare data
-Modify configure.py for dataset directory. Run preprocessing:
 ```sh
 python bin/preprocess.py
 ```
