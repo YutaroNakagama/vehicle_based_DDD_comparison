@@ -59,8 +59,15 @@ setup the public dataset as follows:
 ```sh
 ├───dataset
 │   └───mdapbe
+│       ├───subject_list.txt
 │       └───physio
 │           ├───S0101
+│           │   ├───SIMlsl_S0101_1.mat
+│           │   ├───SIMlsl_S0101_2.mat
+│           │   ├───EEG_S0101_1.mat
+│           │   ├───EEG_S0101_2.mat
+│           │   ├───      :
+│           │  
 │           ├───S0103
 │           ├───S0105
 │           │     :
