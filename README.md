@@ -56,15 +56,15 @@ pip install -r requirements.txt
 ### Prepare data
 Modify configure.py for dataset directory. Run preprocessing:
 ```sh
-python scripts/run_preprocessing.py
+python bin/preprocess.py
 ```
 ### Training a Model
 ```sh
-python scripts/run_training.py --model RF
+python bin/train.py --model [model name: SvmW/SvmA/Lstm/RF]
 ```
 ### Evaluating a Model
 ```sh
-python scripts/run_evaluation.py --model RF
+python bin/evaluate.py --model [model name: SvmW/SvmA/Lstm/RF]
 ```
 <!--
 ## Results & Visualization
