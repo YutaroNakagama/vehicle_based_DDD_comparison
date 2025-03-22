@@ -53,22 +53,51 @@ Make sure you have Python 3.10 installed. Then, install the required packages:
 ```sh
 pip install -r requirements.txt
 ```
+
+### Prepare Dataset
+setup the public dataset as follows:
+```sh
+├───dataset
+│   └───mdapbe
+│       └───physio
+│           ├───S0101
+│           ├───S0103
+│           ├───S0105
+│           │     :
+│           │     :
+│           ├───S0211
+│           ├───S0212
+│           └───S0213
+└───vehicle_based_DDD_comparison
+    └───project
+        ├───bin
+        ├───data
+        │   ├───interim
+        │   └───processed
+        ├───model
+        └───src
+```
+
 ### Go to Project directory
 ```sh
 cd project
 ```
+
 ### Prepare data
 ```sh
 python bin/preprocess.py
 ```
+
 ### Training a Model
 ```sh
 python bin/train.py --model [model name: SvmW/SvmA/Lstm/RF]
 ```
+
 ### Evaluating a Model
 ```sh
 python bin/evaluate.py --model [model name: SvmW/SvmA/Lstm/RF]
 ```
+
 <!--
 ## Results & Visualization
 The model performance is evaluated using **AUC, accuracy, and inference time**. Results are plotted for better interpretability.
