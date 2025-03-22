@@ -53,18 +53,21 @@ Make sure you have Python 3.10 installed. Then, install the required packages:
 ```sh
 pip install -r requirements.txt
 ```
-### Prepare data
-Modify configure.py for dataset directory. Run preprocessing:
+### Go to Project directory
 ```sh
-python scripts/run_preprocessing.py
+cd project
+```
+### Prepare data
+```sh
+python bin/preprocess.py
 ```
 ### Training a Model
 ```sh
-python scripts/run_training.py --model RF
+python bin/train.py --model [model name: SvmW/SvmA/Lstm/RF]
 ```
 ### Evaluating a Model
 ```sh
-python scripts/run_evaluation.py --model RF
+python bin/evaluate.py --model [model name: SvmW/SvmA/Lstm/RF]
 ```
 <!--
 ## Results & Visualization
