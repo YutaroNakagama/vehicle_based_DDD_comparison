@@ -12,8 +12,8 @@ PROCESS_CSV_PATH    = './data/processed'
 MODEL_PKL_PATH    = './model/'
 OUTPUT_SVG_PATH     = './output/svg'
 
-DATA_PROCESS_CHOICES = ["SvmA", "SvmW", "Lstm", "common"]  # ここでモデルの候補を定義
-MODEL_CHOICES = ["SvmA", "SvmW", "Lstm", "RF"]  # ここでモデルの候補を定義
+DATA_PROCESS_CHOICES = ["SvmA", "SvmW", "Lstm", "common"] 
+MODEL_CHOICES = ["SvmA", "SvmW", "Lstm", "RF"]  
 
 # Data process parameters
 WINDOW_SIZE_SEC = 3   # Time window size in seconds
@@ -27,7 +27,6 @@ SAMPLE_RATE_EEG = 500
 WINDOW_SIZE_SAMPLE_EEG = WINDOW_SIZE_SEC * SAMPLE_RATE_EEG 
 STEP_SIZE_SAMPLE_EEG = int(STEP_SIZE_SEC * SAMPLE_RATE_EEG) 
 
-# GHMスケーリングフィルタとウェーブレットフィルタの係数（厳密な係数を使用）
 SCALING_FILTER = np.array([0.48296, 0.83652, 0.22414, -0.12941])
 WAVELET_FILTER = np.array([-0.12941, -0.22414, 0.83652, -0.48296])
 WAVELET_LEV = 3
