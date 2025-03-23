@@ -17,6 +17,7 @@ from src.models.feature_selection.index import calculate_feature_indices
 from src.models.feature_selection.anfis import calculate_id
 from src.models.architectures.lstm import lstm_train
 from src.models.architectures.SvmA import SvmA_train
+from src.models.domain_generalization.data_aug import generate_domain_labels, domain_mixup
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -29,6 +30,7 @@ def load_and_combine_data(subject_list, model_type):
         file_path = f'{PROCESS_CSV_PATH}/{model_type}/{file_name}'
         try:
             df = pd.read_csv(file_path)
+            df['subject_id'] = subject_id
             dfs.append(df)
             logging.info(f"Loaded data for {subject_id}_{version}")
         except FileNotFoundError:
@@ -40,7 +42,13 @@ def load_and_combine_data(subject_list, model_type):
 
 def prepare_data(df):
     filtered_data = df[df["KSS_Theta_Alpha_Beta"].isin([1, 2, 8, 9])]
-    X = filtered_data.iloc[:, 1:46].dropna()
+
+    feature_columns = df.columns[1:46].tolist()
+    if 'subject_id' in df.columns:
+        feature_columns.append('subject_id')
+
+    X = filtered_data[feature_columns].dropna()
+
     y = filtered_data.loc[X.index, "KSS_Theta_Alpha_Beta"].replace({1: 0, 2: 0, 8: 1, 9: 1})
     return train_test_split(X, y, test_size=0.3, random_state=42)
 
@@ -91,12 +99,17 @@ def optimize_classifier(name, clf, X_train, X_test, y_train, y_test, feature_ind
     logging.info(classification_report(y_test, y_pred))
 
 
-def train_pipeline(model):
+def train_pipeline(model, domain_generalize=True):
     subject_list = read_subject_list()
     model_type = model if model in {"SvmW", "SvmA", "Lstm"} else "common"
 
     data = load_and_combine_data(subject_list, model_type)
     X_train, X_test, y_train, y_test = prepare_data(data)
+
+    if domain_generalize == True:
+        domain_labels_train = generate_domain_labels(subject_list, X_train)
+        X_train_aug, y_train_aug = domain_mixup(X_train, y_train, domain_labels_train)
+        X_train, y_train = X_train_aug, y_train_aug
 
     if model == 'Lstm':
         lstm_train(X_train, y_train, model)
@@ -104,7 +117,11 @@ def train_pipeline(model):
         feature_indices = calculate_feature_indices(X_train, y_train)
         SvmA_train(X_train, X_test, y_train, y_test, feature_indices, model)
     else:
-        feature_indices = calculate_feature_indices(X_train, y_train)
+        X_train_for_fs = X_train.drop(columns=["subject_id"], errors='ignore')
+        X_test_for_fs = X_test.drop(columns=["subject_id"], errors='ignore')
+        
+        feature_indices = calculate_feature_indices(X_train_for_fs, y_train)
+        
         classifiers = {
             "RF": RandomForestClassifier(random_state=42),
             "SvmW": SVC(kernel="rbf", probability=True, random_state=42),
@@ -127,5 +144,5 @@ def train_pipeline(model):
             logging.error(f"Model '{model}' not recognized.")
             return
 
-        optimize_classifier(model, clf, X_train, X_test, y_train, y_test, feature_indices, model, model_type)
+        optimize_classifier(model, clf, X_train_for_fs, X_test_for_fs, y_train, y_test, feature_indices, model, model_type)
 
