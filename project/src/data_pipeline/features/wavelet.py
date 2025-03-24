@@ -7,14 +7,23 @@ from scipy.signal import lfilter
 from src.utils.io.loaders import safe_load_mat, save_csv
 from src.config import (
     DATASET_PATH,
-    WINDOW_SIZE_SAMPLE_SIMLSL,
-    STEP_SIZE_SAMPLE_SIMLSL,
+    #WINDOW_SIZE_SAMPLE_SIMLSL,
+    #STEP_SIZE_SAMPLE_SIMLSL,
+    SAMPLE_RATE_SIMLSL,
     SCALING_FILTER,
     WAVELET_FILTER,
     WAVELET_LEV,
+	MODEL_WINDOW_CONFIG,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+
+def get_simlsl_window_params(model):
+    config = MODEL_WINDOW_CONFIG[model]
+    window_samples = int(config["window_sec"] * SAMPLE_RATE_SIMLSL)
+    step_samples = int(config["step_sec"] * SAMPLE_RATE_SIMLSL)
+    return window_samples, step_samples
 
 
 def ghm_wavelet_transform(signal):
@@ -56,6 +65,51 @@ def process_window(signal_window):
     return [calculate_power(signal) for signal in decomposition_signals]
 
 
+#def wavelet_process(subject, model):
+#    subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
+#    mat_file_path = os.path.join(DATASET_PATH, subject_id, f"SIMlsl_{subject_id}_{version}.mat")
+#
+#    mat_data = safe_load_mat(mat_file_path)
+#    if mat_data is None:
+#        logging.error(f"Failed to load data from {mat_file_path}")
+#        return
+#
+#    sim_data = mat_data.get('SIM_lsl')
+#    if sim_data is None or sim_data.shape[0] < 30:
+#        logging.error(f"Invalid SIM_lsl data structure in {mat_file_path}")
+#        return
+#
+#    signals = {
+#        'SteeringWheel': np.nan_to_num(sim_data[29, :]),
+#        'LongitudinalAccel': np.nan_to_num(sim_data[18, :]),
+#        'LateralAccel': np.nan_to_num(sim_data[19, :]),
+#        'LaneOffset': np.nan_to_num(sim_data[27, :]),
+#    }
+#
+#    sim_time = sim_data[0, :]
+#    all_powers, all_timestamps = [], []
+#
+#    for start in range(0, len(sim_time) - WINDOW_SIZE_SAMPLE_SIMLSL + 1, STEP_SIZE_SAMPLE_SIMLSL):
+#        window_powers = []
+#        for signal in signals.values():
+#            signal_window = signal[start:start + WINDOW_SIZE_SAMPLE_SIMLSL]
+#            window_powers.extend(process_window(signal_window))
+#
+#        all_powers.append(window_powers)
+#        all_timestamps.append(sim_time[start])
+#
+#    decomposition_labels = ['DDD', 'DDA', 'DAD', 'DAA', 'ADD', 'ADA', 'AAD', 'AAA']
+#    column_names = [f'{sig}_{label}' for sig in signals.kdef wavelet_process(subject, model):
+#
+#    df = pd.DataFrame(all_powers, columns=column_names)
+#    df.insert(0, 'Timestamp', all_timestamps)
+#
+#    save_csv(df, subject_id, version, 'wavelet', model)
+#    logging.info(f"Wavelet features saved for {subject_id}_{version} [{model}].")
+#
+#
+#
+
 def wavelet_process(subject, model):
     subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
     mat_file_path = os.path.join(DATASET_PATH, subject_id, f"SIMlsl_{subject_id}_{version}.mat")
@@ -70,6 +124,8 @@ def wavelet_process(subject, model):
         logging.error(f"Invalid SIM_lsl data structure in {mat_file_path}")
         return
 
+    window_size, step_size = get_simlsl_window_params(model)
+
     signals = {
         'SteeringWheel': np.nan_to_num(sim_data[29, :]),
         'LongitudinalAccel': np.nan_to_num(sim_data[18, :]),
@@ -80,10 +136,10 @@ def wavelet_process(subject, model):
     sim_time = sim_data[0, :]
     all_powers, all_timestamps = [], []
 
-    for start in range(0, len(sim_time) - WINDOW_SIZE_SAMPLE_SIMLSL + 1, STEP_SIZE_SAMPLE_SIMLSL):
+    for start in range(0, len(sim_time) - window_size + 1, step_size):
         window_powers = []
         for signal in signals.values():
-            signal_window = signal[start:start + WINDOW_SIZE_SAMPLE_SIMLSL]
+            signal_window = signal[start:start + window_size]
             window_powers.extend(process_window(signal_window))
 
         all_powers.append(window_powers)
@@ -97,6 +153,3 @@ def wavelet_process(subject, model):
 
     save_csv(df, subject_id, version, 'wavelet', model)
     logging.info(f"Wavelet features saved for {subject_id}_{version} [{model}].")
-
-
-
