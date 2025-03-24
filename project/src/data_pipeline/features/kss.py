@@ -6,10 +6,7 @@ import logging
 from src.utils.io.loaders import save_csv
 from src.utils.visualization.visualization import plot_custom_colored_distribution
 
-from src.config import (
-    INTRIM_CSV_PATH,
-    PROCESS_CSV_PATH,
-)
+from src.config import INTRIM_CSV_PATH, PROCESS_CSV_PATH, MODEL_WINDOW_CONFIG
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 

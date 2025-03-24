@@ -16,16 +16,22 @@ DATA_PROCESS_CHOICES = ["SvmA", "SvmW", "Lstm", "common"]
 MODEL_CHOICES = ["SvmA", "SvmW", "Lstm", "RF"]  
 
 # Data process parameters
-WINDOW_SIZE_SEC = 3   # Time window size in seconds
-STEP_SIZE_SEC = 0.5     # Step size in seconds
+#WINDOW_SIZE_SEC = 3   # Time window size in seconds
+#STEP_SIZE_SEC = 0.5     # Step size in seconds
+MODEL_WINDOW_CONFIG = {
+    "common": {"window_sec": 3, "step_sec": 0.5},
+    "SvmA":   {"window_sec": 3, "step_sec": 0.5},
+    "SvmW":   {"window_sec": 3, "step_sec": 0.5},
+    "Lstm":   {"window_sec": 3, "step_sec": 0.5},
+}
 
 SAMPLE_RATE_SIMLSL = 60 # sample rate for simlsl
-WINDOW_SIZE_SAMPLE_SIMLSL = WINDOW_SIZE_SEC * SAMPLE_RATE_SIMLSL 
-STEP_SIZE_SAMPLE_SIMLSL = int(STEP_SIZE_SEC * SAMPLE_RATE_SIMLSL) 
+#WINDOW_SIZE_SAMPLE_SIMLSL = WINDOW_SIZE_SEC * SAMPLE_RATE_SIMLSL 
+#STEP_SIZE_SAMPLE_SIMLSL = int(STEP_SIZE_SEC * SAMPLE_RATE_SIMLSL) 
 
 SAMPLE_RATE_EEG = 500
-WINDOW_SIZE_SAMPLE_EEG = WINDOW_SIZE_SEC * SAMPLE_RATE_EEG 
-STEP_SIZE_SAMPLE_EEG = int(STEP_SIZE_SEC * SAMPLE_RATE_EEG) 
+#WINDOW_SIZE_SAMPLE_EEG = WINDOW_SIZE_SEC * SAMPLE_RATE_EEG 
+#STEP_SIZE_SAMPLE_EEG = int(STEP_SIZE_SEC * SAMPLE_RATE_EEG) 
 
 SCALING_FILTER = np.array([0.48296, 0.83652, 0.22414, -0.12941])
 WAVELET_FILTER = np.array([-0.12941, -0.22414, 0.83652, -0.48296])
