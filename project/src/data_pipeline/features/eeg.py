@@ -1,6 +1,7 @@
 from src.config import (
-    WINDOW_SIZE_SAMPLE_EEG,
-    STEP_SIZE_SAMPLE_EEG,
+#    WINDOW_SIZE_SAMPLE_EEG,
+#    STEP_SIZE_SAMPLE_EEG,
+    MODEL_WINDOW_CONFIG, 
     SAMPLE_RATE_EEG,
     DATASET_PATH,
 )
@@ -12,6 +13,21 @@ import logging
 from scipy.signal import butter, filtfilt, welch
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+
+def get_eeg_window_params(model):
+    config = MODEL_WINDOW_CONFIG[model]
+    window_samples = int(config["window_sec"] * SAMPLE_RATE_EEG)
+    step_samples = int(config["step_sec"] * SAMPLE_RATE_EEG)
+    return window_samples, step_samples
+
+
+#def bandpass_filter(data, lowcut, highcut, order=5):
+#    nyquist = 0.5 * SAMPLE_RATE_EEG
+#    low = lowcut / nyquist
+#    high = highcut / nyquist
+#    b, a = butter(order, [low, high], btype='band')
+#    return filtfilt(b, a, data)
 
 
 def bandpass_filter(data, lowcut, highcut, order=5):
@@ -41,12 +57,30 @@ def load_eeg_data(subject):
     return eeg_data, timestamps
 
 
-def process_eeg_windows(eeg_data, timestamps, frequency_bands):
+#def process_eeg_windows(eeg_data, timestamps, frequency_bands):
+#    channel_band_powers = {ch: {band: [] for band in frequency_bands} for ch in range(1, eeg_data.shape[0])}
+#    timestamp_windows = []
+#
+#    for start in range(0, eeg_data.shape[1] - WINDOW_SIZE_SAMPLE_EEG + 1, STEP_SIZE_SAMPLE_EEG):
+#        window_data = eeg_data[:, start:start + WINDOW_SIZE_SAMPLE_EEG]
+#        timestamp_windows.append(timestamps[start])
+#
+#        for ch in range(1, eeg_data.shape[0]):
+#            for band_name, (low, high) in frequency_bands.items():
+#                filtered_signal = bandpass_filter(window_data[ch, :], low, high)
+#                power = calculate_band_power(filtered_signal, (low, high))
+#                channel_band_powers[ch][band_name].append(power)
+#
+#    return timestamp_windows, channel_band_powers
+
+
+def process_eeg_windows(eeg_data, timestamps, frequency_bands, model):
+    window_size, step_size = get_eeg_window_params(model)
     channel_band_powers = {ch: {band: [] for band in frequency_bands} for ch in range(1, eeg_data.shape[0])}
     timestamp_windows = []
 
-    for start in range(0, eeg_data.shape[1] - WINDOW_SIZE_SAMPLE_EEG + 1, STEP_SIZE_SAMPLE_EEG):
-        window_data = eeg_data[:, start:start + WINDOW_SIZE_SAMPLE_EEG]
+    for start in range(0, eeg_data.shape[1] - window_size + 1, step_size):
+        window_data = eeg_data[:, start:start + window_size]
         timestamp_windows.append(timestamps[start])
 
         for ch in range(1, eeg_data.shape[0]):
@@ -73,7 +107,7 @@ def eeg_process(subject, model):
     if eeg_data is None:
         return
 
-    timestamp_windows, channel_band_powers = process_eeg_windows(eeg_data, timestamps, frequency_bands)
+    timestamp_windows, channel_band_powers = process_eeg_windows(eeg_data, timestamps, frequency_bands, model)
 
     data_for_csv = {'Timestamp': timestamp_windows}
     for ch in channel_band_powers:
