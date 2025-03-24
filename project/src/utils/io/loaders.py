@@ -3,8 +3,8 @@ from src.config import (
     DATASET_PATH, 
     INTRIM_CSV_PATH, 
     PROCESS_CSV_PATH, 
-    WINDOW_SIZE_SEC, 
-    STEP_SIZE_SEC,
+    #WINDOW_SIZE_SEC, 
+    #STEP_SIZE_SEC,
     SCALING_FILTER,
     WAVELET_FILTER,
 )

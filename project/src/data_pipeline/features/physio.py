@@ -4,9 +4,13 @@ import logging
 from scipy.interpolate import interp1d
 
 from src.utils.io.loaders import safe_load_mat, save_csv
-from src.config import DATASET_PATH, WINDOW_SIZE_SEC
+from src.config import DATASET_PATH, MODEL_WINDOW_CONFIG #WINDOW_SIZE_SEC
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+
+def get_physio_window_sec(model):
+    return MODEL_WINDOW_CONFIG[model]["window_sec"]
 
 
 def calculate_perclos(blinks, window_size_sec):
@@ -40,7 +44,23 @@ def process_physio_data(physio_content, window_size_sec):
     return physio_df.groupby('Window').mean().reset_index()
 
 
-def calculate_and_save_perclos_physio_combined(blink_data_path, physio_data_path):
+#def calculate_and_save_perclos_physio_combined(blink_data_path, physio_data_path):
+#    blink_data = safe_load_mat(blink_data_path)
+#    physio_data = safe_load_mat(physio_data_path)
+#
+#    if blink_data is None or physio_data is None:
+#        logging.error("Missing Blink or Physio data, skipping...")
+#        return None
+#
+#    perclos_df = calculate_perclos(blink_data['Blinks'], WINDOW_SIZE_SEC)
+#    perclos_df['Window'] = ((perclos_df['Timestamp'] - perclos_df['Timestamp'].min()) // WINDOW_SIZE_SEC).astype(int)
+#
+#    physio_resampled = process_physio_data(physio_data['PhysioData'], WINDOW_SIZE_SEC)
+#
+#    return pd.merge(physio_resampled, perclos_df, on="Window", how="inner")
+
+
+def calculate_and_save_perclos_physio_combined(blink_data_path, physio_data_path, window_size_sec):
     blink_data = safe_load_mat(blink_data_path)
     physio_data = safe_load_mat(physio_data_path)
 
@@ -48,10 +68,10 @@ def calculate_and_save_perclos_physio_combined(blink_data_path, physio_data_path
         logging.error("Missing Blink or Physio data, skipping...")
         return None
 
-    perclos_df = calculate_perclos(blink_data['Blinks'], WINDOW_SIZE_SEC)
-    perclos_df['Window'] = ((perclos_df['Timestamp'] - perclos_df['Timestamp'].min()) // WINDOW_SIZE_SEC).astype(int)
+    perclos_df = calculate_perclos(blink_data['Blinks'], window_size_sec)
+    perclos_df['Window'] = ((perclos_df['Timestamp'] - perclos_df['Timestamp'].min()) // window_size_sec).astype(int)
 
-    physio_resampled = process_physio_data(physio_data['PhysioData'], WINDOW_SIZE_SEC)
+    physio_resampled = process_physio_data(physio_data['PhysioData'], window_size_sec)
 
     return pd.merge(physio_resampled, perclos_df, on="Window", how="inner")
 
