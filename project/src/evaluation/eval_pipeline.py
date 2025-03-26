@@ -8,28 +8,13 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 from src.config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, MODEL_PKL_PATH
-from src.utils.io.loaders import read_subject_list
+from src.utils.io.loaders import read_subject_list, get_model_type, load_subject_csvs
 from src.utils.io.split import data_split
 from src.models.feature_selection.index import calculate_feature_indices
 from src.evaluation.models.lstm import lstm_eval
 from src.evaluation.models.SvmA import SvmA_eval
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-
-def load_and_combine_files(subject_list, model_type):
-    dfs = []
-    for subject in subject_list:
-        subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
-        file_name = f'processed_{subject_id}_{version}.csv'
-        path = os.path.join(PROCESS_CSV_PATH, model_type, file_name)
-        try:
-            df = pd.read_csv(path)
-            dfs.append(df)
-            logging.info(f"Loaded: {file_name}")
-        except FileNotFoundError:
-            logging.warning(f"File not found: {file_name}")
-
-    return pd.concat(dfs, ignore_index=True)
 
 
 def evaluate_model(clf, X_train, X_test, y_train, y_test, features):
@@ -54,9 +39,8 @@ def evaluate_model(clf, X_train, X_test, y_train, y_test, features):
 
 def eval_pipeline(model):
     subject_list = read_subject_list()
-    model_type = model if model in {"SvmW", "SvmA", "Lstm"} else "common"
-
-    combined_data = load_and_combine_files(subject_list, model_type)
+    model_type = get_model_type(model)
+    combined_data = load_subject_csvs(subject_list, model_type, add_subject_id=False)
     X_train, X_val, X_test, y_train, y_val, y_test = data_split(combined_data)
 
     if model == 'Lstm':

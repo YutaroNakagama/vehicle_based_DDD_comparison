@@ -12,7 +12,7 @@ from sklearn.svm import SVC
 from pyswarm import pso
 
 from src.config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, MODEL_PKL_PATH
-from src.utils.io.loaders import read_subject_list
+from src.utils.io.loaders import read_subject_list, get_model_type, load_subject_csvs
 from src.utils.io.split import data_split
 from src.models.feature_selection.index import calculate_feature_indices
 from src.models.feature_selection.anfis import calculate_id
@@ -21,24 +21,6 @@ from src.models.architectures.SvmA import SvmA_train
 from src.models.domain_generalization.data_aug import generate_domain_labels, domain_mixup
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-
-
-def load_and_combine_data(subject_list, model_type):
-    dfs = []
-    for subject in subject_list:
-        subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
-        file_name = f'processed_{subject_id}_{version}.csv'
-        file_path = f'{PROCESS_CSV_PATH}/{model_type}/{file_name}'
-        try:
-            df = pd.read_csv(file_path)
-            df['subject_id'] = subject_id
-            dfs.append(df)
-            logging.info(f"Loaded data for {subject_id}_{version}")
-        except FileNotFoundError:
-            logging.warning(f"File not found: {file_name}")
-
-    combined_df = pd.concat(dfs, ignore_index=True)
-    return combined_df
 
 
 def optimize_classifier(name, clf, X_train, X_test, y_train, y_test, feature_indices, model, model_type):
@@ -89,9 +71,8 @@ def optimize_classifier(name, clf, X_train, X_test, y_train, y_test, feature_ind
 
 def train_pipeline(model, domain_generalize=True):
     subject_list = read_subject_list()
-    model_type = model if model in {"SvmW", "SvmA", "Lstm"} else "common"
-
-    data = load_and_combine_data(subject_list, model_type)
+    model_type = get_model_type(model)
+    data = load_subject_csvs(subject_list, model_type, add_subject_id=True)
     X_train, X_val, X_test, y_train, y_val, y_test = data_split(data)
 
     if domain_generalize == True:
