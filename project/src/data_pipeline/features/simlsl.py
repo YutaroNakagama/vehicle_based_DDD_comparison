@@ -41,6 +41,7 @@ def extract_statistical_features(signal, prefix=""):
 
     return features
 
+
 def get_simlsl_window_params(model):
     config = MODEL_WINDOW_CONFIG[model]
     window_samples = int(config["window_sec"] * SAMPLE_RATE_SIMLSL)
@@ -61,7 +62,6 @@ def process_simlsl_data(signals, prefixes, model):
         features_list.append(window_features)
 
     return pd.DataFrame(features_list)
-
 
 
 def smooth_std_pe_features(signal, model):
@@ -107,7 +107,6 @@ def smooth_std_pe_process(subject, model):
         for key in result:
             features[f'{name}_{key}'] = result[key]
 
-#    timestamps = sim_data[0][::STEP_SIZE_SAMPLE_SIMLSL][:len(features['steering_std_dev'])]
     window_size, step_size = get_simlsl_window_params(model)
     timestamps = sim_data[0][::step_size][:len(features['steering_std_dev'])]
 

@@ -21,9 +21,11 @@ def safe_load_mat(file_path):
         logging.error(f"Error loading file {file_path}: {e}")
         return None
 
+
 def read_subject_list():
     with open(SUBJECT_LIST_PATH, 'r') as file:
         return file.read().splitlines()
+
 
 def save_csv(df, subject_id, version, feat, model):
     if feat == 'processed':
