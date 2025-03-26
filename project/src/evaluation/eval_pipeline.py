@@ -70,7 +70,7 @@ def eval_pipeline(model):
 
     elif model == 'SvmA':
         feature_indices = calculate_feature_indices(X_train, y_train)
-        SvmA_eval(X_train, X_test, y_train, y_test, feature_indices, model)
+        SvmA_eval(X_test, y_test, model)
 
     else:
         model_filename = f"{MODEL_PKL_PATH}/{model_type}/{model}.pkl"
