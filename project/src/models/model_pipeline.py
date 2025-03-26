@@ -13,6 +13,7 @@ from pyswarm import pso
 
 from src.config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, MODEL_PKL_PATH
 from src.utils.io.loaders import read_subject_list
+from src.utils.io.split import data_split
 from src.models.feature_selection.index import calculate_feature_indices
 from src.models.feature_selection.anfis import calculate_id
 from src.models.architectures.lstm import lstm_train
@@ -38,22 +39,6 @@ def load_and_combine_data(subject_list, model_type):
 
     combined_df = pd.concat(dfs, ignore_index=True)
     return combined_df
-
-
-def prepare_data(df):
-    filtered_data = df[df["KSS_Theta_Alpha_Beta"].isin([1, 2, 8, 9])]
-
-    feature_columns = df.columns[1:46].tolist()
-    if 'subject_id' in df.columns:
-        feature_columns.append('subject_id')
-
-    X = filtered_data[feature_columns].dropna()
-    y = filtered_data.loc[X.index, "KSS_Theta_Alpha_Beta"].replace({1: 0, 2: 0, 8: 1, 9: 1})
-
-    X_temp, X_test, y_temp, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    X_train, X_val, y_train, y_val = train_test_split(X_temp, y_temp, test_size=0.25, random_state=42)
-
-    return X_train, X_val, X_test, y_train, y_val, y_test
 
 
 def optimize_classifier(name, clf, X_train, X_test, y_train, y_test, feature_indices, model, model_type):
@@ -107,7 +92,8 @@ def train_pipeline(model, domain_generalize=True):
     model_type = model if model in {"SvmW", "SvmA", "Lstm"} else "common"
 
     data = load_and_combine_data(subject_list, model_type)
-    X_train, X_val, X_test, y_train, y_val, y_test = prepare_data(data)
+#    X_train, X_val, X_test, y_train, y_val, y_test = prepare_data(data)
+    X_train, X_val, X_test, y_train, y_val, y_test = data_split(data)
 
     if domain_generalize == True:
         domain_labels_train = generate_domain_labels(subject_list, X_train)
