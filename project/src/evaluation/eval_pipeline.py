@@ -9,6 +9,7 @@ from sklearn.preprocessing import StandardScaler
 
 from src.config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, MODEL_PKL_PATH
 from src.utils.io.loaders import read_subject_list
+from src.utils.io.split import data_split
 from src.models.feature_selection.index import calculate_feature_indices
 from src.evaluation.models.lstm import lstm_eval
 from src.evaluation.models.SvmA import SvmA_eval
@@ -29,16 +30,6 @@ def load_and_combine_files(subject_list, model_type):
             logging.warning(f"File not found: {file_name}")
 
     return pd.concat(dfs, ignore_index=True)
-
-
-def prepare_data(df):
-    df = df[df["KSS_Theta_Alpha_Beta"].isin([1, 2, 8, 9])]
-    X = df.iloc[:, 1:46].dropna()
-    y = df.loc[X.index, "KSS_Theta_Alpha_Beta"].replace({1: 0, 2: 0, 8: 1, 9: 1})
-    X_temp, X_test, y_temp, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    X_train, X_val, y_train, y_val = train_test_split(X_temp, y_temp, test_size=0.25, random_state=42)
-
-    return X_train, X_val, X_test, y_train, y_val, y_test
 
 
 def evaluate_model(clf, X_train, X_test, y_train, y_test, features):
@@ -66,7 +57,8 @@ def eval_pipeline(model):
     model_type = model if model in {"SvmW", "SvmA", "Lstm"} else "common"
 
     combined_data = load_and_combine_files(subject_list, model_type)
-    X_train, X_val, X_test, y_train, y_val, y_test = prepare_data(combined_data)
+#    X_train, X_val, X_test, y_train, y_val, y_test = prepare_data(combined_data)
+    X_train, X_val, X_test, y_train, y_val, y_test = data_split(combined_data)
 
     if model == 'Lstm':
         lstm_eval(X_test, y_test, model_type)
