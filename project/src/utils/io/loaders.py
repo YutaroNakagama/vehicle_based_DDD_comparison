@@ -7,6 +7,7 @@ from src.config import (
     WAVELET_FILTER,
 )
 
+import os
 import scipy.io
 import logging
 import pandas as pd
@@ -33,6 +34,7 @@ def save_csv(df, subject_id, version, feat, model):
     else:
         output_fp = f'{INTRIM_CSV_PATH}/{feat}/{model}/{feat}_{subject_id}_{version}.csv'
 
+    os.makedirs(os.path.dirname(output_fp), exist_ok=True)
     df.to_csv(output_fp, index=False)
     logging.info(f"CSV file has been saved at: {output_fp}")
 
