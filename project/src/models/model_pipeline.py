@@ -48,9 +48,13 @@ def prepare_data(df):
         feature_columns.append('subject_id')
 
     X = filtered_data[feature_columns].dropna()
-
     y = filtered_data.loc[X.index, "KSS_Theta_Alpha_Beta"].replace({1: 0, 2: 0, 8: 1, 9: 1})
-    return train_test_split(X, y, test_size=0.3, random_state=42)
+
+#    return train_test_split(X, y, test_size=0.3, random_state=42)
+    X_temp, X_test, y_temp, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_val, y_train, y_val = train_test_split(X_temp, y_temp, test_size=0.25, random_state=42)
+
+    return X_train, X_val, X_test, y_train, y_val, y_test
 
 
 def optimize_classifier(name, clf, X_train, X_test, y_train, y_test, feature_indices, model, model_type):
@@ -104,7 +108,8 @@ def train_pipeline(model, domain_generalize=True):
     model_type = model if model in {"SvmW", "SvmA", "Lstm"} else "common"
 
     data = load_and_combine_data(subject_list, model_type)
-    X_train, X_test, y_train, y_test = prepare_data(data)
+#    X_train, X_test, y_train, y_test = prepare_data(data)
+    X_train, X_val, X_test, y_train, y_val, y_test = prepare_data(data)
 
     if domain_generalize == True:
         domain_labels_train = generate_domain_labels(subject_list, X_train)
