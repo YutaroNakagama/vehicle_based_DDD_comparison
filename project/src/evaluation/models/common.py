@@ -1,5 +1,3 @@
-# src/evaluation/models/common.py
-
 import pickle
 import numpy as np
 import logging
