@@ -4,7 +4,7 @@ import logging
 from scipy.interpolate import interp1d
 
 from src.utils.io.loaders import safe_load_mat, save_csv
-from src.config import DATASET_PATH, MODEL_WINDOW_CONFIG #WINDOW_SIZE_SEC
+from src.config import DATASET_PATH, MODEL_WINDOW_CONFIG 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -42,22 +42,6 @@ def process_physio_data(physio_content, window_size_sec):
 
     physio_df['Window'] = ((physio_df['Timestamp'] - physio_df['Timestamp'].min()) // window_size_sec).astype(int)
     return physio_df.groupby('Window').mean().reset_index()
-
-
-#def calculate_and_save_perclos_physio_combined(blink_data_path, physio_data_path):
-#    blink_data = safe_load_mat(blink_data_path)
-#    physio_data = safe_load_mat(physio_data_path)
-#
-#    if blink_data is None or physio_data is None:
-#        logging.error("Missing Blink or Physio data, skipping...")
-#        return None
-#
-#    perclos_df = calculate_perclos(blink_data['Blinks'], WINDOW_SIZE_SEC)
-#    perclos_df['Window'] = ((perclos_df['Timestamp'] - perclos_df['Timestamp'].min()) // WINDOW_SIZE_SEC).astype(int)
-#
-#    physio_resampled = process_physio_data(physio_data['PhysioData'], WINDOW_SIZE_SEC)
-#
-#    return pd.merge(physio_resampled, perclos_df, on="Window", how="inner")
 
 
 def calculate_and_save_perclos_physio_combined(blink_data_path, physio_data_path, window_size_sec):
