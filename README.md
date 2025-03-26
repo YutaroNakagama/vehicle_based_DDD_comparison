@@ -92,7 +92,7 @@ cd project
 
 ### Prepare data
 ```sh
-python bin/preprocess.py
+python bin/preprocess.py --model [model name: SvmW/SvmA/Lstm/common]
 ```
 
 ### Training a Model
