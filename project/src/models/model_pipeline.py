@@ -92,7 +92,6 @@ def train_pipeline(model, domain_generalize=True):
     model_type = model if model in {"SvmW", "SvmA", "Lstm"} else "common"
 
     data = load_and_combine_data(subject_list, model_type)
-#    X_train, X_val, X_test, y_train, y_val, y_test = prepare_data(data)
     X_train, X_val, X_test, y_train, y_val, y_test = data_split(data)
 
     if domain_generalize == True:
