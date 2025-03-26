@@ -57,7 +57,6 @@ def eval_pipeline(model):
     model_type = model if model in {"SvmW", "SvmA", "Lstm"} else "common"
 
     combined_data = load_and_combine_files(subject_list, model_type)
-#    X_train, X_val, X_test, y_train, y_val, y_test = prepare_data(combined_data)
     X_train, X_val, X_test, y_train, y_val, y_test = data_split(combined_data)
 
     if model == 'Lstm':
