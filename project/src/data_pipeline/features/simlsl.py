@@ -19,6 +19,7 @@ def extract_statistical_features(signal, prefix=""):
     freqs = fftfreq(len(signal), 1 / SAMPLE_RATE_SIMLSL)
     spectrum = np.abs(fft(signal)) ** 2
     band = (freqs >= 0.5) & (freqs <= 30)
+    band_sum = np.sum(spectrum[band]) + np.finfo(float).eps  # avoid divide by zero
 
     features = {
         f'{prefix}Range': np.ptp(signal),
@@ -28,12 +29,14 @@ def extract_statistical_features(signal, prefix=""):
         f'{prefix}Quartile25': np.percentile(signal, 25),
         f'{prefix}Median': np.median(signal),
         f'{prefix}Quartile75': np.percentile(signal, 75),
-        f'{prefix}Skewness': skew(signal),
-        f'{prefix}Kurtosis': kurtosis(signal),
+        f'{prefix}Skewness': skew(signal) if np.std(signal) > 0 else 0,
+        f'{prefix}Kurtosis': kurtosis(signal) if np.std(signal) > 0 else 0,
         f'{prefix}FreqVar': np.var(freqs[band]),
-        f'{prefix}SpectralEntropy': -np.sum((spectrum[band] / np.sum(spectrum[band])) * np.log2((spectrum[band] / np.sum(spectrum[band])) + np.finfo(float).eps)),
+        #f'{prefix}SpectralEntropy': -np.sum((spectrum[band] / np.sum(spectrum[band])) * np.log2((spectrum[band] / np.sum(spectrum[band])) + np.finfo(float).eps)),
+        f'{prefix}SpectralEntropy': -np.sum((spectrum[band] / band_sum) * np.log2((spectrum[band] / band_sum) + np.finfo(float).eps)),
         f'{prefix}SpectralFlux': np.sqrt(np.sum(np.diff(spectrum) ** 2)),
-        f'{prefix}FreqCOG': np.sum(freqs[band] * spectrum[band]) / np.sum(spectrum[band]),
+        #f'{prefix}FreqCOG': np.sum(freqs[band] * spectrum[band]) / np.sum(spectrum[band]),
+        f'{prefix}FreqCOG': np.sum(freqs[band] * spectrum[band]) / band_sum if band_sum > 0 else 0,
         f'{prefix}DominantFreq': freqs[np.argmax(spectrum)],
         f'{prefix}AvgPSD': np.mean(spectrum[band]),
         f'{prefix}SampleEntropy': 0,  # Placeholder
