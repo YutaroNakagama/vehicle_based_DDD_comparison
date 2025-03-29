@@ -97,7 +97,6 @@ def kss_process(subject, model):
             # plot_custom_colored_distribution(clean_ratios)
 
             save_csv(data, subject_id, version, 'processed', model)
-            logging.info(f"Processed and saved KSS data for {subject_id}_{version} [{model}].")
 
     except FileNotFoundError:
         logging.error(f"File not found: {file_path}")
