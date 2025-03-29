@@ -105,4 +105,3 @@ def wavelet_process(subject, model):
     df.insert(0, 'Timestamp', all_timestamps)
 
     save_csv(df, subject_id, version, 'wavelet', model)
-    logging.info(f"Wavelet features saved for {subject_id}_{version} [{model}].")

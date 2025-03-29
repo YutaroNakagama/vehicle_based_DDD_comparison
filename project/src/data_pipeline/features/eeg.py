@@ -90,5 +90,4 @@ def eeg_process(subject, model):
 
     df_results = pd.DataFrame(data_for_csv)
     save_csv(df_results, subject_id, version, 'eeg', model)
-    logging.info(f"EEG features saved for {subject_id}_{version} [{model}].")
 
