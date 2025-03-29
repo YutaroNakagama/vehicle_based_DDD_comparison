@@ -117,7 +117,6 @@ def smooth_std_pe_process(subject, model):
     df.insert(0, 'Timestamp', timestamps)
 
     save_csv(df, subject_id, version, 'smooth_std_pe', model)
-    logging.info(f"Saved smooth_std_pe features for {subject_id}_{version} [{model}]")
 
 
 def time_freq_domain_process(subject, model):
@@ -139,4 +138,3 @@ def time_freq_domain_process(subject, model):
 
     features_df.insert(0, 'Timestamp', timestamps)
     save_csv(features_df, subject_id, version, 'time_freq_domain', model)
-    logging.info(f"Saved time-frequency domain features for {subject_id}_{version} [{model}]")
