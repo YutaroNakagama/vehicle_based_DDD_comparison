@@ -69,7 +69,6 @@ def perclos_process(subject):
     df_combined = calculate_and_save_perclos_physio_combined(blink_data_file, physio_data_file)
     if df_combined is not None:
         save_csv(df_combined, subject_id, version, 'perclos')
-        logging.info(f"Processed and saved PERCLOS & Physio data for {subject_id}_{version}")
 
 
 # Pupil processing functions
