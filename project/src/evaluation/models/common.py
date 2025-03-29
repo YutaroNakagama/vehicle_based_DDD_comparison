@@ -19,7 +19,7 @@ def common_eval(X_train, X_test, y_train, y_test, model_name, model_type):
     X_train_scaled = scaler.fit_transform(X_train[selected_features])
     X_test_scaled = scaler.transform(X_test[selected_features])
 
-    clf.fit(X_train_scaled, y_train)
+    #clf.fit(X_train_scaled, y_train)
     y_pred = clf.predict(X_test_scaled)
 
     roc_auc = 0
