@@ -3,6 +3,7 @@
 **/*.pkl
 **/*.npy
 **/*.keras
+**/*.swp
 **/tags
 **/__pycache__/
 
