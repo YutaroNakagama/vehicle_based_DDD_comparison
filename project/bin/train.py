@@ -30,8 +30,21 @@ if __name__ == '__main__':
         help="Enable CORAL domain alignment during training."
     )
 
+    # VAE option
+    parser.add_argument(
+        "--vae",
+        action="store_true",
+        help="Enable VAE-based data augmentation during training."
+    )
+
     args = parser.parse_args()
 
-    print(f"Running '{args.model}' model with domain_mixup={'enabled' if args.domain_mixup else 'disabled'} and coral={'enabled' if args.coral else 'disabled'}.")
+    print(f"Running '{args.model}' model with "+
+          f"domain_mixup={'enabled' if args.domain_mixup else 'disabled'} and "+
+          f"coral={'enabled' if args.coral else 'disabled'}"+
+          f"VAE={'enabled' if args.vae else 'disabled'}.")
 
-    mp.train_pipeline(args.model, use_domain_mixup=args.domain_mixup, use_coral=args.coral)
+    mp.train_pipeline(args.model, 
+            use_domain_mixup=args.domain_mixup, 
+            use_coral=args.coral,
+            use_vae=args.vae)
