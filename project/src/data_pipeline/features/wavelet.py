@@ -5,6 +5,7 @@ import logging
 from scipy.signal import lfilter
 
 from src.utils.io.loaders import safe_load_mat, save_csv
+from src.utils.domain_generalization.data_aug import jittering
 from src.config import (
     DATASET_PATH,
     SAMPLE_RATE_SIMLSL,
@@ -63,7 +64,7 @@ def process_window(signal_window):
     return [calculate_power(signal) for signal in decomposition_signals]
 
 
-def wavelet_process(subject, model):
+def wavelet_process(subject, model, use_jittering=False):
     subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
     mat_file_path = os.path.join(DATASET_PATH, subject_id, f"SIMlsl_{subject_id}_{version}.mat")
 
@@ -85,6 +86,9 @@ def wavelet_process(subject, model):
         'LateralAccel': np.nan_to_num(sim_data[19, :]),
         'LaneOffset': np.nan_to_num(sim_data[27, :]),
     }
+
+    if use_jittering:
+        signals = {key: jittering(sig) for key, sig in signals.items()}
 
     sim_time = sim_data[0, :]
     all_powers, all_timestamps = [], []
