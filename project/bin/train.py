@@ -14,10 +14,15 @@ if __name__ == '__main__':
         choices=src.config.MODEL_CHOICES, 
         required=True, 
         help="Choose a model from: {', '.join(config.MODEL_CHOICES)}"
-        )
+    )
+    parser.add_argument(
+        "--domain_mixup",
+        action="store_true",
+        help="Enable domain mixup augmentation during training."
+    )
 
     args = parser.parse_args()
 
-    print(f"Running '{args.model}' model...")
+    print(f"Running '{args.model}' model with domain_mixup={'enabled' if args.domain_mixup else 'disabled'}...")
 
-    mp.train_pipeline(args.model)
+    mp.train_pipeline(args.model, domain_generalize=args.domain_mixup)
