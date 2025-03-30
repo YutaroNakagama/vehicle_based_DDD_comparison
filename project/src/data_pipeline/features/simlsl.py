@@ -5,6 +5,7 @@ from scipy.fft import fft, fftfreq
 from scipy.stats import skew, kurtosis
 
 from src.utils.io.loaders import safe_load_mat, save_csv
+from src.utils.domain_generalization.data_aug import jittering
 from src.config import (
     DATASET_PATH,
     SAMPLE_RATE_SIMLSL,
@@ -87,7 +88,7 @@ def smooth_std_pe_features(signal, model):
 
     return features
 
-def smooth_std_pe_process(subject, model):
+def smooth_std_pe_process(subject, model, use_jittering=False):
     subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
     file_path = f"{DATASET_PATH}/{subject_id}/SIMlsl_{subject_id}_{version}.mat"
     data = safe_load_mat(file_path)
@@ -104,6 +105,9 @@ def smooth_std_pe_process(subject, model):
     signals = [sim_data[idx] for idx in [29, 19, 18, 27]]
     signal_names = ['steering', 'lat_acc', 'long_acc', 'lane_offset']
 
+    if use_jittering:
+        signals = [jittering(sig) for sig in signals]
+
     features = {}
     for signal, name in zip(signals, signal_names):
         result = smooth_std_pe_features(signal, model)
@@ -119,7 +123,7 @@ def smooth_std_pe_process(subject, model):
     save_csv(df, subject_id, version, 'smooth_std_pe', model)
 
 
-def time_freq_domain_process(subject, model):
+def time_freq_domain_process(subject, model, use_jittering=False):
     subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
     simlsl_file = f"{DATASET_PATH}/{subject_id}/SIMlsl_{subject_id}_{version}.mat"
 
@@ -130,6 +134,10 @@ def time_freq_domain_process(subject, model):
 
     sim_data = simlsl_data['SIM_lsl']
     signals = [sim_data[idx] for idx in [29, 19, 27, 18]]
+
+    if use_jittering:
+        signals = [jittering(sig, sigma=0.03) for sig in signals]
+
     prefixes = ["Steering_", "Lateral_", "LaneOffset_", "LongAcc_"]
 
     window_size, step_size = get_simlsl_window_params(model)
