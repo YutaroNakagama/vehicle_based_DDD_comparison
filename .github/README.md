@@ -97,7 +97,7 @@ python bin/preprocess.py --model [model name: SvmW/SvmA/Lstm/common]
 
 ### Training a Model
 ```sh
-python bin/train.py --model [model name: SvmW/SvmA/Lstm/RF]
+python bin/train.py --model [model name: SvmW/SvmA/Lstm/RF] [--domain_mixup]
 ```
 
 ### Evaluating a Model
