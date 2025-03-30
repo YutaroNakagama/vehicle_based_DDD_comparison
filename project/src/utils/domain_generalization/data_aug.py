@@ -14,7 +14,6 @@ def domain_mixup(X, y, domain_labels, alpha=0.2, augment_ratio=0.3):
     augmented_X = []
     augmented_y = []
 
-    # 数値カラムだけを抽出
     numeric_columns = X.select_dtypes(include=[np.number]).columns.tolist()
 
     num_augment = int(len(X) * augment_ratio)
@@ -33,30 +32,24 @@ def domain_mixup(X, y, domain_labels, alpha=0.2, augment_ratio=0.3):
 
         lam = np.random.beta(alpha, alpha)
 
-        # 数値カラムだけをMixup
         new_numeric = lam * X.iloc[idx1][numeric_columns].values + \
                       (1 - lam) * X.iloc[idx2][numeric_columns].values
 
-        # ラベルはランダムに片方から選ぶ
         new_y = y.iloc[idx1] if np.random.rand() < lam else y.iloc[idx2]
 
-        # 一時的なDataFrameで保存
         new_X = pd.DataFrame([new_numeric], columns=numeric_columns)
         augmented_X.append(new_X)
         augmented_y.append(new_y)
 
-    # concatで整形
     X_aug_numeric = pd.concat(augmented_X, ignore_index=True)
     y_aug = pd.Series(augmented_y)
 
-    # 数値カラム以外（例：subject_id）をXから取り出してそのまま連結
     non_numeric = X.drop(columns=numeric_columns).reset_index(drop=True)
     X_numeric = X[numeric_columns].reset_index(drop=True)
 
     X_combined = pd.concat([X_numeric, X_aug_numeric], ignore_index=True)
     y_combined = pd.concat([y.reset_index(drop=True), y_aug], ignore_index=True)
 
-    # 数値以外の列（例：subject_id）も戻す（元の行を繰り返す or NaNにしてもOK）
     if not non_numeric.empty:
         non_numeric_aug = non_numeric.sample(n=len(X_aug_numeric), replace=True).reset_index(drop=True)
         non_numeric_combined = pd.concat([non_numeric, non_numeric_aug], ignore_index=True)
@@ -64,3 +57,40 @@ def domain_mixup(X, y, domain_labels, alpha=0.2, augment_ratio=0.3):
 
     return X_combined, y_combined
 
+def jittering(data, sigma=0.03):
+    """
+    Apply jittering (Gaussian noise) augmentation to time-series data.
+
+    Parameters:
+    ----------
+    data : pd.DataFrame or np.ndarray
+        Original time-series data (2D: samples × features).
+
+    sigma : float, default=0.03
+        Standard deviation of the Gaussian noise to be added.
+        Higher values imply more noise.
+
+    Returns:
+    --------
+    pd.DataFrame or np.ndarray
+        Augmented data with Gaussian noise (same shape as input).
+    """
+
+    if isinstance(data, pd.DataFrame):
+        # Select numeric columns only
+        numeric_columns = data.select_dtypes(include=[np.number]).columns
+        noisy_data = data.copy()
+
+        # Generate Gaussian noise and add it to numeric data
+        noise = np.random.normal(0, sigma, size=noisy_data[numeric_columns].shape)
+        noisy_data[numeric_columns] += noise
+
+        return noisy_data
+
+    elif isinstance(data, np.ndarray):
+        # If data is numpy array, add noise directly
+        noise = np.random.normal(0, sigma, size=data.shape)
+        return data + noise
+
+    else:
+        raise TypeError("Input data must be a pd.DataFrame or np.ndarray.")
