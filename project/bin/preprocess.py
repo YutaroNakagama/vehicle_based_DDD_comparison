@@ -15,9 +15,10 @@ if __name__ == '__main__':
         required=True, 
         help="Choose a model from: {', '.join(config.MODEL_CHOICES)}"
         )
+    parser.add_argument("--jittering", action="store_true", help="Enable jittering augmentation")
 
     args = parser.parse_args()
 
-    print(f"Running '{args.model}' model...")
+    print(f"Running '{args.model}' model with jittering={'enabled' if args.jittering else 'disabled'}...")
 
-    dp.main_pipeline(args.model)
+    dp.main_pipeline(args.model, use_jittering=args.jittering)
