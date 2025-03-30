@@ -5,7 +5,7 @@ from scipy.fft import fft, fftfreq
 from scipy.stats import skew, kurtosis
 
 from src.utils.io.loaders import safe_load_mat, save_csv
-from src.utils.domain_generalization.data_aug import jittering
+from src.utils.domain_generalization.jitter import jittering
 from src.config import (
     DATASET_PATH,
     SAMPLE_RATE_SIMLSL,
