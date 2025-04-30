@@ -72,20 +72,25 @@ def load_eeg_data(subject: str) -> tuple[np.ndarray, np.ndarray] | tuple[None, N
     """Load EEG data from a .mat file for a given subject.
 
     Args:
-        subject (str): Subject identifier in the format 'subjectID/version'.
+        subject (str): Subject identifier in the format 'subjectID_version', e.g., 'S0120_2'.
 
     Returns:
         tuple: (EEG data as np.ndarray, timestamps as np.ndarray), or (None, None) if loading fails.
     """
-    subject_name, subject_version = subject.split('/')
-    mat_file_name = f'EEG_{subject_version}.mat'
-    mat_data = safe_load_mat(f'{DATASET_PATH}/{subject_name}/{mat_file_name}')
+    parts = subject.split('_')
+    if len(parts) != 2:
+        logging.error(f"Unexpected subject format: {subject}")
+        return None, None
+
+    subject_id, version = parts
+    mat_file_name = f'EEG_{subject_id}_{version}.mat'
+    mat_data = safe_load_mat(f'{DATASET_PATH}/{subject_id}/{mat_file_name}')
     if mat_data is None:
         logging.error(f"EEG data not found for {subject}")
         return None, None
 
     eeg_data = mat_data.get('rawEEG')
-    timestamps = eeg_data[0, :]
+    timestamps = eeg_data[0, :] if eeg_data is not None else None
     return eeg_data, timestamps
 
 
@@ -123,13 +128,18 @@ def eeg_process(subject: str, model: str) -> None:
     """Process EEG data for a single subject and save band power features.
 
     Args:
-        subject (str): Subject identifier in the format 'subjectID/version'.
+        subject (str): Subject identifier in the format 'subjectID_version', e.g., 'S0120_2'.
         model (str): Model name used to determine windowing strategy.
 
     Returns:
         None
     """
-    subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
+    parts = subject.split('_')
+    if len(parts) != 2:
+        logging.error(f"Unexpected subject format: {subject}")
+        return
+
+    subject_id, version = parts
 
     frequency_bands = {
         "Delta (0.5-4 Hz)": (0.5, 4),
