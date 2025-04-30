@@ -35,7 +35,7 @@ def main_pipeline(model: str, use_jittering: bool = False) -> None:
 
     for subject in subject_list:
 
-        if model in ["common", "LstmA"]:
+        if model in ["common", "SvmA"]:
             time_freq_domain_process(subject, model, use_jittering=use_jittering)
         if model in ["common", "SvmW"]:
             wavelet_process(subject, model, use_jittering=use_jittering)
