@@ -1,3 +1,13 @@
+"""Feature extraction for vehicle dynamics (SIMlsl) signals.
+
+This module includes functions to extract statistical and time-frequency
+domain features from vehicle dynamics data such as steering angle,
+acceleration, and lane offset.
+
+Supports jittering-based data augmentation and multi-window sliding
+feature extraction for machine learning models.
+"""
+
 import numpy as np
 import pandas as pd
 import logging
@@ -15,12 +25,20 @@ from src.config import (
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
-def extract_statistical_features(signal, prefix=""):
-    """Extract various statistical and spectral features from a signal."""
+def extract_statistical_features(signal: np.ndarray, prefix: str = "") -> dict:
+    """Extract statistical and spectral features from a 1D signal.
+
+    Args:
+        signal (np.ndarray): Input 1D signal.
+        prefix (str): Feature name prefix (e.g., 'Steering_').
+
+    Returns:
+        dict: Dictionary of extracted features.
+    """
     freqs = fftfreq(len(signal), 1 / SAMPLE_RATE_SIMLSL)
     spectrum = np.abs(fft(signal)) ** 2
     band = (freqs >= 0.5) & (freqs <= 30)
-    band_sum = np.sum(spectrum[band]) + np.finfo(float).eps  # avoid divide by zero
+    band_sum = np.sum(spectrum[band]) + np.finfo(float).eps
 
     features = {
         f'{prefix}Range': np.ptp(signal),
@@ -33,10 +51,8 @@ def extract_statistical_features(signal, prefix=""):
         f'{prefix}Skewness': skew(signal) if np.std(signal) > 0 else 0,
         f'{prefix}Kurtosis': kurtosis(signal) if np.std(signal) > 0 else 0,
         f'{prefix}FreqVar': np.var(freqs[band]),
-        #f'{prefix}SpectralEntropy': -np.sum((spectrum[band] / np.sum(spectrum[band])) * np.log2((spectrum[band] / np.sum(spectrum[band])) + np.finfo(float).eps)),
         f'{prefix}SpectralEntropy': -np.sum((spectrum[band] / band_sum) * np.log2((spectrum[band] / band_sum) + np.finfo(float).eps)),
         f'{prefix}SpectralFlux': np.sqrt(np.sum(np.diff(spectrum) ** 2)),
-        #f'{prefix}FreqCOG': np.sum(freqs[band] * spectrum[band]) / np.sum(spectrum[band]),
         f'{prefix}FreqCOG': np.sum(freqs[band] * spectrum[band]) / band_sum if band_sum > 0 else 0,
         f'{prefix}DominantFreq': freqs[np.argmax(spectrum)],
         f'{prefix}AvgPSD': np.mean(spectrum[band]),
@@ -46,15 +62,32 @@ def extract_statistical_features(signal, prefix=""):
     return features
 
 
-def get_simlsl_window_params(model):
+def get_simlsl_window_params(model: str) -> tuple[int, int]:
+    """Get window and step size in samples for SIMlsl data.
+
+    Args:
+        model (str): Model name used for parameter lookup.
+
+    Returns:
+        tuple[int, int]: (window size, step size) in samples.
+    """
     config = MODEL_WINDOW_CONFIG[model]
     window_samples = int(config["window_sec"] * SAMPLE_RATE_SIMLSL)
     step_samples = int(config["step_sec"] * SAMPLE_RATE_SIMLSL)
     return window_samples, step_samples
 
 
-def process_simlsl_data(signals, prefixes, model):
-    """Process multiple signals and return a DataFrame with extracted features."""
+def process_simlsl_data(signals: list[np.ndarray], prefixes: list[str], model: str) -> pd.DataFrame:
+    """Extract features from multiple vehicle signals using sliding windows.
+
+    Args:
+        signals (list[np.ndarray]): List of input signals.
+        prefixes (list[str]): Corresponding prefixes for each signal.
+        model (str): Model name for window configuration.
+
+    Returns:
+        pd.DataFrame: DataFrame of extracted features.
+    """
     window_size, step_size = get_simlsl_window_params(model)
     features_list = []
 
@@ -68,7 +101,16 @@ def process_simlsl_data(signals, prefixes, model):
     return pd.DataFrame(features_list)
 
 
-def smooth_std_pe_features(signal, model):
+def smooth_std_pe_features(signal: np.ndarray, model: str) -> dict:
+    """Compute smoothed standard deviation and prediction error features.
+
+    Args:
+        signal (np.ndarray): Input signal.
+        model (str): Model name for window config.
+
+    Returns:
+        dict: Feature dictionary with 'std_dev', 'pred_error', and 'gaussian_smooth'.
+    """
     window_size, step_size = get_simlsl_window_params(model)
     features = {'std_dev': [], 'pred_error': [], 'gaussian_smooth': []}
 
@@ -88,7 +130,18 @@ def smooth_std_pe_features(signal, model):
 
     return features
 
-def smooth_std_pe_process(subject, model, use_jittering=False):
+
+def smooth_std_pe_process(subject: str, model: str, use_jittering: bool = False) -> None:
+    """Main function to extract smoothed STD/PE features from SIMlsl data.
+
+    Args:
+        subject (str): Subject identifier in 'subjectID/version' format.
+        model (str): Model name for window settings.
+        use_jittering (bool): Whether to apply jittering augmentation.
+
+    Returns:
+        None
+    """
     subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
     file_path = f"{DATASET_PATH}/{subject_id}/SIMlsl_{subject_id}_{version}.mat"
     data = safe_load_mat(file_path)
@@ -123,7 +176,17 @@ def smooth_std_pe_process(subject, model, use_jittering=False):
     save_csv(df, subject_id, version, 'smooth_std_pe', model)
 
 
-def time_freq_domain_process(subject, model, use_jittering=False):
+def time_freq_domain_process(subject: str, model: str, use_jittering: bool = False) -> None:
+    """Main function to extract time-frequency features from SIMlsl signals.
+
+    Args:
+        subject (str): Subject identifier in 'subjectID/version' format.
+        model (str): Model name for window settings.
+        use_jittering (bool): Whether to apply jittering augmentation.
+
+    Returns:
+        None
+    """
     subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
     simlsl_file = f"{DATASET_PATH}/{subject_id}/SIMlsl_{subject_id}_{version}.mat"
 
@@ -146,3 +209,4 @@ def time_freq_domain_process(subject, model, use_jittering=False):
 
     features_df.insert(0, 'Timestamp', timestamps)
     save_csv(features_df, subject_id, version, 'time_freq_domain', model)
+
