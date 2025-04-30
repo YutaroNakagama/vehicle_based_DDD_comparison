@@ -1,3 +1,12 @@
+"""KSS score estimation from EEG-derived frequency features.
+
+This module estimates Karolinska Sleepiness Scale (KSS) scores based on
+theta, alpha, and beta band ratios from EEG features. It includes outlier removal,
+score conversion, and result saving.
+
+Used in the driver drowsiness detection preprocessing pipeline.
+"""
+
 import os
 import pandas as pd
 import numpy as np
@@ -11,15 +20,14 @@ from src.config import INTRIM_CSV_PATH, PROCESS_CSV_PATH, MODEL_WINDOW_CONFIG
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
-def convert_theta_alpha_to_kss(theta_alpha_ratios):
-    """
-    Assign KSS scores (1-9) based on the dynamic range of Theta/Alpha ratios.
+def convert_theta_alpha_to_kss(theta_alpha_ratios: np.ndarray) -> list:
+    """Assign KSS scores (1–9) based on Theta/Alpha ratio thresholds.
 
-    Parameters:
-        theta_alpha_ratios (np.ndarray): Theta/Alpha ratio data.
+    Args:
+        theta_alpha_ratios (np.ndarray): Array of Theta/Alpha ratio values.
 
     Returns:
-        list: Assigned KSS scores.
+        list: Estimated KSS scores for each ratio.
     """
     min_value, max_value = np.min(theta_alpha_ratios), np.max(theta_alpha_ratios)
     thresholds = np.linspace(min_value, max_value, 10)
@@ -36,32 +44,30 @@ def convert_theta_alpha_to_kss(theta_alpha_ratios):
     return kss_scores
 
 
-def remove_outliers(data, threshold=3):
-    """
-    Remove outliers based on the specified standard deviation threshold.
+def remove_outliers(data: np.ndarray, threshold: float = 3) -> np.ndarray:
+    """Remove outliers based on a standard deviation threshold.
 
-    Parameters:
-        data (np.ndarray): Data array.
-        threshold (float): Standard deviation threshold.
+    Args:
+        data (np.ndarray): Input array.
+        threshold (float): Number of standard deviations to define an outlier.
 
     Returns:
-        np.ndarray: Data without outliers.
+        np.ndarray: Filtered data with outliers removed.
     """
     mean, std_dev = np.mean(data), np.std(data)
     lower_bound, upper_bound = mean - threshold * std_dev, mean + threshold * std_dev
     return data[(data >= lower_bound) & (data <= upper_bound)]
 
 
-def adjust_scores_length(scores, target_length):
-    """
-    Adjust the length of scores to match the target length.
+def adjust_scores_length(scores: list, target_length: int) -> list:
+    """Pad or truncate the KSS score list to match the target length.
 
-    Parameters:
-        scores (list): List of scores.
-        target_length (int): Desired length.
+    Args:
+        scores (list): List of KSS scores.
+        target_length (int): Desired number of elements.
 
     Returns:
-        list: Adjusted scores list.
+        list: Adjusted list of scores with NaNs or truncation applied.
     """
     if len(scores) < target_length:
         scores.extend([np.nan] * (target_length - len(scores)))
@@ -70,7 +76,16 @@ def adjust_scores_length(scores, target_length):
     return scores
 
 
-def kss_process(subject, model):
+def kss_process(subject: str, model: str) -> None:
+    """Compute KSS scores from EEG-derived features for a subject.
+
+    Args:
+        subject (str): Subject identifier in the format 'subjectID/version'.
+        model (str): Model name used for file path resolution.
+
+    Returns:
+        None
+    """
     subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
     file_path = os.path.join(INTRIM_CSV_PATH, 'merged', model, f'merged_{subject_id}_{version}.csv')
 
