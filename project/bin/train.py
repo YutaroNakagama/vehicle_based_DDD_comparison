@@ -1,3 +1,12 @@
+"""Train a machine learning model for driver drowsiness detection.
+
+This script allows the user to specify which model to train and which data augmentation
+or domain generalization techniques to apply (e.g., Domain Mixup, CORAL, VAE).
+
+Example:
+    python train.py --model Lstm --domain_mixup --coral --vae
+"""
+
 import sys
 import os
 import argparse
@@ -7,12 +16,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import src.config
 import src.models.model_pipeline as mp
 
-if __name__ == '__main__':
+def main():
+    """Parse arguments and run the training pipeline."""
     parser = argparse.ArgumentParser(description="Select a model to run.")
     parser.add_argument(
-        "--model", 
-        choices=src.config.MODEL_CHOICES, 
-        required=True, 
+        "--model",
+        choices=src.config.MODEL_CHOICES,
+        required=True,
         help="Choose a model from: {', '.join(config.MODEL_CHOICES)}"
     )
 
@@ -39,12 +49,18 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    print(f"Running '{args.model}' model with "+
-          f"domain_mixup={'enabled' if args.domain_mixup else 'disabled'} and "+
-          f"coral={'enabled' if args.coral else 'disabled'}"+
+    print(f"Running '{args.model}' model with " +
+          f"domain_mixup={'enabled' if args.domain_mixup else 'disabled'}, " +
+          f"coral={'enabled' if args.coral else 'disabled'}, " +
           f"VAE={'enabled' if args.vae else 'disabled'}.")
 
-    mp.train_pipeline(args.model, 
-            use_domain_mixup=args.domain_mixup, 
-            use_coral=args.coral,
-            use_vae=args.vae)
+    mp.train_pipeline(
+        args.model,
+        use_domain_mixup=args.domain_mixup,
+        use_coral=args.coral,
+        use_vae=args.vae
+    )
+
+if __name__ == '__main__':
+    main()
+
