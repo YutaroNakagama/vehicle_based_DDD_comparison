@@ -49,7 +49,7 @@ def read_subject_list() -> list:
         list: List of subject strings, e.g., ["S0210_1", "S0211_2"]
     """
     with open(SUBJECT_LIST_PATH, 'r') as file:
-        return file.read().splitlines()
+        return [line.strip() for line in file if line.strip()]
 
 
 def save_csv(df: pd.DataFrame, subject_id: str, version: str, feat: str, model: str) -> None:
@@ -66,13 +66,13 @@ def save_csv(df: pd.DataFrame, subject_id: str, version: str, feat: str, model: 
         None
     """
     if feat == 'processed':
-        output_fp = f'{PROCESS_CSV_PATH}/{model}/processed_{subject_id}_{version}.csv'
+        output_fp = os.path.join(PROCESS_CSV_PATH, model, f'processed_{subject_id}_{version}.csv')
     else:
-        output_fp = f'{INTRIM_CSV_PATH}/{feat}/{model}/{feat}_{subject_id}_{version}.csv'
+        output_fp = os.path.join(INTRIM_CSV_PATH, feat, model, f'{feat}_{subject_id}_{version}.csv')
 
     os.makedirs(os.path.dirname(output_fp), exist_ok=True)
     df.to_csv(output_fp, index=False)
-    logging.info(f"CSV file has been saved at: {output_fp}")
+    logging.info(f"CSV file has been saved at: {output_fp.replace(os.sep, '/')}")
 
 
 def get_model_type(model_name: str) -> str:
@@ -86,12 +86,11 @@ def get_model_type(model_name: str) -> str:
     """
     return model_name if model_name in {"SvmW", "SvmA", "Lstm"} else "common"
 
-
 def load_subject_csvs(subject_list: list, model_type: str, add_subject_id: bool = False) -> pd.DataFrame:
     """Load processed CSV files for all subjects in the given list.
 
     Args:
-        subject_list (list): List of subject strings (e.g., ["S0210_1"]).
+        subject_list (list): List of subject strings (e.g., ["S0120_2"]).
         model_type (str): Model type directory (e.g., 'Lstm', 'common').
         add_subject_id (bool): If True, adds a 'subject_id' column to each row.
 
@@ -100,9 +99,14 @@ def load_subject_csvs(subject_list: list, model_type: str, add_subject_id: bool 
     """
     dfs = []
     for subject in subject_list:
-        subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
+        # subject: e.g., 'S0120_2'
+        parts = subject.split('_')
+        if len(parts) != 2:
+            logging.warning(f"Unexpected subject format: {subject}")
+            continue
+        subject_id, version = parts
         file_name = f'processed_{subject_id}_{version}.csv'
-        file_path = f'{PROCESS_CSV_PATH}/{model_type}/{file_name}'
+        file_path = os.path.join(PROCESS_CSV_PATH, model_type, file_name)
         try:
             df = pd.read_csv(file_path)
             if add_subject_id:
@@ -111,5 +115,5 @@ def load_subject_csvs(subject_list: list, model_type: str, add_subject_id: bool 
             logging.info(f"Loaded: {file_name}")
         except FileNotFoundError:
             logging.warning(f"File not found: {file_name}")
-    return pd.concat(dfs, ignore_index=True)
+    return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 

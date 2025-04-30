@@ -129,14 +129,19 @@ def wavelet_process(subject: str, model: str, use_jittering: bool = False) -> No
     signals, computes power for each path, and saves results as CSV.
 
     Args:
-        subject (str): Subject identifier in 'subjectID/version' format.
+        subject (str): Subject identifier in 'subjectID_version' format, e.g., 'S0120_2'.
         model (str): Model name for window config.
         use_jittering (bool): Whether to apply jittering to raw signals.
 
     Returns:
         None
     """
-    subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
+    parts = subject.split('_')
+    if len(parts) != 2:
+        logging.error(f"Unexpected subject format: {subject}")
+        return
+
+    subject_id, version = parts
     mat_file_path = os.path.join(DATASET_PATH, subject_id, f"SIMlsl_{subject_id}_{version}.mat")
 
     mat_data = safe_load_mat(mat_file_path)
