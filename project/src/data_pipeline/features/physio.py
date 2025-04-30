@@ -114,17 +114,26 @@ def perclos_process(subject: str) -> None:
     """Main function to extract and save combined perclos + physio features.
 
     Args:
-        subject (str): Subject identifier in 'subjectID/version' format.
+        subject (str): Subject identifier in 'subjectID_version' format, e.g., 'S0120_2'.
 
     Returns:
         None
     """
-    subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
+    parts = subject.split('_')
+    if len(parts) != 2:
+        logging.error(f"Unexpected subject format: {subject}")
+        return
+
+    subject_id, version = parts
 
     blink_data_file = f"{DATASET_PATH}/{subject_id}/Blinks_{subject_id}_{version}.mat"
     physio_data_file = f"{DATASET_PATH}/{subject_id}/Physio_{subject_id}_{version}.mat"
 
-    df_combined = calculate_and_save_perclos_physio_combined(blink_data_file, physio_data_file, get_physio_window_sec(subject.split('/')[1].split('_')[0]))
+    df_combined = calculate_and_save_perclos_physio_combined(
+        blink_data_file,
+        physio_data_file,
+        get_physio_window_sec(subject_id)
+    )
     if df_combined is not None:
         save_csv(df_combined, subject_id, version, 'perclos')
 
@@ -210,12 +219,17 @@ def pupil_process(subject: str) -> None:
     """Main function to process and save pupil diameter data for a subject.
 
     Args:
-        subject (str): Subject identifier in 'subjectID/version' format.
+        subject (str): Subject identifier in 'subjectID_version' format, e.g., 'S0120_2'.
 
     Returns:
         None
     """
-    subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
+    parts = subject.split('_')
+    if len(parts) != 2:
+        logging.error(f"Unexpected subject format: {subject}")
+        return
+
+    subject_id, version = parts
     df_pupil = process_pupil_data(subject_id, version)
 
     if df_pupil is not None:

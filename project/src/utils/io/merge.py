@@ -91,13 +91,18 @@ def merge_process(subject: str, model: str) -> None:
     """Merge selected features for a given subject and model, and save to disk.
 
     Args:
-        subject (str): Subject string in format 'S0210_1/...'.
+        subject (str): Subject string in format 'S0120_2'.
         model (str): Model type used for selecting features.
 
     Returns:
         None
     """
-    subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
+    parts = subject.split('_')
+    if len(parts) != 2:
+        logging.error(f"Unexpected subject format: {subject}")
+        return
+
+    subject_id, version = parts
     features = FEATURES_BY_MODEL.get(model, {})
 
     merged_df = merge_features(features, model, subject_id, version)
@@ -113,13 +118,18 @@ def combine_file(subject: str):
     """(Legacy function) Load a processed CSV for a given subject.
 
     Args:
-        subject (str): Subject string (e.g., 'S0210_1/...').
+        subject (str): Subject string (e.g., 'S0120_2').
 
     Returns:
         list[pd.DataFrame] or None: List containing one DataFrame if successful, otherwise None.
     """
     dfs = []
-    subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
+    parts = subject.split('_')
+    if len(parts) != 2:
+        print(f"Unexpected subject format: {subject}")
+        return None
+
+    subject_id, version = parts
     file_name = f'processed_{subject_id}_{version}.csv'
 
     try:
