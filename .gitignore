@@ -6,4 +6,4 @@
 **/*.swp
 **/tags
 **/__pycache__/
-
+project/docs/
