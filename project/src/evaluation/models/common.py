@@ -1,3 +1,9 @@
+"""Evaluation module for classical ML models using saved pickle classifiers.
+
+This module loads a pre-trained model and its selected features, applies scaling,
+and computes classification metrics (MSE, ROC AUC, report) on the test data.
+"""
+
 import pickle
 import numpy as np
 import logging
@@ -7,7 +13,32 @@ from src.config import MODEL_PKL_PATH
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-def common_eval(X_train, X_test, y_train, y_test, model_name, model_type):
+
+def common_eval(
+    X_train, X_test,
+    y_train, y_test,
+    model_name: str,
+    model_type: str
+) -> None:
+    """Evaluate a classical ML model using saved model and feature subset.
+
+    This function:
+    - Loads a trained model from disk.
+    - Loads selected features used during training.
+    - Applies standard scaling.
+    - Predicts on test data and reports metrics.
+
+    Args:
+        X_train (pd.DataFrame): Training features (used for scaling).
+        X_test (pd.DataFrame): Test features.
+        y_train (pd.Series): Training labels (used for scaling fit).
+        y_test (pd.Series): Test labels for evaluation.
+        model_name (str): Identifier name of the model.
+        model_type (str): Category or directory under which model is stored.
+
+    Returns:
+        None
+    """
     model_path = f"{MODEL_PKL_PATH}/{model_type}/{model_name}.pkl"
     features_path = f"{MODEL_PKL_PATH}/{model_type}/{model_name}_feat.npy"
 
@@ -15,11 +46,11 @@ def common_eval(X_train, X_test, y_train, y_test, model_name, model_type):
         clf = pickle.load(f)
 
     selected_features = np.load(features_path, allow_pickle=True)
+
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train[selected_features])
     X_test_scaled = scaler.transform(X_test[selected_features])
 
-    #clf.fit(X_train_scaled, y_train)
     y_pred = clf.predict(X_test_scaled)
 
     roc_auc = 0
