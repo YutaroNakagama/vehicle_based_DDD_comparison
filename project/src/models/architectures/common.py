@@ -1,8 +1,36 @@
+"""Training pipeline for classical ML models using Optuna-based hyperparameter tuning.
+
+This module supports ANFIS-based feature selection and trains a RandomForest classifier.
+The model is saved as a `.pkl` file and selected features are stored for reproducibility.
+"""
+
 import optuna
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
 
-def common_train(X_train, X_test, y_train, y_test, feature_indices, model, model_type, clf):
+
+def common_train(X_train, X_test, y_train, y_test, feature_indices, model: str, model_type: str, clf=None) -> None:
+    """Train a classical ML model (RandomForest) using Optuna and ANFIS-based feature selection.
+
+    This function:
+    - Performs feature importance estimation via ANFIS membership functions.
+    - Uses Optuna to tune hyperparameters and feature selection threshold.
+    - Trains the final model and saves it to disk.
+    - Logs classification performance.
+
+    Args:
+        X_train (pd.DataFrame): Training feature matrix.
+        X_test (pd.DataFrame): Testing feature matrix.
+        y_train (pd.Series): Training labels.
+        y_test (pd.Series): Testing labels.
+        feature_indices (pd.DataFrame): Feature selection scores per feature (e.g., Fisher, MI).
+        model (str): Model name (used for file naming).
+        model_type (str): Model group (e.g., 'common', 'SvmA').
+        clf: Optional classifier (currently unused; default is RandomForest).
+
+    Returns:
+        None
+    """
     from src.models.feature_selection.anfis import calculate_id
     from sklearn.preprocessing import StandardScaler
     import pickle
@@ -17,7 +45,7 @@ def common_train(X_train, X_test, y_train, y_test, feature_indices, model, model
         selected_indices = np.where(ids > threshold)[0]
 
         if len(selected_indices) == 0:
-            return 1.0  # high error
+            return 1.0  # High error if no features selected
 
         selected_features = X_train.columns[selected_indices]
         scaler = StandardScaler()
@@ -34,17 +62,20 @@ def common_train(X_train, X_test, y_train, y_test, feature_indices, model, model
 
         clf = RandomForestClassifier(**params)
         score = cross_val_score(clf, X_train_scaled, y_train, cv=3, scoring="accuracy").mean()
-        return -score  # maximize accuracy
+        return -score  # Optuna minimizes the objective
 
+    # Run Optuna study
     study = optuna.create_study(direction="minimize")
     study.optimize(objective, n_trials=30)
 
+    # Extract best configuration
     best_params = study.best_params
     best_threshold = best_params.pop("threshold")
 
     ids = calculate_id(feature_indices, [best_threshold] + [1.0] * (len(feature_indices.columns) * 2))
     selected_features = X_train.columns[np.where(ids > best_threshold)[0]]
 
+    # Final training
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train[selected_features])
     X_test_scaled = scaler.transform(X_test[selected_features])
@@ -52,12 +83,12 @@ def common_train(X_train, X_test, y_train, y_test, feature_indices, model, model
     best_clf = RandomForestClassifier(**best_params)
     best_clf.fit(X_train_scaled, y_train)
 
-
+    # Save model and features
     with open(f"{MODEL_PKL_PATH}/{model_type}/{model}.pkl", "wb") as f:
         pickle.dump(best_clf, f)
     np.save(f"{MODEL_PKL_PATH}/{model_type}/{model}_feat.npy", selected_features)
 
-
+    # Evaluate
     y_pred = best_clf.predict(X_test_scaled)
     roc_auc = 0
     if hasattr(best_clf, "predict_proba"):

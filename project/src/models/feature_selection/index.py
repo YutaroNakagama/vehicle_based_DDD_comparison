@@ -1,13 +1,47 @@
+"""Feature selection metrics for evaluating the relevance of input features.
+
+This module defines functions to calculate multiple feature importance indices:
+- Fisher Index
+- Correlation Index
+- T-test Index
+- Mutual Information
+
+Used for ranking features in classification models (e.g., SVM, RF).
+"""
+
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mutual_info_score
 
-# Calculation of feature indices (e.g., Fisher, as per the previous implementation)
-def calculate_feature_indices(X, y):
-    indices = {"Fisher_Index": [], "Correlation_Index": [], "T-test_Index": [], "Mutual_Information_Index": []}
+
+def calculate_feature_indices(X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
+    """Calculate feature importance indices for each feature.
+
+    For each feature (column in X), the following indices are computed:
+    - Fisher Index: difference in means normalized by variance.
+    - Correlation Index: Pearson-like correlation to target.
+    - T-test Index: standard two-class t-test statistic.
+    - Mutual Information Index: discrete mutual information.
+
+    Args:
+        X (pd.DataFrame): Feature matrix of shape (n_samples, n_features).
+        y (pd.Series): Target labels (assumed binary: 0 and 1).
+
+    Returns:
+        pd.DataFrame: Feature importance scores for all features,
+                      indexed by feature names and containing one row per feature.
+    """
+    indices = {
+        "Fisher_Index": [],
+        "Correlation_Index": [],
+        "T-test_Index": [],
+        "Mutual_Information_Index": []
+    }
+
     y_classes = [0, 1]
     for i in range(X.shape[1]):
         xi = X.iloc[:, i]
+
         mu0 = xi[y == y_classes[0]].mean()
         mu1 = xi[y == y_classes[1]].mean()
         sigma0 = xi[y == y_classes[0]].std()
@@ -28,3 +62,4 @@ def calculate_feature_indices(X, y):
         indices["Mutual_Information_Index"].append(mutual_info)
 
     return pd.DataFrame(indices, index=X.columns)
+
