@@ -135,14 +135,19 @@ def smooth_std_pe_process(subject: str, model: str, use_jittering: bool = False)
     """Main function to extract smoothed STD/PE features from SIMlsl data.
 
     Args:
-        subject (str): Subject identifier in 'subjectID/version' format.
+        subject (str): Subject identifier in 'subjectID_version' format, e.g., 'S0120_2'.
         model (str): Model name for window settings.
         use_jittering (bool): Whether to apply jittering augmentation.
 
     Returns:
         None
     """
-    subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
+    parts = subject.split('_')
+    if len(parts) != 2:
+        logging.error(f"Unexpected subject format: {subject}")
+        return
+
+    subject_id, version = parts
     file_path = f"{DATASET_PATH}/{subject_id}/SIMlsl_{subject_id}_{version}.mat"
     data = safe_load_mat(file_path)
 
@@ -180,14 +185,19 @@ def time_freq_domain_process(subject: str, model: str, use_jittering: bool = Fal
     """Main function to extract time-frequency features from SIMlsl signals.
 
     Args:
-        subject (str): Subject identifier in 'subjectID/version' format.
+        subject (str): Subject identifier in 'subjectID_version' format, e.g., 'S0120_2'.
         model (str): Model name for window settings.
         use_jittering (bool): Whether to apply jittering augmentation.
 
     Returns:
         None
     """
-    subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
+    parts = subject.split('_')
+    if len(parts) != 2:
+        logging.error(f"Unexpected subject format: {subject}")
+        return
+
+    subject_id, version = parts
     simlsl_file = f"{DATASET_PATH}/{subject_id}/SIMlsl_{subject_id}_{version}.mat"
 
     simlsl_data = safe_load_mat(simlsl_file)
@@ -202,11 +212,12 @@ def time_freq_domain_process(subject: str, model: str, use_jittering: bool = Fal
         signals = [jittering(sig, sigma=0.03) for sig in signals]
 
     prefixes = ["Steering_", "Lateral_", "LaneOffset_", "LongAcc_"]
-
     window_size, step_size = get_simlsl_window_params(model)
+
     features_df = process_simlsl_data(signals, prefixes, model)
     timestamps = sim_data[0, ::step_size][:len(features_df)]
 
     features_df.insert(0, 'Timestamp', timestamps)
     save_csv(features_df, subject_id, version, 'time_freq_domain', model)
+
 

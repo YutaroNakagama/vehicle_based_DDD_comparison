@@ -80,21 +80,26 @@ def kss_process(subject: str, model: str) -> None:
     """Compute KSS scores from EEG-derived features for a subject.
 
     Args:
-        subject (str): Subject identifier in the format 'subjectID/version'.
+        subject (str): Subject identifier in the format 'subjectID_version', e.g., 'S0120_2'.
         model (str): Model name used for file path resolution.
 
     Returns:
         None
     """
-    subject_id, version = subject.split('/')[0], subject.split('/')[1].split('_')[-1]
+    parts = subject.split('_')
+    if len(parts) != 2:
+        logging.error(f"Unexpected subject format: {subject}")
+        return
+
+    subject_id, version = parts
     file_path = os.path.join(INTRIM_CSV_PATH, 'merged', model, f'merged_{subject_id}_{version}.csv')
 
     try:
         data = pd.read_csv(file_path)
 
-        theta_columns = data.filter(regex='Theta \(4-8 Hz\)')
-        alpha_columns = data.filter(regex='Alpha \(8-13 Hz\)')
-        beta_columns = data.filter(regex='Beta \(13-30 Hz\)')
+        theta_columns = data.filter(regex=r'Theta \(4-8 Hz\)')
+        alpha_columns = data.filter(regex=r'Alpha \(8-13 Hz\)')
+        beta_columns = data.filter(regex=r'Beta \(13-30 Hz\)')
 
         if not theta_columns.empty and not alpha_columns.empty and not beta_columns.empty:
             theta_mean = theta_columns.mean(axis=1)
@@ -108,9 +113,6 @@ def kss_process(subject: str, model: str) -> None:
             kss_scores = adjust_scores_length(kss_scores, len(data))
 
             data['KSS_Theta_Alpha_Beta'] = kss_scores
-            # Optional visualization
-            # plot_custom_colored_distribution(clean_ratios)
-
             save_csv(data, subject_id, version, 'processed', model)
 
     except FileNotFoundError:
