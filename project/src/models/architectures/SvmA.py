@@ -12,6 +12,7 @@ Trained models and selected features are saved using `joblib`.
 import warnings
 warnings.filterwarnings("ignore")
 
+import os
 import numpy as np
 import pandas as pd
 import joblib
@@ -19,6 +20,8 @@ import logging
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, f1_score
 from pyswarm import pso
+
+from src.config import MODEL_PKL_PATH
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -150,9 +153,12 @@ def SvmA_train(
     svm_final = SVC(kernel='rbf', C=best_C, gamma=best_gamma)
     svm_final.fit(X_train_sel, y_train)
 
-    joblib.dump(svm_final, f'model/{model}/svm_model_final.pkl')
-    joblib.dump(X_train_sel, f'model/{model}/selected_features_train.pkl')
-
+    model_dir = f"{MODEL_PKL_PATH}/{model}"
+    os.makedirs(model_dir, exist_ok=True)
+    
+    joblib.dump(svm_final, f"{model_dir}/svm_model_final.pkl")
+    joblib.dump(X_train_sel.columns.tolist(), f"{model_dir}/selected_features_train.pkl")
+    
     logging.info("Model and features saved successfully.")
 
     evaluate_model(svm_final, X_train_sel, y_train, "Training")
