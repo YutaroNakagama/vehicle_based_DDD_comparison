@@ -4,6 +4,7 @@
 **/*.npy
 **/*.keras
 **/*.swp
+**/*.txt
 **/tags
 **/__pycache__/
 project/docs/

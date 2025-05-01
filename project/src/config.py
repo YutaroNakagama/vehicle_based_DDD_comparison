@@ -11,7 +11,7 @@ including:
 import numpy as np
 
 # File paths
-SUBJECT_LIST_PATH   = '../../dataset/mdapbe/subject_list.txt'
+SUBJECT_LIST_PATH   = '../../dataset/mdapbe/subject_list_.txt'
 DATASET_PATH        = '../../dataset/mdapbe/physio'
 INTRIM_CSV_PATH     = './data/interim'
 PROCESS_CSV_PATH    = './data/processed'
