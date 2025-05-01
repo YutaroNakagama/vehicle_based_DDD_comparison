@@ -1,58 +1,79 @@
 """Train a machine learning model for driver drowsiness detection.
 
-This script allows the user to specify which model to train and which data augmentation
-or domain generalization techniques to apply (e.g., Domain Mixup, CORAL, VAE).
+This script executes the training pipeline for a specified model architecture.
+Users can optionally enable data augmentation or domain generalization techniques
+such as Domain Mixup, CORAL (Correlation Alignment), and VAE-based feature augmentation.
 
-Example:
-    python train.py --model Lstm --domain_mixup --coral --vae
+Examples:
+    Train an LSTM model with all augmentation methods enabled:
+        $ python train.py --model Lstm --domain_mixup --coral --vae
+
+    Train a Random Forest model without any augmentation:
+        $ python train.py --model RF
 """
 
 import sys
 import os
 import argparse
 
+# Add project root to the module search path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import src.config
 import src.models.model_pipeline as mp
 
+
 def main():
-    """Parse arguments and run the training pipeline."""
-    parser = argparse.ArgumentParser(description="Select a model to run.")
+    """Parse command-line arguments and invoke the training pipeline.
+
+    This function handles the parsing of command-line arguments for model selection
+    and optional data augmentation strategies. Based on user input, it triggers
+    the appropriate training routine.
+
+    Command-line Arguments:
+        --model (str): Required. Specifies the model architecture to train.
+            Must be one of the model names defined in `src.config.MODEL_CHOICES`.
+        --domain_mixup (bool): Optional. If set, applies Domain Mixup-based
+            feature interpolation.
+        --coral (bool): Optional. If set, applies CORAL-based domain alignment.
+        --vae (bool): Optional. If set, applies VAE-based feature augmentation.
+
+    Raises:
+        SystemExit: Raised by argparse if invalid or missing arguments are given.
+    """
+    parser = argparse.ArgumentParser(
+        description="Train a model for driver drowsiness detection with optional augmentation."
+    )
     parser.add_argument(
         "--model",
         choices=src.config.MODEL_CHOICES,
         required=True,
-        help="Choose a model from: {', '.join(config.MODEL_CHOICES)}"
+        help=f"Model architecture to train. Choices: {', '.join(src.config.MODEL_CHOICES)}"
     )
-
-    # Domain Mixup option
     parser.add_argument(
         "--domain_mixup",
         action="store_true",
-        help="Enable domain mixup augmentation during training."
+        help="Apply Domain Mixup augmentation during training."
     )
-
-    # CORAL option
     parser.add_argument(
         "--coral",
         action="store_true",
-        help="Enable CORAL domain alignment during training."
+        help="Apply CORAL domain alignment during training."
     )
-
-    # VAE option
     parser.add_argument(
         "--vae",
         action="store_true",
-        help="Enable VAE-based data augmentation during training."
+        help="Apply VAE-based data augmentation during training."
     )
 
     args = parser.parse_args()
 
-    print(f"Running '{args.model}' model with " +
-          f"domain_mixup={'enabled' if args.domain_mixup else 'disabled'}, " +
-          f"coral={'enabled' if args.coral else 'disabled'}, " +
-          f"VAE={'enabled' if args.vae else 'disabled'}.")
+    print(
+        f"Running '{args.model}' model with "
+        f"domain_mixup={'enabled' if args.domain_mixup else 'disabled'}, "
+        f"coral={'enabled' if args.coral else 'disabled'}, "
+        f"VAE={'enabled' if args.vae else 'disabled'}."
+    )
 
     mp.train_pipeline(
         args.model,
@@ -60,6 +81,7 @@ def main():
         use_coral=args.coral,
         use_vae=args.vae
     )
+
 
 if __name__ == '__main__':
     main()
