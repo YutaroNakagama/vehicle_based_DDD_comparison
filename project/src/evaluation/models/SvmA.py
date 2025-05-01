@@ -31,7 +31,7 @@ def load_model_and_features(model: str):
     features_path = f'{MODEL_PKL_PATH}/{model}/selected_features_train.pkl'
 
     svm_model = joblib.load(model_path)
-    selected_features = joblib.load(features_path).columns.tolist()
+    selected_features = joblib.load(features_path)  # これは list[str]
 
     return svm_model, selected_features
 
@@ -92,6 +92,16 @@ def SvmA_eval(X_test: pd.DataFrame, y_test: pd.Series, model: str) -> None:
         None
     """
     svm_model, selected_features = load_model_and_features(model)
-    X_selected_test = X_test[selected_features]
-    evaluate_model(svm_model, X_selected_test, y_test)
 
+    # 列名を整形
+    X_test.columns = X_test.columns.str.strip()
+
+    # 欠損列チェックと補完
+    missing_cols = set(selected_features) - set(X_test.columns)
+    if missing_cols:
+        print(f"Warning: Missing columns in X_test: {missing_cols}")
+        for col in missing_cols:
+            X_test[col] = 0.0
+    X_test = X_test[selected_features]  # 順番も保証
+
+    evaluate_model(svm_model, X_test, y_test)

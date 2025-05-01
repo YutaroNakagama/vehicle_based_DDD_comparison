@@ -7,6 +7,7 @@ reporting accuracy, classification report, and confusion matrix.
 import numpy as np
 import pandas as pd
 import logging
+import joblib
 from tensorflow.keras.models import load_model
 from tensorflow.keras.layers import Layer
 import tensorflow as tf
@@ -44,16 +45,18 @@ class AttentionLayer(Layer):
         return tf.keras.backend.sum(output, axis=1)
 
 
+import joblib
+
 def lstm_eval(X_test: pd.DataFrame, y_test: pd.Series, model_name: str, fold_to_test: int = 1) -> dict:
     """Evaluate a saved LSTM model with attention on test data.
 
-    Loads the model, reshapes input data, and reports classification metrics.
+    Loads the model and its scaler, applies consistent preprocessing, and evaluates performance.
 
     Args:
         X_test (pd.DataFrame): Test features.
         y_test (pd.Series): Test labels.
         model_name (str): Name of model directory under `model/`.
-        fold_to_test (int): Fold index to load the correct model file.
+        fold_to_test (int): Fold index to load the correct model and scaler.
 
     Returns:
         dict: Evaluation results including:
@@ -62,17 +65,33 @@ def lstm_eval(X_test: pd.DataFrame, y_test: pd.Series, model_name: str, fold_to_
               - 'classification_report': Text report
               - 'confusion_matrix': Confusion matrix array
     """
-    y_test = y_test.values.flatten()
-    X_test_3d = np.expand_dims(X_test.values, axis=1)
+    # 前処理: 数値列抽出・NaN除去・inf処理
+    X_numeric = X_test.select_dtypes(include=[np.number])
+    X_numeric = X_numeric.replace([np.inf, -np.inf], np.nan).dropna()
+    y_test = y_test.loc[X_numeric.index].values.flatten()
 
+    # float32クリップ・変換
+    X_numeric = X_numeric.clip(np.finfo(np.float32).min, np.finfo(np.float32).max)
+    X_array = X_numeric.astype(np.float32).values
+
+    # スケーラー読み込みと適用
+    scaler_path = f"{MODEL_PKL_PATH}/{model_name}/scaler_fold{fold_to_test}.pkl"
+    scaler = joblib.load(scaler_path)
+    X_scaled = scaler.transform(X_array)
+
+    # LSTM入力形式に整形
+    X_test_3d = np.expand_dims(X_scaled, axis=1)
+
+    # モデル読み込み
     model_path = f'{MODEL_PKL_PATH}/{model_name}/lstm_model_fold{fold_to_test}.keras'
     model = load_model(model_path, custom_objects={'AttentionLayer': AttentionLayer})
-
     logging.info(f"Model '{model_path}' loaded successfully.")
 
+    # 評価
     loss, accuracy = model.evaluate(X_test_3d, y_test, verbose=0)
     logging.info(f"Evaluation Results - Loss: {loss:.4f}, Accuracy: {accuracy:.4f}")
 
+    # 推論とレポート
     y_pred_prob = model.predict(X_test_3d)
     y_pred = (y_pred_prob > 0.5).astype(int).flatten()
 

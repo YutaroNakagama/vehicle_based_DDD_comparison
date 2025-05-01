@@ -80,8 +80,18 @@ def train_pipeline(model: str, use_domain_mixup: bool = False, use_coral: bool =
         lstm_train(X_train, y_train, model)
 
     elif model == 'SvmA':
-        feature_indices = calculate_feature_indices(X_train, y_train)
-        SvmA_train(X_train, X_test, y_train, y_test, feature_indices, model)
+        # subject_id列や非数値列を除去
+        X_train_for_fs = X_train.drop(columns=["subject_id"], errors='ignore')
+        X_test_for_fs = X_test.drop(columns=["subject_id"], errors='ignore')
+        X_train_for_fs = X_train_for_fs.select_dtypes(include=[np.number])
+        X_test_for_fs = X_test_for_fs.select_dtypes(include=[np.number])
+    
+        # ラベル整形（必要なら）
+        y_train = y_train.reset_index(drop=True)
+        y_test = y_test.reset_index(drop=True)
+
+        feature_indices = calculate_feature_indices(X_train_for_fs, y_train)
+        SvmA_train(X_train_for_fs, X_test_for_fs, y_train, y_test, feature_indices, model)
 
     else:
         X_train_for_fs = X_train.drop(columns=["subject_id"], errors='ignore')
