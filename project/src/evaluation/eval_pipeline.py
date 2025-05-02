@@ -58,9 +58,9 @@ def eval_pipeline(model: str, tag: str = None) -> None:
     if model == "SvmA":
         model_file = "svm_model_final.pkl"
     elif model == "Lstm":
-        model_file = f"lstm_model_fold1.keras"  # or handle fold logic
+        model_file = "lstm_model_fold1.keras"
     else:
-        model_file = f"{model}.pkl"
+        model_file = f"{model}{f'_{tag}' if tag else ''}.pkl"
     model_path = os.path.join(MODEL_PKL_PATH, model_type, model_file)
 
     if not os.path.exists(model_path):
@@ -78,7 +78,7 @@ def eval_pipeline(model: str, tag: str = None) -> None:
 
     # call evaluation functions
     if model == 'Lstm':
-        scaler_path = os.path.join(MODEL_PKL_PATH, model_type, "scaler_fold1.pkl") 
+        scaler_path = os.path.join(MODEL_PKL_PATH, model_type, f"scaler_fold1{f'_{tag}' if tag else ''}.pkl")
         if not os.path.exists(scaler_path):
             logging.error(f"Scaler file not found: {scaler_path}")
             return
@@ -87,7 +87,8 @@ def eval_pipeline(model: str, tag: str = None) -> None:
         result = lstm_eval(X_test, y_test, model_type, clf, scaler)
 
     elif model == 'SvmA':
-        feature_path = os.path.join(MODEL_PKL_PATH, model_type, "selected_features_train.pkl")
+        feature_file = f"selected_features_train{f'_{tag}' if tag else ''}.pkl"
+        feature_path = os.path.join(MODEL_PKL_PATH, model_type, feature_file)
         if not os.path.exists(feature_path):
             logging.error(f"Feature file not found: {feature_path}")
             return
@@ -99,7 +100,8 @@ def eval_pipeline(model: str, tag: str = None) -> None:
         result = common_eval(X_train, X_test, y_train, y_test, model, model_type, clf)
 
     # After each evaluation call (e.g., result = common_eval(...))
-    results_path = f"results/metrics_{model}_{tag}.json" if tag else f"results/metrics_{model}.json"
-    os.makedirs("results", exist_ok=True)
+    results_dir = os.path.join("results", model_type)
+    os.makedirs(results_dir, exist_ok=True)
+    results_path = os.path.join(results_dir, f"metrics_{model}_{tag}.json" if tag else f"metrics_{model}.json")
     with open(results_path, "w") as f:
         json.dump(result, f, indent=2)

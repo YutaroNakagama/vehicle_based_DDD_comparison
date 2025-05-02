@@ -103,8 +103,17 @@ def train_pipeline(model: str, use_domain_mixup: bool = False, use_coral: bool =
         feature_indices = calculate_feature_indices(X_train_for_fs, y_train)
         clf = get_classifier(model)
 
+        suffix = ""
+        if use_coral:
+            suffix += "_coral"
+        if use_domain_mixup:
+            suffix += "_mixup"
+        if use_vae:
+            suffix += "_vae"
+
         common_train(
             X_train_for_fs, X_test_for_fs, y_train, y_test,
-            feature_indices, model, model_type, clf
+            feature_indices, model, model_type, clf,
+            suffix=suffix
         )
 
