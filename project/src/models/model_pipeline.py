@@ -36,7 +36,14 @@ from src.models.architectures.common import common_train
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
-def train_pipeline(model: str, use_domain_mixup: bool = False, use_coral: bool = False, use_vae: bool = False) -> None:
+def train_pipeline(
+    model: str,
+    use_domain_mixup: bool = False,
+    use_coral: bool = False,
+    use_vae: bool = False,
+    sample_size: int = None,
+    seed: int = 42
+) -> None:
     """Train a machine learning model for drowsiness detection.
 
     This function loads the processed feature data, applies optional
@@ -53,6 +60,12 @@ def train_pipeline(model: str, use_domain_mixup: bool = False, use_coral: bool =
         None
     """
     subject_list = read_subject_list()
+
+    if sample_size is not None:
+        rng = np.random.default_rng(seed)
+        subject_list = rng.choice(subject_list, size=sample_size, replace=False).tolist()
+        logging.info(f"Using {sample_size} subjects: {subject_list}")
+
     model_type = get_model_type(model)
     data = load_subject_csvs(subject_list, model_type, add_subject_id=True)
     X_train, X_val, X_test, y_train, y_val, y_test = data_split(data)
@@ -86,7 +99,6 @@ def train_pipeline(model: str, use_domain_mixup: bool = False, use_coral: bool =
         X_train_for_fs = X_train_for_fs.select_dtypes(include=[np.number])
         X_test_for_fs = X_test_for_fs.select_dtypes(include=[np.number])
     
-        # ラベル整形（必要なら）
         y_train = y_train.reset_index(drop=True)
         y_test = y_test.reset_index(drop=True)
 
