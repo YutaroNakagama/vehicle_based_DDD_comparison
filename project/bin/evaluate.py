@@ -12,6 +12,8 @@ Example:
 import sys
 import os
 import argparse
+import logging
+logging.basicConfig(level=logging.INFO)
 
 # Add project root to the module search path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -55,9 +57,13 @@ def main():
     )
     args = parser.parse_args()
 
-    print(f"Running '{args.model}' model...")
+	logging.info(f"Running '{args.model}' model...")
 
-    mp.eval_pipeline(args.model, tag=args.tag)
+    try:
+        mp.eval_pipeline(args.model, tag=args.tag)
+    except Exception as e:
+        logging.error(f"Evaluation failed: {e}")
+        sys.exit(1)
 
 
 if __name__ == '__main__':
