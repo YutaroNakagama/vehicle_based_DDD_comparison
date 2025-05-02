@@ -7,12 +7,14 @@ applies prediction to test data, and logs evaluation metrics.
 import warnings
 warnings.filterwarnings("ignore")
 
+import logging
 import pandas as pd
 import numpy as np
 import joblib
 from sklearn.metrics import (
     accuracy_score, confusion_matrix, roc_curve,
     precision_score, recall_score, f1_score,
+    roc_auc_score, mean_squared_error, classification_report
 )
 
 from src.config import MODEL_PKL_PATH
@@ -77,31 +79,64 @@ def evaluate_model(svm_model, X_test: pd.DataFrame, y_test: pd.Series):
     print("\nConfusion Matrix:\n", conf_matrix)
 
 
-def SvmA_eval(X_test: pd.DataFrame, y_test: pd.Series, model: str) -> None:
+def SvmA_eval(
+    X_test: pd.DataFrame,
+    y_test: pd.Series,
+    model: str,
+    clf,
+    selected_features: list
+) -> dict:
     """Main evaluation entry point for SVM-ANFIS model.
-
-    Loads the trained model and feature subset, applies evaluation,
-    and prints performance metrics.
 
     Args:
         X_test (pd.DataFrame): Test features.
         y_test (pd.Series): Test labels.
-        model (str): Model name used for path resolution.
+        model (str): Model name used for saving.
+        clf: Trained SVM classifier (from pickle).
+        selected_features (list): List of selected features.
 
     Returns:
-        None
+        dict: Evaluation metrics (for JSON export).
     """
-    svm_model, selected_features = load_model_and_features(model)
 
-    # 列名を整形
+    # Clean column names
     X_test.columns = X_test.columns.str.strip()
 
-    # 欠損列チェックと補完
+    # Fill missing columns
     missing_cols = set(selected_features) - set(X_test.columns)
     if missing_cols:
         print(f"Warning: Missing columns in X_test: {missing_cols}")
         for col in missing_cols:
             X_test[col] = 0.0
-    X_test = X_test[selected_features]  # 順番も保証
 
-    evaluate_model(svm_model, X_test, y_test)
+    # Align feature order
+    X_test = X_test[selected_features]
+
+    # Predict and compute metrics
+    y_pred = clf.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred, average=None)
+    recall = recall_score(y_test, y_pred, average=None)
+    f1 = f1_score(y_test, y_pred, average=None)
+    conf_matrix = confusion_matrix(y_test, y_pred)
+
+    try:
+        roc_auc = roc_auc_score(y_test, clf.decision_function(X_test))
+    except AttributeError:
+        roc_auc = None
+    
+    mse = mean_squared_error(y_test, y_pred)
+
+    logging.info(f"Model: {model}")  
+    logging.info(f"MSE: {mse:.4f}")
+    logging.info(f"ROC AUC: {roc_auc:.4f}" if roc_auc is not None else "ROC AUC: N/A")
+    logging.info(f"Classification Report:\n{classification_report(y_test, y_pred)}")
+
+    return {
+        "model": model,
+        "accuracy": float(accuracy),
+        "precision": precision.tolist(),
+        "recall": recall.tolist(),
+        "f1_score": f1.tolist(),
+        "confusion_matrix": conf_matrix.tolist()
+    }
