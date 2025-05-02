@@ -47,11 +47,17 @@ def main():
         help=f"Model to evaluate. Choices: {', '.join(src.config.MODEL_CHOICES)}"
     )
 
+    parser.add_argument(
+        "--tag",
+        type=str,
+        default=None,
+        help="Optional tag to distinguish model variants (e.g., 'erm', 'coral')"
+    )
     args = parser.parse_args()
 
     print(f"Running '{args.model}' model...")
 
-    mp.eval_pipeline(args.model)
+    mp.eval_pipeline(args.model, tag=args.tag)
 
 
 if __name__ == '__main__':

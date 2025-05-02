@@ -5,6 +5,7 @@
 **/*.keras
 **/*.swp
 **/*.txt
+**/*.json
 **/tags
 **/__pycache__/
 project/docs/

@@ -8,6 +8,7 @@ import pickle
 import numpy as np
 import logging
 from sklearn.metrics import classification_report, roc_curve, auc, mean_squared_error
+from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import StandardScaler
 from src.config import MODEL_PKL_PATH
 
@@ -18,15 +19,10 @@ def common_eval(
     X_train, X_test,
     y_train, y_test,
     model_name: str,
-    model_type: str
-) -> None:
-    """Evaluate a classical ML model using saved model and feature subset.
-
-    This function:
-    - Loads a trained model from disk.
-    - Loads selected features used during training.
-    - Applies standard scaling.
-    - Predicts on test data and reports metrics.
+    model_type: str,
+    clf
+) -> dict:
+    """Evaluate a classical ML model using provided model and feature subset.
 
     Args:
         X_train (pd.DataFrame): Training features (used for scaling).
@@ -35,16 +31,12 @@ def common_eval(
         y_test (pd.Series): Test labels for evaluation.
         model_name (str): Identifier name of the model.
         model_type (str): Category or directory under which model is stored.
+        clf: Trained classifier object.
 
     Returns:
-        None
+        dict: Evaluation results suitable for JSON output.
     """
-    model_path = f"{MODEL_PKL_PATH}/{model_type}/{model_name}.pkl"
     features_path = f"{MODEL_PKL_PATH}/{model_type}/{model_name}_feat.npy"
-
-    with open(model_path, "rb") as f:
-        clf = pickle.load(f)
-
     selected_features = np.load(features_path, allow_pickle=True)
 
     scaler = StandardScaler()
@@ -53,17 +45,26 @@ def common_eval(
 
     y_pred = clf.predict(X_test_scaled)
 
-    roc_auc = 0
+    roc_auc = None
     if hasattr(clf, "predict_proba"):
         y_pred_proba = clf.predict_proba(X_test_scaled)[:, 1]
         fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
         roc_auc = auc(fpr, tpr)
 
     mse = mean_squared_error(y_test, y_pred)
-    report = classification_report(y_test, y_pred)
+    report = classification_report(y_test, y_pred, output_dict=True)
+    conf_matrix = confusion_matrix(y_test, y_pred)
 
     logging.info(f"Model: {model_name}")
     logging.info(f"MSE: {mse:.4f}")
-    logging.info(f"ROC AUC: {roc_auc:.4f}")
-    logging.info(f"Classification Report:\n{report}")
+    logging.info(f"ROC AUC: {roc_auc:.4f}" if roc_auc is not None else "ROC AUC: N/A")
+    logging.info(f"Classification Report:\n{classification_report(y_test, y_pred)}")
+
+    return {
+        "model": model_name,
+        "mse": float(mse),
+        "roc_auc": float(roc_auc) if roc_auc is not None else None,
+        "classification_report": report,
+        "confusion_matrix": conf_matrix.tolist()
+    }
 

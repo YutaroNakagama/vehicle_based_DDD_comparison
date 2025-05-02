@@ -4,13 +4,13 @@ Loads a trained LSTM model and evaluates it on test data,
 reporting accuracy, classification report, and confusion matrix.
 """
 
-import numpy as np
-import pandas as pd
 import logging
 import joblib
+import numpy as np
+import pandas as pd
+import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras.layers import Layer
-import tensorflow as tf
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
 
 from src.config import MODEL_PKL_PATH
@@ -45,9 +45,14 @@ class AttentionLayer(Layer):
         return tf.keras.backend.sum(output, axis=1)
 
 
-import joblib
-
-def lstm_eval(X_test: pd.DataFrame, y_test: pd.Series, model_name: str, fold_to_test: int = 1) -> dict:
+def lstm_eval(
+    X_test: pd.DataFrame,
+    y_test: pd.Series,
+    model_name: str,
+    clf=None,
+    scaler=None,
+    fold_to_test: int = 1
+) -> dict:
     """Evaluate a saved LSTM model with attention on test data.
 
     Loads the model and its scaler, applies consistent preprocessing, and evaluates performance.
@@ -65,33 +70,39 @@ def lstm_eval(X_test: pd.DataFrame, y_test: pd.Series, model_name: str, fold_to_
               - 'classification_report': Text report
               - 'confusion_matrix': Confusion matrix array
     """
-    # 前処理: 数値列抽出・NaN除去・inf処理
+
+    # Load model and scaler if not provided
+    if clf is None or scaler is None:
+        # Load from disk based on fold
+        scaler_path = f"{MODEL_PKL_PATH}/{model_name}/scaler_fold{fold_to_test}.pkl"
+        scaler = joblib.load(scaler_path)
+    
+        model_path = f"{MODEL_PKL_PATH}/{model_name}/lstm_model_fold{fold_to_test}.keras"
+        clf = load_model(model_path, custom_objects={'AttentionLayer': AttentionLayer})
+
+        model = clf
+    else:
+        model = clf
+
+    # Preprocessing: numeric only, clean NaN/inf
     X_numeric = X_test.select_dtypes(include=[np.number])
     X_numeric = X_numeric.replace([np.inf, -np.inf], np.nan).dropna()
     y_test = y_test.loc[X_numeric.index].values.flatten()
 
-    # float32クリップ・変換
     X_numeric = X_numeric.clip(np.finfo(np.float32).min, np.finfo(np.float32).max)
     X_array = X_numeric.astype(np.float32).values
 
-    # スケーラー読み込みと適用
-    scaler_path = f"{MODEL_PKL_PATH}/{model_name}/scaler_fold{fold_to_test}.pkl"
-    scaler = joblib.load(scaler_path)
+    # Apply scaling
     X_scaled = scaler.transform(X_array)
 
     # LSTM入力形式に整形
     X_test_3d = np.expand_dims(X_scaled, axis=1)
 
-    # モデル読み込み
-    model_path = f'{MODEL_PKL_PATH}/{model_name}/lstm_model_fold{fold_to_test}.keras'
-    model = load_model(model_path, custom_objects={'AttentionLayer': AttentionLayer})
-    logging.info(f"Model '{model_path}' loaded successfully.")
-
-    # 評価
+    # Evaluation
     loss, accuracy = model.evaluate(X_test_3d, y_test, verbose=0)
     logging.info(f"Evaluation Results - Loss: {loss:.4f}, Accuracy: {accuracy:.4f}")
 
-    # 推論とレポート
+    # Prediction and report
     y_pred_prob = model.predict(X_test_3d)
     y_pred = (y_pred_prob > 0.5).astype(int).flatten()
 
@@ -102,9 +113,9 @@ def lstm_eval(X_test: pd.DataFrame, y_test: pd.Series, model_name: str, fold_to_
     logging.info("Confusion Matrix:\n" + str(conf_matrix))
 
     return {
-        'loss': loss,
-        'accuracy': accuracy,
-        'classification_report': report,
-        'confusion_matrix': conf_matrix
+        'loss': float(loss),
+        'accuracy': float(accuracy),
+        'classification_report': classification_report(y_test, y_pred, output_dict=True),
+        'confusion_matrix': conf_matrix.tolist()
     }
 
