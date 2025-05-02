@@ -4,6 +4,7 @@ This module supports ANFIS-based feature selection and trains a RandomForest cla
 The model is saved as a `.pkl` file and selected features are stored for reproducibility.
 """
 
+import os
 import optuna
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score

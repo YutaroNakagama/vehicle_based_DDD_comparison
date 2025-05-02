@@ -65,6 +65,18 @@ def main():
         action="store_true",
         help="Apply VAE-based data augmentation during training."
     )
+    parser.add_argument(
+        "--sample_size",
+        type=int,
+        default=None,
+        help="Number of subjects to randomly sample from all available subjects (for small-scale experiments)."
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Random seed for reproducible subject sampling."
+    )
 
     args = parser.parse_args()
 
@@ -79,7 +91,9 @@ def main():
         args.model,
         use_domain_mixup=args.domain_mixup,
         use_coral=args.coral,
-        use_vae=args.vae
+        use_vae=args.vae,
+        sample_size=args.sample_size,
+        seed=args.seed
     )
 
 
