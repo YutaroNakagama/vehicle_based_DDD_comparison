@@ -9,7 +9,11 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
 
 
-def common_train(X_train, X_test, y_train, y_test, feature_indices, model: str, model_type: str, clf=None) -> None:
+def common_train(
+    X_train, X_test, y_train, y_test,
+    feature_indices, model: str, model_type: str,
+    clf=None, suffix: str = ""
+) -> None:
     """Train a classical ML model (RandomForest) using Optuna and ANFIS-based feature selection.
 
     This function:
@@ -84,9 +88,11 @@ def common_train(X_train, X_test, y_train, y_test, feature_indices, model: str, 
     best_clf.fit(X_train_scaled, y_train)
 
     # Save model and features
-    with open(f"{MODEL_PKL_PATH}/{model_type}/{model}.pkl", "wb") as f:
+    os.makedirs(f"{MODEL_PKL_PATH}/{model_type}", exist_ok=True)
+    with open(f"{MODEL_PKL_PATH}/{model_type}/{model}{suffix}.pkl", "wb") as f:
         pickle.dump(best_clf, f)
-    np.save(f"{MODEL_PKL_PATH}/{model_type}/{model}_feat.npy", selected_features)
+    np.save(f"{MODEL_PKL_PATH}/{model_type}/{model}{suffix}_feat.npy", selected_features)
+
 
     # Evaluate
     y_pred = best_clf.predict(X_test_scaled)
