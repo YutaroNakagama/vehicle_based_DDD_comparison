@@ -41,3 +41,6 @@ WAVELET_LEV = 3
 
 # Feature selection
 TOP_K_FEATURES = 10
+
+# Optuna 
+N_TRIALS = 30
