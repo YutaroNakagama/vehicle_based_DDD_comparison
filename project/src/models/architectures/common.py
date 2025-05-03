@@ -18,7 +18,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import StandardScaler
 
 from src.models.feature_selection.anfis import calculate_id
-from src.config import MODEL_PKL_PATH
+from src.config import MODEL_PKL_PATH, N_TRIALS
 
 def common_train(
     X_train, X_test, y_train, y_test,
@@ -70,7 +70,7 @@ def common_train(
 
     # Run Optuna study
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=100)
+    study.optimize(objective, n_trials=N_TRIALS)
 
     best_params = study.best_params
 
