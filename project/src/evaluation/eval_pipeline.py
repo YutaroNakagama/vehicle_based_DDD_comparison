@@ -23,7 +23,7 @@ from src.evaluation.models.lstm import AttentionLayer
 
 from src.config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, MODEL_PKL_PATH
 from src.utils.io.loaders import read_subject_list, get_model_type, load_subject_csvs
-from src.utils.io.split import data_split
+from src.utils.io.split import data_split, data_split_by_subject
 from src.models.feature_selection.index import calculate_feature_indices
 from src.evaluation.models.lstm import lstm_eval
 from src.evaluation.models.SvmA import SvmA_eval
@@ -32,7 +32,7 @@ from src.evaluation.models.common import common_eval
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
-def eval_pipeline(model: str, tag: str = None, sample_size: int = None, seed: int = 42) -> None:
+def eval_pipeline(model: str, tag: str = None, sample_size: int = None, seed: int = 42, subject_wise_split: bool = False) -> None:
     """Evaluate the specified trained model using appropriate method.
 
     The evaluation routine is selected based on the `model` name.
@@ -46,6 +46,8 @@ def eval_pipeline(model: str, tag: str = None, sample_size: int = None, seed: in
         None
     """
 
+    logging.info(f"Evaluation split mode: {'subject-wise' if subject_wise_split else 'sample-wise'}")
+
     # Load subject list and determine model type
     subject_list = read_subject_list()
     if sample_size is not None:
@@ -56,8 +58,19 @@ def eval_pipeline(model: str, tag: str = None, sample_size: int = None, seed: in
     model_type = get_model_type(model)
 
     # Load preprocessed feature data
-    combined_data = load_subject_csvs(subject_list, model_type, add_subject_id=False)
-    X_train, X_val, X_test, y_train, y_val, y_test = data_split(combined_data)
+    combined_data = load_subject_csvs(subject_list, model_type, add_subject_id=True if subject_wise_split else False)
+    
+    if subject_wise_split:
+        X_train, X_val, X_test, y_train, y_val, y_test = data_split_by_subject(combined_data, subject_list, seed)
+    else:
+        X_train, X_val, X_test, y_train, y_val, y_test = data_split(combined_data)
+
+    if y_test.nunique() < 2:
+        logging.warning(f"Test labels are not binary or contain only one class. Found: {y_test.value_counts().to_dict()}")
+
+    if X_test.shape[0] == 0:
+        logging.error("X_test is empty. Check your subject/sample configuration or preprocessing.")
+        return
 
     # Load trained model
     if model == "SvmA":
@@ -159,3 +172,4 @@ def eval_pipeline(model: str, tag: str = None, sample_size: int = None, seed: in
     results_path = os.path.join(results_dir, f"metrics_{model}_{tag}.json" if tag else f"metrics_{model}.json")
     with open(results_path, "w") as f:
         json.dump(result, f, indent=2)
+    logging.info(f"Saved evaluation metrics to {results_path}")

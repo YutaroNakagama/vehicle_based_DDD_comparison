@@ -22,7 +22,7 @@ from pyswarm import pso
 
 from src.config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, MODEL_PKL_PATH
 from src.utils.io.loaders import read_subject_list, get_model_type, load_subject_csvs
-from src.utils.io.split import data_split
+from src.utils.io.split import data_split, data_split_by_subject  
 from src.utils.domain_generalization.domain_mixup import generate_domain_labels, domain_mixup
 from src.utils.domain_generalization.coral import coral
 from src.utils.domain_generalization.vae_augment import vae_augmentation
@@ -43,7 +43,8 @@ def train_pipeline(
     use_vae: bool = False,
     sample_size: int = None,
     seed: int = 42,
-    tag: str = None 
+    tag: str = None, 
+    subject_wise_split: bool = False  
 ) -> None:
     """Train a machine learning model for drowsiness detection.
 
@@ -68,8 +69,24 @@ def train_pipeline(
         logging.info(f"Using {sample_size} subjects: {subject_list}")
 
     model_type = get_model_type(model)
+    logging.info(f"Model type: {model_type}")
+
     data = load_subject_csvs(subject_list, model_type, add_subject_id=True)
-    X_train, X_val, X_test, y_train, y_val, y_test = data_split(data)
+
+    if subject_wise_split:
+        X_train, X_val, X_test, y_train, y_val, y_test = data_split_by_subject(data, subject_list, seed)
+    else:
+        X_train, X_val, X_test, y_train, y_val, y_test = data_split(data)
+
+    # Check for label diversity in training set
+    if y_train.nunique() < 2:
+        logging.error(f"Training labels are not binary. Found: {y_train.value_counts().to_dict()}")
+        return
+    
+    # Check for empty splits
+    if X_train.shape[0] == 0 or X_val.shape[0] == 0 or X_test.shape[0] == 0:
+        logging.error("Train/val/test split has empty set. Try increasing sample_size or reviewing KSS filtering.")
+        return
 
     if use_domain_mixup:
         domain_labels_train = generate_domain_labels(subject_list, X_train)
@@ -90,6 +107,7 @@ def train_pipeline(
     if use_vae:
         X_train = vae_augmentation(X_train, augment_ratio=0.3)
 
+    # function call
     if model == 'Lstm':
         lstm_train(X_train, y_train, model)
 
@@ -112,6 +130,7 @@ def train_pipeline(
         X_train_for_fs = X_train_for_fs.reset_index(drop=True)
         y_train = y_train.reset_index(drop=True)
 
+        logging.info(f"y_train unique: {y_train.unique()}, counts: {y_train.value_counts().to_dict()}")
         feature_indices = calculate_feature_indices(X_train_for_fs, y_train)
         clf = get_classifier(model)
 

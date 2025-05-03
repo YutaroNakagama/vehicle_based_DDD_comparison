@@ -66,13 +66,25 @@ def main():
         default=42,
         help="Random seed for reproducibility in subset evaluation"
     )
+    parser.add_argument(
+        "--subject_wise_split",
+        action="store_true",
+        help="Use subject-wise data splitting to prevent subject leakage"
+    )
+
 
     args = parser.parse_args()
 
     logging.info(f"Running '{args.model}' model...")
 
     try:
-        mp.eval_pipeline(args.model, tag=args.tag, sample_size=args.sample_size, seed=args.seed)
+        mp.eval_pipeline(
+            args.model,
+            tag=args.tag,
+            sample_size=args.sample_size,
+            seed=args.seed,
+            subject_wise_split=args.subject_wise_split
+        )
     except Exception as e:
         logging.error(f"Evaluation failed: {e}")
         sys.exit(1)
