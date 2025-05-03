@@ -72,7 +72,7 @@ def common_train(
             "random_state": 42,
         }
 
-        clf = RandomForestClassifier(**params)
+        clf = RandomForestClassifier(**params, class_weight="balanced")
         score = cross_val_score(clf, X_train_scaled, y_train, cv=3, scoring="accuracy").mean()
         return -score  # Optuna minimizes the objective
 
@@ -94,7 +94,7 @@ def common_train(
     X_train_scaled = scaler.fit_transform(X_train[selected_features])
     X_test_scaled = scaler.transform(X_test[selected_features])
 
-    best_clf = RandomForestClassifier(**best_params)
+    best_clf = RandomForestClassifier(**best_params, class_weight="balanced")
     best_clf.fit(X_train_scaled, y_train)
 
     # Save model and features
