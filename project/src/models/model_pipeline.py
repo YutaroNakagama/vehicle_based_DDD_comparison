@@ -42,7 +42,8 @@ def train_pipeline(
     use_coral: bool = False,
     use_vae: bool = False,
     sample_size: int = None,
-    seed: int = 42
+    seed: int = 42,
+    tag: str = None 
 ) -> None:
     """Train a machine learning model for drowsiness detection.
 
@@ -116,6 +117,8 @@ def train_pipeline(
         clf = get_classifier(model)
 
         suffix = ""
+        if tag:
+            suffix += f"_{tag}"
         if use_coral:
             suffix += "_coral"
         if use_domain_mixup:

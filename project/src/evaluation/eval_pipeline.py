@@ -32,7 +32,7 @@ from src.evaluation.models.common import common_eval
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
-def eval_pipeline(model: str, tag: str = None) -> None:
+def eval_pipeline(model: str, tag: str = None, sample_size: int = None, seed: int = 42) -> None:
     """Evaluate the specified trained model using appropriate method.
 
     The evaluation routine is selected based on the `model` name.
@@ -48,6 +48,11 @@ def eval_pipeline(model: str, tag: str = None) -> None:
 
     # Load subject list and determine model type
     subject_list = read_subject_list()
+    if sample_size is not None:
+        rng = np.random.default_rng(seed)
+        subject_list = rng.choice(subject_list, size=sample_size, replace=False).tolist()
+        logging.info(f"Evaluating on {sample_size} subjects: {subject_list}")
+
     model_type = get_model_type(model)
 
     # Load preprocessed feature data
@@ -87,7 +92,7 @@ def eval_pipeline(model: str, tag: str = None) -> None:
         result = lstm_eval(X_test, y_test, model_type, clf, scaler)
 
     elif model == 'SvmA':
-        feature_file = f"selected_features_train{f'_{tag}' if tag else ''}.pkl"
+        feature_file = f"selected_features_train_{model}{f'_{tag}' if tag else ''}.pkl"
         feature_path = os.path.join(MODEL_PKL_PATH, model_type, feature_file)
         if not os.path.exists(feature_path):
             logging.error(f"Feature file not found: {feature_path}")
@@ -97,7 +102,56 @@ def eval_pipeline(model: str, tag: str = None) -> None:
         result = SvmA_eval(X_test, y_test, model, clf, selected_features)
 
     else:
-        result = common_eval(X_train, X_test, y_train, y_test, model, model_type, clf)
+        feature_file = f"selected_features_train_{model}{f'_{tag}' if tag else ''}.pkl"
+        feature_path = os.path.join(MODEL_PKL_PATH, model_type, feature_file)
+        if not os.path.exists(feature_path):
+            logging.error(f"Feature file not found: {feature_path}")
+            return
+
+        with open(feature_path, "rb") as ff:
+            selected_features = pickle.load(ff)
+        if not isinstance(selected_features, list):
+            selected_features = list(selected_features)
+
+        scaler_path = os.path.join(MODEL_PKL_PATH, model_type, f"scaler_{model}{f'_{tag}' if tag else ''}.pkl")
+        if not os.path.exists(scaler_path):
+            logging.error(f"Scaler file not found: {scaler_path}")
+            return
+        scaler = joblib.load(scaler_path)
+
+        # Before feature selection, ensure columns are aligned and consistent
+        X_train = X_train.loc[:, ~X_train.columns.duplicated()]
+        X_test = X_test.loc[:, ~X_test.columns.duplicated()]
+
+        # Drop unnecessary columns and ensure only numeric columns are used
+        X_train = X_train.drop(columns=["subject_id"], errors='ignore')
+        X_test = X_test.drop(columns=["subject_id"], errors='ignore')
+
+        X_train = X_train.select_dtypes(include=[np.number])
+        X_test = X_test.select_dtypes(include=[np.number])
+
+        # Align both datasets to only common columns
+        common_columns = X_train.columns.intersection(X_test.columns)
+        X_train = X_train[common_columns]
+        X_test = X_test[common_columns]
+
+        # Check for missing features
+        missing = [f for f in selected_features if f not in X_test.columns]
+        if missing:
+            logging.error(f"Missing features in X_test: {missing}")
+            return
+
+        X_train = X_train.loc[:, selected_features]
+        X_test = X_test.loc[:, selected_features]
+        X_test = scaler.transform(X_test)
+        
+        logging.info(f"X_train shape after feature alignment: {X_train.shape}")
+        logging.info(f"X_test shape after feature alignment: {X_test.shape}")
+
+        logging.info(f"Available columns in X_test: {list(X_test.columns) if hasattr(X_test, 'columns') else 'array'}")
+        logging.info(f"Selected features: {selected_features}")
+
+        result = common_eval(X_test, y_test, model, model_type, clf)
 
     # After each evaluation call (e.g., result = common_eval(...))
     results_dir = os.path.join("results", model_type)
