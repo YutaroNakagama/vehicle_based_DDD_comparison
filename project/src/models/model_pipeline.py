@@ -94,21 +94,20 @@ def train_pipeline(
         lstm_train(X_train, y_train, model)
 
     elif model == 'SvmA':
-        # subject_id列や非数値列を除去
         X_train_for_fs = X_train.drop(columns=["subject_id"], errors='ignore')
-        X_test_for_fs = X_test.drop(columns=["subject_id"], errors='ignore')
+        X_val_for_fs = X_val.drop(columns=["subject_id"], errors='ignore')
         X_train_for_fs = X_train_for_fs.select_dtypes(include=[np.number])
-        X_test_for_fs = X_test_for_fs.select_dtypes(include=[np.number])
+        X_val_for_fs = X_val_for_fs.select_dtypes(include=[np.number])
     
         y_train = y_train.reset_index(drop=True)
-        y_test = y_test.reset_index(drop=True)
+        y_val = y_val.reset_index(drop=True)
 
         feature_indices = calculate_feature_indices(X_train_for_fs, y_train)
-        SvmA_train(X_train_for_fs, X_test_for_fs, y_train, y_test, feature_indices, model)
+        SvmA_train(X_train_for_fs, X_val_for_fs, y_train, y_val, feature_indices, model)
 
     else:
         X_train_for_fs = X_train.drop(columns=["subject_id"], errors='ignore')
-        X_test_for_fs = X_test.drop(columns=["subject_id"], errors='ignore')
+        X_val_for_fs = X_val.drop(columns=["subject_id"], errors='ignore')
 
         X_train_for_fs = X_train_for_fs.reset_index(drop=True)
         y_train = y_train.reset_index(drop=True)
@@ -127,7 +126,7 @@ def train_pipeline(
             suffix += "_vae"
 
         common_train(
-            X_train_for_fs, X_test_for_fs, y_train, y_test,
+            X_train_for_fs, X_val_for_fs, y_train, y_val,
             feature_indices, model, model_type, clf,
             suffix=suffix
         )
