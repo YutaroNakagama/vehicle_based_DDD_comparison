@@ -91,11 +91,12 @@ def main():
 
     args = parser.parse_args()
 
+    tag_msg = f", tag={args.tag}" if args.tag else ""
     print(
         f"Running '{args.model}' model with "
         f"domain_mixup={'enabled' if args.domain_mixup else 'disabled'}, "
         f"coral={'enabled' if args.coral else 'disabled'}, "
-        f"VAE={'enabled' if args.vae else 'disabled'}."
+        f"VAE={'enabled' if args.vae else 'disabled'}{tag_msg}"
     )
 
     mp.train_pipeline(
