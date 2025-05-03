@@ -15,6 +15,7 @@ import pandas as pd
 import logging
 from sklearn.metrics import classification_report, accuracy_score, roc_curve, auc, mean_squared_error
 from sklearn.model_selection import train_test_split
+from sklearn.feature_selection import SelectKBest, mutual_info_classif
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
@@ -131,7 +132,14 @@ def train_pipeline(
         y_train = y_train.reset_index(drop=True)
 
         logging.info(f"y_train unique: {y_train.unique()}, counts: {y_train.value_counts().to_dict()}")
-        feature_indices = calculate_feature_indices(X_train_for_fs, y_train)
+
+        # 一般的な特徴量選択（例: mutual information）
+        selector = SelectKBest(score_func=mutual_info_classif, k=10)
+        selector.fit(X_train_for_fs, y_train)
+        selected_mask = selector.get_support()
+        selected_features = X_train_for_fs.columns[selected_mask].tolist()
+    
+        logging.info(f"Selected features (MI): {selected_features}")
         clf = get_classifier(model)
 
         suffix = ""
@@ -145,8 +153,11 @@ def train_pipeline(
             suffix += "_vae"
 
         common_train(
-            X_train_for_fs, X_val_for_fs, y_train, y_val,
-            feature_indices, model, model_type, clf,
+            X_train_for_fs[selected_features],
+            X_val_for_fs[selected_features],
+            y_train, y_val,
+            selected_features, 
+            model, model_type, clf,
             suffix=suffix
         )
-
+    
