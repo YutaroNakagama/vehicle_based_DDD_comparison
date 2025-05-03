@@ -15,12 +15,13 @@ import pandas as pd
 import logging
 from sklearn.metrics import classification_report, accuracy_score, roc_curve, auc, mean_squared_error
 from sklearn.model_selection import train_test_split
+from sklearn.feature_selection import SelectKBest, mutual_info_classif
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from pyswarm import pso
 
-from src.config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, MODEL_PKL_PATH
+from src.config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, MODEL_PKL_PATH, TOP_K_FEATURES
 from src.utils.io.loaders import read_subject_list, get_model_type, load_subject_csvs
 from src.utils.io.split import data_split, data_split_by_subject  
 from src.utils.domain_generalization.domain_mixup import generate_domain_labels, domain_mixup
@@ -28,6 +29,7 @@ from src.utils.domain_generalization.coral import coral
 from src.utils.domain_generalization.vae_augment import vae_augmentation
 from src.models.feature_selection.index import calculate_feature_indices
 from src.models.feature_selection.anfis import calculate_id
+from src.models.feature_selection.rf_importance import select_top_features_by_importance 
 from src.models.architectures.helpers import get_classifier
 from src.models.architectures.lstm import lstm_train
 from src.models.architectures.SvmA import SvmA_train
@@ -44,7 +46,8 @@ def train_pipeline(
     sample_size: int = None,
     seed: int = 42,
     tag: str = None, 
-    subject_wise_split: bool = False  
+    subject_wise_split: bool = False, 
+    feature_selection_method: str = "rf"  
 ) -> None:
     """Train a machine learning model for drowsiness detection.
 
@@ -57,6 +60,7 @@ def train_pipeline(
         use_domain_mixup (bool): If True, apply domain mixup augmentation.
         use_coral (bool): If True, apply CORAL alignment between source and target domains.
         use_vae (bool): If True, apply VAE-based data augmentation.
+        feature_selection_method (str): Feature selection method ('rf' or 'mi').
 
     Returns:
         None
@@ -131,7 +135,21 @@ def train_pipeline(
         y_train = y_train.reset_index(drop=True)
 
         logging.info(f"y_train unique: {y_train.unique()}, counts: {y_train.value_counts().to_dict()}")
-        feature_indices = calculate_feature_indices(X_train_for_fs, y_train)
+
+        if feature_selection_method == "mi":
+            selector = SelectKBest(score_func=mutual_info_classif, k=TOP_K_FEATURES)
+            selector.fit(X_train_for_fs, y_train)
+            selected_mask = selector.get_support()
+            selected_features = X_train_for_fs.columns[selected_mask].tolist()
+            logging.info(f"Selected features (mutual_info): {selected_features}")
+        
+        elif feature_selection_method == "rf":
+            selected_features = select_top_features_by_importance(X_train_for_fs, y_train, top_k=TOP_K_FEATURES)
+            logging.info(f"Selected features (RF importance): {selected_features}")
+        
+        else:
+            raise ValueError(f"Unknown feature_selection_method: {feature_selection_method}")
+    
         clf = get_classifier(model)
 
         suffix = ""
@@ -145,8 +163,11 @@ def train_pipeline(
             suffix += "_vae"
 
         common_train(
-            X_train_for_fs, X_val_for_fs, y_train, y_val,
-            feature_indices, model, model_type, clf,
+            X_train_for_fs[selected_features],
+            X_val_for_fs[selected_features],
+            y_train, y_val,
+            selected_features, 
+            model, model_type, clf,
             suffix=suffix
         )
-
+    
