@@ -77,6 +77,13 @@ def main():
         default=42,
         help="Random seed for reproducible subject sampling."
     )
+    parser.add_argument(
+        "--tag",
+        type=str,
+        default=None,
+        help="Optional tag suffix for model saving (e.g., 'erm', 'coral')."
+    )
+
 
     args = parser.parse_args()
 
@@ -93,7 +100,8 @@ def main():
         use_coral=args.coral,
         use_vae=args.vae,
         sample_size=args.sample_size,
-        seed=args.seed
+        seed=args.seed,
+        tag=args.tag
     )
 
 

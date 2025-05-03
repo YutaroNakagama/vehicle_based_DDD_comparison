@@ -6,9 +6,19 @@ The model is saved as a `.pkl` file and selected features are stored for reprodu
 
 import os
 import optuna
+import pickle
+import logging
+import json
+import numpy as np
+import pandas as pd
+from collections import OrderedDict
+from sklearn.metrics import classification_report, roc_curve, auc
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
+from sklearn.preprocessing import StandardScaler
 
+from src.models.feature_selection.anfis import calculate_id
+from src.config import MODEL_PKL_PATH
 
 def common_train(
     X_train, X_test, y_train, y_test,
@@ -36,13 +46,10 @@ def common_train(
     Returns:
         None
     """
-    from src.models.feature_selection.anfis import calculate_id
-    from sklearn.preprocessing import StandardScaler
-    import pickle
-    import numpy as np
-    import logging
-    from sklearn.metrics import classification_report, roc_curve, auc
-    from src.config import MODEL_PKL_PATH
+
+    # Remove duplicated column names while preserving order
+    X_train = X_train.loc[:, ~X_train.columns.duplicated()]
+    X_test = X_test.loc[:, ~X_test.columns.duplicated()]
 
     def objective(trial):
         threshold = trial.suggest_float("threshold", 0.5, 0.9)
@@ -52,7 +59,7 @@ def common_train(
         if len(selected_indices) == 0:
             return 1.0  # High error if no features selected
 
-        selected_features = X_train.columns[selected_indices]
+        selected_features = pd.Index(X_train.columns[selected_indices]).unique()
         scaler = StandardScaler()
         X_train_scaled = scaler.fit_transform(X_train[selected_features])
         X_val_scaled = scaler.transform(X_test[selected_features])
@@ -78,7 +85,9 @@ def common_train(
     best_threshold = best_params.pop("threshold")
 
     ids = calculate_id(feature_indices, [best_threshold] + [1.0] * (len(feature_indices.columns) * 2))
-    selected_features = X_train.columns[np.where(ids > best_threshold)[0]]
+    selected_features = list(OrderedDict.fromkeys(
+        X_train.columns[np.where(ids > best_threshold)[0]].tolist()
+    ))
 
     # Final training
     scaler = StandardScaler()
@@ -89,13 +98,23 @@ def common_train(
     best_clf.fit(X_train_scaled, y_train)
 
     # Save model and features
+    logging.info(f"Saving {model} with {len(selected_features)} features.")
     os.makedirs(f"{MODEL_PKL_PATH}/{model_type}", exist_ok=True)
     with open(f"{MODEL_PKL_PATH}/{model_type}/{model}{suffix}.pkl", "wb") as f:
         pickle.dump(best_clf, f)
-    with open(f"{MODEL_PKL_PATH}/{model_type}/selected_features_train{suffix}.pkl", "wb") as f:
-        pickle.dump(selected_features.tolist(), f)
+    with open(f"{MODEL_PKL_PATH}/{model_type}/selected_features_train_{model}{suffix}.pkl", "wb") as f:
+        pickle.dump(selected_features, f)
+    # Save fitted scaler
+    with open(f"{MODEL_PKL_PATH}/{model_type}/scaler_{model}{suffix}.pkl", "wb") as f:
+        pickle.dump(scaler, f)
 
-
+    # Save metadata (feature source info)
+    feature_meta = {
+        "selected_features": selected_features,
+        "feature_source": model_type  # e.g., "common"
+    }
+    with open(f"{MODEL_PKL_PATH}/{model_type}/feature_meta_{model}{suffix}.json", "w") as f:
+        json.dump(feature_meta, f, indent=2)
 
     # Evaluate
     y_pred = best_clf.predict(X_test_scaled)
