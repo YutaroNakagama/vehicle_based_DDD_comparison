@@ -16,38 +16,27 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 
 def common_eval(
-    X_train, X_test,
-    y_train, y_test,
+    X_test,
+    y_test,
     model_name: str,
     model_type: str,
     clf
 ) -> dict:
-    """Evaluate a classical ML model using provided model and feature subset.
+    """
+    Evaluate a classical ML model using test data and a trained classifier.
 
-    Args:
-        X_train (pd.DataFrame): Training features (used for scaling).
-        X_test (pd.DataFrame): Test features.
-        y_train (pd.Series): Training labels (used for scaling fit).
-        y_test (pd.Series): Test labels for evaluation.
-        model_name (str): Identifier name of the model.
-        model_type (str): Category or directory under which model is stored.
-        clf: Trained classifier object.
+    Assumes:
+    - X_test has already been scaled and filtered to selected features.
+    - y_test is aligned with X_test.
 
     Returns:
         dict: Evaluation results suitable for JSON output.
     """
-    features_path = f"{MODEL_PKL_PATH}/{model_type}/{model_name}_feat.npy"
-    selected_features = np.load(features_path, allow_pickle=True)
-
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train[selected_features])
-    X_test_scaled = scaler.transform(X_test[selected_features])
-
-    y_pred = clf.predict(X_test_scaled)
+    y_pred = clf.predict(X_test)
 
     roc_auc = None
     if hasattr(clf, "predict_proba"):
-        y_pred_proba = clf.predict_proba(X_test_scaled)[:, 1]
+        y_pred_proba = clf.predict_proba(X_test)[:, 1]
         fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
         roc_auc = auc(fpr, tpr)
 
