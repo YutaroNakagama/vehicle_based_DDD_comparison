@@ -48,19 +48,31 @@ def main():
         required=True,
         help=f"Model to evaluate. Choices: {', '.join(src.config.MODEL_CHOICES)}"
     )
-
     parser.add_argument(
         "--tag",
         type=str,
         default=None,
         help="Optional tag to distinguish model variants (e.g., 'erm', 'coral')"
     )
+    parser.add_argument(
+        "--sample_size",
+        type=int,
+        default=None,
+        help="Number of subjects to evaluate (for subset evaluation)"
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Random seed for reproducibility in subset evaluation"
+    )
+
     args = parser.parse_args()
 
-	logging.info(f"Running '{args.model}' model...")
+    logging.info(f"Running '{args.model}' model...")
 
     try:
-        mp.eval_pipeline(args.model, tag=args.tag)
+        mp.eval_pipeline(args.model, tag=args.tag, sample_size=args.sample_size, seed=args.seed)
     except Exception as e:
         logging.error(f"Evaluation failed: {e}")
         sys.exit(1)
