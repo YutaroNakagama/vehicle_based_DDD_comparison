@@ -85,25 +85,61 @@ setup the public dataset as follows:
         └───src
 ```
 
-### Go to Project directory
+### Step 1: Preprocess Data
+
 ```sh
 cd project
+python bin/preprocess.py --model [common | SvmA | SvmW | Lstm] [--jittering]
 ```
 
-### Prepare data
+* `--model`: Required. Specifies the preprocessing logic for the selected model.
+* `--jittering`: Optional. Applies jittering-based data augmentation.
+
+---
+
+### Step 2: Train a Model
+
 ```sh
-python bin/preprocess.py --model [model name: SvmW/SvmA/Lstm/common]
+python bin/train.py \
+    --model [RF | SvmA | SvmW | Lstm] \
+    [--domain_mixup] \
+    [--coral] \
+    [--vae] \
+    [--sample_size N] \
+    [--seed N] \
+    [--tag TAG] \
+    [--subject_wise_split] \
+    [--feature_selection rf|mi]
 ```
 
-### Training a Model
+* `--model`: Required. Specifies the model architecture to train.
+* `--domain_mixup`: Optional. Enables Domain Mixup interpolation.
+* `--coral`: Optional. Applies CORAL for domain alignment.
+* `--vae`: Optional. Enables VAE-based feature augmentation.
+* `--sample_size`: Optional. Randomly samples N subjects from the dataset.
+* `--seed`: Optional. Sets the random seed (default: 42).
+* `--tag`: Optional. Adds a suffix tag to identify model variants.
+* `--subject_wise_split`: Optional. Uses subject-wise splitting to avoid leakage.
+* `--feature_selection`: Optional. Chooses feature selection method: `rf` (default) or `mi`.
+
+---
+
+### Step 3: Evaluate a Model
+
 ```sh
-python bin/train.py --model [model name: SvmW/SvmA/Lstm/RF] [--domain_mixup]
+python bin/evaluate.py \
+    --model [RF | SvmA | SvmW | Lstm] \
+    [--tag TAG] \
+    [--sample_size N] \
+    [--seed N] \
+    [--subject_wise_split]
 ```
 
-### Evaluating a Model
-```sh
-python bin/evaluate.py --model [model name: SvmW/SvmA/Lstm/RF]
-```
+* `--model`: Required. Specifies which trained model to evaluate.
+* `--tag`: Optional. Used to identify specific model variants.
+* `--sample_size`: Optional. Limits the number of subjects to evaluate.
+* `--seed`: Optional. Sets the random seed for consistent sampling (default: 42).
+* `--subject_wise_split`: Optional. Enables subject-wise evaluation.
 
 <!--
 ## Results & Visualization
