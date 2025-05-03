@@ -88,6 +88,13 @@ def main():
         action="store_true",
         help="Use subject-wise data splitting to prevent data leakage across subjects."
     )
+    parser.add_argument(
+        "--feature_selection",
+        choices=["rf", "mi"],
+        default="rf",
+        help="Feature selection method: 'rf' for RandomForest importance, 'mi' for Mutual Information (default: rf)."
+    )
+
 
     args = parser.parse_args()
 
@@ -107,7 +114,8 @@ def main():
         sample_size=args.sample_size,
         seed=args.seed,
         tag=args.tag,
-        subject_wise_split=args.subject_wise_split  
+        subject_wise_split=args.subject_wise_split,
+        feature_selection_method=args.feature_selection 
     )
 
 

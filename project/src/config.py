@@ -39,3 +39,5 @@ SCALING_FILTER = np.array([0.48296, 0.83652, 0.22414, -0.12941])
 WAVELET_FILTER = np.array([-0.12941, -0.22414, 0.83652, -0.48296])
 WAVELET_LEV = 3
 
+# Feature selection
+TOP_K_FEATURES = 10
