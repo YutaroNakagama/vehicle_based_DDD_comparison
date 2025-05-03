@@ -12,7 +12,7 @@ import json
 import numpy as np
 import pandas as pd
 from collections import OrderedDict
-from sklearn.metrics import classification_report, roc_curve, auc
+from sklearn.metrics import classification_report, roc_curve, auc, make_scorer, roc_auc_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import StandardScaler
@@ -22,9 +22,10 @@ from src.config import MODEL_PKL_PATH
 
 def common_train(
     X_train, X_test, y_train, y_test,
-    feature_indices, model: str, model_type: str,
+    selected_features,  
+    model: str, model_type: str,
     clf=None, suffix: str = ""
-) -> None:
+):
     """Train a classical ML model (RandomForest) using Optuna and ANFIS-based feature selection.
 
     This function:
@@ -52,18 +53,6 @@ def common_train(
     X_test = X_test.loc[:, ~X_test.columns.duplicated()]
 
     def objective(trial):
-        threshold = trial.suggest_float("threshold", 0.5, 0.9)
-        ids = calculate_id(feature_indices, [threshold] + [1.0] * (len(feature_indices.columns) * 2))
-        selected_indices = np.where(ids > threshold)[0]
-
-        if len(selected_indices) == 0:
-            return 1.0  # High error if no features selected
-
-        selected_features = pd.Index(X_train.columns[selected_indices]).unique()
-        scaler = StandardScaler()
-        X_train_scaled = scaler.fit_transform(X_train[selected_features])
-        X_val_scaled = scaler.transform(X_test[selected_features])
-
         params = {
             "n_estimators": trial.suggest_int("n_estimators", 100, 300),
             "max_depth": trial.suggest_int("max_depth", 5, 30),
@@ -73,21 +62,20 @@ def common_train(
         }
 
         clf = RandomForestClassifier(**params, class_weight="balanced")
-        score = cross_val_score(clf, X_train_scaled, y_train, cv=3, scoring="accuracy").mean()
-        return -score  # Optuna minimizes the objective
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train[selected_features])
+        roc_auc = make_scorer(roc_auc_score, needs_proba=True)
+        score = cross_val_score(clf, X_train_scaled, y_train, cv=3, scoring=roc_auc).mean()
+        return score
 
     # Run Optuna study
-    study = optuna.create_study(direction="minimize")
-    study.optimize(objective, n_trials=30)
+    study = optuna.create_study(direction="maximize")
+    study.optimize(objective, n_trials=100)
 
-    # Extract best configuration
     best_params = study.best_params
-    best_threshold = best_params.pop("threshold")
 
-    ids = calculate_id(feature_indices, [best_threshold] + [1.0] * (len(feature_indices.columns) * 2))
-    selected_features = list(OrderedDict.fromkeys(
-        X_train.columns[np.where(ids > best_threshold)[0]].tolist()
-    ))
+    logging.info(f"Best hyperparameters: {best_params}")
+    logging.info(f"Selected features (from input): {selected_features}")
 
     # Final training
     scaler = StandardScaler()
