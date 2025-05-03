@@ -92,7 +92,9 @@ def common_train(
     os.makedirs(f"{MODEL_PKL_PATH}/{model_type}", exist_ok=True)
     with open(f"{MODEL_PKL_PATH}/{model_type}/{model}{suffix}.pkl", "wb") as f:
         pickle.dump(best_clf, f)
-    np.save(f"{MODEL_PKL_PATH}/{model_type}/{model}{suffix}_feat.npy", selected_features)
+    with open(f"{MODEL_PKL_PATH}/{model_type}/selected_features_train{suffix}.pkl", "wb") as f:
+        pickle.dump(selected_features.tolist(), f)
+
 
 
     # Evaluate

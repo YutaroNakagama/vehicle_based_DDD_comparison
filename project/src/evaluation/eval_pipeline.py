@@ -32,7 +32,7 @@ from src.evaluation.models.common import common_eval
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
-def eval_pipeline(model: str, tag: str = None) -> None:
+def eval_pipeline(model: str, tag: str = None, sample_size: int = None, seed: int = 42) -> None:
     """Evaluate the specified trained model using appropriate method.
 
     The evaluation routine is selected based on the `model` name.
@@ -48,6 +48,11 @@ def eval_pipeline(model: str, tag: str = None) -> None:
 
     # Load subject list and determine model type
     subject_list = read_subject_list()
+    if sample_size is not None:
+        rng = np.random.default_rng(seed)
+        subject_list = rng.choice(subject_list, size=sample_size, replace=False).tolist()
+        logging.info(f"Evaluating on {sample_size} subjects: {subject_list}")
+
     model_type = get_model_type(model)
 
     # Load preprocessed feature data
