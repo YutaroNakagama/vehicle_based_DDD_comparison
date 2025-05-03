@@ -83,7 +83,11 @@ def main():
         default=None,
         help="Optional tag suffix for model saving (e.g., 'erm', 'coral')."
     )
-
+    parser.add_argument(
+        "--subject_wise_split",
+        action="store_true",
+        help="Use subject-wise data splitting to prevent data leakage across subjects."
+    )
 
     args = parser.parse_args()
 
@@ -101,7 +105,8 @@ def main():
         use_vae=args.vae,
         sample_size=args.sample_size,
         seed=args.seed,
-        tag=args.tag
+        tag=args.tag,
+        subject_wise_split=args.subject_wise_split  
     )
 
 
