@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import logging
 import joblib
+import datetime
 from sklearn.metrics import classification_report, roc_curve, auc, mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -166,10 +167,24 @@ def eval_pipeline(model: str, tag: str = None, sample_size: int = None, seed: in
 
         result = common_eval(X_test, y_test, model, model_type, clf)
 
+    # Add evaluation metadata
+    result["sample_size"] = sample_size if sample_size is not None else len(subject_list)
+    result["subject_list"] = subject_list
+    
+    # Add selected features if available
+    if model in ["SvmA", "RF", "SvmW"]:  # Add other classical models here if needed
+        result["selected_features"] = selected_features
+
     # After each evaluation call (e.g., result = common_eval(...))
     results_dir = os.path.join("results", model_type)
     os.makedirs(results_dir, exist_ok=True)
-    results_path = os.path.join(results_dir, f"metrics_{model}_{tag}.json" if tag else f"metrics_{model}.json")
+
+    # generate timestamp
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") 
+
+    # save results
+    results_filename = f"metrics_{model}_{tag}_{timestamp}.json" if tag else f"metrics_{model}_{timestamp}.json"
+    results_path = os.path.join(results_dir, results_filename)
     with open(results_path, "w") as f:
         json.dump(result, f, indent=2)
     logging.info(f"Saved evaluation metrics to {results_path}")
