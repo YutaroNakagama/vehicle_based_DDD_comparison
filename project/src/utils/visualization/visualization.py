@@ -10,6 +10,12 @@ import numpy as np
 import logging
 import scipy.stats
 import matplotlib
+import os
+import json
+from collections import defaultdict
+from datetime import datetime
+import re
+
 matplotlib.use('TkAgg')  # For compatibility with interactive environments
 import matplotlib.pyplot as plt
 
@@ -92,3 +98,69 @@ def plot_custom_colored_distribution(data, output_path: str = None, threshold: f
     else:
         plt.show()
 
+
+def extract_model_and_time(filename):
+    match = re.match(r"metrics_(.+?)_.*?_(\d{8}_\d{6})\.json", filename)
+    if match:
+        model, timestamp = match.groups()
+        dt = datetime.strptime(timestamp, "%Y%m%d_%H%M%S")
+        return model, dt
+    return None, None
+
+
+def find_latest_metric_files(directory):
+    model_files = defaultdict(list)
+
+    for fname in os.listdir(directory):
+        if fname.startswith("metrics_") and fname.endswith(".json"):
+            model, dt = extract_model_and_time(fname)
+            if model and dt:
+                model_files[model].append((dt, fname))
+
+    latest_files = {}
+    for model, filelist in model_files.items():
+        latest_files[model] = max(filelist)[1]
+
+    return latest_files
+
+
+def plot_roc_curves_from_latest_json(results_dir: str, title: str = "ROC Curve Comparison"):
+    """
+    Plot ROC curves from the latest JSON metrics per model in the given directory.
+
+    Args:
+        results_dir (str): Directory where metrics_*.json files are stored.
+        title (str): Title of the ROC plot.
+
+    Returns:
+        None
+    """
+    latest_files = find_latest_metric_files(results_dir)
+
+    plt.figure(figsize=(10, 8))
+
+    for model, fname in sorted(latest_files.items()):
+        full_path = os.path.join(results_dir, fname)
+        with open(full_path, "r") as f:
+            result = json.load(f)
+
+        roc = result.get("roc_curve")
+        if not roc:
+            logging.warning(f"No ROC data in {fname}, skipping.")
+            continue
+
+        fpr = roc["fpr"]
+        tpr = roc["tpr"]
+        auc_value = roc.get("auc", None)
+
+        label = f"{model} (AUC={auc_value:.2f})" if auc_value else model
+        plt.plot(fpr, tpr, label=label)
+
+    plt.plot([0, 1], [0, 1], linestyle="--", color="gray", label="Random")
+    plt.title(title, fontsize=16)
+    plt.xlabel("False Positive Rate", fontsize=14)
+    plt.ylabel("True Positive Rate", fontsize=14)
+    plt.legend(loc="lower right", fontsize=10)
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
