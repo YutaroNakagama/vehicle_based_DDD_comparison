@@ -11,7 +11,13 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
+from catboost import CatBoostClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import AdaBoostClassifier, GradientBoostingClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
+
 
 def get_classifier(model_name: str):
     """Return a classifier instance based on the given model name.
@@ -35,17 +41,16 @@ def get_classifier(model_name: str):
     classifiers = {
         "RF": RandomForestClassifier(random_state=42),
         "SvmW": SVC(kernel="rbf", probability=True, random_state=42),
-        # Extendable section (commented alternatives for future use):
-        # "Decision Tree": DecisionTreeClassifier(random_state=42),
-        # "AdaBoost": AdaBoostClassifier(random_state=42),
-        # "Gradient Boosting": GradientBoostingClassifier(random_state=42),
-        # "XGBoost": XGBClassifier(use_label_encoder=False, eval_metric="logloss", random_state=42),
-        # "LightGBM": LGBMClassifier(random_state=42),
-        # "CatBoost": CatBoostClassifier(verbose=0, random_state=42),
-        # "Logistic Regression": LogisticRegression(max_iter=1000, random_state=42),
-        # "SVM (Linear Kernel)": SVC(kernel="linear", probability=True, random_state=42),
-        # "K-Nearest Neighbors": KNeighborsClassifier(),
-        # "MLP (Neural Network)": MLPClassifier(max_iter=500, random_state=42),
+        "DecisionTree": DecisionTreeClassifier(random_state=42),
+        "AdaBoost": AdaBoostClassifier(random_state=42),
+        "GradientBoosting": GradientBoostingClassifier(random_state=42),
+        "XGBoost": XGBClassifier(use_label_encoder=False, eval_metric="logloss", random_state=42),
+        "LightGBM": LGBMClassifier(random_state=42),
+        "CatBoost": CatBoostClassifier(verbose=0, random_state=42),
+        "LogisticRegression": LogisticRegression(max_iter=1000, random_state=42),
+        "SVM": SVC(kernel="linear", probability=True, random_state=42),
+        "K-Nearest Neighbors": KNeighborsClassifier(),
+        "MLP": MLPClassifier(max_iter=500, random_state=42),
     }
 
     clf = classifiers.get(model_name)
