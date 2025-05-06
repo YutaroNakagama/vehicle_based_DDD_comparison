@@ -35,6 +35,8 @@ def common_eval(
     y_pred = clf.predict(X_test)
 
     roc_auc = None
+    fpr, tpr = None, None  # Add to capture ROC curve if possible
+
     if hasattr(clf, "predict_proba"):
         y_pred_proba = clf.predict_proba(X_test)[:, 1]
         fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
@@ -49,7 +51,7 @@ def common_eval(
     logging.info(f"ROC AUC: {roc_auc:.4f}" if roc_auc is not None else "ROC AUC: N/A")
     logging.info(f"Classification Report:\n{classification_report(y_test, y_pred)}")
 
-    return {
+    result = {
         "model": model_name,
         "mse": float(mse),
         "roc_auc": float(roc_auc) if roc_auc is not None else None,
@@ -57,3 +59,12 @@ def common_eval(
         "confusion_matrix": conf_matrix.tolist()
     }
 
+    # Include ROC curve data if available
+    if fpr is not None and tpr is not None:
+        result["roc_curve"] = {
+            "fpr": fpr.tolist(),
+            "tpr": tpr.tolist(),
+            "auc": roc_auc
+        }
+
+    return result
