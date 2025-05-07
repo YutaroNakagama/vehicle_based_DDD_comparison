@@ -90,11 +90,10 @@ def main():
     )
     parser.add_argument(
         "--feature_selection",
-        choices=["rf", "mi"],
+        choices=["rf", "mi", "anova"],
         default="rf",
-        help="Feature selection method: 'rf' for RandomForest importance, 'mi' for Mutual Information (default: rf)."
+        help="Feature selection method: 'rf' (RandomForest importance), 'mi' (Mutual Information), 'anova' (ANOVA F-test). Default: rf."
     )
-
 
     args = parser.parse_args()
 
