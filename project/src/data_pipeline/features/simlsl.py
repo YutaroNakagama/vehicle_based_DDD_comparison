@@ -160,8 +160,14 @@ def smooth_std_pe_process(subject: str, model: str, use_jittering: bool = False)
         logging.error(f"Invalid data structure in {file_path}")
         return
 
-    signals = [sim_data[idx] for idx in [29, 19, 18, 27]]
-    signal_names = ['steering', 'lat_acc', 'long_acc', 'lane_offset']
+    steering = np.nan_to_num(sim_data[29])
+    steering_speed = np.gradient(steering) * SAMPLE_RATE_SIMLSL
+    lat_acc = np.nan_to_num(sim_data[19])
+    long_acc = np.nan_to_num(sim_data[18])
+    lane_offset = np.nan_to_num(sim_data[27])
+    
+    signals = [steering, steering_speed, lat_acc, long_acc, lane_offset]
+    signal_names = ['steering', 'steering_speed', 'lat_acc', 'long_acc', 'lane_offset']
 
     if use_jittering:
         signals = [jittering(sig) for sig in signals]
@@ -206,12 +212,16 @@ def time_freq_domain_process(subject: str, model: str, use_jittering: bool = Fal
         return
 
     sim_data = simlsl_data['SIM_lsl']
-    signals = [sim_data[idx] for idx in [29, 19, 27, 18]]
+
+    steering = np.nan_to_num(sim_data[29, :])
+    steering_speed = np.gradient(steering) * SAMPLE_RATE_SIMLSL
+    
+    signals = [steering, steering_speed, sim_data[19], sim_data[27], sim_data[18]]
+    prefixes = ["Steering_", "SteeringSpeed_", "Lateral_", "LaneOffset_", "LongAcc_"]
 
     if use_jittering:
         signals = [jittering(sig, sigma=0.03) for sig in signals]
 
-    prefixes = ["Steering_", "Lateral_", "LaneOffset_", "LongAcc_"]
     window_size, step_size = get_simlsl_window_params(model)
 
     features_df = process_simlsl_data(signals, prefixes, model)

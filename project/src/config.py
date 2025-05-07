@@ -28,10 +28,10 @@ MODEL_CHOICES = [
 
 # Data process parameters
 MODEL_WINDOW_CONFIG = {
-    "common": {"window_sec": 3, "step_sec": 0.5},
-    "SvmA":   {"window_sec": 3, "step_sec": 0.5},
-    "SvmW":   {"window_sec": 3, "step_sec": 0.5},
-    "Lstm":   {"window_sec": 3, "step_sec": 0.5},
+    "common": {"window_sec": 3, "step_sec": 1.5},
+    "SvmA":   {"window_sec": 3, "step_sec": 1.5},
+    "SvmW":   {"window_sec": 3, "step_sec": 1.5},
+    "Lstm":   {"window_sec": 3, "step_sec": 1.5},
 }
 
 # Sampling rates
