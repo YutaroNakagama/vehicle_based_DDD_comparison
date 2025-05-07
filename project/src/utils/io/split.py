@@ -31,14 +31,17 @@ def data_split(df: pd.DataFrame):
             - y_val (pd.Series)
             - y_test (pd.Series)
     """
-    df = df[df["KSS_Theta_Alpha_Beta"].isin([1, 2, 6, 7, 8, 9])]
+    df = df[df["KSS_Theta_Alpha_Beta"].isin([1, 2, 8, 9])]
 
-    feature_columns = df.columns[1:46].tolist()
+    start_col = "Steering_Range"
+    end_col = "LaneOffset_AAA"
+    feature_columns = df.loc[:, start_col:end_col].columns.tolist()
+
     if 'subject_id' in df.columns:
         feature_columns.append('subject_id')
 
     X = df[feature_columns].dropna()
-    y = df.loc[X.index, "KSS_Theta_Alpha_Beta"].replace({1: 0, 2: 0, 6: 1, 7: 1, 8: 1, 9: 1})
+    y = df.loc[X.index, "KSS_Theta_Alpha_Beta"].replace({1: 0, 2: 0, 8: 1, 9: 1})
 
     # Train/val/test split: 60% / 20% / 20%
     X_temp, X_test, y_temp, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -90,8 +93,11 @@ def data_split_by_subject(df: pd.DataFrame, subject_list: List[str], seed: int =
     df_val = df[df["subject_id"].isin(subjects_val)].copy()
     df_test = df[df["subject_id"].isin(subjects_test)].copy()
 
-    # Step 4: Extract feature columns and remove NaN rows
-    feature_columns = df.columns[1:46].tolist()  # 想定: feature1〜feature45
+    # Step 4: Define feature columns based on known range
+    start_col = "Steering_Range"
+    end_col = "LaneOffset_AAA"
+    feature_columns = df.loc[:, start_col:end_col].columns.tolist()
+
     if 'subject_id' in df.columns:
         feature_columns.append('subject_id')
 

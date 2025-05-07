@@ -112,7 +112,7 @@ def load_subject_csvs(subject_list: list, model_type: str, add_subject_id: bool 
             if add_subject_id:
                 df['subject_id'] = subject_id
             dfs.append(df)
-            logging.info(f"Loaded: {file_name}")
+            logging.info(f"Loaded: {file_path}")
         except FileNotFoundError:
             logging.warning(f"File not found: {file_name}")
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
