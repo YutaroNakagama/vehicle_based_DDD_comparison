@@ -15,7 +15,7 @@ import pandas as pd
 import logging
 from sklearn.metrics import classification_report, accuracy_score, roc_curve, auc, mean_squared_error
 from sklearn.model_selection import train_test_split
-from sklearn.feature_selection import SelectKBest, mutual_info_classif
+from sklearn.feature_selection import SelectKBest, mutual_info_classif, f_classif  
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
@@ -142,6 +142,13 @@ def train_pipeline(
             selected_mask = selector.get_support()
             selected_features = X_train_for_fs.columns[selected_mask].tolist()
             logging.info(f"Selected features (mutual_info): {selected_features}")
+
+        elif feature_selection_method == "anova":  
+            selector = SelectKBest(score_func=f_classif, k=TOP_K_FEATURES)
+            selector.fit(X_train_for_fs, y_train)
+            selected_mask = selector.get_support()
+            selected_features = X_train_for_fs.columns[selected_mask].tolist()
+            logging.info(f"Selected features (ANOVA F-test): {selected_features}")
         
         elif feature_selection_method == "rf":
             selected_features = select_top_features_by_importance(X_train_for_fs, y_train, top_k=TOP_K_FEATURES)
