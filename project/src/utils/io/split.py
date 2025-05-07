@@ -33,7 +33,10 @@ def data_split(df: pd.DataFrame):
     """
     df = df[df["KSS_Theta_Alpha_Beta"].isin([1, 2, 8, 9])]
 
-    feature_columns = df.columns[1:46].tolist()
+    start_col = "Steering_Range"
+    end_col = "LaneOffset_AAA"
+    feature_columns = df.loc[:, start_col:end_col].columns.tolist()
+
     if 'subject_id' in df.columns:
         feature_columns.append('subject_id')
 
@@ -90,8 +93,11 @@ def data_split_by_subject(df: pd.DataFrame, subject_list: List[str], seed: int =
     df_val = df[df["subject_id"].isin(subjects_val)].copy()
     df_test = df[df["subject_id"].isin(subjects_test)].copy()
 
-    # Step 4: Extract feature columns and remove NaN rows
-    feature_columns = df.columns[1:46].tolist()  # 想定: feature1〜feature45
+    # Step 4: Define feature columns based on known range
+    start_col = "Steering_Range"
+    end_col = "LaneOffset_AAA"
+    feature_columns = df.loc[:, start_col:end_col].columns.tolist()
+
     if 'subject_id' in df.columns:
         feature_columns.append('subject_id')
 

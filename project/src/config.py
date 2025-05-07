@@ -44,7 +44,7 @@ WAVELET_FILTER = np.array([-0.12941, -0.22414, 0.83652, -0.48296])
 WAVELET_LEV = 3
 
 # Feature selection
-TOP_K_FEATURES = 40
+TOP_K_FEATURES = 108
 
 # Optuna 
 N_TRIALS = 15
