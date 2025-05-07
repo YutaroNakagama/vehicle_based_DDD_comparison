@@ -156,8 +156,12 @@ def wavelet_process(subject: str, model: str, use_jittering: bool = False) -> No
 
     window_size, step_size = get_simlsl_window_params(model)
 
+    steering = np.nan_to_num(sim_data[29, :])
+    steering_speed = np.gradient(steering) * SAMPLE_RATE_SIMLSL
+
     signals = {
-        'SteeringWheel': np.nan_to_num(sim_data[29, :]),
+        'SteeringWheel': steering,
+        'SteeringSpeed': steering_speed,
         'LongitudinalAccel': np.nan_to_num(sim_data[18, :]),
         'LateralAccel': np.nan_to_num(sim_data[19, :]),
         'LaneOffset': np.nan_to_num(sim_data[27, :]),
