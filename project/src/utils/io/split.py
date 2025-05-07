@@ -31,14 +31,14 @@ def data_split(df: pd.DataFrame):
             - y_val (pd.Series)
             - y_test (pd.Series)
     """
-    df = df[df["KSS_Theta_Alpha_Beta"].isin([1, 2, 6, 7, 8, 9])]
+    df = df[df["KSS_Theta_Alpha_Beta"].isin([1, 2, 8, 9])]
 
     feature_columns = df.columns[1:46].tolist()
     if 'subject_id' in df.columns:
         feature_columns.append('subject_id')
 
     X = df[feature_columns].dropna()
-    y = df.loc[X.index, "KSS_Theta_Alpha_Beta"].replace({1: 0, 2: 0, 6: 1, 7: 1, 8: 1, 9: 1})
+    y = df.loc[X.index, "KSS_Theta_Alpha_Beta"].replace({1: 0, 2: 0, 8: 1, 9: 1})
 
     # Train/val/test split: 60% / 20% / 20%
     X_temp, X_test, y_temp, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
