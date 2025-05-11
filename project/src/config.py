@@ -11,12 +11,13 @@ including:
 import numpy as np
 
 # File paths
-SUBJECT_LIST_PATH   = '../../dataset/mdapbe/subject_list.txt'
-DATASET_PATH        = '../../dataset/mdapbe/physio'
-INTRIM_CSV_PATH     = './data/interim'
-PROCESS_CSV_PATH    = './data/processed'
-MODEL_PKL_PATH      = './model/'
-OUTPUT_SVG_PATH     = './output/svg'
+SUBJECT_LIST_PATH       = '../../dataset/mdapbe/subject_list.txt'
+SUBJECT_LIST_PATH_TRAIN = '../../dataset/mdapbe/subject_list_train.txt'
+DATASET_PATH            = '../../dataset/mdapbe/physio'
+INTRIM_CSV_PATH         = './data/interim'
+PROCESS_CSV_PATH        = './data/processed'
+MODEL_PKL_PATH          = './model/'
+OUTPUT_SVG_PATH         = './output/svg'
 
 # Choices for processing and modeling
 DATA_PROCESS_CHOICES = ["SvmA", "SvmW", "Lstm", "common"]
@@ -44,7 +45,7 @@ WAVELET_FILTER = np.array([-0.12941, -0.22414, 0.83652, -0.48296])
 WAVELET_LEV = 3
 
 # Feature selection
-TOP_K_FEATURES = 108
+TOP_K_FEATURES = 10
 
 # Optuna 
 N_TRIALS = 15
