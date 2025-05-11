@@ -22,7 +22,7 @@ from sklearn.svm import SVC
 from pyswarm import pso
 
 from src.config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, MODEL_PKL_PATH, TOP_K_FEATURES
-from src.utils.io.loaders import read_subject_list, get_model_type, load_subject_csvs
+from src.utils.io.loaders import read_train_subject_list, get_model_type, load_subject_csvs
 from src.utils.io.split import data_split, data_split_by_subject  
 from src.utils.domain_generalization.domain_mixup import generate_domain_labels, domain_mixup
 from src.utils.domain_generalization.coral import coral
@@ -65,7 +65,7 @@ def train_pipeline(
     Returns:
         None
     """
-    subject_list = read_subject_list()
+    subject_list = read_train_subject_list()
 
     if sample_size is not None:
         rng = np.random.default_rng(seed)
