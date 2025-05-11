@@ -10,6 +10,7 @@ Includes:
 
 from src.config import (
     SUBJECT_LIST_PATH,
+    SUBJECT_LIST_PATH_TRAIN,
     DATASET_PATH,
     INTRIM_CSV_PATH,
     PROCESS_CSV_PATH,
@@ -51,6 +52,14 @@ def read_subject_list() -> list:
     with open(SUBJECT_LIST_PATH, 'r') as file:
         return [line.strip() for line in file if line.strip()]
 
+def read_train_subject_list() -> list:
+    """Read the list of subject IDs from a text file.
+
+    Returns:
+        list: List of subject strings, e.g., ["S0210_1", "S0211_2"]
+    """
+    with open(SUBJECT_LIST_PATH_TRAIN, 'r') as file:
+        return [line.strip() for line in file if line.strip()]
 
 def save_csv(df: pd.DataFrame, subject_id: str, version: str, feat: str, model: str) -> None:
     """Save a DataFrame to CSV in the interim or processed directory.
