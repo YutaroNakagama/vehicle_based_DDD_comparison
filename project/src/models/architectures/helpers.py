@@ -17,6 +17,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier, GradientBoostingClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
+from imblearn.ensemble import BalancedRandomForestClassifier  
 
 
 def get_classifier(model_name: str):
@@ -40,6 +41,7 @@ def get_classifier(model_name: str):
     """
     classifiers = {
         "RF": RandomForestClassifier(random_state=42),
+        "BalancedRF": BalancedRandomForestClassifier(random_state=42),  
         "SvmW": SVC(kernel="rbf", probability=True, random_state=42),
         "DecisionTree": DecisionTreeClassifier(random_state=42),
         "AdaBoost": AdaBoostClassifier(random_state=42),
