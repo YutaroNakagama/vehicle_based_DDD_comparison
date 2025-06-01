@@ -22,7 +22,7 @@ from sklearn.svm import SVC
 from pyswarm import pso
 
 from src.config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, MODEL_PKL_PATH, TOP_K_FEATURES
-from src.utils.io.loaders import read_train_subject_list, get_model_type, load_subject_csvs
+from src.utils.io.loaders import read_train_subject_list, read_train_subject_list_fold, get_model_type, load_subject_csvs
 from src.utils.io.split import data_split, data_split_by_subject  
 from src.utils.domain_generalization.domain_mixup import generate_domain_labels, domain_mixup
 from src.utils.domain_generalization.coral import coral
@@ -45,6 +45,7 @@ def train_pipeline(
     use_vae: bool = False,
     sample_size: int = None,
     seed: int = 42,
+    fold: int = 0,
     tag: str = None, 
     subject_wise_split: bool = False, 
     feature_selection_method: str = "rf"  
@@ -65,7 +66,11 @@ def train_pipeline(
     Returns:
         None
     """
-    subject_list = read_train_subject_list()
+    if fold == 0:
+        subject_list = read_train_subject_list()
+    else:
+        subject_list = read_train_subject_list_fold(fold)
+        
 
     if sample_size is not None:
         rng = np.random.default_rng(seed)

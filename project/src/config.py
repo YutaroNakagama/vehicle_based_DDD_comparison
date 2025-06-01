@@ -13,6 +13,7 @@ import numpy as np
 # File paths
 SUBJECT_LIST_PATH       = '../../dataset/mdapbe/subject_list.txt'
 SUBJECT_LIST_PATH_TRAIN = '../../dataset/mdapbe/subject_list_train.txt'
+SUBJECT_LIST_PATH_FOLD  = '../../dataset/mdapbe/subject_folds'
 DATASET_PATH            = '../../dataset/mdapbe/physio'
 INTRIM_CSV_PATH         = './data/interim'
 PROCESS_CSV_PATH        = './data/processed'
@@ -48,4 +49,4 @@ WAVELET_LEV = 3
 TOP_K_FEATURES = 10
 
 # Optuna 
-N_TRIALS = 30
+N_TRIALS = 10

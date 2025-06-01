@@ -11,6 +11,7 @@ Includes:
 from src.config import (
     SUBJECT_LIST_PATH,
     SUBJECT_LIST_PATH_TRAIN,
+    SUBJECT_LIST_PATH_FOLD,
     DATASET_PATH,
     INTRIM_CSV_PATH,
     PROCESS_CSV_PATH,
@@ -42,7 +43,6 @@ def safe_load_mat(file_path: str):
         logging.error(f"Error loading file {file_path}: {e}")
         return None
 
-
 def read_subject_list() -> list:
     """Read the list of subject IDs from a text file.
 
@@ -52,6 +52,16 @@ def read_subject_list() -> list:
     with open(SUBJECT_LIST_PATH, 'r') as file:
         return [line.strip() for line in file if line.strip()]
 
+def read_subject_list_fold(fold: int) -> list:
+    """Read the list of subject IDs from a text file.
+
+    Returns:
+        list: List of subject strings, e.g., ["S0210_1", "S0211_2"]
+    """
+    input_fp = os.path.join(SUBJECT_LIST_PATH_FOLD, f'subject_list_{fold}.txt')
+    with open(input_fp, 'r') as file:
+        return [line.strip() for line in file if line.strip()]
+
 def read_train_subject_list() -> list:
     """Read the list of subject IDs from a text file.
 
@@ -59,6 +69,16 @@ def read_train_subject_list() -> list:
         list: List of subject strings, e.g., ["S0210_1", "S0211_2"]
     """
     with open(SUBJECT_LIST_PATH_TRAIN, 'r') as file:
+        return [line.strip() for line in file if line.strip()]
+
+def read_train_subject_list_fold(fold: int) -> list:
+    """Read the list of subject IDs from a text file.
+
+    Returns:
+        list: List of subject strings, e.g., ["S0210_1", "S0211_2"]
+    """
+    input_fp = os.path.join(SUBJECT_LIST_PATH_FOLD, f'subject_list_train_{fold}.txt')
+    with open(input_fp, 'r') as file:
         return [line.strip() for line in file if line.strip()]
 
 def save_csv(df: pd.DataFrame, subject_id: str, version: str, feat: str, model: str) -> None:
