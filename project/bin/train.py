@@ -78,6 +78,12 @@ def main():
         help="Random seed for reproducible subject sampling."
     )
     parser.add_argument(
+        "--fold",
+        type=int,
+        default=0,
+        help="Fold number for Cross validation."
+    )
+    parser.add_argument(
         "--tag",
         type=str,
         default=None,
@@ -112,6 +118,7 @@ def main():
         use_vae=args.vae,
         sample_size=args.sample_size,
         seed=args.seed,
+        fold=args.fold,
         tag=args.tag,
         subject_wise_split=args.subject_wise_split,
         feature_selection_method=args.feature_selection 
