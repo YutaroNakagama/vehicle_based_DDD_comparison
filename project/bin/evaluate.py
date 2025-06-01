@@ -67,6 +67,12 @@ def main():
         help="Random seed for reproducibility in subset evaluation"
     )
     parser.add_argument(
+        "--fold",
+        type=int,
+        default=0,
+        help="Fold number for cross validation"
+    )
+    parser.add_argument(
         "--subject_wise_split",
         action="store_true",
         help="Use subject-wise data splitting to prevent subject leakage"
@@ -83,6 +89,7 @@ def main():
             tag=args.tag,
             sample_size=args.sample_size,
             seed=args.seed,
+            fold=args.fold,
             subject_wise_split=args.subject_wise_split
         )
     except Exception as e:
