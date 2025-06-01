@@ -23,7 +23,7 @@ from tensorflow.keras.models import load_model
 from src.evaluation.models.lstm import AttentionLayer 
 
 from src.config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, MODEL_PKL_PATH
-from src.utils.io.loaders import read_subject_list, get_model_type, load_subject_csvs
+from src.utils.io.loaders import read_subject_list, read_subject_list_fold, get_model_type, load_subject_csvs
 from src.utils.io.split import data_split, data_split_by_subject
 from src.models.feature_selection.index import calculate_feature_indices
 from src.evaluation.models.lstm import lstm_eval
@@ -33,7 +33,14 @@ from src.evaluation.models.common import common_eval
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
-def eval_pipeline(model: str, tag: str = None, sample_size: int = None, seed: int = 42, subject_wise_split: bool = False) -> None:
+def eval_pipeline(
+    model: str, 
+    tag: str = None, 
+    sample_size: int = None, 
+    seed: int = 42, 
+    fold: int = 0, 
+    subject_wise_split: bool = False
+    ) -> None:
     """Evaluate the specified trained model using appropriate method.
 
     The evaluation routine is selected based on the `model` name.
@@ -50,9 +57,21 @@ def eval_pipeline(model: str, tag: str = None, sample_size: int = None, seed: in
     logging.info(f"Evaluation split mode: {'subject-wise' if subject_wise_split else 'sample-wise'}")
 
     # Load subject list and determine model type
-    subject_list = read_subject_list()
+    if fold == 0:
+        subject_list = read_subject_list()
+    else:
+        subject_list = read_subject_list_fold(fold)
+
+#    if sample_size is not None:
+#        rng = np.random.default_rng(seed)
+#        subject_list = rng.choice(subject_list, size=sample_size, replace=False).tolist()
+#        logging.info(f"Evaluating on {sample_size} subjects: {subject_list}")
+
     if sample_size is not None:
         rng = np.random.default_rng(seed)
+        if sample_size > len(subject_list):
+            logging.error(f"Sample size ({sample_size}) is larger than available subject count ({len(subject_list)}).")
+            return
         subject_list = rng.choice(subject_list, size=sample_size, replace=False).tolist()
         logging.info(f"Evaluating on {sample_size} subjects: {subject_list}")
 
