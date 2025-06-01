@@ -82,8 +82,8 @@ def train_pipeline(
     else:
         X_train, X_val, X_test, y_train, y_val, y_test = data_split(data)
         logging.info(f"X_train shape after data split: {X_train.shape}")
-        logging.info(f"X_val shape after data split: {X_train.shape}")
-        logging.info(f"X_test shape after data split: {X_test.shape}")
+        logging.info(f"X_val   shape after data split: {X_val.shape}")
+        logging.info(f"X_test  shape after data split: {X_test.shape}")
 
     # Check for label diversity in training set
     if y_train.nunique() < 2:

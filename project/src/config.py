@@ -22,7 +22,7 @@ OUTPUT_SVG_PATH         = './output/svg'
 # Choices for processing and modeling
 DATA_PROCESS_CHOICES = ["SvmA", "SvmW", "Lstm", "common"]
 MODEL_CHOICES = [
-    "SvmA", "SvmW", "Lstm", "RF", "DecisionTree", "AdaBoost", "GradientBoosting",
+    "SvmA", "SvmW", "Lstm", "RF", "BalancedRF", "DecisionTree", "AdaBoost", "GradientBoosting",
     "XGBoost", "LightGBM", "CatBoost", "LogisticRegression", "SVM", "K-Nearest Neighbors", "MLP"
 ]
 
@@ -48,4 +48,4 @@ WAVELET_LEV = 3
 TOP_K_FEATURES = 10
 
 # Optuna 
-N_TRIALS = 15
+N_TRIALS = 30
