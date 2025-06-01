@@ -25,6 +25,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
+from imblearn.ensemble import BalancedRandomForestClassifier
 
 from src.models.feature_selection.anfis import calculate_id
 from src.config import MODEL_PKL_PATH, N_TRIALS
@@ -99,9 +100,25 @@ def common_train(
                 "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
                 "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 5),
                 "random_state": 42,
-                "class_weight": "balanced"
+                "class_weight": "balanced_subsample"
             }
             clf = RandomForestClassifier(**params)
+
+        elif model == "BalancedRF":
+            sampling_strategy = trial.suggest_categorical(
+                "sampling_strategy", ["auto", "majority", "not majority", "not minority", "all", 0.5, 0.75, 1.0]
+            )
+            params = {
+                "n_estimators": trial.suggest_int("n_estimators", 100, 300),
+                "max_depth": trial.suggest_int("max_depth", 5, 30),
+                "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
+                "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 5),
+                "sampling_strategy": sampling_strategy,  
+                "replacement": trial.suggest_categorical("replacement", [True, False]),
+                "random_state": 42,
+                # NOTE: class_weight is not needed; B-RF handles balancing internally
+            }
+            clf = BalancedRandomForestClassifier(**params)
 
         elif model == "CatBoost":
             params = {
@@ -218,7 +235,9 @@ def common_train(
     elif model == "CatBoost":
         best_clf = CatBoostClassifier(**best_params)
     elif model == "RF":
-        best_clf = RandomForestClassifier(**best_params, class_weight="balanced")
+        best_clf = RandomForestClassifier(**best_params, class_weight="balanced_subsample")
+    elif model == "BalancedRF":
+        best_clf = BalancedRandomForestClassifier(**best_params)
     elif model == "LogisticRegression":
         best_clf = LogisticRegression(**best_params)
     elif model == "SVM":
@@ -274,4 +293,31 @@ def common_train(
 
     logging.info(f"{model} (Optuna) trained with ROC AUC: {roc_auc:.2f}")
     logging.info(classification_report(y_test, y_pred))
+
+    # Threshold optimization (F1-score)
+    if y_pred_proba is not None:
+        from sklearn.metrics import precision_recall_curve, f1_score
+
+        precision, recall, thresholds = precision_recall_curve(y_test, y_pred_proba)
+        f1_scores = 2 * precision * recall / (precision + recall + 1e-8)
+        best_idx = np.argmax(f1_scores)
+        best_threshold = thresholds[best_idx] if best_idx < len(thresholds) else 0.5
+
+        logging.info(f"Optimal threshold for F1: {best_threshold:.3f}")
+        
+        y_pred_opt = (y_pred_proba >= best_threshold).astype(int)
+        logging.info("Classification Report with optimized threshold:")
+        logging.info(classification_report(y_test, y_pred_opt))
+
+        # Save threshold
+        threshold_meta = {
+            "model": model,
+            "threshold": best_threshold,
+            "metric": "F1-optimal",
+        }
+        with open(f"{MODEL_PKL_PATH}/{model_type}/threshold_{model}{suffix}.json", "w") as f:
+            json.dump(threshold_meta, f, indent=2)
+
+    else:
+        logging.warning("Threshold optimization skipped: model does not support probability estimation.")
 
