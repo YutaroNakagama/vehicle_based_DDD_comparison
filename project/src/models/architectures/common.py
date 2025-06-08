@@ -230,28 +230,46 @@ def common_train(
 
     if model == "LightGBM":
         best_clf = LGBMClassifier(**best_params)
+
     elif model == "XGBoost":
         best_clf = XGBClassifier(**best_params)
+
     elif model == "CatBoost":
         best_clf = CatBoostClassifier(**best_params)
+
     elif model == "RF":
+        if "class_weight" in best_params:
+            best_params.pop("class_weight")
         best_clf = RandomForestClassifier(**best_params, class_weight="balanced_subsample")
+
     elif model == "BalancedRF":
         best_clf = BalancedRandomForestClassifier(**best_params)
+
     elif model == "LogisticRegression":
-        best_clf = LogisticRegression(**best_params)
+        if "class_weight" in best_params:
+                best_params.pop("class_weight")
+        best_clf = LogisticRegression(**best_params, class_weight="balanced")
+
     elif model == "SVM":
         best_clf = SVC(**best_params, probability=True, class_weight="balanced", random_state=42)
+
     elif model == "DecisionTree":
-        best_clf = DecisionTreeClassifier(**best_params)
+        if "class_weight" in best_params:
+            best_params.pop("class_weight")
+        best_clf = DecisionTreeClassifier(**best_params, class_weight="balanced")
+
     elif model == "AdaBoost":
         best_clf = AdaBoostClassifier(**best_params)
+
     elif model == "GradientBoosting":
         best_clf = GradientBoostingClassifier(**best_params)
+
     elif model == "K-Nearest Neighbors":
         best_clf = KNeighborsClassifier(**best_params)
+
     elif model == "MLP":
         best_clf = MLPClassifier(**best_params)
+
     else:
         raise ValueError(f"Unknown model: {model}")
 
