@@ -6,6 +6,7 @@ sets for use in supervised learning pipelines.
 
 import numpy as np
 import pandas as pd
+from src.config import KSS_BIN_LABELS, KSS_LABEL_MAP
 from typing import List, Tuple
 from sklearn.model_selection import train_test_split
 
@@ -31,7 +32,7 @@ def data_split(df: pd.DataFrame):
             - y_val (pd.Series)
             - y_test (pd.Series)
     """
-    df = df[df["KSS_Theta_Alpha_Beta"].isin([1, 2, 3, 8, 9])]
+    df = df[df["KSS_Theta_Alpha_Beta"].isin(KSS_BIN_LABELS)]
 
     start_col = "Steering_Range"
     end_col = "LaneOffset_AAA"
@@ -41,7 +42,7 @@ def data_split(df: pd.DataFrame):
         feature_columns.append('subject_id')
 
     X = df[feature_columns].dropna()
-    y = df.loc[X.index, "KSS_Theta_Alpha_Beta"].replace({1: 0, 2: 0, 3: 0, 8: 1, 9: 1})
+    y = df.loc[X.index, "KSS_Theta_Alpha_Beta"].replace(KSS_LABEL_MAP)
 
     # Train/val/test split: 60% / 20% / 20%
     X_temp, X_test, y_temp, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -71,8 +72,8 @@ def data_split_by_subject(df: pd.DataFrame, subject_list: List[str], seed: int =
     """
 
     # Step 1: Filter rows by KSS labels (1, 2 → 0 [alert], 8, 9 → 1 [drowsy])
-    df = df[df["KSS_Theta_Alpha_Beta"].isin([1, 2, 8, 9])].copy()
-    df["label"] = df["KSS_Theta_Alpha_Beta"].replace({1: 0, 2: 0, 8: 1, 9: 1})
+    df = df[df["KSS_Theta_Alpha_Beta"].isin(KSS_BIN_LABELS)].copy()
+    df["label"] = df["KSS_Theta_Alpha_Beta"].replace(KSS_LABEL_MAP)
 
     # Step 2: Split subject_id list into train/val/test (60/20/20)
     unique_subjects = list(set(subject_list))
