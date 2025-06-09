@@ -106,7 +106,7 @@ def common_train(
 
         elif model == "BalancedRF":
             sampling_strategy = trial.suggest_categorical(
-                "sampling_strategy", ["auto", "majority", "not majority", "not minority", "all", 0.5, 0.75, 1.0]
+                "sampling_strategy", ["auto", "majority", "not majority", "not minority", "all", 1.0]
             )
             params = {
                 "n_estimators": trial.suggest_int("n_estimators", 100, 300),
