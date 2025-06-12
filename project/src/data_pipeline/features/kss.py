@@ -19,31 +19,6 @@ from src.config import INTRIM_CSV_PATH, PROCESS_CSV_PATH, MODEL_WINDOW_CONFIG
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-
-#def convert_theta_alpha_to_kss(theta_alpha_ratios: np.ndarray) -> list:
-#    """Assign KSS scores (1–9) based on Theta/Alpha ratio thresholds.
-#
-#    Args:
-#        theta_alpha_ratios (np.ndarray): Array of Theta/Alpha ratio values.
-#
-#    Returns:
-#        list: Estimated KSS scores for each ratio.
-#    """
-#    min_value, max_value = np.min(theta_alpha_ratios), np.max(theta_alpha_ratios)
-#    thresholds = np.linspace(min_value, max_value, 10)
-#
-#    kss_scores = []
-#    for ratio in theta_alpha_ratios:
-#        for kss_level in range(1, 10):
-#            if thresholds[kss_level - 1] <= ratio < thresholds[kss_level]:
-#                kss_scores.append(kss_level)
-#                break
-#        else:
-#            kss_scores.append(9)
-#
-#    return kss_scores
-#
-
 def convert_theta_alpha_to_kss(theta_alpha_ratios: np.ndarray) -> np.ndarray:
     """
     Assign KSS scores (1–9) based on Theta/Alpha ratio thresholds (auto 9分割, NumPyベース).
@@ -60,10 +35,10 @@ def convert_theta_alpha_to_kss(theta_alpha_ratios: np.ndarray) -> np.ndarray:
     kss_scores = np.digitize(theta_alpha_ratios, bins=thresholds) + 1
     return kss_scores.tolist()
 
-#def convert_theta_alpha_to_kss_percentile(theta_alpha_ratios: np.ndarray) -> np.ndarray:
-#    percentiles = np.percentile(theta_alpha_ratios, np.arange(0, 100, 100/9))[1:-1]
-#    kss_scores = np.digitize(theta_alpha_ratios, bins=percentiles) + 1
-#    return kss_scores
+def convert_theta_alpha_to_kss_percentile(theta_alpha_ratios: np.ndarray) -> np.ndarray:
+    percentiles = np.percentile(theta_alpha_ratios, np.arange(0, 100, 100/9))[1:-1]
+    kss_scores = np.digitize(theta_alpha_ratios, bins=percentiles) + 1
+    return kss_scores.tolist()
 
 def remove_outliers(data: np.ndarray, threshold: float = 3) -> np.ndarray:
     """Remove outliers based on a standard deviation threshold.
@@ -78,23 +53,6 @@ def remove_outliers(data: np.ndarray, threshold: float = 3) -> np.ndarray:
     mean, std_dev = np.mean(data), np.std(data)
     lower_bound, upper_bound = mean - threshold * std_dev, mean + threshold * std_dev
     return data[(data >= lower_bound) & (data <= upper_bound)]
-
-
-#def adjust_scores_length(scores: list, target_length: int) -> list:
-#    """Pad or truncate the KSS score list to match the target length.
-#
-#    Args:
-#        scores (list): List of KSS scores.
-#        target_length (int): Desired number of elements.
-#
-#    Returns:
-#        list: Adjusted list of scores with NaNs or truncation applied.
-#    """
-#    if len(scores) < target_length:
-#        scores.extend([np.nan] * (target_length - len(scores)))
-#    elif len(scores) > target_length:
-#        scores = scores[:target_length]
-#    return scores
 
 def adjust_scores_length(scores: list, target_length: int) -> list:
     """Pad or truncate the KSS score list to match the target length."""
@@ -144,9 +102,12 @@ def kss_process(subject: str, model: str) -> None:
             clean_ratios = remove_outliers(theta_alpha_beta_ratio)
             kss_scores = convert_theta_alpha_to_kss(clean_ratios)
             kss_scores = adjust_scores_length(kss_scores, len(data))
+            kss_scores_percent = convert_theta_alpha_to_kss_percentile(clean_ratios)
+            kss_scores_percent = adjust_scores_length(kss_scores_percent, len(data))
 
             # Save KSS score based on full-channel (θ+α)/β
             data['KSS_Theta_Alpha_Beta'] = kss_scores
+            data['KSS_Theta_Alpha_Beta_percent'] = kss_scores_percent
 
         # ---- FC1/FC2 based (θ + α) / β index calculation ----
         theta_fc1 = data.get("Channel_2_Theta (4-8 Hz)")
