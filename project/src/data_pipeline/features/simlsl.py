@@ -14,6 +14,7 @@ import logging
 from scipy.fft import fft, fftfreq
 from scipy.stats import skew, kurtosis
 from numba import njit
+from joblib import Parallel, delayed
 
 from src.utils.io.loaders import safe_load_mat, save_csv
 from src.utils.domain_generalization.jitter import jittering
@@ -105,30 +106,22 @@ def get_simlsl_window_params(model: str) -> tuple[int, int]:
     step_samples = int(config["step_sec"] * SAMPLE_RATE_SIMLSL)
     return window_samples, step_samples
 
-
 def process_simlsl_data(signals: list[np.ndarray], prefixes: list[str], model: str) -> pd.DataFrame:
-    """Extract features from multiple vehicle signals using sliding windows.
-
-    Args:
-        signals (list[np.ndarray]): List of input signals.
-        prefixes (list[str]): Corresponding prefixes for each signal.
-        model (str): Model name for window configuration.
-
-    Returns:
-        pd.DataFrame: DataFrame of extracted features.
-    """
     window_size, step_size = get_simlsl_window_params(model)
-    features_list = []
+    starts = range(0, len(signals[0]) - window_size + 1, step_size)
 
-    for start in range(0, len(signals[0]) - window_size + 1, step_size):
+    def process_one_window(start):
         window_features = {}
         for signal, prefix in zip(signals, prefixes):
             segment = signal[start:start + window_size]
             window_features.update(extract_statistical_features(segment, prefix))
-        features_list.append(window_features)
+        return window_features
+
+    features_list = Parallel(n_jobs=-1, prefer="threads")(
+        delayed(process_one_window)(start) for start in starts
+    )
 
     return pd.DataFrame(features_list)
-
 
 def smooth_std_pe_features(signal: np.ndarray, model: str) -> dict:
     """Compute smoothed standard deviation and prediction error features.
