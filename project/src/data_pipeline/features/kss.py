@@ -20,29 +20,50 @@ from src.config import INTRIM_CSV_PATH, PROCESS_CSV_PATH, MODEL_WINDOW_CONFIG
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
-def convert_theta_alpha_to_kss(theta_alpha_ratios: np.ndarray) -> list:
-    """Assign KSS scores (1–9) based on Theta/Alpha ratio thresholds.
+#def convert_theta_alpha_to_kss(theta_alpha_ratios: np.ndarray) -> list:
+#    """Assign KSS scores (1–9) based on Theta/Alpha ratio thresholds.
+#
+#    Args:
+#        theta_alpha_ratios (np.ndarray): Array of Theta/Alpha ratio values.
+#
+#    Returns:
+#        list: Estimated KSS scores for each ratio.
+#    """
+#    min_value, max_value = np.min(theta_alpha_ratios), np.max(theta_alpha_ratios)
+#    thresholds = np.linspace(min_value, max_value, 10)
+#
+#    kss_scores = []
+#    for ratio in theta_alpha_ratios:
+#        for kss_level in range(1, 10):
+#            if thresholds[kss_level - 1] <= ratio < thresholds[kss_level]:
+#                kss_scores.append(kss_level)
+#                break
+#        else:
+#            kss_scores.append(9)
+#
+#    return kss_scores
+#
 
+def convert_theta_alpha_to_kss(theta_alpha_ratios: np.ndarray) -> np.ndarray:
+    """
+    Assign KSS scores (1–9) based on Theta/Alpha ratio thresholds (auto 9分割, NumPyベース).
+    
     Args:
         theta_alpha_ratios (np.ndarray): Array of Theta/Alpha ratio values.
 
     Returns:
-        list: Estimated KSS scores for each ratio.
+        np.ndarray: Estimated KSS scores for each ratio.
     """
     min_value, max_value = np.min(theta_alpha_ratios), np.max(theta_alpha_ratios)
-    thresholds = np.linspace(min_value, max_value, 10)
+    # 9 bins = 8 thresholds (score=1~9), np.linspaceで10個→bins=1~9
+    thresholds = np.linspace(min_value, max_value, 10)[1:-1]  # exclude min, max
+    kss_scores = np.digitize(theta_alpha_ratios, bins=thresholds) + 1
+    return kss_scores.tolist()
 
-    kss_scores = []
-    for ratio in theta_alpha_ratios:
-        for kss_level in range(1, 10):
-            if thresholds[kss_level - 1] <= ratio < thresholds[kss_level]:
-                kss_scores.append(kss_level)
-                break
-        else:
-            kss_scores.append(9)
-
-    return kss_scores
-
+#def convert_theta_alpha_to_kss_percentile(theta_alpha_ratios: np.ndarray) -> np.ndarray:
+#    percentiles = np.percentile(theta_alpha_ratios, np.arange(0, 100, 100/9))[1:-1]
+#    kss_scores = np.digitize(theta_alpha_ratios, bins=percentiles) + 1
+#    return kss_scores
 
 def remove_outliers(data: np.ndarray, threshold: float = 3) -> np.ndarray:
     """Remove outliers based on a standard deviation threshold.
@@ -59,22 +80,30 @@ def remove_outliers(data: np.ndarray, threshold: float = 3) -> np.ndarray:
     return data[(data >= lower_bound) & (data <= upper_bound)]
 
 
+#def adjust_scores_length(scores: list, target_length: int) -> list:
+#    """Pad or truncate the KSS score list to match the target length.
+#
+#    Args:
+#        scores (list): List of KSS scores.
+#        target_length (int): Desired number of elements.
+#
+#    Returns:
+#        list: Adjusted list of scores with NaNs or truncation applied.
+#    """
+#    if len(scores) < target_length:
+#        scores.extend([np.nan] * (target_length - len(scores)))
+#    elif len(scores) > target_length:
+#        scores = scores[:target_length]
+#    return scores
+
 def adjust_scores_length(scores: list, target_length: int) -> list:
-    """Pad or truncate the KSS score list to match the target length.
-
-    Args:
-        scores (list): List of KSS scores.
-        target_length (int): Desired number of elements.
-
-    Returns:
-        list: Adjusted list of scores with NaNs or truncation applied.
-    """
-    if len(scores) < target_length:
-        scores.extend([np.nan] * (target_length - len(scores)))
-    elif len(scores) > target_length:
-        scores = scores[:target_length]
-    return scores
-
+    """Pad or truncate the KSS score list to match the target length."""
+    arr = np.asarray(scores)
+    if len(arr) < target_length:
+        arr = np.concatenate([arr, np.full(target_length - len(arr), np.nan)])
+    elif len(arr) > target_length:
+        arr = arr[:target_length]
+    return arr.tolist()
 
 def kss_process(subject: str, model: str) -> None:
     """
