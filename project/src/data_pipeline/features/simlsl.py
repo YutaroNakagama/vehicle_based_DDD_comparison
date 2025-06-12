@@ -13,6 +13,7 @@ import pandas as pd
 import logging
 from scipy.fft import fft, fftfreq
 from scipy.stats import skew, kurtosis
+from numba import njit
 
 from src.utils.io.loaders import safe_load_mat, save_csv
 from src.utils.domain_generalization.jitter import jittering
@@ -24,6 +25,34 @@ from src.config import (
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
+
+@njit
+def _count_similar_templates(signal, m, r):
+    N = len(signal)
+    count = 0
+    for i in range(N - m):
+        for j in range(i + 1, N - m + 1):
+            if np.all(np.abs(signal[i:i + m] - signal[j:j + m]) <= r):
+                count += 1
+    return count
+
+def sample_entropy(signal, m=2, r=None):
+    """Fast Sample Entropy using Numba."""
+    signal = np.asarray(signal, dtype=np.float64)
+    N = len(signal)
+    if r is None:
+        r = 0.2 * np.std(signal)
+    if N <= m + 1 or r == 0:
+        return np.nan
+
+    try:
+        A = _count_similar_templates(signal, m + 1, r)
+        B = _count_similar_templates(signal, m, r)
+        if B == 0 or A == 0:
+            return np.nan
+        return -np.log(A / B)
+    except Exception:
+        return np.nan
 
 def extract_statistical_features(signal: np.ndarray, prefix: str = "") -> dict:
     """Extract statistical and spectral features from a 1D signal.
@@ -56,7 +85,8 @@ def extract_statistical_features(signal: np.ndarray, prefix: str = "") -> dict:
         f'{prefix}FreqCOG': np.sum(freqs[band] * spectrum[band]) / band_sum if band_sum > 0 else 0,
         f'{prefix}DominantFreq': freqs[np.argmax(spectrum)],
         f'{prefix}AvgPSD': np.mean(spectrum[band]),
-        f'{prefix}SampleEntropy': 0,  # Placeholder
+#        f'{prefix}SampleEntropy': 0,  # Placeholder
+        f'{prefix}SampleEntropy': sample_entropy(signal, m=2, r=0.2*np.std(signal)),
     }
 
     return features
