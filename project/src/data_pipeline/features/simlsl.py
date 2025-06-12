@@ -85,7 +85,6 @@ def extract_statistical_features(signal: np.ndarray, prefix: str = "") -> dict:
         f'{prefix}FreqCOG': np.sum(freqs[band] * spectrum[band]) / band_sum if band_sum > 0 else 0,
         f'{prefix}DominantFreq': freqs[np.argmax(spectrum)],
         f'{prefix}AvgPSD': np.mean(spectrum[band]),
-#        f'{prefix}SampleEntropy': 0,  # Placeholder
         f'{prefix}SampleEntropy': sample_entropy(signal, m=2, r=0.2*np.std(signal)),
     }
 
