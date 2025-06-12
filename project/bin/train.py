@@ -15,6 +15,7 @@ Examples:
 import sys
 import os
 import argparse
+import logging
 
 # Add project root to the module search path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -104,12 +105,19 @@ def main():
     args = parser.parse_args()
 
     tag_msg = f", tag={args.tag}" if args.tag else ""
-    print(
-        f"Running '{args.model}' model with "
-        f"domain_mixup={'enabled' if args.domain_mixup else 'disabled'}, "
-        f"coral={'enabled' if args.coral else 'disabled'}, "
-        f"VAE={'enabled' if args.vae else 'disabled'}{tag_msg}"
+#    print(
+#        f"Running '{args.model}' model with "
+#        f"domain_mixup={'enabled' if args.domain_mixup else 'disabled'}, "
+#        f"coral={'enabled' if args.coral else 'disabled'}, "
+#        f"VAE={'enabled' if args.vae else 'disabled'}{tag_msg}"
+#    )
+    logging.info(
+            f"Running '{args.model}' model with "
+            f"domain_mixup={'enabled' if args.domain_mixup else 'disabled'}, "
+            f"coral={'enabled' if args.coral else 'disabled'}, "
+            f"VAE={'enabled' if args.vae else 'disabled'}{tag_msg}"
     )
+
 
     mp.train_pipeline(
         args.model,
@@ -126,5 +134,6 @@ def main():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     main()
 
