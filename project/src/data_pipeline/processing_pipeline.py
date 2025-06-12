@@ -7,6 +7,9 @@ based on the selected model.
 The output is stored in the interim directory and later merged and labeled for modeling.
 """
 
+import logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
 from src.data_pipeline.features.simlsl import time_freq_domain_process, smooth_std_pe_process
 from src.data_pipeline.features.wavelet import wavelet_process
 from src.data_pipeline.features.physio import perclos_process, pupil_process
@@ -33,7 +36,9 @@ def main_pipeline(model: str, use_jittering: bool = False) -> None:
     """
     subject_list = read_subject_list()
 
-    for subject in subject_list:
+    for i, subject in enumerate(subject_list):
+
+        logging.info(f"Processing subject {i+1}/{len(subject_list)}: {subject}")
 
         if model in ["common", "SvmA"]:
             time_freq_domain_process(subject, model, use_jittering=use_jittering)
