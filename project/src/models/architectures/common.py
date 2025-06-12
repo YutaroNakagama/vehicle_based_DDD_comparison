@@ -74,6 +74,7 @@ def common_train(
                 "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
                 "class_weight": "balanced",
                 "random_state": 42,
+                "n_jobs": -1,  
             }
             clf = LGBMClassifier(**params)
 
@@ -90,6 +91,8 @@ def common_train(
                 "use_label_encoder": False,
                 "eval_metric": "logloss",
                 "random_state": 42,
+                "n_jobs": -1, 
+                "tree_method": "hist",  
             }
             clf = XGBClassifier(**params)
 
@@ -100,7 +103,8 @@ def common_train(
                 "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
                 "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 5),
                 "random_state": 42,
-                "class_weight": "balanced_subsample"
+                "class_weight": "balanced_subsample",
+                "n_jobs": -1,  
             }
             clf = RandomForestClassifier(**params)
 
@@ -207,7 +211,7 @@ def common_train(
         roc_auc = make_scorer(roc_auc_score, needs_proba=True)
 
         try:
-            score = cross_val_score(clf, X_train_scaled, y_train, cv=3, scoring=roc_auc).mean()
+            score = cross_val_score(clf, X_train_scaled, y_train, cv=2, scoring=roc_auc, n_jobs=-1).mean()
         except Exception as e:
             logging.warning(f"Scoring failed: {e}")
             return 0.0 
@@ -215,8 +219,11 @@ def common_train(
         return score
 
     # Run Optuna study
-    study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=N_TRIALS)
+    study = optuna.create_study(
+        direction="maximize",
+        pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=1, interval_steps=1)
+    )
+    study.optimize(objective, n_trials=N_TRIALS, n_jobs=1)
 
     best_params = study.best_params
 
