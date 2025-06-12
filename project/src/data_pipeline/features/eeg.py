@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import logging
 from scipy.signal import butter, filtfilt, welch
+from joblib import Parallel, delayed
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -107,22 +108,38 @@ def process_eeg_windows(eeg_data: np.ndarray, timestamps: np.ndarray,
     Returns:
         tuple: (List of timestamps per window, dict of band power features per channel).
     """
+
     window_size, step_size = get_eeg_window_params(model)
-    channel_band_powers = {ch: {band: [] for band in frequency_bands} for ch in range(1, eeg_data.shape[0])}
-    timestamp_windows = []
+    num_ch = eeg_data.shape[0] - 1
 
-    for start in range(0, eeg_data.shape[1] - window_size + 1, step_size):
+    window_starts = range(0, eeg_data.shape[1] - window_size + 1, step_size)
+
+    def process_window(start):
         window_data = eeg_data[:, start:start + window_size]
-        timestamp_windows.append(timestamps[start])
-
+        ts = timestamps[start]
+        powers = []
         for ch in range(1, eeg_data.shape[0]):
+            band_powers = []
             for band_name, (low, high) in frequency_bands.items():
                 filtered_signal = bandpass_filter(window_data[ch, :], low, high)
                 power = calculate_band_power(filtered_signal, (low, high))
-                channel_band_powers[ch][band_name].append(power)
+                band_powers.append(power)
+            powers.append(band_powers)
+        return ts, powers
+
+    results = Parallel(n_jobs=-1, prefer="threads")(
+        delayed(process_window)(start) for start in window_starts
+    )
+
+    timestamp_windows = []
+    channel_band_powers = {ch: {band: [] for band in frequency_bands} for ch in range(1, eeg_data.shape[0])}
+    for ts, powers in results:
+        timestamp_windows.append(ts)
+        for ch_idx, band_powers in enumerate(powers):
+            for b_idx, band_name in enumerate(frequency_bands):
+                channel_band_powers[ch_idx + 1][band_name].append(band_powers[b_idx])
 
     return timestamp_windows, channel_band_powers
-
 
 def eeg_process(subject: str, model: str) -> None:
     """Process EEG data for a single subject and save band power features.
