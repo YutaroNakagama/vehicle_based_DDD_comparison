@@ -12,6 +12,7 @@ import pandas as pd
 import os
 import logging
 from scipy.signal import lfilter
+from joblib import Parallel, delayed
 
 from src.utils.io.loaders import safe_load_mat, save_csv
 from src.utils.domain_generalization.jitter import jittering
@@ -173,14 +174,18 @@ def wavelet_process(subject: str, model: str, use_jittering: bool = False) -> No
     sim_time = sim_data[0, :]
     all_powers, all_timestamps = [], []
 
-    for start in range(0, len(sim_time) - window_size + 1, step_size):
+    def process_one_window(start):
         window_powers = []
         for signal in signals.values():
             signal_window = signal[start:start + window_size]
             window_powers.extend(process_window(signal_window))
+        return window_powers, sim_time[start]
 
-        all_powers.append(window_powers)
-        all_timestamps.append(sim_time[start])
+    window_starts = range(0, len(sim_time) - window_size + 1, step_size)
+    results = Parallel(n_jobs=-1, prefer="threads")(
+        delayed(process_one_window)(start) for start in window_starts
+    )
+    all_powers, all_timestamps = zip(*results)
 
     decomposition_labels = ['DDD', 'DDA', 'DAD', 'DAA', 'ADD', 'ADA', 'AAD', 'AAA']
     column_names = [f'{sig}_{label}' for sig in signals.keys() for label in decomposition_labels]
