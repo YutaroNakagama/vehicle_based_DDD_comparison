@@ -211,7 +211,7 @@ def common_train(
         roc_auc = make_scorer(roc_auc_score, needs_proba=True)
 
         try:
-            score = cross_val_score(clf, X_train_scaled, y_train, cv=2, scoring=roc_auc, n_jobs=-1).mean()
+            score = cross_val_score(clf, X_train_scaled, y_train, cv=2, scoring=roc_auc, n_jobs=1).mean()
         except Exception as e:
             logging.warning(f"Scoring failed: {e}")
             return 0.0 
