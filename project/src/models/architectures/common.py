@@ -34,7 +34,7 @@ def common_train(
     X_train, X_test, y_train, y_test,
     selected_features,  
     model: str, model_type: str,
-    clf=None, suffix: str = ""
+    clf=None, scaler=None, suffix: str = ""
 ):
     """Train a classical ML model (RandomForest) using Optuna and ANFIS-based feature selection.
 
@@ -230,10 +230,16 @@ def common_train(
     logging.info(f"Best hyperparameters: {best_params}")
     logging.info(f"Selected features (from input): {selected_features}")
 
-    # Final training
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train[selected_features])
+    if scaler is None:
+        raise ValueError("Scaler must be provided (pre-fitted in pipeline).")
+
+    X_train_scaled = scaler.transform(X_train[selected_features])
     X_test_scaled = scaler.transform(X_test[selected_features])
+
+#    # Final training
+#    scaler = StandardScaler()
+#    X_train_scaled = scaler.fit_transform(X_train[selected_features])
+#    X_test_scaled = scaler.transform(X_test[selected_features])
 
     if model == "LightGBM":
         best_clf = LGBMClassifier(**best_params)
