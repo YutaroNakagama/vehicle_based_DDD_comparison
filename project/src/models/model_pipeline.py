@@ -174,6 +174,21 @@ def train_pipeline(
         else:
             raise ValueError(f"Unknown feature_selection_method: {feature_selection_method}")
     
+        if data_leak:
+            scaler = StandardScaler()
+            scaler.fit(pd.concat([X_train_for_fs[selected_features], X_val_for_fs[selected_features]]))
+            logging.info("Scaler was fit using both X_train and X_val (data_leak=True).")
+        else:
+            scaler = StandardScaler()
+            scaler.fit(X_train_for_fs[selected_features])
+            logging.info("Scaler was fit using only X_train (standard procedure).")
+
+        X_train_scaled = scaler.transform(X_train_for_fs[selected_features])
+        X_val_scaled = scaler.transform(X_val_for_fs[selected_features])
+
+        X_train_scaled = pd.DataFrame(X_train_scaled, columns=selected_features)
+        X_val_scaled = pd.DataFrame(X_val_scaled, columns=selected_features)
+
         clf = get_classifier(model)
 
         suffix = ""
@@ -187,11 +202,12 @@ def train_pipeline(
             suffix += "_vae"
 
         common_train(
-            X_train_for_fs[selected_features],
-            X_val_for_fs[selected_features],
+            X_train_scaled,    
+            X_val_scaled,      
             y_train, y_val,
             selected_features, 
             model, model_type, clf,
+            scaler=scaler,    
             suffix=suffix
         )
     
