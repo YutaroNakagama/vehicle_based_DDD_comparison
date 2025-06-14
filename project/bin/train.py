@@ -23,6 +23,22 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import src.config
 import src.models.model_pipeline as mp
 
+def log_train_args(args):
+    logging.info(
+        "[RUN] model=%s | domain_mixup=%s | coral=%s | vae=%s | sample_size=%s | seed=%d | fold=%d | tag=%s | subject_wise_split=%s | feature_selection=%s | data_leak=%s",
+        args.model,
+        "enabled" if args.domain_mixup else "disabled",
+        "enabled" if args.coral else "disabled",
+        "enabled" if args.vae else "disabled",
+        str(args.sample_size) if args.sample_size is not None else "None",
+        args.seed,
+        args.fold,
+        args.tag if args.tag else "None",
+        "enabled" if args.subject_wise_split else "disabled",
+        args.feature_selection,
+        "enabled" if args.data_leak else "disabled",
+    )
+
 
 def main():
     """Parse command-line arguments and invoke the training pipeline.
@@ -101,17 +117,17 @@ def main():
         default="rf",
         help="Feature selection method: 'rf' (RandomForest importance), 'mi' (Mutual Information), 'anova' (ANOVA F-test). Default: rf."
     )
+    parser.add_argument(
+        "--data_leak",
+        action="store_true",
+        help="If set, intentionally allow data leakage for feature selection (for ablation/demonstration).",
+    )
 
     args = parser.parse_args()
 
     tag_msg = f", tag={args.tag}" if args.tag else ""
 
-    logging.info(
-            f"Running '{args.model}' model with "
-            f"domain_mixup={'enabled' if args.domain_mixup else 'disabled'}, "
-            f"coral={'enabled' if args.coral else 'disabled'}, "
-            f"VAE={'enabled' if args.vae else 'disabled'}{tag_msg}"
-    )
+    log_train_args(args)  
 
     mp.train_pipeline(
         args.model,
@@ -123,9 +139,9 @@ def main():
         fold=args.fold,
         tag=args.tag,
         subject_wise_split=args.subject_wise_split,
-        feature_selection_method=args.feature_selection 
+        feature_selection_method=args.feature_selection, 
+        data_leak=args.data_leak,
     )
-
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")

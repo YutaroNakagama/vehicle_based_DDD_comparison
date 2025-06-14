@@ -48,7 +48,8 @@ def train_pipeline(
     fold: int = 0,
     tag: str = None, 
     subject_wise_split: bool = False, 
-    feature_selection_method: str = "rf"  
+    feature_selection_method: str = "rf", 
+    data_leak: bool = False,
 ) -> None:
     """Train a machine learning model for drowsiness detection.
 
@@ -140,7 +141,10 @@ def train_pipeline(
         X_val_for_fs = X_val.drop(columns=["subject_id"], errors='ignore')
 
         X_train_for_fs = X_train_for_fs.reset_index(drop=True)
+        X_val_for_fs = X_val_for_fs.reset_index(drop=True)
+
         y_train = y_train.reset_index(drop=True)
+        y_val = y_val.reset_index(drop=True)
 
         logging.info(f"y_train unique: {y_train.unique()}, counts: {y_train.value_counts().to_dict()}")
 
@@ -153,9 +157,14 @@ def train_pipeline(
 
         elif feature_selection_method == "anova":  
             selector = SelectKBest(score_func=f_classif, k=TOP_K_FEATURES)
-            selector.fit(X_train_for_fs, y_train)
-            selected_mask = selector.get_support()
-            selected_features = X_train_for_fs.columns[selected_mask].tolist()
+            if data_leak == True:
+                selector.fit(pd.concat([X_train_for_fs, X_val_for_fs]), pd.concat([y_train, y_val]))  
+                selected_mask = selector.get_support()
+                selected_features = pd.concat([X_train_for_fs, X_val_for_fs]).columns[selected_mask].tolist()
+            else:
+                selector.fit(X_train_for_fs, y_train)
+                selected_mask = selector.get_support()
+                selected_features = X_train_for_fs.columns[selected_mask].tolist()
             logging.info(f"Selected features (ANOVA F-test): {selected_features}")
         
         elif feature_selection_method == "rf":
