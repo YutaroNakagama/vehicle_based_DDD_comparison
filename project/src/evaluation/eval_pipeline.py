@@ -62,11 +62,6 @@ def eval_pipeline(
     else:
         subject_list = read_subject_list_fold(fold)
 
-#    if sample_size is not None:
-#        rng = np.random.default_rng(seed)
-#        subject_list = rng.choice(subject_list, size=sample_size, replace=False).tolist()
-#        logging.info(f"Evaluating on {sample_size} subjects: {subject_list}")
-
     if sample_size is not None:
         rng = np.random.default_rng(seed)
         if sample_size > len(subject_list):

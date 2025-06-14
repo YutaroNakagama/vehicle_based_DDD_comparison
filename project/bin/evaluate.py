@@ -78,7 +78,6 @@ def main():
         help="Use subject-wise data splitting to prevent subject leakage"
     )
 
-
     args = parser.parse_args()
 
     logging.info(f"Running '{args.model}' model...")
