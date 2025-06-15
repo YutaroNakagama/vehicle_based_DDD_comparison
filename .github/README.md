@@ -85,7 +85,7 @@ setup the public dataset as follows:
         └───src
 ```
 
-### Step 1: Preprocess Data
+### 1. Data Processing
 
 ```sh
 cd project
@@ -97,34 +97,30 @@ python bin/preprocess.py --model [common | SvmA | SvmW | Lstm] [--jittering]
 
 ---
 
-### Step 2: Train a Model
+### 2. Model Training
 
 ```sh
 python bin/train.py \
-    --model [RF | SvmA | SvmW | Lstm] \
-    [--domain_mixup] \
-    [--coral] \
-    [--vae] \
-    [--sample_size N] \
-    [--seed N] \
-    [--tag TAG] \
-    [--subject_wise_split] \
-    [--feature_selection rf|mi]
+           --model [RF|SvmA|SvmW|Lstm|BalancedRF|LightGBM|XGBoost|CatBoost|LogisticRegression|SVM|DecisionTree|AdaBoost|GradientBoosting|K-Nearest\ Neighbors|MLP] \
+           [--domain_mixup] [--coral] [--vae] \
+           [--sample_size N] [--seed N] [--fold N] \
+           [--tag TAG] [--subject_wise_split] \
+           [--feature_selection rf|mi|anova] [--data_leak True|False]
 ```
-
-* `--model`: Required. Specifies the model architecture to train.
-* `--domain_mixup`: Optional. Enables Domain Mixup interpolation.
-* `--coral`: Optional. Applies CORAL for domain alignment.
-* `--vae`: Optional. Enables VAE-based feature augmentation.
-* `--sample_size`: Optional. Randomly samples N subjects from the dataset.
-* `--seed`: Optional. Sets the random seed (default: 42).
-* `--tag`: Optional. Adds a suffix tag to identify model variants.
-* `--subject_wise_split`: Optional. Uses subject-wise splitting to avoid leakage.
-* `--feature_selection`: Optional. Chooses feature selection method: `rf` (default) or `mi`.
+* `--domain_mixup`: optional, Domain Mixup (domain generalization)
+* `--coral`: optional, CORAL (feature alignment)
+* `--vae`: optional, VAE-based augmentation
+* `--sample_size`: subsample N subjects (for quick test/debug)
+* `--seed`: random seed (default: 42)
+* `--fold`: fold number (cross-validation)
+* `--tag`: experiment name/tag
+* `--subject_wise_split`: prevent train/test subject overlap
+* `--feature_selection`: feature selection method (default: rf)
+* `--data_leak`: intentionally leak validation set for feature selection/scaler (for ablation/repro test, default: False)
 
 ---
 
-### Step 3: Evaluate a Model
+### 3. Model Evaluation
 
 ```sh
 python bin/evaluate.py \
