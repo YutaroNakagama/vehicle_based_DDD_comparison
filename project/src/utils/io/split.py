@@ -6,6 +6,7 @@ sets for use in supervised learning pipelines.
 
 import numpy as np
 import pandas as pd
+import logging
 from src.config import KSS_BIN_LABELS, KSS_LABEL_MAP
 from typing import List, Tuple
 from sklearn.model_selection import train_test_split
@@ -52,7 +53,13 @@ def data_split(df: pd.DataFrame):
 
 
 
-def data_split_by_subject(df: pd.DataFrame, subject_list: List[str], seed: int = 42) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
+def data_split_by_subject(
+    df: pd.DataFrame,
+    train_subjects: list,
+    seed: int = 42,
+    val_subjects: list = None,
+    test_subjects: list = None,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
     """
     Split data by subject IDs to avoid data leakage across train/val/test sets.
 
@@ -71,28 +78,17 @@ def data_split_by_subject(df: pd.DataFrame, subject_list: List[str], seed: int =
             - y_test (pd.Series)
     """
 
+    logging.info(f"df shape before label filter: {df.shape}")
+
     # Step 1: Filter rows by KSS labels (1, 2 → 0 [alert], 8, 9 → 1 [drowsy])
     df = df[df["KSS_Theta_Alpha_Beta"].isin(KSS_BIN_LABELS)].copy()
     df["label"] = df["KSS_Theta_Alpha_Beta"].replace(KSS_LABEL_MAP)
 
-    # Step 2: Split subject_id list into train/val/test (60/20/20)
-    unique_subjects = list(set(subject_list))
-    rng = np.random.default_rng(seed)
-    rng.shuffle(unique_subjects)
-
-    n_total = len(unique_subjects)
-    n_train = int(n_total * 0.6)
-    n_val = int(n_total * 0.2)
-    n_test = n_total - n_train - n_val  # 端数の調整
-
-    subjects_train = unique_subjects[:n_train]
-    subjects_val = unique_subjects[n_train:n_train + n_val]
-    subjects_test = unique_subjects[n_train + n_val:]
-
-    # Step 3: Extract subsets by subject group
-    df_train = df[df["subject_id"].isin(subjects_train)].copy()
-    df_val = df[df["subject_id"].isin(subjects_val)].copy()
-    df_test = df[df["subject_id"].isin(subjects_test)].copy()
+    logging.info(f"df shape after label filter: {df.shape}")
+    logging.info(f"train_subjects: {train_subjects}")
+    logging.info(f"val_subjects: {val_subjects}")
+    logging.info(f"test_subjects: {test_subjects}")
+    logging.info(f"df['subject_id'].unique(): {df['subject_id'].unique()}")
 
     # Step 4: Define feature columns based on known range
     start_col = "Steering_Range"
@@ -102,14 +98,23 @@ def data_split_by_subject(df: pd.DataFrame, subject_list: List[str], seed: int =
     if 'subject_id' in df.columns:
         feature_columns.append('subject_id')
 
-    X_train = df_train[feature_columns].dropna()
-    y_train = df_train.loc[X_train.index, "label"]
+    X_train = df[df["subject_id"].isin(train_subjects)][feature_columns].dropna()
+    y_train = df[df["subject_id"].isin(train_subjects)].loc[X_train.index, "label"]
 
-    X_val = df_val[feature_columns].dropna()
-    y_val = df_val.loc[X_val.index, "label"]
+    X_val = pd.DataFrame(); y_val = pd.Series(dtype=int)
+    X_test = pd.DataFrame(); y_test = pd.Series(dtype=int)
 
-    X_test = df_test[feature_columns].dropna()
-    y_test = df_test.loc[X_test.index, "label"]
+    if val_subjects is not None:
+        X_val = df[df["subject_id"].isin(val_subjects)][feature_columns].dropna()
+        y_val = df[df["subject_id"].isin(val_subjects)].loc[X_val.index, "label"]
+
+    if test_subjects is not None:
+        X_test = df[df["subject_id"].isin(test_subjects)][feature_columns].dropna()
+        y_test = df[df["subject_id"].isin(test_subjects)].loc[X_test.index, "label"]
+
+    logging.info(f"X_train shape: {X_train.shape}, y_train.value_counts: {y_train.value_counts().to_dict()}")
+    logging.info(f"X_val shape: {X_val.shape}, y_val.value_counts: {y_val.value_counts().to_dict()}")
+    logging.info(f"X_test shape: {X_test.shape}, y_test.value_counts: {y_test.value_counts().to_dict()}")
 
     return X_train, X_val, X_test, y_train, y_val, y_test
 

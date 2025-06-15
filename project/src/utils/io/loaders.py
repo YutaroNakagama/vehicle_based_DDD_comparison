@@ -139,7 +139,7 @@ def load_subject_csvs(subject_list: list, model_type: str, add_subject_id: bool 
         try:
             df = pd.read_csv(file_path)
             if add_subject_id:
-                df['subject_id'] = subject_id
+                df['subject_id'] = f"{subject_id}_{version}"
             dfs.append(df)
             logging.info(f"Loaded: {file_path}")
         except FileNotFoundError:

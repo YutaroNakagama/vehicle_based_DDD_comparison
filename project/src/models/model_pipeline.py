@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 import logging
 from sklearn.metrics import classification_report, accuracy_score, roc_curve, auc, mean_squared_error
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GroupKFold
 from sklearn.feature_selection import SelectKBest, mutual_info_classif, f_classif  
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
@@ -45,7 +45,8 @@ def train_pipeline(
     use_vae: bool = False,
     sample_size: int = None,
     seed: int = 42,
-    fold: int = 0,
+    fold: int = None,
+    n_folds: int = None,
     tag: str = None, 
     subject_wise_split: bool = False, 
     feature_selection_method: str = "rf", 
@@ -67,12 +68,11 @@ def train_pipeline(
     Returns:
         None
     """
-    if fold == 0:
-        subject_list = read_train_subject_list()
-    else:
-        subject_list = read_train_subject_list_fold(fold)
-        
 
+    # get subject list
+    subject_list = read_train_subject_list()
+
+    # 2. if sample_size set, sample
     if sample_size is not None:
         rng = np.random.default_rng(seed)
         subject_list = rng.choice(subject_list, size=sample_size, replace=False).tolist()
@@ -81,11 +81,43 @@ def train_pipeline(
     model_type = get_model_type(model)
     logging.info(f"Model type: {model_type}")
 
-    data = load_subject_csvs(subject_list, model_type, add_subject_id=True)
+    # 3. fold split (subject_wise_split == True）
+    if subject_wise_split and fold and fold > 0:
 
-    if subject_wise_split:
-        X_train, X_val, X_test, y_train, y_val, y_test = data_split_by_subject(data, subject_list, seed)
+        # index generate by GroupKFold
+        n_splits = n_folds
+        subject_array = np.array(subject_list)
+        gkf = GroupKFold(n_splits=n_splits)
+
+        # 1 sample for each subject, split train/test by subject wise 
+        splits = list(gkf.split(subject_array, groups=subject_array))
+
+        train_idx, test_idx = splits[fold - 1]
+        train_subjects = subject_array[train_idx].tolist()
+        test_subjects = subject_array[test_idx].tolist()
+
+        # train→val is also split by subject-wise 9:1
+        rng = np.random.default_rng(seed)
+        n_train = int(len(train_subjects) * 0.9)
+        shuffled = rng.permutation(train_subjects)
+        actual_train_subjects = shuffled[:n_train].tolist()
+        val_subjects = shuffled[n_train:].tolist()
+
+        use_subjects = actual_train_subjects + val_subjects + test_subjects
+        data = load_subject_csvs(use_subjects, model_type, add_subject_id=True)
+        X_train, X_val, X_test, y_train, y_val, y_test = data_split_by_subject(
+            data,
+            actual_train_subjects,
+            seed,
+            val_subjects=val_subjects,
+            test_subjects=test_subjects
+        )
+        logging.info(f"X_train shape after data split: {X_train.shape}")
+        logging.info(f"X_val   shape after data split: {X_val.shape}")
+        logging.info(f"X_test  shape after data split: {X_test.shape}")
     else:
+        # no fold or subject_wise_split == False
+        data = load_subject_csvs(subject_list, model_type, add_subject_id=True)
         X_train, X_val, X_test, y_train, y_val, y_test = data_split(data)
         logging.info(f"X_train shape after data split: {X_train.shape}")
         logging.info(f"X_val   shape after data split: {X_val.shape}")
