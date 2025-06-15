@@ -118,7 +118,7 @@ def train_pipeline(
     else:
         # no fold or subject_wise_split == False
         data = load_subject_csvs(subject_list, model_type, add_subject_id=True)
-        X_train, X_val, X_test, y_train, y_val, y_test = data_split(data)
+        X_train, X_val, X_test, y_train, y_val, y_test = data_split(data, random_state=seed)
         logging.info(f"X_train shape after data split: {X_train.shape}")
         logging.info(f"X_val   shape after data split: {X_val.shape}")
         logging.info(f"X_test  shape after data split: {X_test.shape}")
