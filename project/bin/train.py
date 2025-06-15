@@ -95,10 +95,16 @@ def main():
         help="Random seed for reproducible subject sampling."
     )
     parser.add_argument(
+        "--n_folds",
+        type=int,
+        default=None,
+        help="Number of folds for cross-validation (if specified, runs fold=1,...,n_folds sequentially)."
+    )
+    parser.add_argument(
         "--fold",
         type=int,
-        default=0,
-        help="Fold number for Cross validation."
+        default=None,
+        help="Fold number for single-fold training. If n_folds is set, this is ignored."
     )
     parser.add_argument(
         "--tag",
@@ -124,26 +130,58 @@ def main():
     )
 
     args = parser.parse_args()
-
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     tag_msg = f", tag={args.tag}" if args.tag else ""
 
-    log_train_args(args)  
-
-    mp.train_pipeline(
-        args.model,
-        use_domain_mixup=args.domain_mixup,
-        use_coral=args.coral,
-        use_vae=args.vae,
-        sample_size=args.sample_size,
-        seed=args.seed,
-        fold=args.fold,
-        tag=args.tag,
-        subject_wise_split=args.subject_wise_split,
-        feature_selection_method=args.feature_selection, 
-        data_leak=args.data_leak,
-    )
+    if args.n_folds is not None:
+        for fold in range(1, args.n_folds + 1):
+            logging.info(f"==== Running fold {fold} / {args.n_folds} ====")
+            args.fold = fold
+            log_train_args(args)
+            mp.train_pipeline(
+                args.model,
+                use_domain_mixup=args.domain_mixup,
+                use_coral=args.coral,
+                use_vae=args.vae,
+                sample_size=args.sample_size,
+                seed=args.seed,
+                fold=fold,
+                tag=args.tag,
+                subject_wise_split=args.subject_wise_split,
+                feature_selection_method=args.feature_selection,
+                data_leak=args.data_leak,
+            )
+    elif args.fold is not None:
+        log_train_args(args)
+        mp.train_pipeline(
+            args.model,
+            use_domain_mixup=args.domain_mixup,
+            use_coral=args.coral,
+            use_vae=args.vae,
+            sample_size=args.sample_size,
+            seed=args.seed,
+            fold=args.fold,
+            tag=args.tag,
+            subject_wise_split=args.subject_wise_split,
+            feature_selection_method=args.feature_selection, 
+            data_leak=args.data_leak,
+        )
+    else:
+        log_train_args(args)
+        mp.train_pipeline(
+            args.model,
+            use_domain_mixup=args.domain_mixup,
+            use_coral=args.coral,
+            use_vae=args.vae,
+            sample_size=args.sample_size,
+            seed=args.seed,
+            fold=args.fold,
+            tag=args.tag,
+            subject_wise_split=args.subject_wise_split,
+            feature_selection_method=args.feature_selection, 
+            data_leak=args.data_leak,
+        )
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     main()
 
