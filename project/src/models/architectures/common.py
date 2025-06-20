@@ -34,7 +34,8 @@ def common_train(
     X_train, X_test, y_train, y_test,
     selected_features,  
     model: str, model_type: str,
-    clf=None, scaler=None, suffix: str = ""
+    clf=None, scaler=None, suffix: str = "",
+    data_leak: bool = False,
 ):
     """Train a classical ML model (RandomForest) using Optuna and ANFIS-based feature selection.
 
@@ -206,12 +207,20 @@ def common_train(
         else:
             raise ValueError(f"Optuna tuning not implemented for model: {model}")
 
-        scaler = StandardScaler()
-        X_train_scaled = scaler.fit_transform(X_train[selected_features])
         roc_auc = make_scorer(roc_auc_score, needs_proba=True)
 
         try:
-            score = cross_val_score(clf, X_train_scaled, y_train, cv=2, scoring=roc_auc, n_jobs=1).mean()
+            if data_leak:
+                X_all = np.vstack([X_train[selected_features], X_test[selected_features]])
+                y_all = np.concatenate([y_train, y_test])
+                scaler = StandardScaler()
+                X_all_scaled = scaler.fit_transform(X_all[selected_features])
+                score = cross_val_score(clf, X_all_scaled, y_all, cv=2, scoring=roc_auc, n_jobs=1).mean()
+            else:
+                scaler = StandardScaler()
+                X_train_scaled = scaler.fit_transform(X_train[selected_features])
+                score = cross_val_score(clf, X_train_scaled, y_train, cv=2, scoring=roc_auc, n_jobs=1).mean()
+    
         except Exception as e:
             logging.warning(f"Scoring failed: {e}")
             return 0.0 
@@ -286,7 +295,13 @@ def common_train(
     else:
         raise ValueError(f"Unknown model: {model}")
 
-    best_clf.fit(X_train_scaled, y_train)
+    if data_leak:
+        best_clf.fit(
+            np.vstack([X_train_scaled, X_test_scaled]),
+            np.concatenate([y_train, y_test])
+        )
+    else:
+        best_clf.fit(X_train_scaled, y_train)
 
     # Save model and features
     logging.info(f"Saving {model} with {len(selected_features)} features.")

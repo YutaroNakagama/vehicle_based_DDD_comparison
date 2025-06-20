@@ -25,19 +25,19 @@ import src.models.model_pipeline as mp
 
 def log_train_args(args):
     logging.info(
-        "[RUN] model=%s | domain_mixup=%s | coral=%s | vae=%s | sample_size=%s | seed=%d | fold=%d | tag=%s | subject_wise_split=%s | feature_selection=%s | data_leak=%s",
+        "[RUN] model=%s | domain_mixup=%s | coral=%s | vae=%s | sample_size=%s | seed=%s | fold=%s | tag=%s | subject_wise_split=%s | feature_selection=%s | data_leak=%s",
         args.model,
         "enabled" if args.domain_mixup else "disabled",
         "enabled" if args.coral else "disabled",
         "enabled" if args.vae else "disabled",
         str(args.sample_size) if args.sample_size is not None else "None",
-        args.seed,
-        args.fold,
+        str(args.seed) if args.seed is not None else "None",
+        str(args.fold) if args.fold is not None else "None",
         args.tag if args.tag else "None",
         "enabled" if args.subject_wise_split else "disabled",
         args.feature_selection,
         "enabled" if args.data_leak else "disabled",
-    )
+        )
 
 
 def main():

@@ -41,8 +41,8 @@ SAMPLE_RATE_SIMLSL = 60  # sample rate for simlsl
 SAMPLE_RATE_EEG = 500
 
 # KSS label
-KSS_BIN_LABELS = [1,8,9]
-KSS_LABEL_MAP = {1: 0, 8: 1, 9: 1}
+KSS_BIN_LABELS = [1,2,3,4,5,8,9]
+KSS_LABEL_MAP = {1: 0,2: 0,3: 0,4: 0,5: 0, 8: 1, 9: 1}
 
 # Filters for EEG wavelet decomposition
 SCALING_FILTER = np.array([0.48296, 0.83652, 0.22414, -0.12941])
@@ -53,4 +53,4 @@ WAVELET_LEV = 3
 TOP_K_FEATURES = 10
 
 # Optuna 
-N_TRIALS = 20
+N_TRIALS = 30
