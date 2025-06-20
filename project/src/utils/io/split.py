@@ -12,7 +12,10 @@ from typing import List, Tuple
 from sklearn.model_selection import train_test_split
 
 
-def data_split(df: pd.DataFrame):
+def data_split(
+    df: pd.DataFrame,
+    random_state: int = 42,
+):
     """Split dataset into train/validation/test sets after KSS-based filtering.
 
     This function:
@@ -39,15 +42,15 @@ def data_split(df: pd.DataFrame):
     end_col = "LaneOffset_AAA"
     feature_columns = df.loc[:, start_col:end_col].columns.tolist()
 
-    if 'subject_id' in df.columns:
-        feature_columns.append('subject_id')
+#    if 'subject_id' in df.columns:
+#        feature_columns.append('subject_id')
 
     X = df[feature_columns].dropna()
     y = df.loc[X.index, "KSS_Theta_Alpha_Beta"].replace(KSS_LABEL_MAP)
 
     # Train/val/test split: 60% / 20% / 20%
-    X_temp, X_test, y_temp, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    X_train, X_val, y_train, y_val = train_test_split(X_temp, y_temp, test_size=0.25, random_state=42)
+    X_temp, X_test, y_temp, y_test = train_test_split(X, y, test_size=0.2, random_state=random_state)
+    X_train, X_val, y_train, y_val = train_test_split(X_temp, y_temp, test_size=0.25, random_state=random_state)
 
     return X_train, X_val, X_test, y_train, y_val, y_test
 

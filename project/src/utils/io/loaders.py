@@ -23,7 +23,7 @@ import os
 import scipy.io
 import logging
 import pandas as pd
-
+from typing import Tuple
 
 def safe_load_mat(file_path: str):
     """Safely load a MATLAB .mat file.
@@ -115,7 +115,7 @@ def get_model_type(model_name: str) -> str:
     """
     return model_name if model_name in {"SvmW", "SvmA", "Lstm"} else "common"
 
-def load_subject_csvs(subject_list: list, model_type: str, add_subject_id: bool = False) -> pd.DataFrame:
+def load_subject_csvs(subject_list: list, model_type: str, add_subject_id: bool = False) -> Tuple[pd.DataFrame, list]:
     """Load processed CSV files for all subjects in the given list.
 
     Args:
@@ -124,7 +124,7 @@ def load_subject_csvs(subject_list: list, model_type: str, add_subject_id: bool 
         add_subject_id (bool): If True, adds a 'subject_id' column to each row.
 
     Returns:
-        pd.DataFrame: Concatenated DataFrame of all loaded subjects.
+        Tuple[pd.DataFrame, list]: (Concatenated DataFrame, feature columns list)
     """
     dfs = []
     for subject in subject_list:
@@ -144,5 +144,14 @@ def load_subject_csvs(subject_list: list, model_type: str, add_subject_id: bool 
             logging.info(f"Loaded: {file_path}")
         except FileNotFoundError:
             logging.warning(f"File not found: {file_name}")
-    return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
+    
+    df_all = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
+    if not df_all.empty:
+        start_col = "Steering_Range"
+        end_col = "LaneOffset_AAA"
+        feature_columns = df_all.loc[:, start_col:end_col].columns.tolist()
+    else:
+        feature_columns = []
+    return df_all, feature_columns
+#    return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 
