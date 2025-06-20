@@ -13,6 +13,8 @@ import pickle
 import numpy as np
 import pandas as pd
 import logging
+import matplotlib.pyplot as plt
+from scipy.stats import zscore
 from sklearn.metrics import classification_report, accuracy_score, roc_curve, auc, mean_squared_error
 from sklearn.model_selection import train_test_split, GroupKFold
 from sklearn.feature_selection import SelectKBest, mutual_info_classif, f_classif  
@@ -36,6 +38,34 @@ from src.models.architectures.SvmA import SvmA_train
 from src.models.architectures.common import common_train
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+def remove_outliers_zscore(df, cols, threshold=5.0):
+    """
+    Remove rows where any column value has a z-score > threshold.
+    """
+    z = np.abs(zscore(df[cols], nan_policy='omit'))
+    mask = (z < threshold).all(axis=1)
+    return df[mask]
+
+def save_feature_histograms(df, feature_columns, outdir="feature_hist_svg"):
+    """
+    Save histograms of all features as SVG files (one per feature).
+
+    Args:
+    df (pd.DataFrame): DataFrame containing features.
+                       feature_columns (list): List of feature columns to plot.
+                                               outdir (str): Directory to save SVG files.
+    """
+    os.makedirs(outdir, exist_ok=True)
+    for col in feature_columns:
+        plt.figure(figsize=(6, 4))
+        df[col].hist(bins=50)
+        plt.title(col)
+        plt.xlabel(col)
+        plt.ylabel("Count")
+        plt.tight_layout()
+        plt.savefig(os.path.join(outdir, f"{col}.svg"), format="svg")
+        plt.close()
 
 
 def train_pipeline(
@@ -104,7 +134,7 @@ def train_pipeline(
         val_subjects = shuffled[n_train:].tolist()
 
         use_subjects = actual_train_subjects + val_subjects + test_subjects
-        data = load_subject_csvs(use_subjects, model_type, add_subject_id=True)
+        data, _ = load_subject_csvs(use_subjects, model_type, add_subject_id=True)
         X_train, X_val, X_test, y_train, y_val, y_test = data_split_by_subject(
             data,
             actual_train_subjects,
@@ -117,8 +147,13 @@ def train_pipeline(
         logging.info(f"X_test  shape after data split: {X_test.shape}")
     else:
         # no fold or subject_wise_split == False
-        data = load_subject_csvs(subject_list, model_type, add_subject_id=True)
-        X_train, X_val, X_test, y_train, y_val, y_test = data_split(data)
+        data, feature_columns = load_subject_csvs(subject_list, model_type, add_subject_id=True)
+
+        #save_feature_histograms(data, feature_columns, outdir="./data/log/")
+        #main_features = ['Steering_Range', 'Lateral_StdDev', 'LaneOffset_AAA']
+        #data_clean = remove_outliers_zscore(data, main_features, threshold=5.0)
+
+        X_train, X_val, X_test, y_train, y_val, y_test = data_split(data, random_state=seed)
         logging.info(f"X_train shape after data split: {X_train.shape}")
         logging.info(f"X_val   shape after data split: {X_val.shape}")
         logging.info(f"X_test  shape after data split: {X_test.shape}")
@@ -198,6 +233,8 @@ def train_pipeline(
                 selected_mask = selector.get_support()
                 selected_features = X_train_for_fs.columns[selected_mask].tolist()
             logging.info(f"Selected features (ANOVA F-test): {selected_features}")
+#            data_clean = remove_outliers_zscore(data, selected_features, threshold=5.0)
+#            save_feature_histograms(data, selected_features, outdir="./data/log/")
         
         elif feature_selection_method == "rf":
             selected_features = select_top_features_by_importance(X_train_for_fs, y_train, top_k=TOP_K_FEATURES)
@@ -240,6 +277,7 @@ def train_pipeline(
             selected_features, 
             model, model_type, clf,
             scaler=scaler,    
-            suffix=suffix
+            suffix=suffix,
+            data_leak=data_leak,
         )
     
