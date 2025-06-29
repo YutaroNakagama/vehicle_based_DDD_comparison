@@ -1,11 +1,20 @@
-"""I/O utility functions for data loading and saving in the DDD project.
+"""I/O Utility Functions for Data Loading and Saving in the DDD Project.
 
-Includes:
-- Safe .mat file loading
-- Subject list loading
-- CSV saving for feature files
-- Model type resolution
-- Batch CSV loading for subject list
+This module provides a collection of utility functions designed to handle data input
+and output operations within the Driver Drowsiness Detection (DDD) project. It includes
+functionalities for safely loading MATLAB (.mat) files, reading subject lists from text files,
+saving processed data to CSV files, determining model-specific directory names, and
+batch loading of processed CSV data for multiple subjects.
+
+Functions:
+- `safe_load_mat()`: Safely loads MATLAB .mat files.
+- `read_subject_list()`: Reads a list of all subject IDs.
+- `read_subject_list_fold()`: Reads a list of subject IDs for a specific cross-validation fold.
+- `read_train_subject_list()`: Reads a list of subject IDs designated for training.
+- `read_train_subject_list_fold()`: Reads a list of subject IDs for training within a specific cross-validation fold.
+- `save_csv()`: Saves a Pandas DataFrame to a CSV file in a structured directory.
+- `get_model_type()`: Determines the appropriate model type directory name.
+- `load_subject_csvs()`: Loads processed CSV data for multiple subjects.
 """
 
 from src.config import (
@@ -26,13 +35,17 @@ import pandas as pd
 from typing import Tuple
 
 def safe_load_mat(file_path: str):
-    """Safely load a MATLAB .mat file.
+    """Safely loads a MATLAB .mat file, handling potential FileNotFoundError or other exceptions.
+
+    This function attempts to load a .mat file and logs an error if the file is not found
+    or if any other exception occurs during loading, returning None in such cases.
 
     Args:
-        file_path (str): Path to the .mat file.
+        file_path (str): The absolute path to the .mat file to be loaded.
 
     Returns:
-        dict or None: Parsed content if successful, else None.
+        dict | None: The parsed content of the .mat file as a dictionary if successful,
+                     otherwise returns None.
     """
     try:
         return scipy.io.loadmat(file_path)
@@ -44,55 +57,84 @@ def safe_load_mat(file_path: str):
         return None
 
 def read_subject_list() -> list:
-    """Read the list of subject IDs from a text file.
+    """Reads the list of all subject IDs from a predefined text file.
+
+    Each line in the text file is expected to contain a single subject ID.
+    Empty lines are ignored.
 
     Returns:
-        list: List of subject strings, e.g., ["S0210_1", "S0211_2"]
+        list[str]: A list of strings, where each string is a subject ID
+                   (e.g., ["S0210_1", "S0211_2"]).
     """
     with open(SUBJECT_LIST_PATH, 'r') as file:
         return [line.strip() for line in file if line.strip()]
 
 def read_subject_list_fold(fold: int) -> list:
-    """Read the list of subject IDs from a text file.
+    """Reads the list of subject IDs for a specific cross-validation fold from a text file.
+
+    The function constructs the file path based on the provided fold number.
+    Each line in the text file is expected to contain a single subject ID.
+    Empty lines are ignored.
+
+    Args:
+        fold (int): The fold number for which to read the subject list.
 
     Returns:
-        list: List of subject strings, e.g., ["S0210_1", "S0211_2"]
+        list[str]: A list of strings, where each string is a subject ID
+                   (e.g., ["S0210_1", "S0211_2"]).
     """
     input_fp = os.path.join(SUBJECT_LIST_PATH_FOLD, f'subject_list_{fold}.txt')
     with open(input_fp, 'r') as file:
         return [line.strip() for line in file if line.strip()]
 
 def read_train_subject_list() -> list:
-    """Read the list of subject IDs from a text file.
+    """Reads the list of subject IDs designated for training from a predefined text file.
+
+    Each line in the text file is expected to contain a single subject ID.
+    Empty lines are ignored.
 
     Returns:
-        list: List of subject strings, e.g., ["S0210_1", "S0211_2"]
+        list[str]: A list of strings, where each string is a subject ID
+                   (e.g., ["S0210_1", "S0211_2"]).
     """
     with open(SUBJECT_LIST_PATH_TRAIN, 'r') as file:
         return [line.strip() for line in file if line.strip()]
 
 def read_train_subject_list_fold(fold: int) -> list:
-    """Read the list of subject IDs from a text file.
+    """Reads the list of subject IDs for training within a specific cross-validation fold from a text file.
+
+    The function constructs the file path based on the provided fold number.
+    Each line in the text file is expected to contain a single subject ID.
+    Empty lines are ignored.
+
+    Args:
+        fold (int): The fold number for which to read the training subject list.
 
     Returns:
-        list: List of subject strings, e.g., ["S0210_1", "S0211_2"]
+        list[str]: A list of strings, where each string is a subject ID
+                   (e.g., ["S0210_1", "S0211_2"]).
     """
     input_fp = os.path.join(SUBJECT_LIST_PATH_FOLD, f'subject_list_train_{fold}.txt')
     with open(input_fp, 'r') as file:
         return [line.strip() for line in file if line.strip()]
 
 def save_csv(df: pd.DataFrame, subject_id: str, version: str, feat: str, model: str) -> None:
-    """Save a DataFrame to CSV in the interim or processed directory.
+    """Saves a Pandas DataFrame to a CSV file within a structured directory hierarchy.
+
+    The output path is determined by whether the data is 'processed' or an 'interim' feature,
+    along with the model type, subject ID, and version. Directories are created if they don't exist.
 
     Args:
-        df (pd.DataFrame): Data to save.
-        subject_id (str): Subject ID (e.g., "S0210").
-        version (str): Session/version ID (e.g., "1").
-        feat (str): Feature name ('eeg', 'wavelet', 'processed', etc.).
-        model (str): Model type ('common', 'SvmA', etc.).
+        df (pd.DataFrame): The DataFrame containing the data to be saved.
+        subject_id (str): The subject's identifier (e.g., "S0210").
+        version (str): The session or version identifier for the subject's data (e.g., "1").
+        feat (str): The feature name or processing stage (e.g., 'eeg', 'wavelet', 'processed').
+                    If 'processed', the file is saved in the `PROCESS_CSV_PATH`; otherwise, in `INTRIM_CSV_PATH`.
+        model (str): The model type, used as a subdirectory name to organize saved files
+                     (e.g., 'common', 'SvmA').
 
     Returns:
-        None
+        None: The function saves the DataFrame to a CSV file and does not return any value.
     """
     if feat == 'processed':
         output_fp = os.path.join(PROCESS_CSV_PATH, model, f'processed_{subject_id}_{version}.csv')
@@ -105,26 +147,43 @@ def save_csv(df: pd.DataFrame, subject_id: str, version: str, feat: str, model: 
 
 
 def get_model_type(model_name: str) -> str:
-    """Determine the model type directory name based on the model name.
+    """Determines the appropriate model type directory name based on a given model name.
+
+    This function maps specific model names (e.g., 'Lstm', 'SvmA', 'SvmW') to their
+    corresponding directory names used for organizing files. If the model name does
+    not match a specific type, it defaults to 'common'.
 
     Args:
-        model_name (str): Name of the model (e.g., 'Lstm', 'SvmA', 'RF').
+        model_name (str): The name of the model (e.g., 'Lstm', 'SvmA', 'RF').
 
     Returns:
-        str: Corresponding type name ('Lstm', 'SvmA', 'SvmW', or 'common').
+        str: The corresponding model type directory name (e.g., 'Lstm', 'SvmA',
+             'SvmW', or 'common').
     """
     return model_name if model_name in {"SvmW", "SvmA", "Lstm"} else "common"
 
 def load_subject_csvs(subject_list: list, model_type: str, add_subject_id: bool = False) -> Tuple[pd.DataFrame, list]:
-    """Load processed CSV files for all subjects in the given list.
+    """Loads processed CSV files for all subjects in the given list and concatenates them into a single DataFrame.
+
+    This function iterates through a list of subject IDs, constructs the file path
+    for their processed CSV data based on the model type, loads each CSV, and
+    optionally adds a 'subject_id' column. It then concatenates all loaded DataFrames
+    and extracts the names of the feature columns.
 
     Args:
-        subject_list (list): List of subject strings (e.g., ["S0120_2"]).
-        model_type (str): Model type directory (e.g., 'Lstm', 'common').
-        add_subject_id (bool): If True, adds a 'subject_id' column to each row.
+        subject_list (list): A list of subject strings (e.g., ["S0120_2"]).
+        model_type (str): The model type directory name (e.g., 'Lstm', 'common'),
+                          indicating where the processed CSVs are located.
+        add_subject_id (bool): If True, a 'subject_id' column (format: 'subjectID_version')
+                               is added to each row of the loaded DataFrames. Defaults to False.
 
     Returns:
-        Tuple[pd.DataFrame, list]: (Concatenated DataFrame, feature columns list)
+        Tuple[pd.DataFrame, list]: A tuple containing:
+            - pd.DataFrame: A concatenated DataFrame of all loaded subject data.
+                            Returns an empty DataFrame if no files are loaded.
+            - list: A list of strings representing the names of the feature columns
+                    (from 'Steering_Range' to 'LaneOffset_AAA'). Returns an empty list
+                    if the concatenated DataFrame is empty.
     """
     dfs = []
     for subject in subject_list:
@@ -153,5 +212,4 @@ def load_subject_csvs(subject_list: list, model_type: str, add_subject_id: bool 
     else:
         feature_columns = []
     return df_all, feature_columns
-#    return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 

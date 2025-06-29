@@ -1,7 +1,10 @@
-"""Data splitting utility for KSS-based binary classification.
+"""Data Splitting Utilities for Driver Drowsiness Detection.
 
-This module filters KSS scores and splits the data into train/validation/test
-sets for use in supervised learning pipelines.
+This module provides functions for splitting datasets into training, validation,
+and test sets, with a focus on handling KSS (Karolinska Sleepiness Scale)-based
+binary classification. It includes functionalities for filtering data based on KSS scores,
+mapping them to binary labels, and performing both random and subject-wise data splits
+to ensure proper evaluation and prevent data leakage.
 """
 
 import numpy as np
@@ -16,25 +19,28 @@ def data_split(
     df: pd.DataFrame,
     random_state: int = 42,
 ):
-    """Split dataset into train/validation/test sets after KSS-based filtering.
+    """Splits the input DataFrame into training, validation, and test sets.
 
-    This function:
-    - Filters only rows where KSS_Theta_Alpha_Beta is in {1, 2, 8, 9}
-    - Maps labels: 1/2 → 0 (alert), 8/9 → 1 (drowsy)
-    - Splits into 60% train, 20% val, 20% test
-    - Retains 'subject_id' column if available
+    This function first filters the DataFrame to include only rows with specific
+    KSS_Theta_Alpha_Beta values, maps these to binary labels (0 for alert, 1 for drowsy),
+    and then divides the data into 60% training, 20% validation, and 20% test sets.
+    It ensures that the 'subject_id' column is retained if present.
 
     Args:
-        df (pd.DataFrame): Input DataFrame including features and KSS labels.
+        df (pd.DataFrame): The input DataFrame, expected to include feature columns
+                           and a 'KSS_Theta_Alpha_Beta' column.
+        random_state (int): Seed for the random number generator to ensure reproducibility
+                            of the data split. Defaults to 42.
 
     Returns:
-        tuple:
-            - X_train (pd.DataFrame)
-            - X_val (pd.DataFrame)
-            - X_test (pd.DataFrame)
-            - y_train (pd.Series)
-            - y_val (pd.Series)
-            - y_test (pd.Series)
+        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
+            A tuple containing:
+            - X_train (pd.DataFrame): Features for the training set.
+            - X_val (pd.DataFrame): Features for the validation set.
+            - X_test (pd.DataFrame): Features for the test set.
+            - y_train (pd.Series): Labels for the training set.
+            - y_val (pd.Series): Labels for the validation set.
+            - y_test (pd.Series): Labels for the test set.
     """
     df = df[df["KSS_Theta_Alpha_Beta"].isin(KSS_BIN_LABELS)]
 
@@ -63,22 +69,32 @@ def data_split_by_subject(
     val_subjects: list = None,
     test_subjects: list = None,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
-    """
-    Split data by subject IDs to avoid data leakage across train/val/test sets.
+    """Splits data into training, validation, and test sets based on provided subject IDs.
+
+    This function is crucial for maintaining subject independence across datasets,
+    preventing data leakage when evaluating models. It filters the input DataFrame
+    by KSS labels, maps them to binary drowsiness states, and then assigns data
+    rows to train, validation, or test sets based on their 'subject_id'.
 
     Args:
-        df (pd.DataFrame): Combined dataframe containing features and subject_id.
-        subject_list (List[str]): List of subject IDs to split.
-        seed (int): Random seed for reproducibility.
+        df (pd.DataFrame): The combined DataFrame containing features and a 'subject_id' column.
+        train_subjects (list[str]): A list of subject IDs designated for the training set.
+        seed (int): Random seed for reproducibility, particularly for internal operations
+                    like label mapping if not explicitly handled. Defaults to 42.
+        val_subjects (list[str], optional): A list of subject IDs for the validation set.
+                                            If None, the validation set will be empty.
+        test_subjects (list[str], optional): A list of subject IDs for the test set.
+                                             If None, the test set will be empty.
 
     Returns:
-        Tuple of:
-            - X_train (pd.DataFrame)
-            - X_val (pd.DataFrame)
-            - X_test (pd.DataFrame)
-            - y_train (pd.Series)
-            - y_val (pd.Series)
-            - y_test (pd.Series)
+        Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
+            A tuple containing:
+            - X_train (pd.DataFrame): Features for the training set.
+            - X_val (pd.DataFrame): Features for the validation set.
+            - X_test (pd.DataFrame): Features for the test set.
+            - y_train (pd.Series): Labels for the training set.
+            - y_val (pd.Series): Labels for the validation set.
+            - y_test (pd.Series): Labels for the test set.
     """
 
     logging.info(f"df shape before label filter: {df.shape}")
