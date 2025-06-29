@@ -11,6 +11,10 @@ We utilize the **open dataset** from _Multi-modal Data Acquisition Platform for 
 - Labels for driver drowsiness states
 
 **DOI:** [10.7910/DVN/HMZ5RG](https://doi.org/10.7910/DVN/HMZ5RG)
+```sh
+curl -L -O -J "https://dataverse.harvard.edu/api/access/dataset/:persistentId/?persistentId=doi:10.7910/DVN/HMZ5RG"
+```
+
 <!-- need to explain how to download complete dataset via API -->
 
 <!--
