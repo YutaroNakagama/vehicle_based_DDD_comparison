@@ -1,11 +1,15 @@
 """Evaluation pipeline for trained models in driver drowsiness detection.
 
-This script selects the appropriate evaluation routine based on the model type:
-- LSTM (deep learning)
-- SVM-ANFIS (optimized with PSO)
-- Common classifiers (e.g., Random Forest, SvmW)
+This module provides the `eval_pipeline` function, which orchestrates the evaluation of various
+trained driver drowsiness detection (DDD) models. It handles data loading, preprocessing
+(including subject-wise splitting if specified), model loading, and dispatches to
+model-specific evaluation routines. The evaluation results, including performance metrics
+and metadata, are logged and saved to a JSON file.
 
-The evaluation includes data loading, preprocessing, and performance logging.
+It supports different model types:
+- LSTM (deep learning models)
+- SVM-ANFIS (optimized with PSO)
+- Common classifiers (e.g., Random Forest, SvmW, etc.)
 """
 
 import os
@@ -43,15 +47,22 @@ def eval_pipeline(
     ) -> None:
     """Evaluate the specified trained model using appropriate method.
 
-    The evaluation routine is selected based on the `model` name.
-    For SvmA and LSTM models, custom evaluators are used.
-    For other models, a generic evaluation method is used.
+    This function orchestrates the evaluation process for a given model.
+    It loads the necessary data and model, applies any required preprocessing
+    (like data splitting), and then calls the relevant evaluation function
+    based on the model type. Finally, it saves the evaluation results.
 
     Args:
-        model (str): Model name (e.g., 'Lstm', 'SvmA', 'RF', 'SvmW').
+        model (str): The name of the model to evaluate (e.g., 'Lstm', 'SvmA', 'RF', 'SvmW').
+        tag (str, optional): An optional tag used to identify specific model variants or experiment runs.
+        sample_size (int, optional): If specified, a subset of subjects of this size will be sampled for evaluation.
+        seed (int): Random seed for reproducibility of subject sampling. Defaults to 42.
+        fold (int): The current fold number if performing k-fold cross-validation. Defaults to 0 (no specific fold).
+        subject_wise_split (bool): If True, data splitting will ensure subjects are not mixed across train/test sets.
+                                   Defaults to False.
 
     Returns:
-        None
+        None: The function saves evaluation metrics to a JSON file and does not return any value.
     """
 
     logging.info(f"Evaluation split mode: {'subject-wise' if subject_wise_split else 'sample-wise'}")
@@ -109,7 +120,7 @@ def eval_pipeline(
         with open(model_path, "rb") as f:
             clf = pickle.load(f)
 
-    # call evaluation functions
+    # Call evaluation functions based on model type
     if model == 'Lstm':
         scaler_path = os.path.join(MODEL_PKL_PATH, model_type, f"scaler_fold1{f'_{tag}' if tag else ''}.pkl")
         if not os.path.exists(scaler_path):

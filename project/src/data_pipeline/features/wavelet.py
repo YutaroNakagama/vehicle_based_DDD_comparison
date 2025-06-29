@@ -1,10 +1,14 @@
-"""Wavelet-based feature extraction from vehicle dynamics signals (SIMlsl).
+"""Wavelet-based Feature Extraction for Driver Drowsiness Detection.
 
-This module performs multi-level GHM wavelet decomposition on steering and
-acceleration signals, computes energy per decomposition path, and outputs
-features used in driver drowsiness detection.
+This module provides functionalities for extracting features from vehicle dynamics signals
+(specifically SIMlsl data) using multi-level GHM (Generalized Haar Multiwavelet) wavelet decomposition.
+It focuses on processing steering and acceleration signals to derive energy features
+per decomposition path, which are then used in driver drowsiness detection models.
 
-Key output features include power values from decomposition paths like DDD, DDA, etc.
+Key features generated include power values from various decomposition paths (e.g., DDD, DDA, etc.),
+providing a multi-resolution analysis of the signals. The module also supports
+optional jittering for data augmentation and integrates with a sliding window approach
+for feature extraction across time.
 """
 
 import numpy as np
@@ -29,13 +33,17 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 
 def get_simlsl_window_params(model: str) -> tuple[int, int]:
-    """Get window and step size in samples based on model configuration.
+    """Retrieves the window size and step size in samples for SIMlsl data
+    based on the specified model configuration.
 
     Args:
-        model (str): Model name (e.g., 'SvmW').
+        model (str): The name of the model for which to retrieve window parameters.
+                     This key is used to look up the configuration in `MODEL_WINDOW_CONFIG`.
 
     Returns:
-        tuple[int, int]: (window size, step size) in samples.
+        tuple[int, int]: A tuple containing two integers:
+                         - The window size in samples.
+                         - The step size in samples.
     """
     config = MODEL_WINDOW_CONFIG[model]
     window_samples = int(config["window_sec"] * SAMPLE_RATE_SIMLSL)
@@ -44,13 +52,19 @@ def get_simlsl_window_params(model: str) -> tuple[int, int]:
 
 
 def ghm_wavelet_transform(signal: np.ndarray) -> list[tuple[np.ndarray, np.ndarray]]:
-    """Apply GHM wavelet transform to a signal.
+    """Applies the GHM (Generalized Haar Multiwavelet) wavelet transform to a 1D signal.
+
+    This function performs a multi-level wavelet decomposition using predefined
+    scaling and wavelet filters. It iteratively decomposes the approximation
+    coefficients to generate detail and new approximation coefficients at each level.
 
     Args:
-        signal (np.ndarray): 1D input signal.
+        signal (np.ndarray): The 1D input signal to be transformed.
 
     Returns:
-        list: List of tuples (scaling_coeffs, wavelet_coeffs) per level.
+        list[tuple[np.ndarray, np.ndarray]]: A list of tuples, where each tuple contains
+                                             (scaling_coefficients, wavelet_coefficients)
+                                             for each decomposition level.
     """
     coeffs = []
     approx = signal
@@ -63,27 +77,38 @@ def ghm_wavelet_transform(signal: np.ndarray) -> list[tuple[np.ndarray, np.ndarr
 
 
 def adjust_and_add(coeff1: np.ndarray, coeff2: np.ndarray) -> np.ndarray:
-    """Align and sum two wavelet coefficient arrays to same length.
+    """Aligns two wavelet coefficient arrays to the same length and performs element-wise summation.
+
+    This function is used to combine coefficients from different decomposition paths
+    by truncating the longer array to match the length of the shorter one, ensuring
+    compatible dimensions for summation.
 
     Args:
-        coeff1 (np.ndarray): First array.
-        coeff2 (np.ndarray): Second array.
+        coeff1 (np.ndarray): The first NumPy array of wavelet coefficients.
+        coeff2 (np.ndarray): The second NumPy array of wavelet coefficients.
 
     Returns:
-        np.ndarray: Element-wise sum of trimmed arrays.
+        np.ndarray: A new NumPy array representing the element-wise sum of the
+                    trimmed input arrays.
     """
     min_len = min(len(coeff1), len(coeff2))
     return coeff1[:min_len] + coeff2[:min_len]
 
 
 def generate_decomposition_signals(coeffs: list[tuple[np.ndarray, np.ndarray]]) -> list[np.ndarray]:
-    """Generate 8 wavelet decomposition paths from coefficients.
+    """Generates 8 specific wavelet decomposition paths from a list of wavelet coefficients.
+
+    These paths represent different combinations of detail (D) and approximation (A) coefficients
+    across multiple decomposition levels, crucial for feature extraction in certain DDD models.
+    The combinations are based on a predefined structure (e.g., DDD, DDA, ADA, AAA).
 
     Args:
-        coeffs (list): List of wavelet transform coefficient pairs.
+        coeffs (list): A list of tuples, where each tuple contains (scaling_coefficients, wavelet_coefficients)
+                       for each level of wavelet decomposition.
 
     Returns:
-        list[np.ndarray]: List of 8 decomposition signals (DDD, DDA, ... AAA).
+        list[np.ndarray]: A list of 8 NumPy arrays, each representing a specific wavelet
+                          decomposition signal (e.g., DDD, DDA, ... AAA).
     """
     return [
         coeffs[0][1],  # D
@@ -98,25 +123,33 @@ def generate_decomposition_signals(coeffs: list[tuple[np.ndarray, np.ndarray]]) 
 
 
 def calculate_power(signal: np.ndarray) -> float:
-    """Calculate signal power (mean squared value).
+    """Calculates the mean power (mean squared value) of a 1D signal.
+
+    This function is used to quantify the energy content within different
+    wavelet decomposition paths, serving as a feature for drowsiness detection.
 
     Args:
-        signal (np.ndarray): 1D input signal.
+        signal (np.ndarray): The 1D input signal.
 
     Returns:
-        float: Mean power of the signal.
+        float: The mean power of the signal.
     """
     return np.mean(signal ** 2)
 
 
 def process_window(signal_window: np.ndarray) -> list[float]:
-    """Apply wavelet transform and compute power for each decomposition.
+    """Applies GHM wavelet transform to a single signal window and computes power for each decomposition path.
+
+    This function serves as a core processing step within a sliding window approach,
+    transforming raw signal segments into a set of power features based on their
+    wavelet decomposition.
 
     Args:
-        signal_window (np.ndarray): 1D signal window.
+        signal_window (np.ndarray): A 1D NumPy array representing a segment (window) of a signal.
 
     Returns:
-        list[float]: Power values for 8 decomposition paths.
+        list[float]: A list of floating-point numbers, where each value is the
+                     calculated power for one of the 8 wavelet decomposition paths.
     """
     coeffs = ghm_wavelet_transform(signal_window)
     decomposition_signals = generate_decomposition_signals(coeffs)
@@ -124,18 +157,22 @@ def process_window(signal_window: np.ndarray) -> list[float]:
 
 
 def wavelet_process(subject: str, model: str, use_jittering: bool = False) -> None:
-    """Main function to extract wavelet features from vehicle signals.
+    """Main function to extract wavelet-based features from vehicle dynamics signals for a given subject.
 
-    Applies multi-resolution wavelet decomposition to steering and acceleration
-    signals, computes power for each path, and saves results as CSV.
+    This function orchestrates the process of loading SIMlsl data, extracting relevant
+    vehicle signals (steering, steering speed, longitudinal acceleration, lateral acceleration,
+    and lane offset), applying optional jittering for data augmentation, and then performing
+    multi-resolution GHM wavelet decomposition on these signals within sliding windows.
+    The power of each decomposition path is computed and saved as features to a CSV file.
 
     Args:
-        subject (str): Subject identifier in 'subjectID_version' format, e.g., 'S0120_2'.
-        model (str): Model name for window config.
-        use_jittering (bool): Whether to apply jittering to raw signals.
+        subject (str): The subject identifier in 'subjectID_version' format (e.g., 'S0120_2').
+        model (str): The model name, used to determine window settings for feature extraction.
+        use_jittering (bool): If True, jittering-based data augmentation is applied to signals.
+                              Defaults to False.
 
     Returns:
-        None
+        None: The function saves the processed features to a CSV file and does not return any value.
     """
     parts = subject.split('_')
     if len(parts) != 2:

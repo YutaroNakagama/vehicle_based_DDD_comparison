@@ -29,6 +29,18 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 @njit
 def _count_similar_templates(signal, m, r):
+    """
+    Counts the number of similar template pairs for Sample Entropy calculation.
+    This is a helper function optimized with Numba for performance.
+
+    Args:
+        signal (np.ndarray): The input signal array.
+        m (int): The length of the template.
+        r (float): The tolerance for similarity.
+
+    Returns:
+        int: The count of similar template pairs.
+    """
     N = len(signal)
     count = 0
     for i in range(N - m):
@@ -38,7 +50,21 @@ def _count_similar_templates(signal, m, r):
     return count
 
 def sample_entropy(signal, m=2, r=None):
-    """Fast Sample Entropy using Numba."""
+    """Calculates the Sample Entropy of a given signal.
+
+    Sample Entropy is a measure of complexity and predictability of time-series data.
+    A lower value indicates more regularity and predictability.
+
+    Args:
+        signal (np.ndarray): The input 1D signal.
+        m (int): The length of the template vectors. Defaults to 2.
+        r (float, optional): The tolerance for accepting matches. If None, it defaults
+                             to 0.2 times the standard deviation of the signal.
+
+    Returns:
+        float: The Sample Entropy value, or np.nan if calculation is not possible
+               (e.g., signal too short, or zero standard deviation).
+    """
     signal = np.asarray(signal, dtype=np.float64)
     N = len(signal)
     if r is None:
@@ -56,14 +82,21 @@ def sample_entropy(signal, m=2, r=None):
         return np.nan
 
 def extract_statistical_features(signal: np.ndarray, prefix: str = "") -> dict:
-    """Extract statistical and spectral features from a 1D signal.
+    """Extracts a comprehensive set of statistical and spectral features from a 1D signal.
+
+    Features include range, standard deviation, energy, zero-crossing rate, quartiles,
+    median, skewness, kurtosis, frequency variance, spectral entropy, spectral flux,
+    frequency center of gravity (COG), dominant frequency, average Power Spectral Density (PSD),
+    and Sample Entropy.
 
     Args:
-        signal (np.ndarray): Input 1D signal.
-        prefix (str): Feature name prefix (e.g., 'Steering_').
+        signal (np.ndarray): The input 1D signal from which to extract features.
+        prefix (str): A string prefix to add to each feature name (e.g., 'Steering_').
+                      Defaults to an empty string.
 
     Returns:
-        dict: Dictionary of extracted features.
+        dict: A dictionary where keys are feature names (prefixed) and values are the
+              corresponding extracted feature values.
     """
     freqs = fftfreq(len(signal), 1 / SAMPLE_RATE_SIMLSL)
     spectrum = np.abs(fft(signal)) ** 2
@@ -93,13 +126,17 @@ def extract_statistical_features(signal: np.ndarray, prefix: str = "") -> dict:
 
 
 def get_simlsl_window_params(model: str) -> tuple[int, int]:
-    """Get window and step size in samples for SIMlsl data.
+    """Retrieves the window size and step size in samples for SIMlsl data
+    based on the specified model configuration.
 
     Args:
-        model (str): Model name used for parameter lookup.
+        model (str): The name of the model for which to retrieve window parameters.
+                     This key is used to look up the configuration in `MODEL_WINDOW_CONFIG`.
 
     Returns:
-        tuple[int, int]: (window size, step size) in samples.
+        tuple[int, int]: A tuple containing two integers:
+                         - The window size in samples.
+                         - The step size in samples.
     """
     config = MODEL_WINDOW_CONFIG[model]
     window_samples = int(config["window_sec"] * SAMPLE_RATE_SIMLSL)
@@ -107,6 +144,20 @@ def get_simlsl_window_params(model: str) -> tuple[int, int]:
     return window_samples, step_samples
 
 def process_simlsl_data(signals: list[np.ndarray], prefixes: list[str], model: str) -> pd.DataFrame:
+    """Processes a list of SIMlsl signals by applying a sliding window and extracting features.
+
+    For each signal, statistical and spectral features are extracted from overlapping windows.
+    The processing is parallelized for efficiency.
+
+    Args:
+        signals (list[np.ndarray]): A list of 1D NumPy arrays, where each array is a SIMlsl signal.
+        prefixes (list[str]): A list of string prefixes corresponding to each signal,
+                              used for naming the extracted features.
+        model (str): The model name, used to determine window size and step size.
+
+    Returns:
+        pd.DataFrame: A DataFrame where each row represents a window and columns are the extracted features.
+    """
     window_size, step_size = get_simlsl_window_params(model)
     starts = range(0, len(signals[0]) - window_size + 1, step_size)
 
@@ -124,14 +175,19 @@ def process_simlsl_data(signals: list[np.ndarray], prefixes: list[str], model: s
     return pd.DataFrame(features_list)
 
 def smooth_std_pe_features(signal: np.ndarray, model: str) -> dict:
-    """Compute smoothed standard deviation and prediction error features.
+    """Computes smoothed standard deviation and prediction error features from a signal.
+
+    This function applies a sliding window to the input signal and calculates
+    the standard deviation, prediction error, and a Gaussian-smoothed value
+    for each window. These features are indicative of signal variability and predictability.
 
     Args:
-        signal (np.ndarray): Input signal.
-        model (str): Model name for window config.
+        signal (np.ndarray): The input 1D signal array.
+        model (str): The model name, used to retrieve window parameters (size and step).
 
     Returns:
-        dict: Feature dictionary with 'std_dev', 'pred_error', and 'gaussian_smooth'.
+        dict: A dictionary containing lists of computed 'std_dev', 'pred_error', and
+              'gaussian_smooth' features across all windows.
     """
     window_size, step_size = get_simlsl_window_params(model)
     features = {'std_dev': [], 'pred_error': [], 'gaussian_smooth': []}
@@ -154,15 +210,21 @@ def smooth_std_pe_features(signal: np.ndarray, model: str) -> dict:
 
 
 def smooth_std_pe_process(subject: str, model: str, use_jittering: bool = False) -> None:
-    """Main function to extract smoothed STD/PE features from SIMlsl data.
+    """Main function to extract smoothed standard deviation and prediction error features
+    from SIMlsl (Simulated Lane-keeping System) data for a given subject.
+
+    This function loads SIMlsl data, extracts relevant signals (steering, acceleration, lane offset),
+    applies optional jittering for data augmentation, computes smoothed standard deviation
+    and prediction error features using a sliding window, and saves the results to a CSV file.
 
     Args:
-        subject (str): Subject identifier in 'subjectID_version' format, e.g., 'S0120_2'.
-        model (str): Model name for window settings.
-        use_jittering (bool): Whether to apply jittering augmentation.
+        subject (str): The subject identifier in 'subjectID_version' format (e.g., 'S0120_2').
+        model (str): The model name, used to determine window settings for feature extraction.
+        use_jittering (bool): If True, jittering-based data augmentation is applied to signals.
+                              Defaults to False.
 
     Returns:
-        None
+        None: The function saves the processed features to a CSV file and does not return any value.
     """
     parts = subject.split('_')
     if len(parts) != 2:
@@ -210,15 +272,21 @@ def smooth_std_pe_process(subject: str, model: str, use_jittering: bool = False)
 
 
 def time_freq_domain_process(subject: str, model: str, use_jittering: bool = False) -> None:
-    """Main function to extract time-frequency features from SIMlsl signals.
+    """Main function to extract time-frequency domain features from SIMlsl signals for a given subject.
+
+    This function loads SIMlsl data, extracts relevant vehicle dynamics signals,
+    applies optional jittering for data augmentation, and then processes these
+    signals using a sliding window to extract time-frequency domain features.
+    The extracted features are then saved to a CSV file.
 
     Args:
-        subject (str): Subject identifier in 'subjectID_version' format, e.g., 'S0120_2'.
-        model (str): Model name for window settings.
-        use_jittering (bool): Whether to apply jittering augmentation.
+        subject (str): The subject identifier in 'subjectID_version' format (e.g., 'S0120_2').
+        model (str): The model name, used to determine window settings for feature extraction.
+        use_jittering (bool): If True, jittering-based data augmentation is applied to signals.
+                              Defaults to False.
 
     Returns:
-        None
+        None: The function saves the processed features to a CSV file and does not return any value.
     """
     parts = subject.split('_')
     if len(parts) != 2:

@@ -1,13 +1,22 @@
-"""Preprocessing functions for physiological and pupil data.
+"""Physiological and Pupil Data Preprocessing for Driver Drowsiness Detection.
 
-This module processes PERCLOS (Percentage of Eye Closure), blood pressure,
-skin conductance, respiration, oxygen saturation, and pupil diameter data
-from raw MAT files. It computes window-based features for use in driver
-drowsiness detection.
+This module contains functions for processing raw physiological signals (blood pressure,
+skin conductance, respiration, oxygen saturation) and pupil diameter data, typically
+loaded from MAT files. It focuses on extracting meaningful features by calculating
+PERCLOS (Percentage of Eye Closure) and aggregating physiological signals over
+time windows. The processed data is then saved as CSV files for further use in
+driver drowsiness detection models.
 
 Functions:
-    - perclos_process(): Save PERCLOS and physiological data as CSV.
-    - pupil_process(): Save cleaned pupil size features as CSV.
+    - `get_physio_window_sec()`: Retrieves window size for physiological data.
+    - `calculate_perclos()`: Computes PERCLOS from blink event data.
+    - `process_physio_data()`: Aggregates physiological signals over windows.
+    - `calculate_and_save_perclos_physio_combined()`: Combines PERCLOS and physiological data.
+    - `perclos_process()`: Main function to extract and save combined PERCLOS and physiological features.
+    - `replace_outliers_with_interpolation()`: Handles outliers in time series data.
+    - `non_overlapping_average()`: Computes non-overlapping moving averages.
+    - `process_pupil_data()`: Loads, cleans, and averages pupil data.
+    - `pupil_process()`: Main function to process and save pupil diameter data.
 """
 
 import pandas as pd
@@ -22,26 +31,36 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 
 def get_physio_window_sec(model: str) -> float:
-    """Retrieve the window size in seconds for a given model.
+    """Retrieves the window size in seconds for physiological data based on the specified model configuration.
+
+    This function accesses the `MODEL_WINDOW_CONFIG` to find the appropriate
+    window duration for processing physiological signals, ensuring consistency
+    with the model's requirements.
 
     Args:
-        model (str): Model name (e.g., 'Lstm', 'SvmW', etc.).
+        model (str): The name of the model for which to retrieve the window size (e.g., 'Lstm', 'SvmW').
 
     Returns:
-        float: Window size in seconds.
+        float: The window size in seconds.
     """
     return MODEL_WINDOW_CONFIG[model]["window_sec"]
 
 
 def calculate_perclos(blinks: np.ndarray, window_size_sec: float) -> pd.DataFrame:
-    """Calculate PERCLOS (Percentage of Eye Closure) per time window.
+    """Calculates PERCLOS (Percentage of Eye Closure) for each time window.
+
+    PERCLOS is a key metric in drowsiness detection, representing the proportion
+    of time the eyes are closed within a specific time window.
 
     Args:
-        blinks (np.ndarray): Blink events array from MAT file.
-        window_size_sec (float): Duration of each analysis window in seconds.
+        blinks (np.ndarray): A 2D NumPy array containing blink event data, typically
+                             from a MAT file. Expected columns include blink start times
+                             and durations.
+        window_size_sec (float): The duration of each analysis window in seconds.
 
     Returns:
-        pd.DataFrame: DataFrame with Timestamp and PERCLOS values per window.
+        pd.DataFrame: A DataFrame with two columns: 'Timestamp' (start time of each window)
+                      and 'PERCLOS' (the calculated PERCLOS value for that window).
     """
     blink_starts, blink_durations = blinks[:, 10], blinks[:, 2]
     total_duration = blink_starts[-1] - blink_starts[0]
@@ -61,14 +80,20 @@ def calculate_perclos(blinks: np.ndarray, window_size_sec: float) -> pd.DataFram
 
 
 def process_physio_data(physio_content: np.ndarray, window_size_sec: float) -> pd.DataFrame:
-    """Aggregate physiological signals over non-overlapping windows.
+    """Aggregates physiological signals over non-overlapping time windows.
+
+    This function takes raw physiological data, organizes it into a DataFrame,
+    and then groups it into specified time windows, calculating the mean value
+    for each physiological signal within each window.
 
     Args:
-        physio_content (np.ndarray): 2D array [5, N] of physio signals.
-        window_size_sec (float): Duration of each analysis window in seconds.
+        physio_content (np.ndarray): A 2D NumPy array where the first row is timestamps
+                                     and subsequent rows are different physiological signals.
+        window_size_sec (float): The duration of each non-overlapping analysis window in seconds.
 
     Returns:
-        pd.DataFrame: Window-averaged physiological feature DataFrame.
+        pd.DataFrame: A DataFrame containing the window-averaged physiological features,
+                      with a 'Window' column indicating the time window index.
     """
     physio_df = pd.DataFrame({
         "Timestamp": physio_content[0],
@@ -85,15 +110,23 @@ def process_physio_data(physio_content: np.ndarray, window_size_sec: float) -> p
 def calculate_and_save_perclos_physio_combined(
     blink_data_path: str, physio_data_path: str, window_size_sec: float
 ) -> pd.DataFrame | None:
-    """Combine and align PERCLOS and physiological data by time window.
+    """Combines and aligns PERCLOS and physiological data by time window.
+
+    This function loads blink and physiological data from specified MAT files,
+    calculates PERCLOS, processes physiological signals into windows, and then
+    merges these two datasets based on their time windows. This combined data
+    provides a rich feature set for drowsiness detection.
 
     Args:
-        blink_data_path (str): Path to blink MAT file.
-        physio_data_path (str): Path to physiological data MAT file.
-        window_size_sec (float): Duration of analysis window.
+        blink_data_path (str): The absolute path to the MAT file containing blink event data.
+        physio_data_path (str): The absolute path to the MAT file containing physiological data.
+        window_size_sec (float): The duration of the analysis window in seconds, used for
+                                 both PERCLOS calculation and physiological data aggregation.
 
     Returns:
-        pd.DataFrame or None: Combined features DataFrame or None if data missing.
+        pd.DataFrame | None: A DataFrame containing the combined and aligned features
+                             (PERCLOS and physiological data) if both data sources are
+                             successfully loaded; otherwise, returns None.
     """
     blink_data = safe_load_mat(blink_data_path)
     physio_data = safe_load_mat(physio_data_path)
@@ -111,13 +144,17 @@ def calculate_and_save_perclos_physio_combined(
 
 
 def perclos_process(subject: str) -> None:
-    """Main function to extract and save combined perclos + physio features.
+    """Main function to extract and save combined PERCLOS and physiological features for a given subject.
+
+    This function orchestrates the loading of blink and physiological data files
+    for a specified subject, calculates and combines the PERCLOS and other
+    physiological features, and then saves the resulting DataFrame to a CSV file.
 
     Args:
-        subject (str): Subject identifier in 'subjectID_version' format, e.g., 'S0120_2'.
+        subject (str): The subject identifier in 'subjectID_version' format (e.g., 'S0120_2').
 
     Returns:
-        None
+        None: The function saves the processed features to a CSV file and does not return any value.
     """
     parts = subject.split('_')
     if len(parts) != 2:
@@ -141,14 +178,20 @@ def perclos_process(subject: str) -> None:
 # ----- Pupil Processing -----
 
 def replace_outliers_with_interpolation(data: np.ndarray, threshold: float = 3) -> np.ndarray:
-    """Replace outliers in a 1D signal with interpolated values.
+    """Replaces outliers in a 1D signal with interpolated values.
+
+    Outliers are identified based on a Z-score threshold. Identified outliers
+    are replaced using linear interpolation from neighboring valid data points.
+    This helps in cleaning noisy physiological signals like pupil diameter.
 
     Args:
-        data (np.ndarray): 1D time series.
-        threshold (float): Number of std devs for outlier detection.
+        data (np.ndarray): The input 1D time series signal.
+        threshold (float): The Z-score threshold for outlier detection. Data points
+                           with an absolute Z-score greater than this threshold are
+                           considered outliers. Defaults to 3.
 
     Returns:
-        np.ndarray: Signal with outliers interpolated.
+        np.ndarray: The signal with outliers replaced by interpolated values.
     """
     mean, std_dev = np.nanmean(data), np.nanstd(data)
     outliers = (data < mean - threshold * std_dev) | (data > mean + threshold * std_dev)
@@ -159,28 +202,40 @@ def replace_outliers_with_interpolation(data: np.ndarray, threshold: float = 3) 
 
 
 def non_overlapping_average(data: np.ndarray, window_size: int) -> np.ndarray:
-    """Compute non-overlapping moving average of 1D data.
+    """Computes the non-overlapping moving average of a 1D signal.
+
+    This function divides the input signal into contiguous windows of a specified size
+    and calculates the mean of the data within each window. This is useful for downsampling
+    or smoothing signals while preserving their overall trend.
 
     Args:
-        data (np.ndarray): Input 1D signal.
-        window_size (int): Number of samples per window.
+        data (np.ndarray): The input 1D signal array.
+        window_size (int): The number of samples to include in each non-overlapping window.
 
     Returns:
-        np.ndarray: Averaged signal.
+        np.ndarray: A new NumPy array containing the averaged values for each window.
     """
     return np.array([np.mean(data[i * window_size:(i + 1) * window_size]) for i in range(len(data) // window_size)])
 
 
 def process_pupil_data(subject_id: str, version: str, threshold: float = 3) -> pd.DataFrame | None:
-    """Load, clean, and average pupil data from MAT files.
+    """Loads, cleans, and averages pupil diameter data from MAT files.
+
+    This function handles the entire pipeline for pupil data: loading from a MAT file,
+    replacing outliers with interpolated values, and then computing non-overlapping
+    averages of the pupil data within fixed-size windows. It processes both 2D and 3D
+    pupil data if available.
 
     Args:
-        subject_id (str): Subject ID.
-        version (str): Recording version.
-        threshold (float): Outlier threshold (default=3).
+        subject_id (str): The subject identifier (e.g., 'S0120').
+        version (str): The recording version for the subject (e.g., '2').
+        threshold (float): The Z-score threshold used for outlier detection during cleaning.
+                           Defaults to 3.
 
     Returns:
-        pd.DataFrame or None: Cleaned and averaged pupil data, or None if file not found.
+        pd.DataFrame | None: A DataFrame containing the cleaned and averaged pupil data
+                             (left and right pupil for both 2D and 3D, along with timestamps)
+                             if the data is successfully loaded and processed; otherwise, None.
     """
     file_path = f'{DATASET_PATH}/{subject_id}/PupilData_{subject_id}_{version}.mat'
     data = safe_load_mat(file_path)
@@ -216,13 +271,17 @@ def process_pupil_data(subject_id: str, version: str, threshold: float = 3) -> p
 
 
 def pupil_process(subject: str) -> None:
-    """Main function to process and save pupil diameter data for a subject.
+    """Main function to process and save pupil diameter data for a given subject.
+
+    This function loads raw pupil data, cleans it by replacing outliers with
+    interpolated values, and then aggregates it into averaged values over time windows.
+    The processed pupil data is then saved to a CSV file.
 
     Args:
-        subject (str): Subject identifier in 'subjectID_version' format, e.g., 'S0120_2'.
+        subject (str): The subject identifier in 'subjectID_version' format (e.g., 'S0120_2').
 
     Returns:
-        None
+        None: The function saves the processed features to a CSV file and does not return any value.
     """
     parts = subject.split('_')
     if len(parts) != 2:

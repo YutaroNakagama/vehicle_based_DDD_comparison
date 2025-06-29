@@ -1,7 +1,10 @@
-"""Feature merging utilities for driver drowsiness detection.
+"""Feature Merging Utilities for Driver Drowsiness Detection.
 
-This module merges intermediate CSVs (e.g., EEG, wavelet, time-frequency features)
-based on time alignment, and saves merged files to the processed dataset.
+This module provides functions for merging various intermediate feature CSVs
+(e.g., EEG, wavelet, time-frequency features) into a single, time-aligned dataset.
+It handles the loading of individual feature files, performs time-based merging,
+and saves the combined data to the processed dataset directory. This is crucial
+for creating a unified feature set for machine learning models.
 """
 
 import os
@@ -37,18 +40,24 @@ FEATURES_BY_MODEL = {
 }
 
 
-def load_feature_csv(feature: str, timestamp_col: str, model: str, subject_id: str, version: str) -> pd.DataFrame:
-    """Load a feature CSV file and standardize its timestamp column.
+def load_feature_csv(feature: str, timestamp_col: str, model: str, subject_id: str, version: str) -> pd.DataFrame | None:
+    """Loads a specific feature CSV file and standardizes its timestamp column to 'Timestamp'.
+
+    This function constructs the expected file path for an interim feature CSV,
+    loads it into a Pandas DataFrame, and renames the specified `timestamp_col`
+    to a generic 'Timestamp' for consistent merging. It handles cases where the
+    file might not exist.
 
     Args:
-        feature (str): Feature name (e.g., 'eeg', 'wavelet').
-        timestamp_col (str): Original timestamp column name in CSV.
-        model (str): Model type (e.g., 'SvmA', 'Lstm').
-        subject_id (str): Subject identifier.
-        version (str): Session/version identifier.
+        feature (str): The name of the feature (e.g., 'eeg', 'wavelet', 'smooth_std_pe').
+        timestamp_col (str): The original name of the timestamp column within the CSV file.
+        model (str): The model type (e.g., 'common', 'SvmA', 'Lstm'), used to locate the file.
+        subject_id (str): The subject's identifier (e.g., "S0210").
+        version (str): The session or version identifier (e.g., "1").
 
     Returns:
-        pd.DataFrame or None: Loaded DataFrame with renamed 'Timestamp' column, or None if file not found.
+        pd.DataFrame | None: The loaded DataFrame with a standardized 'Timestamp' column
+                             if the file is found and loaded successfully; otherwise, None.
     """
     file_path = os.path.join(INTRIM_CSV_PATH, feature, model, f"{feature}_{subject_id}_{version}.csv")
     if os.path.exists(file_path):
@@ -60,16 +69,24 @@ def load_feature_csv(feature: str, timestamp_col: str, model: str, subject_id: s
 
 
 def merge_features(features: dict, model: str, subject_id: str, version: str) -> pd.DataFrame:
-    """Merge multiple feature DataFrames based on timestamp alignment.
+    """Merges multiple feature DataFrames for a given subject based on timestamp alignment.
+
+    This function iterates through a dictionary of features, loads each feature's
+    CSV file, and performs a time-series merge (`pd.merge_asof`) to align them
+    by their timestamps. The merging is done with a 'nearest' direction to find
+    the closest timestamp match.
 
     Args:
-        features (dict): Mapping of feature name to its timestamp column name.
-        model (str): Model type ('common', 'SvmA', etc.).
-        subject_id (str): Subject identifier.
-        version (str): Session/version identifier.
+        features (dict): A dictionary where keys are feature names (str) and values
+                         are the original timestamp column names (str) within those feature CSVs.
+        model (str): The model type (e.g., 'common', 'SvmA', etc.), used to locate feature files.
+        subject_id (str): The subject's identifier (e.g., "S0210").
+        version (str): The session or version identifier (e.g., "1").
 
     Returns:
-        pd.DataFrame: Merged DataFrame sorted by timestamp.
+        pd.DataFrame: A single, merged DataFrame containing all specified features,
+                      aligned and sorted by the 'Timestamp' column. Returns an empty
+                      DataFrame if no features could be loaded or merged.
     """
     merged_df = pd.DataFrame()
     for feature, timestamp_col in features.items():
@@ -88,14 +105,18 @@ def merge_features(features: dict, model: str, subject_id: str, version: str) ->
 
 
 def merge_process(subject: str, model: str) -> None:
-    """Merge selected features for a given subject and model, and save to disk.
+    """Merges selected features for a given subject and model, and saves the combined data to disk.
+
+    This is the main entry point for the merging process. It identifies the relevant
+    features based on the specified model, loads and merges them, and then saves
+    the resulting comprehensive dataset as a 'merged' CSV file in the processed data directory.
 
     Args:
-        subject (str): Subject string in format 'S0120_2'.
-        model (str): Model type used for selecting features.
+        subject (str): The subject string in 'subjectID_version' format (e.g., 'S0120_2').
+        model (str): The model type, used to select the specific set of features to merge.
 
     Returns:
-        None
+        None: The function saves the merged data to a CSV file and does not return any value.
     """
     parts = subject.split('_')
     if len(parts) != 2:
@@ -114,14 +135,20 @@ def merge_process(subject: str, model: str) -> None:
         logging.warning(f"No data merged for {subject_id}_{version} [{model}].")
 
 
-def combine_file(subject: str):
-    """(Legacy function) Load a processed CSV for a given subject.
+def combine_file(subject: str) -> list[pd.DataFrame] | None:
+    """Loads a processed CSV file for a given subject (legacy function).
+
+    This function is intended for loading previously processed and saved CSV files
+    for a specific subject. It is marked as legacy, suggesting newer approaches
+    might be preferred for data loading.
 
     Args:
-        subject (str): Subject string (e.g., 'S0120_2').
+        subject (str): The subject string in 'subjectID_version' format (e.g., 'S0120_2').
 
     Returns:
-        list[pd.DataFrame] or None: List containing one DataFrame if successful, otherwise None.
+        list[pd.DataFrame] | None: A list containing a single Pandas DataFrame if the file
+                                   is successfully loaded; otherwise, None if the file is
+                                   not found or the subject format is incorrect.
     """
     dfs = []
     parts = subject.split('_')
