@@ -1,159 +1,142 @@
 # Vehicle-Based DDD Comparison
 
 ## Overview
-This repository focuses on benchmarking **lightweight Driver Drowsiness Detection (DDD) models** using **vehicle-based features**. The goal is to compare the efficiency and performance of various lightweight ML models.
+
+This repository benchmarks **lightweight Driver Drowsiness Detection (DDD) models** using **vehicle-based features**. It aims to compare the effectiveness and computational efficiency of multiple classical and neural ML models in detecting driver drowsiness.
 
 ## Dataset
-We utilize the **open dataset** from _Multi-modal Data Acquisition Platform for Behavioral Evaluation_ (Aygun et al., 2024). The dataset contains:
-- Vehicle-based features (steering, acceleration, etc.)
-- EEG signals
-- Physiological data (heart rate, GSR, etc.)
-- Labels for driver drowsiness states
 
-**DOI:** [10.7910/DVN/HMZ5RG](https://doi.org/10.7910/DVN/HMZ5RG)
+<!-- need to explain how to download complete dataset via API -->
+We use the **open dataset** from *Multi-modal Data Acquisition Platform for Behavioral Evaluation* (Aygun et al., 2024), which includes:
+
+* Vehicle-based features (e.g., steering angle, velocity)
+    * EEG signals
+    * Physiological signals (e.g., GSR, heart rate, EOG)
+* Annotated drowsiness labels (KSS, vigilance state)
+
+    **DOI:** [10.7910/DVN/HMZ5RG](https://doi.org/10.7910/DVN/HMZ5RG)
 ```sh
 curl -L -O -J "https://dataverse.harvard.edu/api/access/dataset/:persistentId/?persistentId=doi:10.7910/DVN/HMZ5RG"
 ```
 
-<!-- need to explain how to download complete dataset via API -->
+## Compared Approaches
 
-<!--
-### Preprocessing
-- Vehicle-based signals are filtered and normalized.
-- EEG data is transformed into meaningful frequency components.
-- Labels are categorized into drowsiness levels based on predefined thresholds.
+    Our experiments evaluate:
 
-## ⚙️ Setup
-To set up the environment, install the required dependencies:
+    * **Classic ML models**: Random Forest, Logistic Regression, SVM, etc.
+    * **Shallow neural networks**
+    * **SvmA/SvmW**: Adaptive feature selection using ANFIS or wavelet decomposition
+    * **LSTM**: Deep learning using temporal EEG and vehicle data
 
-```sh
+    These are compared against:
+
+    1. **Zhao et al. (2009)** - Multiwavelet packet energy spectrum [DOI](http://dx.doi.org/10.1109/CISP.2009.5301253)
+    2. **Arefnezhad et al. (2019)** - Adaptive neuro-fuzzy selection on steering [DOI](https://doi.org/10.3390/s19040943)
+    3. **Wang et al. (2022)** - Vehicle dynamics + naturalistic driving [DOI](http://dx.doi.org/10.1016/j.trc.2022.103561)
+
+    ---
+
+## Directory Structure
+
+```
+├── dataset
+│   └── mdapbe
+│       ├── subject_list.txt
+│       └── physio
+│           ├── S0101
+│           │   ├── EEG_S0101_1.mat
+│           │   ├── SIMlsl_S0101_1.mat
+│           │   └── ...
+│           └── ...
+└── vehicle_based_DDD_comparison
+└── project
+├── bin
+├── data
+│   ├── interim
+│   └── processed
+├── model
+└── src
+```
+
+## Installation
+
+```bash
 pip install -r requirements.txt
 ```
 
-Recommended Python version: **3.8+**
--->
-
-## Model Comparison
-We compare different lightweight models optimized for efficiency:
-
-<!--
-| Model | Pruning | Quantization | Params | Accuracy |
-|--------|---------|-------------|--------|----------|
-| Baseline DNN | ❌ | ❌ | 1M | 85% |
-| Pruned DNN | ✅ | ❌ | 500K | 84% |
-| Quantized DNN | ❌ | ✅ | 250K | 83% |
-| Pruned + Quantized | ✅ | ✅ | 200K | 82% |
--->
-
-### Compared DDD Approaches
-We compare our models against the following established DDD methods. 
-1. **Zhao et al. (2009)** - Detecting driver’s drowsiness using multiwavelet packet energy spectrum. [DOI: 10.1109/CISP.2009.5301253](http://dx.doi.org/10.1109/CISP.2009.5301253)
-2. **Arefnezhad et al. (2019)** - Driver drowsiness detection using steering wheel data and adaptive neuro-fuzzy feature selection. [DOI: 10.3390/s19040943](https://doi.org/10.3390/s19040943)
-3. **Wang et al. (2022)** - Driver distraction detection based on vehicle dynamics using naturalistic driving data. [DOI: 10.1016/j.trc.2022.103561](http://dx.doi.org/10.1016/j.trc.2022.103561)
-
-## Usage
-### Install dependencies
-Make sure you have Python 3.10 installed. Then, install the required packages:
-```sh
-pip install -r requirements.txt
-```
-
-### Prepare Dataset
-setup the public dataset as follows:
-```sh
-├───dataset
-│   └───mdapbe
-│       ├───subject_list.txt
-│       └───physio
-│           ├───S0101
-│           │   ├───SIMlsl_S0101_1.mat
-│           │   ├───SIMlsl_S0101_2.mat
-│           │   ├───EEG_S0101_1.mat
-│           │   ├───EEG_S0101_2.mat
-│           │   ├───      :
-│           │  
-│           ├───S0103
-│           ├───S0105
-│           │     :
-│           │     :
-│           ├───S0211
-│           ├───S0212
-│           └───S0213
-└───vehicle_based_DDD_comparison
-    └───project
-        ├───bin
-        ├───data
-        │   ├───interim
-        │   └───processed
-        ├───model
-        └───src
-```
-
-### 1. Data Processing
-
-```sh
-cd project
-python bin/preprocess.py --model [common | SvmA | SvmW | Lstm] [--jittering]
-```
-
-* `--model`: Required. Specifies the preprocessing logic for the selected model.
-* `--jittering`: Optional. Applies jittering-based data augmentation.
+Python 3.10 is recommended.
 
 ---
 
-### 2. Model Training
+## 1. Data Preprocessing
 
-```sh
+```bash
+python bin/preprocess.py --model [common|SvmA|SvmW|Lstm] [--jittering]
+```
+
+* `--model`: Required. Chooses the preprocessing logic per model type.
+* `--jittering`: Optional. Applies noise-based data augmentation.
+
+---
+
+## 2. Model Training
+
+```bash
 python bin/train.py \
-           --model [RF|SvmA|SvmW|Lstm|BalancedRF|LightGBM|XGBoost|CatBoost|LogisticRegression|SVM|DecisionTree|AdaBoost|GradientBoosting|K-Nearest\ Neighbors|MLP] \
-           [--domain_mixup] [--coral] [--vae] \
-           [--sample_size N] [--seed N] [--fold N] \
-           [--tag TAG] [--subject_wise_split] \
-           [--feature_selection rf|mi|anova] [--data_leak True|False]
+    --model [RF|SvmA|SvmW|Lstm|BalancedRF|LightGBM|XGBoost|CatBoost|LogisticRegression|SVM|DecisionTree|AdaBoost|GradientBoosting|K-Nearest\ Neighbors|MLP] \
+    [--domain_mixup] [--coral] [--vae] \
+    [--sample_size N] [--seed N] [--n_folds N | --fold N] \
+    [--tag TAG] [--subject_wise_split] \
+    [--feature_selection rf|mi|anova] [--data_leak]
 ```
-* `--domain_mixup`: optional, Domain Mixup (domain generalization)
-* `--coral`: optional, CORAL (feature alignment)
-* `--vae`: optional, VAE-based augmentation
-* `--sample_size`: subsample N subjects (for quick test/debug)
-* `--seed`: random seed (default: 42)
-* `--fold`: fold number (cross-validation)
-* `--tag`: experiment name/tag
-* `--subject_wise_split`: prevent train/test subject overlap
-* `--feature_selection`: feature selection method (default: rf)
-* `--data_leak`: intentionally leak validation set for feature selection/scaler (for ablation/repro test, default: False)
+
+### Options:
+
+* `--domain_mixup`: Mixes source/target samples (for domain generalization)
+* `--coral`: CORAL-based alignment across subject domains
+* `--vae`: VAE-based augmentation for latent data variability
+* `--feature_selection`: Selects features via RandomForest (rf), MutualInfo (mi), or ANOVA (anova)
+* `--data_leak`: Forces feature selection to access validation set (for ablation)
+* `--n_folds` / `--fold`: Cross-validation control
+
+Trained models are saved to:
+
+```
+model/
+└── [model_type]/
+├── model.pkl
+├── scaler.pkl
+├── selected_features_train.pkl
+└── feature_meta.json
+```
 
 ---
 
-### 3. Model Evaluation
+## 3. Model Evaluation
 
-```sh
+```bash
 python bin/evaluate.py \
-    --model [RF | SvmA | SvmW | Lstm] \
-    [--tag TAG] \
-    [--sample_size N] \
-    [--seed N] \
-    [--subject_wise_split]
+    --model [RF|SvmA|SvmW|Lstm] \
+    [--tag TAG] [--sample_size N] [--seed N] [--subject_wise_split]
 ```
 
-* `--model`: Required. Specifies which trained model to evaluate.
-* `--tag`: Optional. Used to identify specific model variants.
-* `--sample_size`: Optional. Limits the number of subjects to evaluate.
-* `--seed`: Optional. Sets the random seed for consistent sampling (default: 42).
-* `--subject_wise_split`: Optional. Enables subject-wise evaluation.
+---
 
-<!--
-## Results & Visualization
-The model performance is evaluated using **AUC, accuracy, and inference time**. Results are plotted for better interpretability.
+## Notes
 
-```sh
-python scripts/plot_results.py
-```
-## 📜 License
-This project is released under the **MIT License**.
+* All training uses `optuna` for hyperparameter tuning
+* `selected_features` are saved per model variant for reproducibility
+* Evaluation includes ROC AUC, precision/recall, and threshold-optimized F1-score
 
-## Credits
-- Open dataset by Aygun et al. (2024) [DOI: 10.7910/DVN/HMZ5RG]
-- Developed for research on efficient DDD models
-- Compared with existing DDD methods by Arefnezhad et al. (2019), Zhao et al. (2009), and Wang et al. (2022)
--->
+---
+
+## License
+
+MIT License
+
+## Citation
+
+If you use this code or dataset, please cite:
+
+* Aygun et al. (2024) for the dataset
 
