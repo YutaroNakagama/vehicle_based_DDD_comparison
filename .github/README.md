@@ -87,7 +87,9 @@ python bin/train.py \
     [--domain_mixup] [--coral] [--vae] \
     [--sample_size N] [--seed N] [--n_folds N | --fold N] \
     [--tag TAG] [--subject_wise_split] \
-    [--feature_selection rf|mi|anova] [--data_leak]
+    [--feature_selection rf|mi|anova] [--data_leak] \
+    [--subject_split_strategy random|leave-one-out|custom|isolate_target_subjects|finetune_target_subjects] \
+    [--target_subjects S0101_1 S0101_2 ...]
 ```
 
 ### Options:
@@ -98,6 +100,28 @@ python bin/train.py \
 * `--feature_selection`: Selects features via RandomForest (rf), MutualInfo (mi), or ANOVA (anova)
 * `--data_leak`: Forces feature selection to access validation set (for ablation)
 * `--n_folds` / `--fold`: Cross-validation control
+* `--subject_split_strategy`: Defines how subjects are split.
+    * `isolate_target_subjects`: Trains and evaluates only on `--target_subjects`. 80% of the data is used for training, 10% for validation, and 10% for testing.
+    * `finetune_target_subjects`: Trains on all other subjects plus 80% of `--target_subjects`, and evaluates on the remaining 10% for validation and 10% for testing.
+* `--target_subjects`: A list of subject IDs to be used with specific split strategies.
+
+### Usage Examples:
+
+**Isolate 10 subjects for training and evaluation:**
+```bash
+python bin/train.py \
+    --model RF \
+    --subject_split_strategy isolate_target_subjects \
+    --target_subjects S0101_1 S0101_2 S0201_1 S0201_2 S0301_1 S0301_2 S0401_1 S0401_2 S0501_1 S0501_2
+```
+
+**Use 70 subjects to pre-train and 10 subjects to fine-tune/evaluate:**
+```bash
+python bin/train.py \
+    --model RF \
+    --subject_split_strategy finetune_target_subjects \
+    --target_subjects S0101_1 S0101_2 S0201_1 S0201_2 S0301_1 S0301_2 S0401_1 S0401_2 S0501_1 S0501_2
+```
 
 Trained models are saved to:
 
