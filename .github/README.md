@@ -30,9 +30,9 @@ curl -L -O -J "https://dataverse.harvard.edu/api/access/dataset/:persistentId/?p
 
     These are compared against:
 
-    1. **Zhao et al. (2009)** - Multiwavelet packet energy spectrum [DOI](http://dx.doi.org/10.1109/CISP.2009.5301253)
-    2. **Arefnezhad et al. (2019)** - Adaptive neuro-fuzzy selection on steering [DOI](https://doi.org/10.3390/s19040943)
-    3. **Wang et al. (2022)** - Vehicle dynamics + naturalistic driving [DOI](http://dx.doi.org/10.1016/j.trc.2022.103561)
+1. **Zhao et al. (2009)** - Multiwavelet packet energy spectrum [DOI](http://dx.doi.org/10.1109/CISP.2009.5301253)
+2. **Arefnezhad et al. (2019)** - Adaptive neuro-fuzzy selection on steering [DOI](https://doi.org/10.3390/s19040943)
+3. **Wang et al. (2022)** - Vehicle dynamics + naturalistic driving [DOI](http://dx.doi.org/10.1016/j.trc.2022.103561)
 
     ---
 
@@ -158,20 +158,20 @@ python bin/evaluate.py \
 
 ---
 
+## 4. Analysis
+
+After running training experiments, you can analyze the results using the `analyze_results.py` script:
+
+```bash
+python bin/analyze_results.py
+```
+
+This script reads the log files generated during training and presents a summary of key performance metrics (ROC AUC, F1-score, Precision, Recall, Accuracy) for each experiment. It also provides mean and standard deviation across different experimental runs.
+
+---
+
 ## Notes
 
 * All training uses `optuna` for hyperparameter tuning
 * `selected_features` are saved per model variant for reproducibility
 * Evaluation includes ROC AUC, precision/recall, and threshold-optimized F1-score
-
----
-
-## License
-
-MIT License
-
-## Citation
-
-If you use this code or dataset, please cite:
-
-* Aygun et al. (2024) for the dataset
