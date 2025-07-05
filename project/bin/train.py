@@ -123,14 +123,14 @@ def main():
         default="rf",
         help="Feature selection method: 'rf' (RandomForest importance), 'mi' (Mutual Information), 'anova' (ANOVA F-test). Default: rf."
     )
-    """    parser.add_argument(
+    parser.add_argument(
         "--data_leak",
         action="store_true",
         help="If set, intentionally allow data leakage for feature selection (for ablation/demonstration).",
     )
     parser.add_argument(
         "--subject_split_strategy",
-        choices=["random", "leave-one-out", "custom", "isolate_target_subjects", "finetune_target_subjects"],
+        choices=["random", "leave-one-out", "custom", "isolate_target_subjects", "finetune_target_subjects", "single_subject_data_split"],
         default="random",
         help="Strategy for splitting subjects into train, validation, and test sets."
     )
@@ -158,6 +158,12 @@ def main():
         default=[],
         help="List of subject IDs for the test set (used with 'custom' strategy)."
     )
+    parser.add_argument(
+        "--general_subjects",
+        nargs='+',
+        default=[],
+        help="List of subject IDs for general training data (used with 'finetune_target_subjects' strategy)."
+    )
 
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -174,12 +180,13 @@ def main():
         "tag": args.tag,
         "subject_wise_split": args.subject_wise_split,
         "feature_selection_method": args.feature_selection,
-        "data_leak": args.data_leak,
+        "data_leak": False,
         "subject_split_strategy": args.subject_split_strategy,
         "target_subjects": args.target_subjects,
         "train_subjects": args.train_subjects,
         "val_subjects": args.val_subjects,
-        "test_subjects": args.test_subjects
+        "test_subjects": args.test_subjects,
+        "general_subjects": args.general_subjects
     }
 
     if args.n_folds is not None:
@@ -193,7 +200,7 @@ def main():
         pipeline_args["fold"] = args.fold
         pipeline_args["n_folds"] = args.n_folds
         log_train_args(args)
-        mp.train_pipeline(**pipeline_args)""
+        mp.train_pipeline(**pipeline_args)
 
 if __name__ == '__main__':
     main()

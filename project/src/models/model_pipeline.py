@@ -29,7 +29,7 @@ from sklearn.svm import SVC
 from pyswarm import pso
 
 from src.config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, MODEL_PKL_PATH, TOP_K_FEATURES
-from src.utils.io.loaders import read_train_subject_list, read_train_subject_list_fold, get_model_type, load_subject_csvs
+from src.utils.io.loaders import read_subject_list, read_train_subject_list_fold, get_model_type, load_subject_csvs
 from src.utils.io.split import data_split, data_split_by_subject  
 from src.utils.domain_generalization.domain_mixup import generate_domain_labels, domain_mixup
 from src.utils.domain_generalization.coral import coral
@@ -102,7 +102,8 @@ def train_pipeline(
     target_subjects: list = [],
     train_subjects: list = [],
     val_subjects: list = [],
-    test_subjects: list = []
+    test_subjects: list = [],
+    general_subjects: list = []
 ) -> None:
     """Train a machine learning model for drowsiness detection.
 
@@ -134,7 +135,7 @@ def train_pipeline(
     """
 
     # 1. Load subject list
-    subject_list = read_train_subject_list()
+    subject_list = read_subject_list()
 
     # 2. Subsample subjects if sample_size is specified
     if sample_size is not None:
@@ -142,13 +143,26 @@ def train_pipeline(
         subject_list = rng.choice(subject_list, size=sample_size, replace=False).tolist()
         logging.info(f"Using {sample_size} subjects: {subject_list}")
 
-    model_type = get_model_type(model)
+    model_type = get_model_type(model_name)
     logging.info(f"Model type: {model_type}")
 
-    # 3. Data Splitting: Subject-wise or Random
-    # 3. Data Splitting: Subject-wise or Random
-    if subject_split_strategy == "isolate_target_subjects":
-        # Case 1: Isolate target subjects for training, validation, and testing
+    # 3. Data Splitting based on strategy
+    if subject_split_strategy == "single_subject_data_split":
+        if not target_subjects or len(target_subjects) != 1:
+            logging.error("`single_subject_data_split` strategy requires exactly one subject in `--target_subjects`.")
+            return
+        
+        logging.info(f"Performing single subject data split for: {target_subjects[0]}")
+        data, _ = load_subject_csvs(target_subjects, model_type, add_subject_id=True)
+        X_train, X_val, X_test, y_train, y_val, y_test = data_split(data, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, random_state=seed)
+
+    elif subject_split_strategy == "isolate_target_subjects":
+        if not target_subjects:
+            logging.error("`isolate_target_subjects` strategy requires `--target_subjects` to be set.")
+            return
+        
+        logging.info(f"Isolating target subjects: {target_subjects}")
+        # Split target subjects: 80% train, 10% val, 10% test
         train_subjects, temp_subjects = train_test_split(target_subjects, test_size=0.2, random_state=seed)
         val_subjects, test_subjects = train_test_split(temp_subjects, test_size=0.5, random_state=seed)
         
@@ -159,32 +173,69 @@ def train_pipeline(
         )
 
     elif subject_split_strategy == "finetune_target_subjects":
-        # Case 2: Use general subjects for pre-training, target subjects for fine-tuning
-        general_subjects = [s for s in subject_list if s not in target_subjects]
-        target_train_subjects, temp_subjects = train_test_split(target_subjects, test_size=0.2, random_state=seed)
-        val_subjects, test_subjects = train_test_split(temp_subjects, test_size=0.5, random_state=seed)
+        if not target_subjects:
+            logging.error("`finetune_target_subjects` strategy requires `--target_subjects` to be set.")
+            return
 
-        train_subjects = general_subjects + target_train_subjects
-        use_subjects = subject_list
+        logging.info(f"Finetuning with target subjects: {target_subjects}")
+        
+        # Split target subjects for validation and testing (if more than one target subject)
+        if len(target_subjects) > 1:
+            target_train_subjects, temp_subjects = train_test_split(target_subjects, test_size=0.2, random_state=seed)
+            val_subjects, test_subjects = train_test_split(temp_subjects, test_size=0.5, random_state=seed)
+        else: # Only one target subject, use data_split for within-subject split
+            target_train_subjects = target_subjects # The single subject is the 'target_train_subject'
+            # Load data for the single target subject to split it
+            single_subject_data, _ = load_subject_csvs(target_subjects, model_type, add_subject_id=True)
+            X_single_train, X_single_val, X_single_test, y_single_train, y_single_val, y_single_test = data_split(single_subject_data, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, random_state=seed)
+            # These will be used later to construct the final X_val, y_val, X_test, y_test
+
+            val_subjects = [] # No separate validation subject list
+            test_subjects = [] # No separate test subject list
+
+        # Use all other subjects for the main training set
+        if general_subjects:
+            general_subjects_list = general_subjects
+        else:
+            general_subjects_list = [s for s in subject_list if s not in target_subjects]
+        
+        # Load all data (general subjects + target subjects)
+        use_subjects = list(set(general_subjects_list + target_subjects)) # Ensure unique subjects
         data, _ = load_subject_csvs(use_subjects, model_type, add_subject_id=True)
-        X_train, X_val, X_test, y_train, y_val, y_test = data_split_by_subject(
-            data, train_subjects, seed, val_subjects=val_subjects, test_subjects=test_subjects
-        )
+
+        if len(target_subjects) > 1:
+            train_subjects = general_subjects_list + target_train_subjects
+            X_train, X_val, X_test, y_train, y_val, y_test = data_split_by_subject(
+                data, train_subjects, seed, val_subjects=val_subjects, test_subjects=test_subjects
+            )
+        else: # Single target subject case
+            # Combine general subjects data with the single target subject's training data
+            X_general_train, _, _, y_general_train, _, _ = data_split_by_subject(
+                data, general_subjects_list, seed, val_subjects=[], test_subjects=[]
+            )
+            X_train = pd.concat([X_general_train, X_single_train], ignore_index=True)
+            y_train = pd.concat([y_general_train, y_single_train], ignore_index=True)
+            X_val = X_single_val
+            y_val = y_single_val
+            X_test = X_single_test
+            y_test = y_single_test
+
+            logging.info(f"X_train shape after finetune_target_subjects (single subject): {X_train.shape}")
+            logging.info(f"X_val   shape after finetune_target_subjects (single subject): {X_val.shape}")
+            logging.info(f"X_test  shape after finetune_target_subjects (single subject): {X_test.shape}")
+
 
     elif subject_wise_split and fold and fold > 0:
-        # Perform subject-wise data splitting for cross-validation
+        # Existing logic for cross-validation
         n_splits = n_folds
         subject_array = np.array(subject_list)
         gkf = GroupKFold(n_splits=n_splits)
 
-        # Generate train/test splits based on subject groups 
         splits = list(gkf.split(subject_array, groups=subject_array))
-
         train_idx, test_idx = splits[fold - 1]
         train_subjects = subject_array[train_idx].tolist()
         test_subjects = subject_array[test_idx].tolist()
 
-        # Further split training subjects into actual training and validation sets (9:1 subject-wise)
         rng = np.random.default_rng(seed)
         n_train = int(len(train_subjects) * 0.9)
         shuffled = rng.permutation(train_subjects)
@@ -204,13 +255,8 @@ def train_pipeline(
         logging.info(f"X_val   shape after subject-wise data split: {X_val.shape}")
         logging.info(f"X_test  shape after subject-wise data split: {X_test.shape}")
     else:
-        # no fold or subject_wise_split == False
+        # Default random split
         data, feature_columns = load_subject_csvs(subject_list, model_type, add_subject_id=True)
-
-        #save_feature_histograms(data, feature_columns, outdir="./data/log/")
-        #main_features = ['Steering_Range', 'Lateral_StdDev', 'LaneOffset_AAA']
-        #data_clean = remove_outliers_zscore(data, main_features, threshold=5.0)
-
         X_train, X_val, X_test, y_train, y_val, y_test = data_split(data, random_state=seed)
         logging.info(f"X_train shape after random data split: {X_train.shape}")
         logging.info(f"X_val   shape after random data split: {X_val.shape}")
@@ -234,11 +280,11 @@ def train_pipeline(
         logging.info(f"Applied Domain Mixup. New X_train shape: {X_train.shape}")
 
     # Model-specific training dispatch
-    if model == 'Lstm':
+    if model_name == 'Lstm':
         lstm_train(X_train, y_train, model)
         logging.info("LSTM model training initiated.")
 
-    elif model == 'SvmA':
+    elif model_name == 'SvmA':
         X_train_for_fs = X_train.drop(columns=["subject_id"], errors='ignore')
         X_val_for_fs = X_val.drop(columns=["subject_id"], errors='ignore')
         X_train_for_fs = X_train_for_fs.select_dtypes(include=[np.number])
@@ -248,7 +294,7 @@ def train_pipeline(
         y_val = y_val.reset_index(drop=True)
 
         feature_indices = calculate_feature_indices(X_train_for_fs, y_train)
-        SvmA_train(X_train_for_fs, X_val_for_fs, y_train, y_val, feature_indices, model)
+        SvmA_train(X_train_for_fs, X_val_for_fs, y_train, y_val, feature_indices, model_name)
         logging.info("SvmA model training initiated with internal feature selection.")
 
     else:
@@ -317,7 +363,7 @@ def train_pipeline(
         X_val_scaled = pd.DataFrame(X_val_scaled, columns=selected_features)
 
         # 9. Get Classifier and Train
-        clf = get_classifier(model)
+        clf = get_classifier(model_name)
 
         # Construct suffix for model saving based on applied techniques
         suffix = ""
@@ -335,7 +381,7 @@ def train_pipeline(
             X_val_scaled,      
             y_train, y_val,
             selected_features, 
-            model, model_type, clf,
+            model_name, model_type, clf,
             scaler=scaler,    
             suffix=suffix,
             data_leak=data_leak,
