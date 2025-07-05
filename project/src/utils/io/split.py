@@ -17,18 +17,24 @@ from sklearn.model_selection import train_test_split
 
 def data_split(
     df: pd.DataFrame,
+    train_ratio: float = 0.8,
+    val_ratio: float = 0.1,
+    test_ratio: float = 0.1,
     random_state: int = 42,
 ):
-    """Splits the input DataFrame into training, validation, and test sets.
+    """Splits the input DataFrame into training, validation, and test sets based on specified ratios.
 
     This function first filters the DataFrame to include only rows with specific
     KSS_Theta_Alpha_Beta values, maps these to binary labels (0 for alert, 1 for drowsy),
-    and then divides the data into 60% training, 20% validation, and 20% test sets.
-    It ensures that the 'subject_id' column is retained if present.
+    and then divides the data into training, validation, and test sets according to the
+    provided ratios. It ensures that the 'subject_id' column is retained if present.
 
     Args:
         df (pd.DataFrame): The input DataFrame, expected to include feature columns
                            and a 'KSS_Theta_Alpha_Beta' column.
+        train_ratio (float): The proportion of the dataset to include in the train split.
+        val_ratio (float): The proportion of the dataset to include in the validation split.
+        test_ratio (float): The proportion of the dataset to include in the test split.
         random_state (int): Seed for the random number generator to ensure reproducibility
                             of the data split. Defaults to 42.
 
@@ -42,21 +48,37 @@ def data_split(
             - y_val (pd.Series): Labels for the validation set.
             - y_test (pd.Series): Labels for the test set.
     """
+    if not np.isclose(train_ratio + val_ratio + test_ratio, 1.0):
+        raise ValueError("Train, validation, and test ratios must sum to 1.0")
+
     df = df[df["KSS_Theta_Alpha_Beta"].isin(KSS_BIN_LABELS)]
 
     start_col = "Steering_Range"
     end_col = "LaneOffset_AAA"
     feature_columns = df.loc[:, start_col:end_col].columns.tolist()
 
-#    if 'subject_id' in df.columns:
-#        feature_columns.append('subject_id')
-
     X = df[feature_columns].dropna()
     y = df.loc[X.index, "KSS_Theta_Alpha_Beta"].replace(KSS_LABEL_MAP)
 
-    # Train/val/test split: 60% / 20% / 20%
-    X_temp, X_test, y_temp, y_test = train_test_split(X, y, test_size=0.2, random_state=random_state)
-    X_train, X_val, y_train, y_val = train_test_split(X_temp, y_temp, test_size=0.25, random_state=random_state)
+    # Calculate sizes
+    total_size = len(X)
+    train_size = int(total_size * train_ratio)
+    val_size = int(total_size * val_ratio)
+    test_size = total_size - train_size - val_size # Ensure all samples are used
+
+    # Split into train and temp (val + test)
+    X_train, X_temp, y_train, y_temp = train_test_split(
+        X, y, test_size=(val_size + test_size) / total_size, random_state=random_state, stratify=y
+    )
+
+    # Split temp into val and test
+    if val_size + test_size > 0:
+        X_val, X_test, y_val, y_test = train_test_split(
+            X_temp, y_temp, test_size=test_size / (val_size + test_size), random_state=random_state, stratify=y_temp
+        )
+    else:
+        X_val, y_val = pd.DataFrame(), pd.Series(dtype=int)
+        X_test, y_test = pd.DataFrame(), pd.Series(dtype=int)
 
     return X_train, X_val, X_test, y_train, y_val, y_test
 
@@ -97,43 +119,43 @@ def data_split_by_subject(
             - y_test (pd.Series): Labels for the test set.
     """
 
-    logging.info(f"df shape before label filter: {df.shape}")
+    logging.info(f"Splitting data by subject.")
+    logging.info(f"  Train subjects ({len(train_subjects)}): {train_subjects}")
+    logging.info(f"  Validation subjects ({len(val_subjects) if val_subjects else 0}): {val_subjects}")
+    logging.info(f"  Test subjects ({len(test_subjects) if test_subjects else 0}): {test_subjects}")
 
-    # Step 1: Filter rows by KSS labels (1, 2 → 0 [alert], 8, 9 → 1 [drowsy])
-    df = df[df["KSS_Theta_Alpha_Beta"].isin(KSS_BIN_LABELS)].copy()
-    df["label"] = df["KSS_Theta_Alpha_Beta"].replace(KSS_LABEL_MAP)
+    # Step 1: Filter rows by KSS labels and create 'label' column
+    df_filtered = df[df["KSS_Theta_Alpha_Beta"].isin(KSS_BIN_LABELS)].copy()
+    df_filtered["label"] = df_filtered["KSS_Theta_Alpha_Beta"].replace(KSS_LABEL_MAP)
+    logging.info(f"Filtered data from {df.shape[0]} to {df_filtered.shape[0]} rows based on KSS labels.")
 
-    logging.info(f"df shape after label filter: {df.shape}")
-    logging.info(f"train_subjects: {train_subjects}")
-    logging.info(f"val_subjects: {val_subjects}")
-    logging.info(f"test_subjects: {test_subjects}")
-    logging.info(f"df['subject_id'].unique(): {df['subject_id'].unique()}")
-
-    # Step 4: Define feature columns based on known range
+    # Step 2: Define feature columns
     start_col = "Steering_Range"
     end_col = "LaneOffset_AAA"
-    feature_columns = df.loc[:, start_col:end_col].columns.tolist()
-
-    if 'subject_id' in df.columns:
+    feature_columns = df_filtered.loc[:, start_col:end_col].columns.tolist()
+    if 'subject_id' in df_filtered.columns:
         feature_columns.append('subject_id')
 
-    X_train = df[df["subject_id"].isin(train_subjects)][feature_columns].dropna()
-    y_train = df[df["subject_id"].isin(train_subjects)].loc[X_train.index, "label"]
+    # Step 3: Create datasets based on subject lists
+    X_train = df_filtered[df_filtered["subject_id"].isin(train_subjects)][feature_columns].dropna()
+    y_train = df_filtered.loc[X_train.index, "label"]
 
-    X_val = pd.DataFrame(); y_val = pd.Series(dtype=int)
-    X_test = pd.DataFrame(); y_test = pd.Series(dtype=int)
+    X_val = pd.DataFrame()
+    y_val = pd.Series(dtype=int)
+    if val_subjects:
+        X_val = df_filtered[df_filtered["subject_id"].isin(val_subjects)][feature_columns].dropna()
+        y_val = df_filtered.loc[X_val.index, "label"]
 
-    if val_subjects is not None:
-        X_val = df[df["subject_id"].isin(val_subjects)][feature_columns].dropna()
-        y_val = df[df["subject_id"].isin(val_subjects)].loc[X_val.index, "label"]
+    X_test = pd.DataFrame()
+    y_test = pd.Series(dtype=int)
+    if test_subjects:
+        X_test = df_filtered[df_filtered["subject_id"].isin(test_subjects)][feature_columns].dropna()
+        y_test = df_filtered.loc[X_test.index, "label"]
 
-    if test_subjects is not None:
-        X_test = df[df["subject_id"].isin(test_subjects)][feature_columns].dropna()
-        y_test = df[df["subject_id"].isin(test_subjects)].loc[X_test.index, "label"]
-
-    logging.info(f"X_train shape: {X_train.shape}, y_train.value_counts: {y_train.value_counts().to_dict()}")
-    logging.info(f"X_val shape: {X_val.shape}, y_val.value_counts: {y_val.value_counts().to_dict()}")
-    logging.info(f"X_test shape: {X_test.shape}, y_test.value_counts: {y_test.value_counts().to_dict()}")
+    logging.info("Data splitting summary:")
+    logging.info(f"  X_train shape: {X_train.shape}, y_train distribution: {y_train.value_counts().to_dict()}")
+    logging.info(f"  X_val shape: {X_val.shape}, y_val distribution: {y_val.value_counts().to_dict()}")
+    logging.info(f"  X_test shape: {X_test.shape}, y_test distribution: {y_test.value_counts().to_dict()}")
 
     return X_train, X_val, X_test, y_train, y_val, y_test
 
