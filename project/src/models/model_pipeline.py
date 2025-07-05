@@ -86,7 +86,7 @@ def save_feature_histograms(df, feature_columns, outdir="feature_hist_svg"):
 
 
 def train_pipeline(
-    model: str,
+    model_name: str,
     use_domain_mixup: bool = False,
     use_coral: bool = False,
     use_vae: bool = False,
@@ -98,6 +98,11 @@ def train_pipeline(
     subject_wise_split: bool = False, 
     feature_selection_method: str = "rf", 
     data_leak: bool = False,
+    subject_split_strategy: str = "random",
+    target_subjects: list = [],
+    train_subjects: list = [],
+    val_subjects: list = [],
+    test_subjects: list = []
 ) -> None:
     """Train a machine learning model for drowsiness detection.
 
@@ -141,8 +146,32 @@ def train_pipeline(
     logging.info(f"Model type: {model_type}")
 
     # 3. Data Splitting: Subject-wise or Random
-    if subject_wise_split and fold and fold > 0:
+    # 3. Data Splitting: Subject-wise or Random
+    if subject_split_strategy == "isolate_target_subjects":
+        # Case 1: Isolate target subjects for training, validation, and testing
+        train_subjects, temp_subjects = train_test_split(target_subjects, test_size=0.2, random_state=seed)
+        val_subjects, test_subjects = train_test_split(temp_subjects, test_size=0.5, random_state=seed)
+        
+        use_subjects = target_subjects
+        data, _ = load_subject_csvs(use_subjects, model_type, add_subject_id=True)
+        X_train, X_val, X_test, y_train, y_val, y_test = data_split_by_subject(
+            data, train_subjects, seed, val_subjects=val_subjects, test_subjects=test_subjects
+        )
 
+    elif subject_split_strategy == "finetune_target_subjects":
+        # Case 2: Use general subjects for pre-training, target subjects for fine-tuning
+        general_subjects = [s for s in subject_list if s not in target_subjects]
+        target_train_subjects, temp_subjects = train_test_split(target_subjects, test_size=0.2, random_state=seed)
+        val_subjects, test_subjects = train_test_split(temp_subjects, test_size=0.5, random_state=seed)
+
+        train_subjects = general_subjects + target_train_subjects
+        use_subjects = subject_list
+        data, _ = load_subject_csvs(use_subjects, model_type, add_subject_id=True)
+        X_train, X_val, X_test, y_train, y_val, y_test = data_split_by_subject(
+            data, train_subjects, seed, val_subjects=val_subjects, test_subjects=test_subjects
+        )
+
+    elif subject_wise_split and fold and fold > 0:
         # Perform subject-wise data splitting for cross-validation
         n_splits = n_folds
         subject_array = np.array(subject_list)
