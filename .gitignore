@@ -4,9 +4,15 @@
 **/*.npy
 **/*.keras
 **/*.swp
-**/*.txt
-**/*.json
+
+
 **/tags
 **/__pycache__/
 project/docs/
 catboost_info/
+project/data/log/*.svg
+
+# Ignore generated files and directories
+project/data/log/
+project/model/
+project/results/

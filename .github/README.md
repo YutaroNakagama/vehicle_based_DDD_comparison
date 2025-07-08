@@ -30,9 +30,9 @@ curl -L -O -J "https://dataverse.harvard.edu/api/access/dataset/:persistentId/?p
 
     These are compared against:
 
-    1. **Zhao et al. (2009)** - Multiwavelet packet energy spectrum [DOI](http://dx.doi.org/10.1109/CISP.2009.5301253)
-    2. **Arefnezhad et al. (2019)** - Adaptive neuro-fuzzy selection on steering [DOI](https://doi.org/10.3390/s19040943)
-    3. **Wang et al. (2022)** - Vehicle dynamics + naturalistic driving [DOI](http://dx.doi.org/10.1016/j.trc.2022.103561)
+1. **Zhao et al. (2009)** - Multiwavelet packet energy spectrum [DOI](http://dx.doi.org/10.1109/CISP.2009.5301253)
+2. **Arefnezhad et al. (2019)** - Adaptive neuro-fuzzy selection on steering [DOI](https://doi.org/10.3390/s19040943)
+3. **Wang et al. (2022)** - Vehicle dynamics + naturalistic driving [DOI](http://dx.doi.org/10.1016/j.trc.2022.103561)
 
     ---
 
@@ -87,7 +87,10 @@ python bin/train.py \
     [--domain_mixup] [--coral] [--vae] \
     [--sample_size N] [--seed N] [--n_folds N | --fold N] \
     [--tag TAG] [--subject_wise_split] \
-    [--feature_selection rf|mi|anova] [--data_leak]
+    [--feature_selection rf|mi|anova] [--data_leak] \
+    [--subject_split_strategy random|leave-one-out|custom|isolate_target_subjects|finetune_target_subjects|single_subject_data_split] \
+    [--target_subjects S0101_1 S0101_2 ...] \
+    [--general_subjects S0101_1 S0101_2 ...]
 ```
 
 ### Options:
@@ -98,6 +101,39 @@ python bin/train.py \
 * `--feature_selection`: Selects features via RandomForest (rf), MutualInfo (mi), or ANOVA (anova)
 * `--data_leak`: Forces feature selection to access validation set (for ablation)
 * `--n_folds` / `--fold`: Cross-validation control
+* `--subject_split_strategy`: Defines how subjects are split.
+    * `isolate_target_subjects`: Trains and evaluates only on `--target_subjects`. 80% of the data is used for training, 10% for validation, and 10% for testing.
+    * `finetune_target_subjects`: Trains on `--general_subjects` (if provided, otherwise all other subjects) plus 80% of `--target_subjects`, and evaluates on the remaining 10% for validation and 10% for testing from `--target_subjects`.
+    * `single_subject_data_split`: Performs a within-subject split (80% train, 10% validation, 10% test) on a single subject specified by `--target_subjects`.
+* `--target_subjects`: A list of subject IDs to be used with specific split strategies.
+* `--general_subjects`: A list of subject IDs to be used as general training data, typically with `finetune_target_subjects` strategy.
+
+### Usage Examples:
+
+**Isolate 10 subjects for training and evaluation:**
+```bash
+python bin/train.py \
+    --model RF \
+    --subject_split_strategy isolate_target_subjects \
+    --target_subjects S0101_1 S0101_2 S0201_1 S0201_2 S0301_1 S0301_2 S0401_1 S0401_2 S0501_1 S0501_2
+```
+
+**Perform within-subject split for a single subject:**
+```bash
+python bin/train.py \
+    --model RF \
+    --subject_split_strategy single_subject_data_split \
+    --target_subjects S0101_1
+```
+
+**Use 70 subjects to pre-train and 10 subjects to fine-tune/evaluate:**
+```bash
+python bin/train.py \
+    --model RF \
+    --subject_split_strategy finetune_target_subjects \
+    --target_subjects S0101_1 S0101_2 S0201_1 S0201_2 S0301_1 S0301_2 S0401_1 S0401_2 S0501_1 S0501_2 \
+    --general_subjects S0601_1 S0601_2 ... # List of 70 other subjects
+```
 
 Trained models are saved to:
 
@@ -122,21 +158,20 @@ python bin/evaluate.py \
 
 ---
 
+## 4. Analysis
+
+After running training experiments, you can analyze the results using the `analyze_results.py` script:
+
+```bash
+python bin/analyze_results.py
+```
+
+This script reads the log files generated during training and presents a summary of key performance metrics (ROC AUC, F1-score, Precision, Recall, Accuracy) for each experiment. It also provides mean and standard deviation across different experimental runs.
+
+---
+
 ## Notes
 
 * All training uses `optuna` for hyperparameter tuning
 * `selected_features` are saved per model variant for reproducibility
 * Evaluation includes ROC AUC, precision/recall, and threshold-optimized F1-score
-
----
-
-## License
-
-MIT License
-
-## Citation
-
-If you use this code or dataset, please cite:
-
-* Aygun et al. (2024) for the dataset
-
