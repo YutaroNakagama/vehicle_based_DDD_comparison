@@ -17,3 +17,5 @@ project/data/log/*.svg
 project/data/log/
 project/model/
 project/results/
+project/.venv311/
+
