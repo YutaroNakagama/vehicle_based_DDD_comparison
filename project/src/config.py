@@ -59,9 +59,9 @@ SAMPLE_RATE_EEG = 500
 """Sampling rate for EEG (Electroencephalography) data in Hz."""
 
 # KSS label
-KSS_BIN_LABELS = [1,2,3,4,5,8,9]
+KSS_BIN_LABELS = [1,2,3,4,5,7,8,9]
 """Original Karolinska Sleepiness Scale (KSS) labels used in the dataset."""
-KSS_LABEL_MAP = {1: 0,2: 0,3: 0,4: 0,5: 0, 8: 1, 9: 1}
+KSS_LABEL_MAP = {1:0, 2:0, 3:0, 4:0, 5:1, 6:1, 7:1, 8:1, 9:1}
 """
 Mapping of original KSS labels to binary drowsiness states:
 - 0: Alert/Non-drowsy (KSS 1-5)
@@ -81,5 +81,5 @@ TOP_K_FEATURES = 10
 """Number of top features to select during feature selection processes."""
 
 # Optuna
-N_TRIALS = 30
+N_TRIALS = 5
 """Number of trials for hyperparameter optimization using Optuna."""
