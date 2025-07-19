@@ -17,7 +17,7 @@ from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
 from sklearn.metrics import classification_report, roc_curve, auc, make_scorer, roc_auc_score
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_score, StratifiedKFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier, GradientBoostingClassifier
@@ -64,6 +64,16 @@ def common_train(
     X_test = X_test.loc[:, ~X_test.columns.duplicated()]
 
     def objective(trial):
+        print('X_train.shape:', X_train.shape)
+        print('X_train nan:', np.isnan(X_train.values).sum(), 'inf:', np.isinf(X_train.values).sum())
+        print('X_train col nan count:', np.isnan(X_train.values).sum(axis=0))
+        print('X_train all const col:', [c for c in X_train.columns if X_train[c].nunique() == 1])
+        print('selected_features:', selected_features)
+        print('y_train shape:', y_train.shape)
+        print('y_train nan:', np.isnan(y_train).sum(), 'unique:', np.unique(y_train))
+        print('X_train[selected_features] shape:', X_train[selected_features].shape)
+        print('X_train[selected_features] col nan:', np.isnan(X_train[selected_features].values).sum(axis=0))
+ 
         if model == "LightGBM":
             params = {
                 "n_estimators": trial.suggest_int("n_estimators", 100, 300),
@@ -207,25 +217,88 @@ def common_train(
         else:
             raise ValueError(f"Optuna tuning not implemented for model: {model}")
 
-        roc_auc = make_scorer(roc_auc_score, needs_proba=True)
+        roc_auc = "roc_auc" #make_scorer(roc_auc_score, needs_proba=True)
 
         try:
             if data_leak:
+                # 全データでスケーリング＆学習（リーク用）
                 X_all = np.vstack([X_train[selected_features], X_test[selected_features]])
                 y_all = np.concatenate([y_train, y_test])
-                scaler = StandardScaler()
-                X_all_scaled = scaler.fit_transform(X_all[selected_features])
-                score = cross_val_score(clf, X_all_scaled, y_all, cv=2, scoring=roc_auc, n_jobs=1).mean()
+                scaler_local = StandardScaler()
+                X_all_scaled = scaler_local.fit_transform(X_all)
+                cv = StratifiedKFold(n_splits=2, shuffle=True, random_state=42)
+                for i, (_, va_idx) in enumerate(cv.split(X_all_scaled, y_all)):
+                    bincounts = np.bincount(y_all[va_idx].astype(int))
+                    print(f"[CV-Leak] Fold {i} y_val bincount: {bincounts}")
+                    if len(bincounts) < 2 or np.any(bincounts == 0):
+                        print(f"[CV-Leak] Fold {i} has only one class! Skipping trial.")
+                        return 0.0
+                score_arr = cross_val_score(clf, X_all_scaled, y_all, cv=cv, scoring=roc_auc, n_jobs=1)
             else:
-                scaler = StandardScaler()
-                X_train_scaled = scaler.fit_transform(X_train[selected_features])
-                score = cross_val_score(clf, X_train_scaled, y_train, cv=2, scoring=roc_auc, n_jobs=1).mean()
-    
+                # こっちがメイン
+                scaler_local = StandardScaler()
+                X_train_scaled = scaler_local.fit_transform(X_train[selected_features])
+                cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)  # n_splitsを5など大きめに！
+
+                auc_list = []
+                
+                for i, (tr_idx, va_idx) in enumerate(cv.split(X_train_scaled, y_train)):
+                    clf.fit(X_train_scaled[tr_idx], y_train[tr_idx])
+                    y_val = y_train[va_idx]
+                    y_pred = clf.predict(X_train_scaled[va_idx])
+                    bincount_pred = np.bincount(y_pred.astype(int))
+                    print(f"[CV] Fold {i}: y_val bincount: {np.bincount(y_val.astype(int))}, y_pred bincount: {bincount_pred}")
+                    try:
+                        y_proba = clf.predict_proba(X_train_scaled[va_idx])[:,1]
+                        auc = roc_auc_score(y_val, y_proba)
+                        print(f"[CV] Fold {i}: AUC = {auc}")
+                    except ValueError as e:
+                        print(f"[CV] Fold {i}: AUC nan! {e}")
+                        auc = np.nan
+                    auc_list.append(auc)
+                
+                print("manual auc_list:", auc_list)
+                print("manual auc mean (ignore nan):", np.nanmean(auc_list))
+#                for i, (_, va_idx) in enumerate(cv.split(X_train_scaled, y_train)):
+#                    bincounts = np.bincount(y_train[va_idx].astype(int))
+#                    print(f"[CV] Fold {i} y_val bincount: {bincounts}")
+#                    if len(bincounts) < 2 or np.any(bincounts == 0):
+#                        print(f"[CV] Fold {i} has only one class! Skipping trial.")
+#                        return 0.0
+                try:
+                    # scoringでnanになったときにエラー内容を表示
+                    score_arr = cross_val_score(
+                        clf, X_train_scaled, y_train, 
+                        cv=cv, 
+                        scoring=roc_auc,
+                        n_jobs=1,
+                        error_score='raise'  # 'nan' だと本当に理由がわからなくなるので
+                    )
+                    print("cross_val_score:", score_arr)
+                    if np.any(np.isnan(score_arr)):
+                        print("Score nan detected: ", score_arr)
+                        return 0.0
+                    score = np.nanmean(score_arr)
+                except Exception as e:
+                    print(f"[cross_val_score error] {e}")
+                    import traceback
+                    traceback.print_exc()
+                    return 0.0
+
+                score_arr = cross_val_score(clf, X_train_scaled, y_train, cv=cv, scoring='accuracy', n_jobs=1)
+ 
+            print("cross_val_score:", score_arr)
+            if np.any(np.isnan(score_arr)):
+                print("Score nan detected: ", score_arr)
+                return 0.0
+ 
+            score = np.nanmean(score_arr)
         except Exception as e:
             logging.warning(f"Scoring failed: {e}")
-            return 0.0 
-
+            return 0.0
+ 
         return score
+
 
     # Run Optuna study
     study = optuna.create_study(
