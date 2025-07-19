@@ -30,7 +30,7 @@ from pyswarm import pso
 
 from src.config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, MODEL_PKL_PATH, TOP_K_FEATURES
 from src.utils.io.loaders import read_subject_list, read_train_subject_list_fold, get_model_type, load_subject_csvs
-from src.utils.io.split import data_split, data_split_by_subject  
+from src.utils.io.split import data_split, data_split_by_subject, data_time_split_by_subject 
 from src.utils.domain_generalization.domain_mixup import generate_domain_labels, domain_mixup
 from src.utils.domain_generalization.coral import coral
 from src.utils.domain_generalization.vae_augment import vae_augmentation
@@ -224,6 +224,14 @@ def train_pipeline(
             logging.info(f"X_val   shape after finetune_target_subjects (single subject): {X_val.shape}")
             logging.info(f"X_test  shape after finetune_target_subjects (single subject): {X_test.shape}")
 
+    elif subject_split_strategy == "subject_time_split":
+        if target_subjects:
+            data, _ = load_subject_csvs(target_subjects, model_type, add_subject_id=True)
+        else:
+            data, _ = load_subject_csvs(subject_list, model_type, add_subject_id=True)
+        X_train, X_val, X_test, y_train, y_val, y_test = data_time_split_by_subject(
+            data, subject_col="subject_id", time_col="Timestamp"
+        )
 
     elif subject_wise_split and fold and fold > 0:
         # Existing logic for cross-validation
