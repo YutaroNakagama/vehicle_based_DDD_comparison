@@ -1,23 +1,37 @@
+# Ignore all .csv, .pkl, .npy, .keras files (output or cache data)
 **/*.csv
-**/*.ps1
 **/*.pkl
 **/*.npy
 **/*.keras
+
+# Ignore all PowerShell scripts (Windows, if unnecessary)
+**/*.ps1
+
+# Ignore all .sh files (shell scripts) except for jobs/pbs.sh
+**/*.sh
+!project/jobs/pbs.sh
+
+# Ignore all swap, object, and error files (common in cluster environments)
 **/*.swp
-**/*.pbs
 **/*.o*
 **/*.e*
 
-
+# Ignore tags files (ctags, etags, etc.)
 **/tags
+
+# Ignore Python cache folders
 **/__pycache__/
-project/docs/
-catboost_info/
-project/data/log/*.svg
 
 # Ignore generated files and directories
 project/data/log/
 project/model/
 project/results/
 project/.venv311/
+catboost_info/
+
+# Ignore documentation outputs (if needed)
+project/docs/
+
+# Ignore .svg log images (redundant, because project/data/log/ is already ignored)
+project/data/log/*.svg
 
