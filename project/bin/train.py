@@ -130,7 +130,7 @@ def main():
     )
     parser.add_argument(
         "--subject_split_strategy",
-        choices=["random", "leave-one-out", "custom", "isolate_target_subjects", "finetune_target_subjects", "single_subject_data_split"],
+        choices=["random", "leave-one-out", "custom", "isolate_target_subjects", "finetune_target_subjects", "single_subject_data_split","subject_time_split"],
         default="random",
         help="Strategy for splitting subjects into train, validation, and test sets."
     )
