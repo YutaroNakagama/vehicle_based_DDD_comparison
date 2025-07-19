@@ -103,7 +103,8 @@ def train_pipeline(
     train_subjects: list = [],
     val_subjects: list = [],
     test_subjects: list = [],
-    general_subjects: list = []
+    general_subjects: list = [],
+    finetune_setting=None,   
 ) -> None:
     """Train a machine learning model for drowsiness detection.
 
