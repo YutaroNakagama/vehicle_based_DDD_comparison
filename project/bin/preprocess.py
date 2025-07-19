@@ -21,6 +21,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import src.config
 import src.data_pipeline.processing_pipeline as dp
+import src.data_pipeline.processing_pipeline_mp as dp_mp
 
 
 def main():
@@ -57,12 +58,20 @@ def main():
         action="store_true",
         help="Apply jittering augmentation to the input features."
     )
+    parser.add_argument(
+        "--multi_process",
+        action="store_true",
+        help="Apply multi process."
+    )
 
     args = parser.parse_args()
 
     print(f"Running '{args.model}' model with jittering={'enabled' if args.jittering else 'disabled'}...")
 
-    dp.main_pipeline(args.model, use_jittering=args.jittering)
+    if args.multi_process:
+        dp_mp.main_pipeline(args.model, use_jittering=args.jittering)
+    else:
+        dp.main_pipeline(args.model, use_jittering=args.jittering)
 
 
 if __name__ == '__main__':
