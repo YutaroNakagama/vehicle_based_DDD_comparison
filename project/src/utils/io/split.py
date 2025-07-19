@@ -159,3 +159,57 @@ def data_split_by_subject(
 
     return X_train, X_val, X_test, y_train, y_val, y_test
 
+def data_time_split_by_subject(
+    df,
+    subject_col="subject_id",
+    time_col="timestamp",
+    train_ratio=0.8,
+    val_ratio=0.1,
+    test_ratio=0.1,
+):
+    """
+    被験者ごとに時系列でデータを8:1:1に分割し、KSSラベルもバイナリ化する
+    """
+    from src.config import KSS_BIN_LABELS, KSS_LABEL_MAP
+
+    # 1. KSSフィルタ & バイナリ変換
+    if "KSS_Theta_Alpha_Beta" in df.columns:
+        df = df[df["KSS_Theta_Alpha_Beta"].isin(KSS_BIN_LABELS)].copy()
+        df["label"] = df["KSS_Theta_Alpha_Beta"].replace(KSS_LABEL_MAP)
+    elif "KSS" in df.columns:
+        # KSS列しかない場合は、そのまま使うけど注意（あとでバイナリ化が必要かも）
+        df["label"] = df["KSS"]
+    else:
+        raise ValueError("KSS or KSS_Theta_Alpha_Beta column not found")
+
+    # 2. カラム定義（例: Steering_Range ～ LaneOffset_AAA, subject_id）
+    start_col = "Steering_Range"
+    end_col = "LaneOffset_AAA"
+    feature_columns = df.loc[:, start_col:end_col].columns.tolist()
+    if subject_col in df.columns:
+        feature_columns.append(subject_col)
+
+    dfs_train, dfs_val, dfs_test = [], [], []
+
+    for subj, df_sub in df.groupby(subject_col):
+        df_sub = df_sub.sort_values(time_col)
+        n = len(df_sub)
+        n_train = int(n * train_ratio)
+        n_val = int(n * val_ratio)
+        dfs_train.append(df_sub.iloc[:n_train])
+        dfs_val.append(df_sub.iloc[n_train:n_train+n_val])
+        dfs_test.append(df_sub.iloc[n_train+n_val:])
+
+    train = pd.concat(dfs_train).reset_index(drop=True)
+    val = pd.concat(dfs_val).reset_index(drop=True)
+    test = pd.concat(dfs_test).reset_index(drop=True)
+
+    X_train = train[feature_columns].drop(columns=[subject_col], errors="ignore")
+    X_val = val[feature_columns].drop(columns=[subject_col], errors="ignore")
+    X_test = test[feature_columns].drop(columns=[subject_col], errors="ignore")
+    y_train = train["label"]
+    y_val = val["label"]
+    y_test = test["label"]
+
+    return X_train, X_val, X_test, y_train, y_val, y_test
+
