@@ -20,6 +20,12 @@ import logging
 # Add project root to the module search path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
 import src.config
 import src.models.model_pipeline as mp
 
@@ -165,6 +171,13 @@ def main():
         help="List of subject IDs for general training data (used with 'finetune_target_subjects' strategy)."
     )
 
+    parser.add_argument(
+        "--finetune_setting",
+        type=str,
+        default=None,
+        help="Path to pickle file with pretrained feature/param settings for finetune."
+    )
+
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     tag_msg = f", tag={args.tag}" if args.tag else ""
@@ -186,7 +199,8 @@ def main():
         "train_subjects": args.train_subjects,
         "val_subjects": args.val_subjects,
         "test_subjects": args.test_subjects,
-        "general_subjects": args.general_subjects
+        "general_subjects": args.general_subjects,
+        "finetune_setting": args.finetune_setting
     }
 
     if args.n_folds is not None:

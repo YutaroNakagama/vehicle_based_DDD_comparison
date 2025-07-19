@@ -115,7 +115,7 @@ def common_train(
                 "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 5),
                 "random_state": 42,
                 "class_weight": "balanced_subsample",
-                "n_jobs": -1,  
+                "n_jobs": 1,  
             }
             clf = RandomForestClassifier(**params)
 
