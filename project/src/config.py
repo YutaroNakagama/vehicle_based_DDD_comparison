@@ -81,5 +81,5 @@ TOP_K_FEATURES = 10
 """Number of top features to select during feature selection processes."""
 
 # Optuna
-N_TRIALS = 5
+N_TRIALS = 10
 """Number of trials for hyperparameter optimization using Optuna."""
