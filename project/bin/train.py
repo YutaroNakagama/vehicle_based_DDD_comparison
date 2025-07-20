@@ -178,6 +178,11 @@ def main():
         help="Path to pickle file with pretrained feature/param settings for finetune."
     )
 
+    parser.add_argument(
+        "--save_pretrain", type=str, default=None,
+        help="Path to save pretrain settings (feature list, scaler, model params)."
+    )
+
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     tag_msg = f", tag={args.tag}" if args.tag else ""
@@ -200,7 +205,8 @@ def main():
         "val_subjects": args.val_subjects,
         "test_subjects": args.test_subjects,
         "general_subjects": args.general_subjects,
-        "finetune_setting": args.finetune_setting
+        "finetune_setting": args.finetune_setting,
+        "save_pretrain": args.save_pretrain,    # ← 追加
     }
 
     if args.n_folds is not None:
