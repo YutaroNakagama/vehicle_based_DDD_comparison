@@ -105,6 +105,7 @@ def train_pipeline(
     test_subjects: list = [],
     general_subjects: list = [],
     finetune_setting=None,   
+    save_pretrain: str = None,      # ← 追加！
 ) -> None:
     """Train a machine learning model for drowsiness detection.
 
@@ -179,6 +180,73 @@ def train_pipeline(
             return
 
         logging.info(f"Finetuning with target subjects: {target_subjects}")
+
+        # Use all other subjects for the main training set
+        if general_subjects:
+            general_subjects_list = general_subjects
+        else:
+            general_subjects_list = [s for s in subject_list if s not in target_subjects]
+
+        # --- Step 1: general_subjectsでpretrain用の特徴量・scalerを保存 ---
+        if save_pretrain:
+            # 1. general_subjectsだけでデータロード
+            general_data, _ = load_subject_csvs(general_subjects_list, model_type, add_subject_id=True)
+            # 2. 普通のランダム分割（または全部trainでもOK）
+            X_gtrain, _, _, y_gtrain, _, _ = data_split(general_data, random_state=seed)
+            X_gtrain_for_fs = X_gtrain.drop(columns=["subject_id"], errors='ignore')
+    
+            # 3. 特徴量選択（例: RF importance）
+            selected_features = select_top_features_by_importance(X_gtrain_for_fs, y_gtrain, top_k=TOP_K_FEATURES)
+    
+            # 4. スケーラー
+            scaler = StandardScaler()
+            scaler.fit(X_gtrain_for_fs[selected_features])
+    
+            # 5. 必要ならRFパラメータ等もここで決定（Optunaまではここでは不要？）
+            # 今は特徴量リストとスケーラーのみ保存
+    
+            # 6. 保存
+            pretrain_dict = {
+                "selected_features": selected_features,
+                "scaler": scaler,
+            }
+            with open(save_pretrain, "wb") as f:
+                pickle.dump(pretrain_dict, f)
+            logging.info(f"Saved pretrain setting (features/scaler) to {save_pretrain}")
+
+        # --- Step 2: finetune_setting指定時（pretrain設定の流用） ---
+        if finetune_setting:
+            with open(finetune_setting, "rb") as f:
+                pretrain_dict = pickle.load(f)
+            selected_features = pretrain_dict["selected_features"]
+            scaler = pretrain_dict["scaler"]
+            logging.info(f"Loaded pretrain setting from {finetune_setting}: features={selected_features}")
+
+            # --- 10人分のデータロード（target_subjectsのみ） ---
+            data, _ = load_subject_csvs(target_subjects, model_type, add_subject_id=True)
+            # --- 時系列分割 ---
+            X_train, X_val, X_test, y_train, y_val, y_test = data_time_split_by_subject(
+                data, subject_col="subject_id", time_col="Timestamp"
+            )
+
+            # --- 特徴量選択・スケーリング ---
+            X_train_for_fs = X_train[selected_features]
+            X_val_for_fs = X_val[selected_features]
+            X_train_scaled = pd.DataFrame(scaler.transform(X_train_for_fs), columns=selected_features)
+            X_val_scaled = pd.DataFrame(scaler.transform(X_val_for_fs), columns=selected_features)
+
+            # --- あとは学習・保存 ---
+            clf = get_classifier(model_name)
+            suffix = ""
+            if tag:
+                suffix += f"_{tag}_finetune"
+            common_train(
+                X_train_scaled, X_val_scaled, y_train, y_val,
+                selected_features,
+                model_name, model_type, clf,
+                scaler=scaler, suffix=suffix, data_leak=data_leak,
+            )
+            return  # finetune_setting時は以降の処理スキップ
         
         # Split target subjects for validation and testing (if more than one target subject)
         if len(target_subjects) > 1:
@@ -194,11 +262,6 @@ def train_pipeline(
             val_subjects = [] # No separate validation subject list
             test_subjects = [] # No separate test subject list
 
-        # Use all other subjects for the main training set
-        if general_subjects:
-            general_subjects_list = general_subjects
-        else:
-            general_subjects_list = [s for s in subject_list if s not in target_subjects]
         
         # Load all data (general subjects + target subjects)
         use_subjects = list(set(general_subjects_list + target_subjects)) # Ensure unique subjects
