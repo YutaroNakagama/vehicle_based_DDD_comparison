@@ -189,6 +189,9 @@ def train_pipeline(
 
         # --- Step 1: general_subjectsでpretrain用の特徴量・scalerを保存 ---
         if save_pretrain:
+            if not os.path.dirname(save_pretrain):
+                save_pretrain = os.path.join("model/common", save_pretrain)
+
             # 1. general_subjectsだけでデータロード
             general_data, _ = load_subject_csvs(general_subjects_list, model_type, add_subject_id=True)
             # 2. 普通のランダム分割（または全部trainでもOK）
@@ -216,6 +219,8 @@ def train_pipeline(
 
         # --- Step 2: finetune_setting指定時（pretrain設定の流用） ---
         if finetune_setting:
+            if not os.path.dirname(finetune_setting):
+                finetune_setting = os.path.join("model/common", finetune_setting)
             with open(finetune_setting, "rb") as f:
                 pretrain_dict = pickle.load(f)
             selected_features = pretrain_dict["selected_features"]
