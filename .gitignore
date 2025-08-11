@@ -32,6 +32,7 @@ catboost_info/
 # Ignore documentation outputs (if needed)
 project/docs/
 project/jobs/log/
+project/misc/
 
 # Ignore .svg log images (redundant, because project/data/log/ is already ignored)
 project/data/log/*.svg
