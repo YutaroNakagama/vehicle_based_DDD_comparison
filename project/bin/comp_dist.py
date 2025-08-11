@@ -17,10 +17,20 @@ os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 
+def _median_gamma(X, Y, max_samples=1000):
+    """Estimate RBF gamma via median heuristic on squared L2 distances."""
+    A = X if len(X) <= max_samples else X[np.random.choice(len(X), max_samples, replace=False)]
+    B = Y if len(Y) <= max_samples else Y[np.random.choice(len(Y), max_samples, replace=False)]
+    D = np.sum((A[:, None, :] - B[None, :, :])**2, axis=2)  # squared L2
+    med = np.median(D)
+    if not np.isfinite(med) or med <= 0:
+        return 1.0 / X.shape[1]
+    return 1.0 / (2.0 * med)
+
 def compute_mmd(X, Y, gamma=None):
     """Compute MMD (Maximum Mean Discrepancy) between two feature matrices."""
     if gamma is None:
-        gamma = 1.0 / X.shape[1]
+        gamma = _median_gamma(X, Y)  # <- changed from 1.0 / X.shape[1]
     Kxx = rbf_kernel(X, X, gamma=gamma)
     Kyy = rbf_kernel(Y, Y, gamma=gamma)
     Kxy = rbf_kernel(X, Y, gamma=gamma)
@@ -44,7 +54,12 @@ def load_features(subject_str):
     return df[feature_cols].dropna().values
 
 def extract_features(subjects):
-    return {subj: load_features(subj) for subj in subjects if load_features(subj) is not None}
+    out = {}
+    for s in subjects:
+        x = load_features(s)
+        if x is not None:
+            out[s] = x
+    return out
 
 def load_subject_list(path):
     with open(path) as f:
@@ -62,10 +77,20 @@ def load_groups(path):
 def compute_mmd_matrix(features):
     valid_subjects = list(features.keys())
     n = len(valid_subjects)
-    mmd_matrix = np.zeros((n, n))
-    for i in tqdm(range(n), desc="MMD matrix"):
-        for j in range(n):
-            mmd_matrix[i, j] = compute_mmd(features[valid_subjects[i]], features[valid_subjects[j]])
+    mmd_matrix = np.zeros((n, n), dtype=np.float64)
+    for i in tqdm(range(n), desc="MMD matrix (symmetric)"):
+        Xi = features[valid_subjects[i]]
+        for j in range(i, n):
+            if i == j:
+                val = 0.0
+            else:
+                Xj = features[valid_subjects[j]]
+                if Xi.shape[1] != Xj.shape[1]:
+                    raise ValueError(f"Feature dim mismatch: {valid_subjects[i]} vs {valid_subjects[j]}")
+                val = compute_mmd(Xi, Xj)
+            mmd_matrix[i, j] = val
+            mmd_matrix[j, i] = val
+    np.fill_diagonal(mmd_matrix, 0.0)
     return mmd_matrix, valid_subjects
 
 def plot_heatmap(matrix, row_labels, col_labels, title, save_path, annot=True, fmt=".2f"):
@@ -89,15 +114,17 @@ def plot_bar(labels, means, stds, title, ylabel, save_path):
 def plot_group_projection(matrix, subjects, groups, method_name, save_path):
     coords = MDS(n_components=2, dissimilarity="precomputed", random_state=42).fit_transform(np.nan_to_num(matrix))
     subj_to_coords = {s: coords[i] for i, s in enumerate(subjects)}
+
     plt.figure(figsize=(10, 8))
     for gname, members in groups.items():
-        group_coords = [subj_to_coords[s] for s in members if s in subj_to_coords]
-        if group_coords:
-            group_coords = np.array(group_coords)
-            plt.scatter(group_coords[:, 0], group_coords[:, 1], label=gname)
-            for i, s in enumerate(members):
-                if s in subj_to_coords:
-                    plt.text(group_coords[i, 0], group_coords[i, 1], s, fontsize=6)
+        pairs = [(subj_to_coords[s], s) for s in members if s in subj_to_coords]
+        if not pairs:
+            continue
+        arr = np.array([p[0] for p in pairs])
+        plt.scatter(arr[:, 0], arr[:, 1], label=gname)
+        for (xy, sid) in pairs:
+            plt.text(xy[0], xy[1], sid, fontsize=6)
+
     plt.title(f"{method_name}: Subject Group Distribution")
     plt.legend()
     plt.tight_layout()
@@ -109,11 +136,30 @@ def compute_group_dist_matrix(matrix, subjects, groups):
     group_names = list(groups.keys())
     n = len(group_names)
     group_matrix = np.zeros((n, n))
+
+    # Precompute index lists per group
+    group_idxs = {
+        g: [subj_to_idx[s] for s in members if s in subj_to_idx]
+        for g, members in groups.items()
+    }
+
     for i in range(n):
         for j in range(n):
-            a, b = groups[group_names[i]], groups[group_names[j]]
-            valid = [(subj_to_idx[x], subj_to_idx[y]) for x in a for y in b if x in subj_to_idx and y in subj_to_idx]
-            group_matrix[i, j] = np.mean([matrix[p][q] for p, q in valid]) if valid else np.nan
+            A = group_idxs[group_names[i]]
+            B = group_idxs[group_names[j]]
+            if not A or not B:
+                group_matrix[i, j] = np.nan
+                continue
+
+            if i == j:
+                # within-group: off-diagonal only (p < q)
+                vals = [matrix[p, q] for p in A for q in A if p < q]
+            else:
+                # between-groups: all cross pairs
+                vals = [matrix[p, q] for p in A for q in B]
+
+            group_matrix[i, j] = np.mean(vals) if len(vals) > 0 else np.nan
+
     return group_matrix, group_names
 
 def compute_group_centroids_from_distance_matrix(matrix, subjects, groups):
@@ -141,9 +187,10 @@ def compute_intra_group_variability(matrix, subjects, groups):
             results[group_name] = {"mean": np.nan, "std": np.nan}
             continue
         dists = [matrix[i, j] for i in indices for j in indices if i < j]
+        arr = np.array(dists, dtype=float)
         results[group_name] = {
-            "mean": float(np.mean(dists)) if dists else np.nan,
-            "std": float(np.std(dists)) if dists else np.nan
+            "mean": float(np.nanmean(arr)) if arr.size else np.nan,
+            "std":  float(np.nanstd(arr))  if arr.size else np.nan,
         }
     return results
 
@@ -153,13 +200,14 @@ def compute_intra_inter_stats(matrix, subjects, groups):
     for gname, gmembers in groups.items():
         idx_in = [subj_to_idx[s] for s in gmembers if s in subj_to_idx]
         idx_out = [i for i in range(len(subjects)) if i not in idx_in]
-        intra_vals = [matrix[i, j] for i in idx_in for j in idx_in if i != j]
-        inter_vals = [matrix[i, j] for i in idx_in for j in idx_out]
+        #intra_vals = np.array([matrix[i, j] for i in idx_in for j in idx_in if i != j], dtype=float)
+        intra_vals = np.array([matrix[i, j] for i in idx_in for j in idx_in if i < j], dtype=float)
+        inter_vals = np.array([matrix[i, j] for i in idx_in for j in idx_out], dtype=float)
         stats[gname] = {
-            "intra_mean": np.mean(intra_vals) if intra_vals else np.nan,
-            "intra_std": np.std(intra_vals) if intra_vals else np.nan,
-            "inter_mean": np.mean(inter_vals) if inter_vals else np.nan,
-            "inter_std": np.std(inter_vals) if inter_vals else np.nan,
+            "intra_mean": float(np.nanmean(intra_vals)) if intra_vals.size else np.nan,
+            "intra_std":  float(np.nanstd(intra_vals))  if intra_vals.size else np.nan,
+            "inter_mean": float(np.nanmean(inter_vals)) if inter_vals.size else np.nan,
+            "inter_std":  float(np.nanstd(inter_vals))  if inter_vals.size else np.nan,
         }
     return stats
 
@@ -183,12 +231,20 @@ def plot_intra_inter(stats, dist_name, save_path):
     plt.close()
 
 def main():
+    np.random.seed(42)
     subject_list_path = "../../dataset/mdapbe/subject_list.txt"
     out_dir = "results/mmd"
     # 1. Subject List
     subjects = load_subject_list(subject_list_path)
     # 2. Feature Extraction
     features = extract_features(subjects)
+    # --- Optional but recommended: z-score normalization across all subjects ---
+    # This makes Wasserstein distances less sensitive to raw feature scales.
+    if len(features) > 0:
+        all_X = np.vstack(list(features.values()))
+        mu = all_X.mean(axis=0, keepdims=True)
+        sigma = all_X.std(axis=0, keepdims=True) + 1e-12
+        features = {k: (v - mu) / sigma for k, v in features.items()}
     # 3. MMD Matrix
     mmd_matrix, valid_subjects = compute_mmd_matrix(features)
     os.makedirs(out_dir, exist_ok=True)
@@ -198,27 +254,59 @@ def main():
         json.dump(valid_subjects, f)
     print(f"Saved subject list to {out_dir}/mmd_subjects.json")
 
-    # Wasserstein/DTW計算（同一valid_subjectsを使う）
+    # Note: annot=False to avoid heavy rendering for large N
+    plot_heatmap(
+        mmd_matrix, valid_subjects, valid_subjects,
+        "MMD Distance Matrix", f"{out_dir}/mmd_matrix.png",
+        annot=False, fmt=".2f"
+    )
+    print(f"Saved MMD heatmap to {out_dir}/mmd_matrix.png")
+
     n = len(valid_subjects)
-    print("Computing Wasserstein and DTW distance matrices...")
-    wass_matrix = np.zeros((n, n))
-    dtw_matrix = np.zeros((n, n))
+
+    print("Computing Wasserstein and DTW distance matrices (symmetric)...")
+    wass_matrix = np.zeros((n, n), dtype=np.float64)
+    dtw_matrix  = np.zeros((n, n), dtype=np.float64)
     mean_series = [features[subj].mean(axis=1) for subj in valid_subjects]
     MAX_DIST = 1e6
-
-    for i in tqdm(range(n)):
-        for j in range(n):
-            # Wasserstein
-            dists = [min(wasserstein_distance(features[valid_subjects[i]][:, k], features[valid_subjects[j]][:, k]), MAX_DIST)
-                     for k in range(min(features[valid_subjects[i]].shape[1], features[valid_subjects[j]].shape[1]))
-                     if np.isfinite(wasserstein_distance(features[valid_subjects[i]][:, k], features[valid_subjects[j]][:, k]))]
-            wass_matrix[i, j] = np.mean(dists) if dists else 0.0
-            # DTW
-            try:
-                d = dtw(mean_series[i], mean_series[j])
-                dtw_matrix[i, j] = d if np.isfinite(d) and d < MAX_DIST else 0.0
-            except:
-                dtw_matrix[i, j] = 0.0
+    
+    for i in tqdm(range(n), desc="Wass/DTW (symmetric)"):
+        Xi = features[valid_subjects[i]]  # fetch once per i
+        for j in range(i, n):  # upper triangle only
+            if i == j:
+                wass_val = 0.0
+                dtw_val  = 0.0
+            else:
+                Xj = features[valid_subjects[j]]
+    
+                # --- Wasserstein: average over common feature columns ---
+                common_cols = min(Xi.shape[1], Xj.shape[1])
+                w_dists = []
+                for k in range(common_cols):
+                    d = wasserstein_distance(Xi[:, k], Xj[:, k])
+                    if np.isfinite(d):
+                        w_dists.append(min(d, MAX_DIST))
+                # use NaN if nothing finite; later handle with nan_to_num
+                wass_val = float(np.mean(w_dists)) if len(w_dists) > 0 else np.nan
+    
+                # --- DTW on 1D series (mean over features) ---
+                try:
+                    d = dtw(mean_series[i], mean_series[j])
+                    dtw_val = float(d) if np.isfinite(d) and d < MAX_DIST else np.nan
+                except Exception as e:
+                    # Log the pair to help debugging
+                    print(f"[DTW warn] {valid_subjects[i]} vs {valid_subjects[j]} -> {e}")
+                    dtw_val = np.nan
+    
+            # mirror
+            wass_matrix[i, j] = wass_val
+            wass_matrix[j, i] = wass_val
+            dtw_matrix[i, j]  = dtw_val
+            dtw_matrix[j, i]  = dtw_val
+    
+    # keep diagonals strictly 0
+    np.fill_diagonal(wass_matrix, 0.0)
+    np.fill_diagonal(dtw_matrix, 0.0)
 
     os.makedirs("results/distances", exist_ok=True)
     np.save("results/distances/wasserstein_matrix.npy", wass_matrix)
@@ -229,7 +317,20 @@ def main():
         json.dump(valid_subjects, f)
     print("Saved subjects list to results/distances/subjects.json")
 
-    # 分析・可視化を1ループで
+    # --- NEW: save Wasserstein/DTW heatmap images ---
+    plot_heatmap(
+        wass_matrix, valid_subjects, valid_subjects,
+        "Wasserstein Distance Matrix", "results/distances/wasserstein_matrix.png",
+        annot=False, fmt=".2f"
+    )
+    print("Saved Wasserstein heatmap to results/distances/wasserstein_matrix.png")
+    plot_heatmap(
+        dtw_matrix, valid_subjects, valid_subjects,
+        "DTW Distance Matrix", "results/distances/dtw_matrix.png",
+        annot=False, fmt=".2f"
+    )
+    print("Saved DTW heatmap to results/distances/dtw_matrix.png")
+
     distance_types = {
         "mmd": ("results/mmd/mmd_matrix.npy", "results/mmd/mmd_subjects.json"),
         "wasserstein": ("results/distances/wasserstein_matrix.npy", "results/distances/subjects.json"),
@@ -237,11 +338,19 @@ def main():
     }
     groups = load_groups("../misc/target_groups.txt")
     for dist_name, (matrix_path, subject_path) in distance_types.items():
-        matrix = np.nan_to_num(np.load(matrix_path))
+
+        matrix = np.load(matrix_path)  # ← NaNのまま保持
         subjects = load_json(subject_path)
-        # 平均・分散
-        means, stds = matrix.mean(axis=1), matrix.std(axis=1)
-        sorted_idx = np.argsort(-means)
+        
+        # Exclude diagonal & NaN at the same time
+        n = matrix.shape[0]
+        mask = ~np.eye(n, dtype=bool)  # off-diagonal True
+        masked = np.where(mask, matrix, np.nan)
+        means = np.nanmean(masked, axis=1)
+        stds  = np.nanstd(masked, axis=1)
+        means_for_sort = np.nan_to_num(means, nan=-np.inf)  # NaNは最小扱い→降順で末尾へ
+        sorted_idx = np.argsort(-means_for_sort)
+        
         subj_sorted = [subjects[i] for i in sorted_idx]
         save_dir = f"results/{dist_name.lower()}"
         os.makedirs(save_dir, exist_ok=True)
@@ -259,7 +368,6 @@ def main():
         plot_bar(subj_sorted, means[sorted_idx], stds[sorted_idx], f"Mean and StdDev of {dist_name} per Subject (Sorted)", dist_name, os.path.join(save_dir, f"{dist_name.lower()}_mean_std_sorted.png"))
         print(f"Saved sorted bar plot ({dist_name}) to {os.path.join(save_dir, f'{dist_name.lower()}_mean_std_sorted.png')}")
 
-        # グループ間距離・重心・プロット
         group_matrix, group_names = compute_group_dist_matrix(matrix, subjects, groups)
         group_dir = f"results/group_distances/{dist_name.lower()}"
         os.makedirs(group_dir, exist_ok=True)
@@ -285,7 +393,6 @@ def main():
                          centroid_heatmap_path)
             print(f"Saved centroid distance heatmap ({dist_name}) to {centroid_heatmap_path}")
 
-        # グループ内ばらつき・intra/inter可視化
         intra_results = compute_intra_group_variability(matrix, subjects, groups)
         intra_dir = f"results/group_distances/{dist_name.lower()}/intra"
         os.makedirs(intra_dir, exist_ok=True)
