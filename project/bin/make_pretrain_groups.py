@@ -182,6 +182,94 @@ def pick_seed(M: np.ndarray, friendly: bool) -> int:
     order = np.argsort(g) if friendly else np.argsort(-g)
     return int(order[0])
 
+# ===== ここを make_pretrain_groups.py の「greedy builders」節の下あたりに追記 =====
+
+def group_objectives(M: np.ndarray, T: Set[int], S: Set[int]):
+    """便利関数: Intra/Inter/NN と中心距離(重心距離)をまとめて返す"""
+    intra = intra_mean(M, T)
+    inter = inter_mean(M, T, S)
+    nnv   = nn_T_to_S(M, T, S)
+
+    # グループ重心（添字）を簡易に「Tの各点の全体平均距離」の平均で近似し、それを全体中心と比較
+    g_mean = global_mean_dist(M)                # 各個体の全体平均距離
+    center_all = float(np.nanmean(g_mean))      # 全体中心（スカラー）
+    center_T   = float(np.nanmean([g_mean[i] for i in T])) if len(T) else np.nan
+    center_gap = abs(center_T - center_all)     # 中心からのズレ量（大きいほど遠い）
+
+    # グループ内部の多様性: Intra をそのまま proxy に
+    hetero = intra
+
+    return intra, inter, nnv, center_gap, hetero
+
+
+def build_group_biased(M: np.ndarray, k: int, mode: str) -> List[int]:
+    """
+    偏らせるためのグループ作成:
+      mode='far'         : 中心から遠い & なるべく凝集（intra 小さめ）
+      mode='hetero'      : 中心 ± 外れを意図的に混ぜる（intra を大きく）
+      mode='anti_pretrain': pretrain 効果を下げる想定 = 遠さ(center_gap大) と異質性(hetero大)
+    """
+    n = M.shape[0]
+    g = global_mean_dist(M)
+    order_far = np.argsort(-g)  # 遠い順
+    order_near = np.argsort(g)  # 近い順
+
+    # シード決定
+    if mode == "far" or mode == "anti_pretrain":
+        T: Set[int] = {int(order_far[0])}
+    elif mode == "hetero":
+        # 近い代表 + 遠い代表の2点から始める
+        T = {int(order_near[0]), int(order_far[0])}
+    else:
+        raise ValueError(f"Unknown biased mode: {mode}")
+
+    while len(T) < k:
+        candidates = [i for i in range(n) if i not in T]
+        scores = []
+        for c in candidates:
+            T_new = set(T) | {c}
+            S_new = set(range(n)) - T_new
+            intra, inter, nnv, center_gap, hetero = group_objectives(M, T_new, S_new)
+
+            # 正規化のためいったん配列に入れてから外で min-max でもよいが、
+            # ここではスカラーを素直に組合せ、重み付けで表現する。
+            if mode == "far":
+                # 遠さ(+) と 凝集性(=intra小)の両立
+                score = (+1.0 * center_gap) + (-0.5 * intra) + (+0.5 * inter) + (+0.25 * nnv)
+            elif mode == "hetero":
+                # 異質性を最大化（intra 大）しつつ、中心にも遠すぎず近すぎずに偏らない
+                # ここでは単純に intra を主、遠さは弱めに足す
+                score = (+1.0 * hetero) + (+0.2 * center_gap)
+            elif mode == "anti_pretrain":
+                # pretrain 効果を落とす狙い：遠さ(+) と 異質性(+) を同時に上げる
+                score = (+0.8 * center_gap) + (+0.8 * hetero) + (+0.2 * inter)
+            else:
+                score = 0.0
+            scores.append(score)
+
+        best_idx = int(np.argmax(scores))
+        T.add(candidates[best_idx])
+
+    return list(T)
+
+
+def make_biased_groups_for_metric(
+    metric_name: str,
+    matrix_path: str,
+    subjects_path: str,
+    modes: List[str],
+    k: int = 10,
+    out_dir: str = "misc/pretrain_groups"
+):
+    M, subs = load_matrix_subjects(matrix_path, subjects_path)
+    ensure_dir(out_dir)
+
+    for mode in modes:
+        ids = build_group_biased(M, k, mode)
+        out_txt = os.path.join(out_dir, f"{metric_name}_biased_{mode}.txt")
+        save_group_line([subs[i] for i in ids], out_txt)
+
+
 # -------- end-to-end per metric --------
 
 def make_groups_for_metric(
@@ -233,19 +321,27 @@ def main():
     ap = argparse.ArgumentParser(description="Make 10-subject groups maximizing/minimizing pretrain benefit per metric.")
     ap.add_argument("--k", type=int, default=10, help="Group size (default: 10).")
     ap.add_argument("--out", default="misc/pretrain_groups", help="Output directory.")
+    ap.add_argument("--biased_modes", default="", help="comma separated modes among {far,hetero,anti_pretrain}")
     args = ap.parse_args()
 
     # paths for each metric
     metrics = [
-        ("mmd",         "results/mmd/mmd_matrix.npy",                 "results/mmd/mmd_subjects.json"),
-        ("wasserstein", "results/distances/wasserstein_matrix.npy",   "results/distances/subjects.json"),
-        ("dtw",         "results/distances/dtw_matrix.npy",           "results/distances/subjects.json"),
+        ("mmd",         "results/mmd/mmd_matrix.npy",               "results/mmd/mmd_subjects.json"),
+        ("wasserstein", "results/distances/wasserstein_matrix.npy", "results/distances/subjects.json"),
+        ("dtw",         "results/distances/dtw_matrix.npy",         "results/distances/subjects.json"),
     ]
+
+    # parse biased modes just once
+    modes = [m.strip() for m in args.biased_modes.split(",") if m.strip()]
 
     all_stats = {}
     for name, mpath, spath in metrics:
         print(f"\n=== {name.upper()} ===")
+        # 既存: friendly/hard を作成
         all_stats[name] = make_groups_for_metric(name, mpath, spath, k=args.k, out_dir=args.out)
+        # 追加: 偏らせたグループを必要なら作成
+        if modes:
+            make_biased_groups_for_metric(name, mpath, spath, modes=modes, k=args.k, out_dir=args.out)
 
     # combined report
     with open(os.path.join(args.out, "summary_all_metrics.json"), "w") as f:

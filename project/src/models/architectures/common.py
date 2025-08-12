@@ -15,7 +15,21 @@ from collections import OrderedDict
 from lightgbm import LGBMClassifier
 from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
-from sklearn.metrics import classification_report, roc_curve, auc, make_scorer, roc_auc_score
+#from sklearn.metrics import classification_report, roc_curve, auc, make_scorer, roc_auc_score
+#from sklearn.metrics import (
+#    classification_report, roc_curve, auc, make_scorer, roc_auc_score,
+#    accuracy_score, precision_score, recall_score, f1_score
+#)
+#from sklearn.metrics import (
+#    classification_report, roc_curve, auc, make_scorer, roc_auc_score,
+#    accuracy_score, precision_score, recall_score, f1_score,
+#    confusion_matrix
+#)
+from sklearn.metrics import (
+    classification_report, roc_curve, auc, make_scorer, roc_auc_score,
+    accuracy_score, precision_score, recall_score, f1_score,
+    confusion_matrix, precision_recall_curve, average_precision_score
+)
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score, StratifiedKFold
 from sklearn.preprocessing import StandardScaler
@@ -30,8 +44,11 @@ from imblearn.ensemble import BalancedRandomForestClassifier
 from src.models.feature_selection.anfis import calculate_id
 from src.config import MODEL_PKL_PATH, N_TRIALS
 
+#def common_train(
+#    X_train, X_test, y_train, y_test,
 def common_train(
-    X_train, X_test, y_train, y_test,
+#    X_train, X_val, X_test, y_train, y_val, y_test,
+    X_train, X_val, X_test, y_train, y_val, y_test,
     selected_features,  
     model: str, model_type: str,
     clf=None, scaler=None, suffix: str = "",
@@ -59,9 +76,13 @@ def common_train(
         None
     """
 
+#    # Remove duplicated column names while preserving order
+#    X_train = X_train.loc[:, ~X_train.columns.duplicated()]
+#    X_test = X_test.loc[:, ~X_test.columns.duplicated()]
     # Remove duplicated column names while preserving order
     X_train = X_train.loc[:, ~X_train.columns.duplicated()]
-    X_test = X_test.loc[:, ~X_test.columns.duplicated()]
+    X_val   = X_val.loc[:,   ~X_val.columns.duplicated()]
+    X_test  = X_test.loc[:,  ~X_test.columns.duplicated()]
 
     def objective(trial):
         print('X_train.shape:', X_train.shape)
@@ -235,7 +256,8 @@ def common_train(
                         return 0.0
                 score_arr = cross_val_score(clf, X_all_scaled, y_all, cv=cv, scoring=roc_auc, n_jobs=1)
             else:
-                # こっちがメイン
+#                scaler_local = StandardScaler()
+#                X_train_scaled = scaler_local.fit_transform(X_train[selected_features])
                 scaler_local = StandardScaler()
                 X_train_scaled = scaler_local.fit_transform(X_train[selected_features])
                 cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)  # n_splitsを5など大きめに！
@@ -285,14 +307,14 @@ def common_train(
                     traceback.print_exc()
                     return 0.0
 
-                score_arr = cross_val_score(clf, X_train_scaled, y_train, cv=cv, scoring='accuracy', n_jobs=1)
- 
-            print("cross_val_score:", score_arr)
-            if np.any(np.isnan(score_arr)):
-                print("Score nan detected: ", score_arr)
-                return 0.0
- 
-            score = np.nanmean(score_arr)
+#                score_arr = cross_val_score(clf, X_train_scaled, y_train, cv=cv, scoring='accuracy', n_jobs=1)
+# 
+#            print("cross_val_score:", score_arr)
+#            if np.any(np.isnan(score_arr)):
+#                print("Score nan detected: ", score_arr)
+#                return 0.0
+# 
+#            score = np.nanmean(score_arr)
         except Exception as e:
             logging.warning(f"Scoring failed: {e}")
             return 0.0
@@ -315,8 +337,12 @@ def common_train(
     if scaler is None:
         raise ValueError("Scaler must be provided (pre-fitted in pipeline).")
 
+#    X_train_scaled = scaler.transform(X_train[selected_features])
+#    X_test_scaled = scaler.transform(X_test[selected_features])
+    # Scale all splits using pre-fitted scaler from pipeline
     X_train_scaled = scaler.transform(X_train[selected_features])
-    X_test_scaled = scaler.transform(X_test[selected_features])
+    X_val_scaled   = scaler.transform(X_val[selected_features])
+    X_test_scaled  = scaler.transform(X_test[selected_features])
 
 #    # Final training
 #    scaler = StandardScaler()
@@ -370,8 +396,10 @@ def common_train(
 
     if data_leak:
         best_clf.fit(
-            np.vstack([X_train_scaled, X_test_scaled]),
-            np.concatenate([y_train, y_test])
+#            np.vstack([X_train_scaled, X_test_scaled]),
+#            np.concatenate([y_train, y_test])
+            np.vstack([X_train_scaled, X_val_scaled, X_test_scaled]),
+            np.concatenate([y_train, y_val, y_test])
         )
     else:
         best_clf.fit(X_train_scaled, y_train)
@@ -395,38 +423,183 @@ def common_train(
     with open(f"{MODEL_PKL_PATH}/{model_type}/feature_meta_{model}{suffix}.json", "w") as f:
         json.dump(feature_meta, f, indent=2)
 
-    # Evaluate
-    y_pred = best_clf.predict(X_test_scaled)
-    roc_auc = 0
+#    # Evaluate
+#    y_pred = best_clf.predict(X_test_scaled)
+    # ---------- Evaluate & Save per-split metrics ----------
+    def _eval_split(Xs, ys):
+        yhat = best_clf.predict(Xs)
+        out = {
+            "accuracy": float(accuracy_score(ys, yhat)),
+            "precision": float(precision_score(ys, yhat, zero_division=0)),
+            "recall": float(recall_score(ys, yhat, zero_division=0)),
+            "f1": float(f1_score(ys, yhat, zero_division=0)),
+            "auc": float("nan"),
+            "ap":  float("nan"),
+            "_y_true": ys,
+            "_y_pred": yhat,
+        }
+        if hasattr(best_clf, "predict_proba"):
+            proba = best_clf.predict_proba(Xs)[:,1]
+            try:
+                out["auc"] = float(roc_auc_score(ys, proba))
+            except Exception:
+                pass
+            try:
+                out["ap"] = float(average_precision_score(ys, proba))
+            except Exception:
+                pass
+            out["_proba"] = proba  # for threshold search
+        elif hasattr(best_clf, "decision_function"):
+            score = best_clf.decision_function(Xs)
+            try:
+                out["auc"] = float(roc_auc_score(ys, score))
+            except Exception:
+                pass
+            try:
+                out["ap"] = float(average_precision_score(ys, score))
+            except Exception:
+                pass
+            out["_proba"] = score
+        else:
+            out["_proba"] = None
+        return out
 
-    if hasattr(best_clf, "predict_proba"):
-        y_pred_proba = best_clf.predict_proba(X_test_scaled)[:, 1]
-    elif hasattr(best_clf, "decision_function"):
-        y_pred_proba = best_clf.decision_function(X_test_scaled)
-    else:
-        y_pred_proba = None
-    
-    if y_pred_proba is not None:
-        fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
+    m_train = _eval_split(X_train_scaled, y_train)
+    m_val   = _eval_split(X_val_scaled,   y_val)
+    m_test  = _eval_split(X_test_scaled,  y_test)
+#    roc_auc = 0
+#
+#    if hasattr(best_clf, "predict_proba"):
+#        y_pred_proba = best_clf.predict_proba(X_test_scaled)[:, 1]
+#    elif hasattr(best_clf, "decision_function"):
+#        y_pred_proba = best_clf.decision_function(X_test_scaled)
+#    else:
+#        y_pred_proba = None
+#    
+#    if y_pred_proba is not None:
+#        fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
+#        roc_auc = auc(fpr, tpr)
+#
+#    logging.info(f"{model} (Optuna) trained with ROC AUC: {roc_auc:.2f}")
+#    logging.info(classification_report(y_test, y_pred))
+    logging.info(f"{model} (Optuna) metrics: "
+                 f"train acc={m_train['accuracy']:.3f}, val acc={m_val['accuracy']:.3f}, test acc={m_test['accuracy']:.3f}")
+    # Testの分類レポートをログに
+    y_pred_test = best_clf.predict(X_test_scaled)
+    logging.info("Test classification report:\n" + classification_report(y_test, y_pred_test))
+
+    # ---------- Save Confusion Matrices (default decision) ----------
+    out_dir = f"{MODEL_PKL_PATH}/{model_type}"
+    os.makedirs(out_dir, exist_ok=True)
+
+    def _save_cm(y_true, y_pred, split, tag_suffix):
+        cm = confusion_matrix(y_true, y_pred, labels=[0,1])
+        # CSV (2x2)
+        pd.DataFrame(cm, index=["true_0","true_1"], columns=["pred_0","pred_1"]).to_csv(
+            f"{out_dir}/cm_{split}_{model}{tag_suffix}.csv"
+        )
+        # PNG
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(3.6,3.2))
+        plt.imshow(cm, interpolation="nearest")
+        plt.title(f"CM ({split})")
+        plt.xlabel("Predicted"); plt.ylabel("True")
+        for (i,j), v in np.ndenumerate(cm):
+            plt.text(j, i, str(v), ha="center", va="center")
+        plt.tight_layout()
+        plt.savefig(f"{out_dir}/cm_{split}_{model}{tag_suffix}.png", dpi=160)
+        plt.close()
+
+    _save_cm(m_train["_y_true"], m_train["_y_pred"], "train", suffix)
+    _save_cm(m_val["_y_true"],   m_val["_y_pred"],   "val",   suffix)
+    _save_cm(m_test["_y_true"],  m_test["_y_pred"],  "test",  suffix)
+
+    # ---------- Save ROC curves (image + raw data) ----------
+    def _save_roc(y_true, scores, split, tag_suffix):
+        if scores is None:
+            return
+        fpr, tpr, thr = roc_curve(y_true, scores)
         roc_auc = auc(fpr, tpr)
+        # data
+        pd.DataFrame({"fpr":fpr, "tpr":tpr, "threshold":thr}).to_csv(
+            f"{out_dir}/roc_{split}_{model}{tag_suffix}.csv", index=False
+        )
+        # plot
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(4.0,3.6))
+        plt.plot(fpr, tpr, label=f"AUC={roc_auc:.3f}")
+        plt.plot([0,1],[0,1], linestyle="--")
+        plt.xlabel("FPR"); plt.ylabel("TPR"); plt.title(f"ROC ({split})")
+        plt.legend(loc="lower right")
+        plt.tight_layout()
+        plt.savefig(f"{out_dir}/roc_{split}_{model}{tag_suffix}.png", dpi=160)
+        plt.close()
 
-    logging.info(f"{model} (Optuna) trained with ROC AUC: {roc_auc:.2f}")
-    logging.info(classification_report(y_test, y_pred))
+    _save_roc(m_train["_y_true"], m_train.get("_proba"), "train", suffix)
+    _save_roc(m_val["_y_true"],   m_val.get("_proba"),   "val",   suffix)
+    _save_roc(m_test["_y_true"],  m_test.get("_proba"),  "test",  suffix)
+
+    # ---------- Save PR curves (image + raw data) ----------
+    def _save_pr(y_true, scores, split, tag_suffix):
+        if scores is None:
+            return
+        # precision_recall_curve returns precision, recall, thresholds (len(thr)=len(prec)-1)
+        prec, rec, thr = precision_recall_curve(y_true, scores)
+        # CSV（長さ差を埋めるために最後の閾値はNaNにして揃える）
+        import numpy as np, pandas as pd
+        thr_aligned = np.concatenate([thr, [np.nan]])
+        pd.DataFrame({"precision":prec, "recall":rec, "threshold":thr_aligned}).to_csv(
+            f"{out_dir}/pr_{split}_{model}{tag_suffix}.csv", index=False
+        )
+        # plot
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(4.0,3.6))
+        plt.plot(rec, prec)
+        plt.xlabel("Recall"); plt.ylabel("Precision"); plt.title(f"PR ({split})")
+        plt.tight_layout()
+        plt.savefig(f"{out_dir}/pr_{split}_{model}{tag_suffix}.png", dpi=160)
+        plt.close()
+
+    _save_pr(m_train["_y_true"], m_train.get("_proba"), "train", suffix)
+    _save_pr(m_val["_y_true"],   m_val.get("_proba"),   "val",   suffix)
+    _save_pr(m_test["_y_true"],  m_test.get("_proba"),  "test",  suffix)
 
     # Threshold optimization (F1-score)
-    if y_pred_proba is not None:
-        from sklearn.metrics import precision_recall_curve, f1_score
+#    if y_pred_proba is not None:
+    # ---------- Threshold optimization on validation (maximize F1) ----------
+    # しきい値は妥当性のため「検証」で最適化 → その閾値をTestにも適用
+#    if m_val["_proba"] is not None:
+    if m_val["_proba"] is not None:
+#        from sklearn.metrics import precision_recall_curve, f1_score
 
-        precision, recall, thresholds = precision_recall_curve(y_test, y_pred_proba)
+#        precision, recall, thresholds = precision_recall_curve(y_test, y_pred_proba)
+        precision, recall, thresholds = precision_recall_curve(y_val, m_val["_proba"])
         f1_scores = 2 * precision * recall / (precision + recall + 1e-8)
         best_idx = np.argmax(f1_scores)
         best_threshold = thresholds[best_idx] if best_idx < len(thresholds) else 0.5
 
         logging.info(f"Optimal threshold for F1: {best_threshold:.3f}")
         
-        y_pred_opt = (y_pred_proba >= best_threshold).astype(int)
-        logging.info("Classification Report with optimized threshold:")
-        logging.info(classification_report(y_test, y_pred_opt))
+#        y_pred_opt = (y_pred_proba >= best_threshold).astype(int)
+#        logging.info("Classification Report with optimized threshold:")
+#        logging.info(classification_report(y_test, y_pred_opt))
+        def _apply_thr(proba, y_true):
+            yhat = (proba >= best_threshold).astype(int)
+            return {
+                "accuracy": float(accuracy_score(y_true, yhat)),
+                "precision": float(precision_score(y_true, yhat, zero_division=0)),
+                "recall": float(recall_score(y_true, yhat, zero_division=0)),
+                "f1": float(f1_score(y_true, yhat, zero_division=0)),
+            }
+
+#        thr_val  = _apply_thr(m_val["_proba"],  y_val)
+#        thr_test = _apply_thr(m_test["_proba"], y_test) if m_test["_proba"] is not None else None
+        thr_val  = _apply_thr(m_val["_proba"],  y_val)
+        thr_test = _apply_thr(m_test["_proba"], y_test) if m_test["_proba"] is not None else None
+
+        logging.info("Validation (F1-opt threshold) metrics: " + json.dumps(thr_val))
+        if thr_test:
+            logging.info("Test (F1-opt threshold from Val) metrics: " + json.dumps(thr_test))
 
         # Save threshold
         threshold_meta = {
@@ -440,3 +613,15 @@ def common_train(
     else:
         logging.warning("Threshold optimization skipped: model does not support probability estimation.")
 
+
+    # ---------- Save metrics CSV ----------
+    rows = []
+#    rows.append({"split":"train", **{k:v for k,v in m_train.items() if not k.startswith("_")}})
+#    rows.append({"split":"val",   **{k:v for k,v in m_val.items()   if not k.startswith("_")}})
+#    rows.append({"split":"test",  **{k:v for k,v in m_test.items()  if not k.startswith("_")}})
+    rows.append({"split":"train", **{k:v for k,v in m_train.items() if not k.startswith("_")}})
+    rows.append({"split":"val",   **{k:v for k,v in m_val.items()   if not k.startswith("_")}})
+    rows.append({"split":"test",  **{k:v for k,v in m_test.items()  if not k.startswith("_")}})
+    os.makedirs(f"{MODEL_PKL_PATH}/{model_type}", exist_ok=True)
+    pd.DataFrame(rows).to_csv(f"{MODEL_PKL_PATH}/{model_type}/metrics_{model}{suffix}.csv", index=False)
+    logging.info(f"Saved metrics CSV -> {MODEL_PKL_PATH}/{model_type}/metrics_{model}{suffix}.csv")
