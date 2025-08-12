@@ -235,18 +235,39 @@ def train_pipeline(
             )
 
             # --- 特徴量選択・スケーリング ---
-            X_train_for_fs = X_train[selected_features]
-            X_val_for_fs = X_val[selected_features]
-            X_train_scaled = pd.DataFrame(scaler.transform(X_train_for_fs), columns=selected_features)
-            X_val_scaled = pd.DataFrame(scaler.transform(X_val_for_fs), columns=selected_features)
-
-            # --- あとは学習・保存 ---
+#            X_train_for_fs = X_train[selected_features]
+#            X_val_for_fs = X_val[selected_features]
+#            X_train_scaled = pd.DataFrame(scaler.transform(X_train_for_fs), columns=selected_features)
+#            X_val_scaled = pd.DataFrame(scaler.transform(X_val_for_fs), columns=selected_features)
+#
+#            # --- あとは学習・保存 ---
+#            clf = get_classifier(model_name)
+#            suffix = ""
+#            if tag:
+#                suffix += f"_{tag}_finetune"
+#            common_train(
+#                X_train_scaled, X_val_scaled, y_train, y_val,
+#                selected_features,
+#                model_name, model_type, clf,
+#                scaler=scaler, suffix=suffix, data_leak=data_leak,
+#            )
             clf = get_classifier(model_name)
+#            suffix = ""
+#            if tag:
+#                suffix += f"_{tag}_finetune"
             suffix = ""
             if tag:
-                suffix += f"_{tag}_finetune"
+                suffix += f"_{tag}"
+                # finetune の場合だけ _finetune を追加
+                if "finetune" in tag:
+                    suffix += "_finetune"
+            elif target_subjects:
+                # tag が無くてもグループ番号を付ける
+                safe_targets = "-".join(map(str, target_subjects))[:40]  # 長過ぎ防止
+                suffix += f"_targets-{safe_targets}"
+
             common_train(
-                X_train_scaled, X_val_scaled, y_train, y_val,
+                X_train, X_val, X_test, y_train, y_val, y_test,
                 selected_features,
                 model_name, model_type, clf,
                 scaler=scaler, suffix=suffix, data_leak=data_leak,
@@ -433,19 +454,38 @@ def train_pipeline(
             scaler.fit(X_train_for_fs[selected_features])
             logging.info("Scaler was fit using only X_train (standard procedure).")
 
-        X_train_scaled = scaler.transform(X_train_for_fs[selected_features])
-        X_val_scaled = scaler.transform(X_val_for_fs[selected_features])
-
-        X_train_scaled = pd.DataFrame(X_train_scaled, columns=selected_features)
-        X_val_scaled = pd.DataFrame(X_val_scaled, columns=selected_features)
+#        X_train_scaled = scaler.transform(X_train_for_fs[selected_features])
+#        X_val_scaled = scaler.transform(X_val_for_fs[selected_features])
+#
+#        X_train_scaled = pd.DataFrame(X_train_scaled, columns=selected_features)
+#        X_val_scaled = pd.DataFrame(X_val_scaled, columns=selected_features)
+        X_test_for_fs = X_test.drop(columns=["subject_id"], errors='ignore')
+        X_test_for_fs = X_test_for_fs.reset_index(drop=True)
 
         # 9. Get Classifier and Train
         clf = get_classifier(model_name)
 
+#        # Construct suffix for model saving based on applied techniques
+#        suffix = ""
+#        if tag:
+#            suffix += f"_{tag}"
+#        if use_coral:
+#            suffix += "_coral"
+#        if use_domain_mixup:
+#            suffix += "_mixup"
+#        if use_vae:
+#            suffix += "_vae"
         # Construct suffix for model saving based on applied techniques
         suffix = ""
         if tag:
             suffix += f"_{tag}"
+        elif target_subjects:
+            safe_targets = "-".join(map(str, target_subjects))[:40]
+            suffix += f"_targets-{safe_targets}"
+        # 追加で任意: PBS_ARRAY_INDEX があればグループ番号を使う
+        elif os.getenv("PBS_ARRAY_INDEX"):
+            suffix += f"_group{os.getenv('PBS_ARRAY_INDEX')}"
+        
         if use_coral:
             suffix += "_coral"
         if use_domain_mixup:
@@ -453,13 +493,22 @@ def train_pipeline(
         if use_vae:
             suffix += "_vae"
 
+#        common_train(
+#            X_train_scaled,    
+#            X_val_scaled,      
+#            y_train, y_val,
+#            selected_features, 
+#            model_name, model_type, clf,
+#            scaler=scaler,    
+#            suffix=suffix,
+#            data_leak=data_leak,
+#        )
         common_train(
-            X_train_scaled,    
-            X_val_scaled,      
-            y_train, y_val,
-            selected_features, 
+            X_train_for_fs, X_val_for_fs, X_test_for_fs,
+            y_train, y_val, y_test,
+            selected_features,
             model_name, model_type, clf,
-            scaler=scaler,    
+            scaler=scaler,
             suffix=suffix,
             data_leak=data_leak,
         )
