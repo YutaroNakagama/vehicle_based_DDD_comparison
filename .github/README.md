@@ -61,7 +61,8 @@ curl -L -O -J "https://dataverse.harvard.edu/api/access/dataset/:persistentId/?p
 ## Installation
 
 ```bash
-pip install -r requirements.txt
+cd project
+pip install -r misc/requirements.txt
 ```
 
 Python 3.10 is recommended.
@@ -160,13 +161,26 @@ python bin/evaluate.py \
 
 ## 4. Analysis
 
-After running training experiments, you can analyze the results using the `analyze_results.py` script:
+After running training, you can run distance computation and correlation analysis with the unified CLI `bin/analyze.py`:
 
+**(A) Distance matrices (MMD / Wasserstein / DTW)**
 ```bash
-python bin/analyze_results.py
+python bin/analyze.py comp-dist \
+  --subject_list ../../dataset/mdapbe/subject_list.txt \
+  --data_root data/processed/common \
+  --groups_file misc/target_groups.txt
 ```
 
-This script reads the log files generated during training and presents a summary of key performance metrics (ROC AUC, F1-score, Precision, Recall, Accuracy) for each experiment. It also provides mean and standard deviation across different experimental runs.
+**(B) Correlation: d(U,G) / disp(G) vs (finetune − only10) deltas**
+```bash
+python bin/analyze.py corr \
+  --summary_csv model/common/summary_6groups_only10_vs_finetune_wide.csv \
+  --distance results/distances/wasserstein_matrix.npy \
+  --subjects_json results/distances/subjects.json \
+  --groups_dir misc/pretrain_groups \
+  --group_names_file misc/pretrain_groups/group_names.txt \
+  --outdir model/common/dist_corr
+```
 
 ---
 
