@@ -1,5 +1,5 @@
 from __future__ import annotations
-import os, json
+import os, json, hashlib
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -10,6 +10,24 @@ from sklearn.manifold import MDS
 from scipy.stats import wasserstein_distance
 from tslearn.metrics import dtw
 from tqdm import tqdm
+
+CACHE_VERSION = "v1"  # bump this when feature layout/filters change
+
+def _cache_key(subjects, data_root: Path) -> str:
+#    s = "|".join(subjects) + "@" + str(data_root.resolve())
+    s = CACHE_VERSION + "|" + "|".join(subjects) + "@" + str(data_root.resolve())
+    return hashlib.md5(s.encode()).hexdigest()
+
+def _extract_features_with_cache(subjects, data_root: Path, cache_dir: Path = Path("results/.cache")):
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    key = _cache_key(subjects, data_root)
+    npz = cache_dir / f"features_{key}.npz"
+    if npz.exists():
+        z = np.load(npz, allow_pickle=True)
+        return {k: z[k] for k in z.files}
+    feats = _extract_features(subjects, data_root)
+    np.savez_compressed(npz, **feats)
+    return feats
 
 # Limit BLAS threads
 os.environ.setdefault("OMP_NUM_THREADS", "1")
@@ -212,15 +230,19 @@ def run_comp_dist(
     groups_file: str = "../misc/target_groups.txt",
 ) -> int:
     """Re-implementation of legacy bin/comp_dist.py with parametrized I/O."""
+    # reproducibility for median-heuristic subsampling
+    np.random.seed(42)
     subjects = _load_subject_list(Path(subject_list_path))
-    features = _extract_features(subjects, Path(data_root))
+    #features = _extract_features(subjects, Path(data_root))
+    features = _extract_features_with_cache(subjects, Path(data_root))
 
     # Global z-score across all subjects
     if features:
         all_X = np.vstack(list(features.values()))
         mu = all_X.mean(axis=0, keepdims=True)
         sigma = all_X.std(axis=0, keepdims=True) + 1e-12
-        features = {k: (v - mu) / sigma for k, v in features.items()}
+#        features = {k: (v - mu) / sigma for k, v in features.items()}
+        features = {k: ((v - mu) / sigma).astype(np.float32, copy=False) for k, v in features.items()}
 
     # MMD
     out_mmd = Path(out_mmd_dir); out_mmd.mkdir(parents=True, exist_ok=True)
