@@ -2,8 +2,12 @@
 # Backward-compatible wrapper for domain distance computations.
 # English comments only.
 
-import argparse
+import os, sys
+# add project root so that "import src.***" works when running from bin/
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from src.analysis.distances import run_comp_dist
+import argparse
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Compute MMD/Wasserstein/DTW matrices and group summaries.")
