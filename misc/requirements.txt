@@ -14,3 +14,7 @@ tqdm
 optuna
 pyswarm
 h5py
+sphinx
+sphinx-rtd-theme
+sphinx-autodoc-typehints
+tslearn

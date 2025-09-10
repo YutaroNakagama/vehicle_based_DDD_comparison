@@ -9,7 +9,9 @@ import pandas as pd
 METRICS = ["accuracy", "f1", "auc", "precision", "recall"]
 
 def _read_test_metrics(csv_path: Path, split: Optional[str]) -> Optional[Dict[str, float]]:
-    """metrics_*.csv を読み、split列があれば指定splitで1行抽出。無ければ先頭行。"""
+    """
+    metrics_*.csv を読み、split列があれば指定splitで1行抽出。無ければ先頭行。
+    """
     if not csv_path.exists():
         return None
     try:
@@ -37,8 +39,8 @@ def run_summarize_only10_vs_finetune(
     finetune_pattern: str = "metrics_{model}_finetune_{group}_finetune.csv",
 ) -> Dict[str, Path]:
     """
-    グループごとの only10 / finetune 指標を集計し、long, wide, 改善サマリCSV、Markdown を出力。
-    必要に応じてレーダー図も作成（png+PDF）。
+    collects  only10 / finetune for each groups, and outputs long, wide, improve summary CSV, and Markdown
+    generate rador diagram if needed (png+PDF)
     """
     names_file = Path(names_file)
     model_dir  = Path(model_dir)
@@ -50,7 +52,6 @@ def run_summarize_only10_vs_finetune(
     if not names_file.exists():
         raise FileNotFoundError(f"Group names file not found: {names_file}")
 
-    # group_names* の混入行を除外
     names: List[str] = [
         ln.strip() for ln in names_file.read_text().splitlines()
         if ln.strip() and not ln.strip().startswith("group_names")
@@ -58,7 +59,6 @@ def run_summarize_only10_vs_finetune(
 
     rows: List[Dict] = []
 
-    # baseline（任意）
     base_path = model_dir / f"metrics_{model}.csv"
     base_m = _read_test_metrics(base_path, split)
     if base_m is not None:
@@ -153,12 +153,10 @@ def run_summarize_only10_vs_finetune(
     out_md.write_text("\n".join(lines), encoding="utf-8")
     print(f"Saved: {out_md}")
 
-    # レーダー図（必要なら）
     if make_radar:
         try:
             from .radar import make_radar
         except Exception:
-            # 直接相対importが失敗する環境向けフォールバック
             from src.analysis.radar import make_radar  # type: ignore
         make_radar(wide, model_dir / "radar_allgroups", metrics=METRICS, ylim=(0,1))
 

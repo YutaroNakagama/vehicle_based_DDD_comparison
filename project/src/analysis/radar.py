@@ -14,8 +14,8 @@ def make_radar(
     ylim: tuple[float, float] = (0.0, 1.0),
 ) -> Path:
     """
-    wide_df には 'group' と '{metric}_finetune' / '{metric}_only10' 列が必要。
-    各グループのpngと、まとめPDFを out_dir に出力。
+    wide_df needs 'group' and '{metric}_finetune' / '{metric}_only10' column.s
+    output each group png and summary PDF in  out_dir
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
