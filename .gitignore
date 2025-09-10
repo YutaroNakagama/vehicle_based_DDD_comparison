@@ -37,3 +37,4 @@ project/misc/
 # Ignore .svg log images (redundant, because project/data/log/ is already ignored)
 project/data/log/*.svg
 
+docs/_build/
