@@ -1,0 +1,641 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>analysis package &mdash; ddd 0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=837179f8"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="config module" href="config.html" />
+    <link rel="prev" title="src" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            ddd
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">analysis package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.correlation">analysis.correlation module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#analysis.correlation.run_distance_vs_delta"><code class="docutils literal notranslate"><span class="pre">run_distance_vs_delta()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.distances">analysis.distances module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#analysis.distances.compute_mmd"><code class="docutils literal notranslate"><span class="pre">compute_mmd()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#analysis.distances.run_comp_dist"><code class="docutils literal notranslate"><span class="pre">run_comp_dist()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.metrics_tables">analysis.metrics_tables module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#analysis.metrics_tables.make_comparison_table"><code class="docutils literal notranslate"><span class="pre">make_comparison_table()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#analysis.metrics_tables.summarize_metrics"><code class="docutils literal notranslate"><span class="pre">summarize_metrics()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.pretrain_groups_report">analysis.pretrain_groups_report module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#analysis.pretrain_groups_report.ensure_dir"><code class="docutils literal notranslate"><span class="pre">ensure_dir()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#analysis.pretrain_groups_report.inter_mean"><code class="docutils literal notranslate"><span class="pre">inter_mean()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#analysis.pretrain_groups_report.intra_mean"><code class="docutils literal notranslate"><span class="pre">intra_mean()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#analysis.pretrain_groups_report.load_group_ids"><code class="docutils literal notranslate"><span class="pre">load_group_ids()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#analysis.pretrain_groups_report.load_matrix_subjects"><code class="docutils literal notranslate"><span class="pre">load_matrix_subjects()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#analysis.pretrain_groups_report.nn_T_to_S"><code class="docutils literal notranslate"><span class="pre">nn_T_to_S()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#analysis.pretrain_groups_report.plot_bars"><code class="docutils literal notranslate"><span class="pre">plot_bars()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#analysis.pretrain_groups_report.report_for_metric"><code class="docutils literal notranslate"><span class="pre">report_for_metric()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#analysis.pretrain_groups_report.run_report_pretrain_groups"><code class="docutils literal notranslate"><span class="pre">run_report_pretrain_groups()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#analysis.pretrain_groups_report.save_json"><code class="docutils literal notranslate"><span class="pre">save_json()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.radar">analysis.radar module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#analysis.radar.make_radar"><code class="docutils literal notranslate"><span class="pre">make_radar()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.summary_groups">analysis.summary_groups module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#analysis.summary_groups.run_summarize_only10_vs_finetune"><code class="docutils literal notranslate"><span class="pre">run_summarize_only10_vs_finetune()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="config.html">config module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_pipeline.html">data_pipeline package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="evaluation.html">evaluation package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html">models package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html#bin">bin</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ddd</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">src</a></li>
+      <li class="breadcrumb-item active">analysis package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/analysis.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="analysis-package">
+<h1>analysis package<a class="headerlink" href="#analysis-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-analysis.correlation">
+<span id="analysis-correlation-module"></span><h2>analysis.correlation module<a class="headerlink" href="#module-analysis.correlation" title="Link to this heading"></a></h2>
+<p>Correlation analysis between group-level distances and evaluation deltas.</p>
+<p>This module provides functions to compute correlations between group distances
+(e.g., mean inter-group distance d(U,G), within-group dispersion disp(G)) and
+changes in evaluation metrics (Δ accuracy, Δ F1, Δ AUC, etc.).</p>
+<p>It supports both CSV and NPY distance matrices and generates correlation tables
+and scatter plots as output.</p>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>_read_group_members(groups_dir, group_names_file)</dt><dd><p>Read group definitions from text files.</p>
+</dd>
+<dt>_mean_cross_distance(D, A, B)</dt><dd><p>Compute mean pairwise distance between two sets of subjects.</p>
+</dd>
+<dt>_mean_within_distance(D, A)</dt><dd><p>Compute mean pairwise distance within a group of subjects.</p>
+</dd>
+<dt>_load_distance_matrix(distance_path, subjects_json)</dt><dd><p>Load a square distance matrix from CSV or NPY format.</p>
+</dd>
+<dt>run_distance_vs_delta(summary_csv, distance_path, groups_dir, group_names_file, …)</dt><dd><p>Compute correlations between group distances and evaluation deltas.</p>
+</dd>
+</dl>
+</section>
+<dl class="py function">
+<dt class="sig sig-object py" id="analysis.correlation.run_distance_vs_delta">
+<span class="sig-prename descclassname"><span class="pre">analysis.correlation.</span></span><span class="sig-name descname"><span class="pre">run_distance_vs_delta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">summary_csv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_names_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'model/common/dist_corr'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subjects_json</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/analysis/correlation.html#run_distance_vs_delta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#analysis.correlation.run_distance_vs_delta" title="Link to this definition"></a></dt>
+<dd><p>Correlate group-level distances with evaluation deltas.</p>
+<p>This function computes:
+- d(U,G): mean distance between group G and the complement U
+- disp(G): within-group dispersion of G</p>
+<p>These are then correlated with Δ metrics (accuracy, F1, AUC, precision, recall)
+from the summary CSV.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>summary_csv</strong> (<em>str</em><em> or </em><em>Path</em>) – Path to summary CSV containing columns <code class="docutils literal notranslate"><span class="pre">group</span></code> and Δ metrics.</p></li>
+<li><p><strong>distance_path</strong> (<em>str</em><em> or </em><em>Path</em>) – Path to distance matrix (.csv or .npy).</p></li>
+<li><p><strong>groups_dir</strong> (<em>str</em><em> or </em><em>Path</em>) – Directory containing group membership files.</p></li>
+<li><p><strong>group_names_file</strong> (<em>str</em><em> or </em><em>Path</em>) – File listing group names, one per line.</p></li>
+<li><p><strong>outdir</strong> (<em>str</em><em> or </em><em>Path</em><em>, </em><em>default=&quot;model/common/dist_corr&quot;</em>) – Output directory for correlation results.</p></li>
+<li><p><strong>subjects_json</strong> (<em>str</em><em> or </em><em>Path</em><em>, </em><em>optional</em>) – Required if <code class="docutils literal notranslate"><span class="pre">distance_path</span></code> is <code class="docutils literal notranslate"><span class="pre">.npy</span></code>. JSON file with subject IDs.</p></li>
+<li><p><strong>subject_list</strong> (<em>str</em><em> or </em><em>Path</em><em>, </em><em>optional</em>) – Path to text file with the global subject list. If omitted, inferred
+from the distance matrix.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Return code (0 indicates success).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This function generates the following output files:
+- <code class="docutils literal notranslate"><span class="pre">distance_vs_delta_merged.csv</span></code>: merged table of distances and deltas
+- <code class="docutils literal notranslate"><span class="pre">correlations_dUG_vs_deltas.csv</span></code>: correlations between d(U,G) and Δ metrics
+- <code class="docutils literal notranslate"><span class="pre">correlations_dispG_vs_deltas.csv</span></code>: correlations between disp(G) and Δ metrics
+- scatter plots (PNG) for each Δ metric</p>
+</dd></dl>
+
+</section>
+<section id="module-analysis.distances">
+<span id="analysis-distances-module"></span><h2>analysis.distances module<a class="headerlink" href="#module-analysis.distances" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="analysis.distances.compute_mmd">
+<span class="sig-prename descclassname"><span class="pre">analysis.distances.</span></span><span class="sig-name descname"><span class="pre">compute_mmd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/analysis/distances.html#compute_mmd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#analysis.distances.compute_mmd" title="Link to this definition"></a></dt>
+<dd><p>Compute the Maximum Mean Discrepancy (MMD) between two datasets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>ndarray</em><em> of </em><em>shape</em><em> (</em><em>n_samples_X</em><em>, </em><em>n_features</em><em>)</em>) – Feature matrix for dataset X.</p></li>
+<li><p><strong>Y</strong> (<em>ndarray</em><em> of </em><em>shape</em><em> (</em><em>n_samples_Y</em><em>, </em><em>n_features</em><em>)</em>) – Feature matrix for dataset Y.</p></li>
+<li><p><strong>gamma</strong> (<em>float</em><em>, </em><em>optional</em>) – RBF kernel width parameter. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, it is estimated using the median heuristic.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Estimated MMD^2 value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="analysis.distances.run_comp_dist">
+<span class="sig-prename descclassname"><span class="pre">analysis.distances.</span></span><span class="sig-name descname"><span class="pre">run_comp_dist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subject_list_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'../../dataset/mdapbe/subject_list.txt'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'data/processed/common'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_mmd_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'results/mmd'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dist_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'results/distances'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'../misc/target_groups.txt'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/analysis/distances.html#run_comp_dist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#analysis.distances.run_comp_dist" title="Link to this definition"></a></dt>
+<dd><p>Run the full computation pipeline for subject/group distances.</p>
+<p>This orchestrator function performs the following steps:</p>
+<ol class="arabic simple">
+<li><p>Load subject list and extract features.</p></li>
+<li><p>Normalize features across subjects.</p></li>
+<li><p>Compute subject-level distance matrices:</p>
+<ul class="simple">
+<li><p>MMD (Maximum Mean Discrepancy)</p></li>
+<li><p>Wasserstein distance</p></li>
+<li><p>Dynamic Time Warping (DTW)</p></li>
+</ul>
+</li>
+<li><p>Save results (NPY, JSON, PNG).</p></li>
+<li><p>Compute group-level summaries:</p>
+<ul class="simple">
+<li><p>Group distance matrices</p></li>
+<li><p>Group centroid distances</p></li>
+<li><p>Intra/inter-group variability</p></li>
+</ul>
+</li>
+<li><p>Generate plots (heatmaps, bar charts, projections).</p></li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subject_list_path</strong> (<em>str</em><em>, </em><em>default=&quot;../../dataset/mdapbe/subject_list.txt&quot;</em>) – Path to subject list file.</p></li>
+<li><p><strong>data_root</strong> (<em>str</em><em>, </em><em>default=&quot;data/processed/common&quot;</em>) – Directory containing processed feature CSVs.</p></li>
+<li><p><strong>out_mmd_dir</strong> (<em>str</em><em>, </em><em>default=&quot;results/mmd&quot;</em>) – Output directory for MMD results.</p></li>
+<li><p><strong>out_dist_dir</strong> (<em>str</em><em>, </em><em>default=&quot;results/distances&quot;</em>) – Output directory for Wasserstein/DTW results.</p></li>
+<li><p><strong>groups_file</strong> (<em>str</em><em>, </em><em>default=&quot;../misc/target_groups.txt&quot;</em>) – Path to group definitions file.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Return code (0 = success).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-analysis.metrics_tables">
+<span id="analysis-metrics-tables-module"></span><h2>analysis.metrics_tables module<a class="headerlink" href="#module-analysis.metrics_tables" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="analysis.metrics_tables.make_comparison_table">
+<span class="sig-prename descclassname"><span class="pre">analysis.metrics_tables.</span></span><span class="sig-name descname"><span class="pre">make_comparison_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">summary_df_or_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_csv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_cols</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/analysis/metrics_tables.html#make_comparison_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#analysis.metrics_tables.make_comparison_table" title="Link to this definition"></a></dt>
+<dd><p>Generate a wide comparison table from summarized metrics.</p>
+<p>Converts the long-form summary into a wide table with metrics
+for <code class="docutils literal notranslate"><span class="pre">only10</span></code> and <code class="docutils literal notranslate"><span class="pre">finetune</span></code> schemes, and their differences (delta).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>summary_df_or_path</strong> (<em>pandas.DataFrame</em><em> or </em><em>Path</em>) – Summary DataFrame or path to CSV (from <a class="reference internal" href="#analysis.metrics_tables.summarize_metrics" title="analysis.metrics_tables.summarize_metrics"><code class="xref py py-func docutils literal notranslate"><span class="pre">summarize_metrics()</span></code></a>).</p></li>
+<li><p><strong>out_csv</strong> (<em>Path</em><em>, </em><em>optional</em>) – If provided, save the wide table to this path.</p></li>
+<li><p><strong>metric_cols</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Metrics to include. Defaults to
+<code class="docutils literal notranslate"><span class="pre">[&quot;accuracy&quot;,</span> <span class="pre">&quot;precision&quot;,</span> <span class="pre">&quot;recall&quot;,</span> <span class="pre">&quot;f1&quot;,</span> <span class="pre">&quot;auc&quot;,</span> <span class="pre">&quot;ap&quot;]</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Wide-form DataFrame with columns for each metric:
+<code class="docutils literal notranslate"><span class="pre">{metric}_only10</span></code>, <code class="docutils literal notranslate"><span class="pre">{metric}_finetune</span></code>, and <code class="docutils literal notranslate"><span class="pre">{metric}_delta</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="analysis.metrics_tables.summarize_metrics">
+<span class="sig-prename descclassname"><span class="pre">analysis.metrics_tables.</span></span><span class="sig-name descname"><span class="pre">summarize_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_tag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'RF'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'test'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_csv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_cols</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/analysis/metrics_tables.html#summarize_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#analysis.metrics_tables.summarize_metrics" title="Link to this definition"></a></dt>
+<dd><p>Summarize evaluation metrics across models.</p>
+<p>This function scans a directory for metrics CSVs and compiles them into a
+long-form DataFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_dir</strong> (<em>Path</em>) – Directory containing metrics CSV files.</p></li>
+<li><p><strong>model_tag</strong> (<em>str</em><em>, </em><em>default=&quot;RF&quot;</em>) – Model identifier used in filenames.</p></li>
+<li><p><strong>split</strong> (<em>str</em><em>, </em><em>default=&quot;test&quot;</em>) – Dataset split to filter (e.g., <code class="docutils literal notranslate"><span class="pre">test</span></code>).</p></li>
+<li><p><strong>out_csv</strong> (<em>Path</em><em>, </em><em>optional</em>) – If provided, save the summary table to this path.</p></li>
+<li><p><strong>metric_cols</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Metrics to include. Defaults to
+<code class="docutils literal notranslate"><span class="pre">[&quot;accuracy&quot;,</span> <span class="pre">&quot;precision&quot;,</span> <span class="pre">&quot;recall&quot;,</span> <span class="pre">&quot;f1&quot;,</span> <span class="pre">&quot;auc&quot;,</span> <span class="pre">&quot;ap&quot;]</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Long-form DataFrame with columns: <code class="docutils literal notranslate"><span class="pre">group</span></code>, <code class="docutils literal notranslate"><span class="pre">scheme</span></code>, metrics, <code class="docutils literal notranslate"><span class="pre">source</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-analysis.pretrain_groups_report">
+<span id="analysis-pretrain-groups-report-module"></span><h2>analysis.pretrain_groups_report module<a class="headerlink" href="#module-analysis.pretrain_groups_report" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="analysis.pretrain_groups_report.ensure_dir">
+<span class="sig-prename descclassname"><span class="pre">analysis.pretrain_groups_report.</span></span><span class="sig-name descname"><span class="pre">ensure_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/analysis/pretrain_groups_report.html#ensure_dir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#analysis.pretrain_groups_report.ensure_dir" title="Link to this definition"></a></dt>
+<dd><p>Ensure that a directory exists.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>p</strong> (<em>Path</em>) – Directory path to create. Parent directories are also created
+if they do not exist.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="analysis.pretrain_groups_report.inter_mean">
+<span class="sig-prename descclassname"><span class="pre">analysis.pretrain_groups_report.</span></span><span class="sig-name descname"><span class="pre">inter_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/analysis/pretrain_groups_report.html#inter_mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#analysis.pretrain_groups_report.inter_mean" title="Link to this definition"></a></dt>
+<dd><p>Compute mean inter-group distance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>M</strong> (<em>ndarray</em><em> of </em><em>shape</em><em> (</em><em>n_subjects</em><em>, </em><em>n_subjects</em><em>)</em>) – Pairwise distance matrix.</p></li>
+<li><p><strong>T</strong> (<em>set</em><em> of </em><em>int</em>) – Indices for the target group.</p></li>
+<li><p><strong>S</strong> (<em>set</em><em> of </em><em>int</em>) – Indices for the comparison set.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Mean distance between subjects in T and S, or NaN if empty.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="analysis.pretrain_groups_report.intra_mean">
+<span class="sig-prename descclassname"><span class="pre">analysis.pretrain_groups_report.</span></span><span class="sig-name descname"><span class="pre">intra_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/analysis/pretrain_groups_report.html#intra_mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#analysis.pretrain_groups_report.intra_mean" title="Link to this definition"></a></dt>
+<dd><p>Compute mean intra-group distance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>M</strong> (<em>ndarray</em><em> of </em><em>shape</em><em> (</em><em>n_subjects</em><em>, </em><em>n_subjects</em><em>)</em>) – Pairwise distance matrix.</p></li>
+<li><p><strong>T</strong> (<em>set</em><em> of </em><em>int</em>) – Set of subject indices for the group.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Mean pairwise distance within the group,
+or NaN if fewer than two subjects are present.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="analysis.pretrain_groups_report.load_group_ids">
+<span class="sig-prename descclassname"><span class="pre">analysis.pretrain_groups_report.</span></span><span class="sig-name descname"><span class="pre">load_group_ids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/analysis/pretrain_groups_report.html#load_group_ids"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#analysis.pretrain_groups_report.load_group_ids" title="Link to this definition"></a></dt>
+<dd><p>Load subject IDs from a group file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file</strong> (<em>Path</em>) – Path to a text file containing subject IDs separated by spaces.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Subject IDs as a list.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="analysis.pretrain_groups_report.load_matrix_subjects">
+<span class="sig-prename descclassname"><span class="pre">analysis.pretrain_groups_report.</span></span><span class="sig-name descname"><span class="pre">load_matrix_subjects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subjects_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/analysis/pretrain_groups_report.html#load_matrix_subjects"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#analysis.pretrain_groups_report.load_matrix_subjects" title="Link to this definition"></a></dt>
+<dd><p>Load a square distance matrix and subject IDs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>matrix_path</strong> (<em>Path</em>) – Path to the <code class="docutils literal notranslate"><span class="pre">.npy</span></code> file containing the distance matrix.</p></li>
+<li><p><strong>subjects_path</strong> (<em>Path</em>) – Path to the <code class="docutils literal notranslate"><span class="pre">.json</span></code> file containing the list of subject IDs.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>2D NumPy array of shape (N, N), with diagonal forced to zero.</p></li>
+<li><p>List of subject IDs.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple of (ndarray, list of str)</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the matrix is not square or does not match the number of subjects.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="analysis.pretrain_groups_report.nn_T_to_S">
+<span class="sig-prename descclassname"><span class="pre">analysis.pretrain_groups_report.</span></span><span class="sig-name descname"><span class="pre">nn_T_to_S</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/analysis/pretrain_groups_report.html#nn_T_to_S"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#analysis.pretrain_groups_report.nn_T_to_S" title="Link to this definition"></a></dt>
+<dd><p>Compute nearest-neighbour distance from T to S.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>M</strong> (<em>ndarray</em><em> of </em><em>shape</em><em> (</em><em>n_subjects</em><em>, </em><em>n_subjects</em><em>)</em>) – Pairwise distance matrix.</p></li>
+<li><p><strong>T</strong> (<em>set</em><em> of </em><em>int</em>) – Indices for the source group.</p></li>
+<li><p><strong>S</strong> (<em>set</em><em> of </em><em>int</em>) – Indices for the target group.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Mean of nearest-neighbour distances from each element of T to S,
+or NaN if groups are empty.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="analysis.pretrain_groups_report.plot_bars">
+<span class="sig-prename descclassname"><span class="pre">analysis.pretrain_groups_report.</span></span><span class="sig-name descname"><span class="pre">plot_bars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metric_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stats</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_png</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Distance'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/analysis/pretrain_groups_report.html#plot_bars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#analysis.pretrain_groups_report.plot_bars" title="Link to this definition"></a></dt>
+<dd><p>Plot a grouped bar chart comparing intra/inter/NN statistics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metric_name</strong> (<em>str</em>) – Name of the metric (e.g., <code class="docutils literal notranslate"><span class="pre">mmd</span></code>).</p></li>
+<li><p><strong>stats</strong> (<em>dict</em><em> of </em><em>{str: dict</em><em> of </em><em>{str: float}}</em>) – Nested dict with keys <code class="docutils literal notranslate"><span class="pre">friendly</span></code> and <code class="docutils literal notranslate"><span class="pre">hard</span></code>,
+each containing <code class="docutils literal notranslate"><span class="pre">intra</span></code>, <code class="docutils literal notranslate"><span class="pre">inter</span></code>, and <code class="docutils literal notranslate"><span class="pre">nn</span></code>.</p></li>
+<li><p><strong>out_png</strong> (<em>Path</em>) – Path to save the output PNG file.</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em><em>, </em><em>default=&quot;Distance&quot;</em>) – Label for the y-axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="analysis.pretrain_groups_report.report_for_metric">
+<span class="sig-prename descclassname"><span class="pre">analysis.pretrain_groups_report.</span></span><span class="sig-name descname"><span class="pre">report_for_metric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metric_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matrix_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subjects_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_friendly_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_hard_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/analysis/pretrain_groups_report.html#report_for_metric"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#analysis.pretrain_groups_report.report_for_metric" title="Link to this definition"></a></dt>
+<dd><p>Generate a detailed report for a given metric.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metric_name</strong> (<em>str</em>) – Name of the metric (e.g., <code class="docutils literal notranslate"><span class="pre">mmd</span></code>, <code class="docutils literal notranslate"><span class="pre">wasserstein</span></code>, <code class="docutils literal notranslate"><span class="pre">dtw</span></code>).</p></li>
+<li><p><strong>matrix_path</strong> (<em>Path</em>) – Path to the distance matrix <code class="docutils literal notranslate"><span class="pre">.npy</span></code> file.</p></li>
+<li><p><strong>subjects_path</strong> (<em>Path</em>) – Path to the subjects <code class="docutils literal notranslate"><span class="pre">.json</span></code> file.</p></li>
+<li><p><strong>group_friendly_file</strong> (<em>Path</em>) – File containing subject IDs for the friendly group.</p></li>
+<li><p><strong>group_hard_file</strong> (<em>Path</em>) – File containing subject IDs for the hard group.</p></li>
+<li><p><strong>out_dir</strong> (<em>Path</em>) – Directory where JSON, CSV, and PNG outputs will be saved.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>dict of {str</strong> – Report containing intra, inter, nn distances for both groups.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict of {str: float}}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="analysis.pretrain_groups_report.run_report_pretrain_groups">
+<span class="sig-prename descclassname"><span class="pre">analysis.pretrain_groups_report.</span></span><span class="sig-name descname"><span class="pre">run_report_pretrain_groups</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PosixPath('misc/pretrain_groups')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_summary_json</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PosixPath('misc/pretrain_groups/summary_report_ext.json')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_summary_csv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PosixPath('misc/pretrain_groups/summary_report_ext.csv')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mmd_matrix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PosixPath('results/mmd/mmd_matrix.npy')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mmd_subjects</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PosixPath('results/mmd/mmd_subjects.json')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wass_matrix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PosixPath('results/distances/wasserstein_matrix.npy')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtw_matrix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PosixPath('results/distances/dtw_matrix.npy')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_subjects</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PosixPath('results/distances/subjects.json')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/analysis/pretrain_groups_report.html#run_report_pretrain_groups"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#analysis.pretrain_groups_report.run_report_pretrain_groups" title="Link to this definition"></a></dt>
+<dd><p>Run reports for MMD, Wasserstein, and DTW distances.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>group_dir</strong> (<em>Path</em><em>, </em><em>default=&quot;misc/pretrain_groups&quot;</em>) – Directory containing friendly/hard group definitions.</p></li>
+<li><p><strong>out_summary_json</strong> (<em>Path</em><em>, </em><em>default=&quot;misc/pretrain_groups/summary_report_ext.json&quot;</em>) – Path to save combined summary JSON.</p></li>
+<li><p><strong>out_summary_csv</strong> (<em>Path</em><em>, </em><em>default=&quot;misc/pretrain_groups/summary_report_ext.csv&quot;</em>) – Path to save combined summary CSV.</p></li>
+<li><p><strong>mmd_matrix</strong> (<em>Path</em><em>, </em><em>default=&quot;results/mmd/mmd_matrix.npy&quot;</em>) – Path to MMD distance matrix.</p></li>
+<li><p><strong>mmd_subjects</strong> (<em>Path</em><em>, </em><em>default=&quot;results/mmd/mmd_subjects.json&quot;</em>) – Path to subject list for MMD.</p></li>
+<li><p><strong>wass_matrix</strong> (<em>Path</em><em>, </em><em>default=&quot;results/distances/wasserstein_matrix.npy&quot;</em>) – Path to Wasserstein distance matrix.</p></li>
+<li><p><strong>dtw_matrix</strong> (<em>Path</em><em>, </em><em>default=&quot;results/distances/dtw_matrix.npy&quot;</em>) – Path to DTW distance matrix.</p></li>
+<li><p><strong>dist_subjects</strong> (<em>Path</em><em>, </em><em>default=&quot;results/distances/subjects.json&quot;</em>) – Path to subject list for Wasserstein/DTW.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>dict of {str</strong> – Nested dictionary: metric → group → {intra, inter, nn, ids}.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict of {str: dict of float}}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="analysis.pretrain_groups_report.save_json">
+<span class="sig-prename descclassname"><span class="pre">analysis.pretrain_groups_report.</span></span><span class="sig-name descname"><span class="pre">save_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/analysis/pretrain_groups_report.html#save_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#analysis.pretrain_groups_report.save_json" title="Link to this definition"></a></dt>
+<dd><p>Save a Python object as JSON.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>obj</strong> (<em>any</em>) – Object to serialize into JSON.</p></li>
+<li><p><strong>path</strong> (<em>Path</em>) – Path to the output JSON file. Parent directories are created
+automatically if they do not exist.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-analysis.radar">
+<span id="analysis-radar-module"></span><h2>analysis.radar module<a class="headerlink" href="#module-analysis.radar" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="analysis.radar.make_radar">
+<span class="sig-prename descclassname"><span class="pre">analysis.radar.</span></span><span class="sig-name descname"><span class="pre">make_radar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wide_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0.0,</span> <span class="pre">1.0)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/analysis/radar.html#make_radar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#analysis.radar.make_radar" title="Link to this definition"></a></dt>
+<dd><p>Generate radar plots comparing finetune vs only10 metrics.</p>
+<p>This function creates individual radar charts for each group in the input
+DataFrame and saves them as PNG images. It also generates a combined PDF
+containing all radar plots.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>wide_df</strong> (<em>pandas.DataFrame</em>) – Wide-form DataFrame containing per-group metrics.
+Must include a <code class="docutils literal notranslate"><span class="pre">group</span></code> column and columns of the form
+<code class="docutils literal notranslate"><span class="pre">{metric}_finetune</span></code> and <code class="docutils literal notranslate"><span class="pre">{metric}_only10</span></code> for each metric.</p></li>
+<li><p><strong>out_dir</strong> (<em>Path</em><em> or </em><em>str</em>) – Directory where output PNG and PDF files will be saved.</p></li>
+<li><p><strong>metrics</strong> (<em>list</em><em> of </em><em>str</em>) – List of metric names to plot (e.g., <code class="docutils literal notranslate"><span class="pre">[&quot;accuracy&quot;,</span> <span class="pre">&quot;f1&quot;,</span> <span class="pre">&quot;auc&quot;]</span></code>).</p></li>
+<li><p><strong>ylim</strong> (<em>tuple</em><em> of </em><em>float</em><em>, </em><em>default=</em><em>(</em><em>0.0</em><em>, </em><em>1.0</em><em>)</em>) – Limits for the radial axis (y-axis).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Path to the combined PDF file containing all radar plots.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Path</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Saves one PNG per group in the format <code class="docutils literal notranslate"><span class="pre">radar_{group}.png</span></code>.</p></li>
+<li><p>Saves a combined PDF named <code class="docutils literal notranslate"><span class="pre">radar_finetune_vs_only10.pdf</span></code> in the
+output directory.</p></li>
+</ul>
+</dd></dl>
+
+</section>
+<section id="module-analysis.summary_groups">
+<span id="analysis-summary-groups-module"></span><h2>analysis.summary_groups module<a class="headerlink" href="#module-analysis.summary_groups" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="analysis.summary_groups.run_summarize_only10_vs_finetune">
+<span class="sig-prename descclassname"><span class="pre">analysis.summary_groups.</span></span><span class="sig-name descname"><span class="pre">run_summarize_only10_vs_finetune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">names_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'RF'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'test'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">make_radar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only10_pattern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'metrics_{model}_only10_{group}.csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">finetune_pattern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'metrics_{model}_finetune_{group}_finetune.csv'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/analysis/summary_groups.html#run_summarize_only10_vs_finetune"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#analysis.summary_groups.run_summarize_only10_vs_finetune" title="Link to this definition"></a></dt>
+<dd><p>Summarize only10 vs finetune results across groups.</p>
+<p>This function collects per-group metrics from the specified model directory,
+compares <code class="docutils literal notranslate"><span class="pre">only10</span></code> and <code class="docutils literal notranslate"><span class="pre">finetune</span></code> schemes, and generates multiple outputs:
+long-form CSV, wide-form CSV with deltas, improvement summary, and Markdown.
+Optionally, radar plots are generated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>names_file</strong> (<em>Path</em>) – Path to a text file listing group names, one per line.</p></li>
+<li><p><strong>model_dir</strong> (<em>Path</em>) – Directory containing metrics CSV files.</p></li>
+<li><p><strong>out_prefix</strong> (<em>str</em>) – Prefix for output filenames.</p></li>
+<li><p><strong>model</strong> (<em>str</em><em>, </em><em>default=&quot;RF&quot;</em>) – Model identifier used in metrics filenames.</p></li>
+<li><p><strong>split</strong> (<em>str</em><em>, </em><em>optional</em><em>, </em><em>default=&quot;test&quot;</em>) – Dataset split to filter (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;test&quot;</span></code>). If <code class="docutils literal notranslate"><span class="pre">None</span></code>, use all rows.</p></li>
+<li><p><strong>make_radar</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to generate radar plots for all groups.</p></li>
+<li><p><strong>only10_pattern</strong> (<em>str</em><em>, </em><em>default=&quot;metrics_{model}_only10_{group}.csv&quot;</em>) – Filename pattern for only10 metrics.</p></li>
+<li><p><strong>finetune_pattern</strong> (<em>str</em><em>, </em><em>default=&quot;metrics_{model}_finetune_{group}_finetune.csv&quot;</em>) – Filename pattern for finetune metrics.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>dict of {str</strong> – Dictionary containing paths to generated output files:
+- <code class="docutils literal notranslate"><span class="pre">&quot;long&quot;</span></code> : long-form CSV
+- <code class="docutils literal notranslate"><span class="pre">&quot;wide&quot;</span></code> : wide-form CSV with deltas
+- <code class="docutils literal notranslate"><span class="pre">&quot;markdown&quot;</span></code> : Markdown summary
+- <code class="docutils literal notranslate"><span class="pre">&quot;improvements&quot;</span></code> : improvement summary CSV</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Path}</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>FileNotFoundError</strong> – If the group names file is missing.</p></li>
+<li><p><strong>RuntimeError</strong> – If no metrics are found in the given directory.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-analysis">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-analysis" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-left" title="src" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="config.html" class="btn btn-neutral float-right" title="config module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, ynakagama.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
