@@ -1,0 +1,473 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>project.bin.train &mdash; ddd 0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=837179f8"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            ddd
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">src</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html#bin">bin</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ddd</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">project.bin.train</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for project.bin.train</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Train a machine learning model for driver drowsiness detection.</span>
+
+<span class="sd">This script executes the training pipeline for a specified model architecture.</span>
+<span class="sd">Users can optionally enable data augmentation or domain generalization techniques</span>
+<span class="sd">such as Domain Mixup, CORAL (Correlation Alignment), and VAE-based feature augmentation.</span>
+
+<span class="sd">Examples</span>
+<span class="sd">--------</span>
+<span class="sd">Train an LSTM model with all augmentation methods enabled:</span>
+
+<span class="sd">    $ python train.py --model Lstm --domain_mixup --coral --vae</span>
+
+<span class="sd">Train a Random Forest model without any augmentation:</span>
+
+<span class="sd">    $ python train.py --model RF</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="c1"># Add project root to the module search path</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;..&quot;</span><span class="p">)))</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;OMP_NUM_THREADS&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;OPENBLAS_NUM_THREADS&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;MKL_NUM_THREADS&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;VECLIB_MAXIMUM_THREADS&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;NUMEXPR_NUM_THREADS&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">src.models.model_pipeline</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mp</span>
+
+<div class="viewcode-block" id="log_train_args">
+<a class="viewcode-back" href="../../../bin/train.html#project.bin.train.log_train_args">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">log_train_args</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Log training arguments in a consistent format.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    args : argparse.Namespace</span>
+<span class="sd">        Parsed command-line arguments containing training settings.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;[RUN] model=</span><span class="si">%s</span><span class="s2"> | domain_mixup=</span><span class="si">%s</span><span class="s2"> | coral=</span><span class="si">%s</span><span class="s2"> | vae=</span><span class="si">%s</span><span class="s2"> | sample_size=</span><span class="si">%s</span><span class="s2"> | seed=</span><span class="si">%s</span><span class="s2"> | fold=</span><span class="si">%s</span><span class="s2"> | tag=</span><span class="si">%s</span><span class="s2"> | subject_wise_split=</span><span class="si">%s</span><span class="s2"> | feature_selection=</span><span class="si">%s</span><span class="s2"> | data_leak=</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+        <span class="s2">&quot;enabled&quot;</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">domain_mixup</span> <span class="k">else</span> <span class="s2">&quot;disabled&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;enabled&quot;</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">coral</span> <span class="k">else</span> <span class="s2">&quot;disabled&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;enabled&quot;</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">vae</span> <span class="k">else</span> <span class="s2">&quot;disabled&quot;</span><span class="p">,</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">sample_size</span><span class="p">)</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">sample_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">fold</span><span class="p">)</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">fold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">tag</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">tag</span> <span class="k">else</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;enabled&quot;</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">subject_wise_split</span> <span class="k">else</span> <span class="s2">&quot;disabled&quot;</span><span class="p">,</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">feature_selection</span><span class="p">,</span>
+        <span class="s2">&quot;enabled&quot;</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">data_leak</span> <span class="k">else</span> <span class="s2">&quot;disabled&quot;</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../../bin/train.html#project.bin.train.main">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse command-line arguments and invoke the training pipeline.</span>
+
+<span class="sd">    This function parses CLI arguments for model selection, augmentation</span>
+<span class="sd">    options, cross-validation, and subject split strategies. It then calls</span>
+<span class="sd">    the centralized training pipeline.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    None</span>
+
+<span class="sd">    Other Parameters</span>
+<span class="sd">    ----------------</span>
+<span class="sd">    --model : str</span>
+<span class="sd">        Required. Model architecture to train. Must be one of</span>
+<span class="sd">        ``src.config.MODEL_CHOICES``.</span>
+<span class="sd">    --domain_mixup : bool, optional</span>
+<span class="sd">        Apply Domain Mixup augmentation during training.</span>
+<span class="sd">    --coral : bool, optional</span>
+<span class="sd">        Apply CORAL domain alignment during training.</span>
+<span class="sd">    --vae : bool, optional</span>
+<span class="sd">        Apply VAE-based feature augmentation during training.</span>
+<span class="sd">    --sample_size : int, optional</span>
+<span class="sd">        Number of subjects to randomly sample for small-scale experiments.</span>
+<span class="sd">    --seed : int, optional</span>
+<span class="sd">        Random seed for reproducibility. Default is 42.</span>
+<span class="sd">    --n_folds : int, optional</span>
+<span class="sd">        Number of folds for cross-validation. If set, runs sequentially.</span>
+<span class="sd">    --fold : int, optional</span>
+<span class="sd">        Fold number for single-fold training. Ignored if ``n_folds`` is set.</span>
+<span class="sd">    --tag : str, optional</span>
+<span class="sd">        Optional tag suffix for model saving.</span>
+<span class="sd">    --subject_wise_split : bool, optional</span>
+<span class="sd">        Prevent data leakage across subjects by using subject-wise split.</span>
+<span class="sd">    --feature_selection : {&quot;rf&quot;, &quot;mi&quot;, &quot;anova&quot;}, default=&quot;rf&quot;</span>
+<span class="sd">        Feature selection method: RandomForest importance, Mutual Information, or ANOVA F-test.</span>
+<span class="sd">    --data_leak : bool, optional</span>
+<span class="sd">        Intentionally allow data leakage for feature selection (for ablation).</span>
+<span class="sd">    --subject_split_strategy : {&quot;random&quot;, &quot;leave-one-out&quot;, &quot;custom&quot;, \</span>
+<span class="sd">&quot;isolate_target_subjects&quot;, &quot;finetune_target_subjects&quot;, &quot;single_subject_data_split&quot;, &quot;subject_time_split&quot;}, default=&quot;random&quot;</span>
+<span class="sd">        Strategy for splitting subjects into train/val/test.</span>
+<span class="sd">    --target_subjects, --train_subjects, --val_subjects, --test_subjects, --general_subjects : list of str, optional</span>
+<span class="sd">        Lists of subject IDs used with specific split strategies.</span>
+<span class="sd">    --finetune_setting : str, optional</span>
+<span class="sd">        Path to pretrained settings (pickle file).</span>
+<span class="sd">    --save_pretrain : str, optional</span>
+<span class="sd">        Path to save pretrain settings (feature list, scaler, model params).</span>
+<span class="sd">    --eval_only_pretrained : bool, optional</span>
+<span class="sd">        Skip fine-tuning and directly evaluate a pretrained model.</span>
+<span class="sd">    --time_stratify_labels : bool, optional</span>
+<span class="sd">        Adjust time-ordered split boundaries so each split matches the global</span>
+<span class="sd">        positive/negative ratio.</span>
+<span class="sd">    --time_stratify_tolerance : float, default=0.02</span>
+<span class="sd">        Allowed deviation in class ratio per split.</span>
+<span class="sd">    --time_stratify_window : float, default=0.10</span>
+<span class="sd">        Window size (fraction of N) to adjust split boundaries.</span>
+<span class="sd">    --time_stratify_min_chunk : int, default=100</span>
+<span class="sd">        Minimum rows per split to avoid degenerate segments.</span>
+<span class="sd">    --balance_labels : bool, optional</span>
+<span class="sd">        Rebalance each split to 50/50 class distribution.</span>
+<span class="sd">    --balance_method : {&quot;undersample&quot;, &quot;oversample&quot;}, default=&quot;undersample&quot;</span>
+<span class="sd">        Method for label balancing.</span>
+<span class="sd">    --mode : {&quot;only_target&quot;, &quot;only_general&quot;, &quot;eval_only&quot;, &quot;finetune&quot;}, optional</span>
+<span class="sd">        Experiment mode controlling subject splits.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    SystemExit</span>
+<span class="sd">        If invalid or missing arguments are provided.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Train a model for driver drowsiness detection with optional augmentation.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--model&quot;</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="n">src</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">MODEL_CHOICES</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Model architecture to train. Choices: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">MODEL_CHOICES</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--domain_mixup&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Apply Domain Mixup augmentation during training.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--coral&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Apply CORAL domain alignment during training.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--vae&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Apply VAE-based data augmentation during training.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--sample_size&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of subjects to randomly sample from all available subjects (for small-scale experiments).&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--seed&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Random seed for reproducible subject sampling.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--n_folds&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of folds for cross-validation (if specified, runs fold=1,...,n_folds sequentially).&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--fold&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Fold number for single-fold training. If n_folds is set, this is ignored.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--tag&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Optional tag suffix for model saving (e.g., &#39;erm&#39;, &#39;coral&#39;).&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--subject_wise_split&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Use subject-wise data splitting to prevent data leakage across subjects.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--feature_selection&quot;</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;rf&quot;</span><span class="p">,</span> <span class="s2">&quot;mi&quot;</span><span class="p">,</span> <span class="s2">&quot;anova&quot;</span><span class="p">],</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;rf&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Feature selection method: &#39;rf&#39; (RandomForest importance), &#39;mi&#39; (Mutual Information), &#39;anova&#39; (ANOVA F-test). Default: rf.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--data_leak&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;If set, intentionally allow data leakage for feature selection (for ablation/demonstration).&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--subject_split_strategy&quot;</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;random&quot;</span><span class="p">,</span> <span class="s2">&quot;leave-one-out&quot;</span><span class="p">,</span> <span class="s2">&quot;custom&quot;</span><span class="p">,</span> <span class="s2">&quot;isolate_target_subjects&quot;</span><span class="p">,</span> <span class="s2">&quot;finetune_target_subjects&quot;</span><span class="p">,</span> <span class="s2">&quot;single_subject_data_split&quot;</span><span class="p">,</span><span class="s2">&quot;subject_time_split&quot;</span><span class="p">],</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;random&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Strategy for splitting subjects into train, validation, and test sets.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--target_subjects&quot;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;List of subject IDs for the training set (used with &#39;custom&#39; or target-based strategies).&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--train_subjects&quot;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;List of subject IDs for the training set (used with &#39;custom&#39; strategy).&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--val_subjects&quot;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;List of subject IDs for the validation set (used with &#39;custom&#39; strategy).&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--test_subjects&quot;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;List of subject IDs for the test set (used with &#39;custom&#39; strategy).&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--general_subjects&quot;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;List of subject IDs for general training data (used with &#39;finetune_target_subjects&#39; strategy).&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--finetune_setting&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to pickle file with pretrained feature/param settings for finetune.&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--eval_only_pretrained&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Skip fine-tuning on target subjects and directly evaluate using a model pretrained on non-target subjects.&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--save_pretrain&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to save pretrain settings (feature list, scaler, model params).&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--time_stratify_labels&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Adjust time-ordered split boundaries so that each split&#39;s pos/neg ratio matches the global ratio (no resampling).&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--time_stratify_tolerance&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Allowed absolute deviation of positive ratio per split from the global ratio (e.g., 0.02 = ±2%).&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--time_stratify_window&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mf">0.10</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Search window size around nominal cut positions as a fraction of N (e.g., 0.10 = ±10%).&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--time_stratify_min_chunk&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Minimum number of rows per split to avoid degenerate segments.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--balance_labels&quot;</span><span class="p">,</span> 
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Rebalance each split (train/val/test) to 50/50 positive/negative.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--balance_method&quot;</span><span class="p">,</span> 
+        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;undersample&quot;</span><span class="p">,</span> <span class="s2">&quot;oversample&quot;</span><span class="p">],</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;undersample&quot;</span><span class="p">,</span> 
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;How to balance labels within each split.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--mode&quot;</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;only_target&quot;</span><span class="p">,</span> <span class="s2">&quot;only_general&quot;</span><span class="p">,</span> <span class="s2">&quot;eval_only&quot;</span><span class="p">,</span> <span class="s2">&quot;finetune&quot;</span><span class="p">],</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Exp mode: only_target / only_general(eval_only) / finetune&quot;</span>
+    <span class="p">)</span>
+
+
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> - </span><span class="si">%(levelname)s</span><span class="s2"> - </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">tag_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;, tag=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">tag</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">tag</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">mode</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;only_general&quot;</span><span class="p">,</span> <span class="s2">&quot;eval_only&quot;</span><span class="p">):</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">subject_split_strategy</span> <span class="o">=</span> <span class="s2">&quot;finetune_target_subjects&quot;</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">eval_only_pretrained</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">target_subjects</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">&quot;[ERROR] --mode=only_general(eval_only) では --target_subjects が必須です。&quot;</span><span class="p">)</span>
+    
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;finetune&quot;</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">subject_split_strategy</span> <span class="o">=</span> <span class="s2">&quot;finetune_target_subjects&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">target_subjects</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">&quot;[ERROR] --mode=finetune では --target_subjects が必須です。&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">finetune_setting</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">save_pretrain</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">&quot;[ERROR] --mode=finetune では --finetune_setting か --save_pretrain のどちらかが必要です。&quot;</span><span class="p">)</span>
+    
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;only_target&quot;</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">subject_split_strategy</span> <span class="o">=</span> <span class="s2">&quot;subject_time_split&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">target_subjects</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">&quot;[ERROR] --mode=only_target では --target_subjects が必須です。&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Centralize the call to the training pipeline</span>
+    <span class="n">pipeline_args</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;model_name&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+        <span class="s2">&quot;use_domain_mixup&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">domain_mixup</span><span class="p">,</span>
+        <span class="s2">&quot;use_coral&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">coral</span><span class="p">,</span>
+        <span class="s2">&quot;use_vae&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">vae</span><span class="p">,</span>
+        <span class="s2">&quot;sample_size&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">sample_size</span><span class="p">,</span>
+        <span class="s2">&quot;seed&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
+        <span class="s2">&quot;tag&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span>
+        <span class="s2">&quot;subject_wise_split&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">subject_wise_split</span><span class="p">,</span>
+        <span class="s2">&quot;feature_selection_method&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">feature_selection</span><span class="p">,</span>
+        <span class="s2">&quot;data_leak&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">data_leak</span><span class="p">,</span>
+        <span class="s2">&quot;subject_split_strategy&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">subject_split_strategy</span><span class="p">,</span>
+        <span class="s2">&quot;target_subjects&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">target_subjects</span><span class="p">,</span>
+        <span class="s2">&quot;train_subjects&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">train_subjects</span><span class="p">,</span>
+        <span class="s2">&quot;val_subjects&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">val_subjects</span><span class="p">,</span>
+        <span class="s2">&quot;test_subjects&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">test_subjects</span><span class="p">,</span>
+        <span class="s2">&quot;general_subjects&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">general_subjects</span><span class="p">,</span>
+        <span class="s2">&quot;finetune_setting&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">finetune_setting</span><span class="p">,</span>
+        <span class="s2">&quot;save_pretrain&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">save_pretrain</span><span class="p">,</span>   
+        <span class="s2">&quot;eval_only_pretrained&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">eval_only_pretrained</span><span class="p">,</span>
+        <span class="s2">&quot;balance_labels&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">balance_labels</span><span class="p">,</span>          <span class="c1"># if you kept previous balancing option</span>
+        <span class="s2">&quot;balance_method&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">balance_method</span><span class="p">,</span>
+        <span class="s2">&quot;time_stratify_labels&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">time_stratify_labels</span><span class="p">,</span>
+        <span class="s2">&quot;time_stratify_tolerance&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">time_stratify_tolerance</span><span class="p">,</span>
+        <span class="s2">&quot;time_stratify_window&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">time_stratify_window</span><span class="p">,</span>
+        <span class="s2">&quot;time_stratify_min_chunk&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">time_stratify_min_chunk</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">n_folds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">fold</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">n_folds</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;==== Running fold </span><span class="si">{</span><span class="n">fold</span><span class="si">}</span><span class="s2"> / </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">n_folds</span><span class="si">}</span><span class="s2"> ====&quot;</span><span class="p">)</span>
+            <span class="n">pipeline_args</span><span class="p">[</span><span class="s2">&quot;fold&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fold</span>
+            <span class="n">pipeline_args</span><span class="p">[</span><span class="s2">&quot;n_folds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">n_folds</span>
+            <span class="n">log_train_args</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+            <span class="n">mp</span><span class="o">.</span><span class="n">train_pipeline</span><span class="p">(</span><span class="o">**</span><span class="n">pipeline_args</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pipeline_args</span><span class="p">[</span><span class="s2">&quot;fold&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">fold</span>
+        <span class="n">pipeline_args</span><span class="p">[</span><span class="s2">&quot;n_folds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">n_folds</span>
+        <span class="n">log_train_args</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="n">mp</span><span class="o">.</span><span class="n">train_pipeline</span><span class="p">(</span><span class="o">**</span><span class="n">pipeline_args</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, ynakagama.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

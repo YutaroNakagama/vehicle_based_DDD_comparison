@@ -1,0 +1,368 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>config module &mdash; ddd 0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=837179f8"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="data_pipeline package" href="data_pipeline.html" />
+    <link rel="prev" title="analysis package" href="analysis.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            ddd
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="analysis.html">analysis package</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">config module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#config.DATASET_PATH"><code class="docutils literal notranslate"><span class="pre">DATASET_PATH</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.DATA_PROCESS_CHOICES"><code class="docutils literal notranslate"><span class="pre">DATA_PROCESS_CHOICES</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.INTRIM_CSV_PATH"><code class="docutils literal notranslate"><span class="pre">INTRIM_CSV_PATH</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.KSS_BIN_LABELS"><code class="docutils literal notranslate"><span class="pre">KSS_BIN_LABELS</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.KSS_LABEL_MAP"><code class="docutils literal notranslate"><span class="pre">KSS_LABEL_MAP</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.MODEL_CHOICES"><code class="docutils literal notranslate"><span class="pre">MODEL_CHOICES</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.MODEL_PKL_PATH"><code class="docutils literal notranslate"><span class="pre">MODEL_PKL_PATH</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.MODEL_WINDOW_CONFIG"><code class="docutils literal notranslate"><span class="pre">MODEL_WINDOW_CONFIG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.N_TRIALS"><code class="docutils literal notranslate"><span class="pre">N_TRIALS</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.OUTPUT_SVG_PATH"><code class="docutils literal notranslate"><span class="pre">OUTPUT_SVG_PATH</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.PROCESS_CSV_PATH"><code class="docutils literal notranslate"><span class="pre">PROCESS_CSV_PATH</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.SAMPLE_RATE_EEG"><code class="docutils literal notranslate"><span class="pre">SAMPLE_RATE_EEG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.SAMPLE_RATE_SIMLSL"><code class="docutils literal notranslate"><span class="pre">SAMPLE_RATE_SIMLSL</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.SCALING_FILTER"><code class="docutils literal notranslate"><span class="pre">SCALING_FILTER</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.SUBJECT_LIST_PATH"><code class="docutils literal notranslate"><span class="pre">SUBJECT_LIST_PATH</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.SUBJECT_LIST_PATH_FOLD"><code class="docutils literal notranslate"><span class="pre">SUBJECT_LIST_PATH_FOLD</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.SUBJECT_LIST_PATH_TRAIN"><code class="docutils literal notranslate"><span class="pre">SUBJECT_LIST_PATH_TRAIN</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.TOP_K_FEATURES"><code class="docutils literal notranslate"><span class="pre">TOP_K_FEATURES</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.WAVELET_FILTER"><code class="docutils literal notranslate"><span class="pre">WAVELET_FILTER</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config.WAVELET_LEV"><code class="docutils literal notranslate"><span class="pre">WAVELET_LEV</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_pipeline.html">data_pipeline package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="evaluation.html">evaluation package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html">models package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html#bin">bin</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ddd</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">src</a></li>
+      <li class="breadcrumb-item active">config module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/config.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-config">
+<span id="config-module"></span><h1>config module<a class="headerlink" href="#module-config" title="Link to this heading"></a></h1>
+<p>Configuration settings for the DDD pipeline.</p>
+<p>This module centralizes configuration parameters for driver drowsiness detection,
+including dataset paths, model options, sampling rates, wavelet filters, and
+hyperparameter tuning.</p>
+<p class="rubric">Notes</p>
+<p>All variables are defined as module-level constants. They are imported directly
+by other modules in the pipeline (e.g., preprocessing, training, evaluation).</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="config.DATASET_PATH">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">DATASET_PATH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'../../dataset/mdapbe/physio'</span></em><a class="headerlink" href="#config.DATASET_PATH" title="Link to this definition"></a></dt>
+<dd><p>Base path to the raw physiological data (e.g., SIMlsl, EEG).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.DATA_PROCESS_CHOICES">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">DATA_PROCESS_CHOICES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['SvmA',</span> <span class="pre">'SvmW',</span> <span class="pre">'Lstm',</span> <span class="pre">'common']</span></em><a class="headerlink" href="#config.DATA_PROCESS_CHOICES" title="Link to this definition"></a></dt>
+<dd><p>Supported data processing strategies/models for preprocessing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.INTRIM_CSV_PATH">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">INTRIM_CSV_PATH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'./data/interim'</span></em><a class="headerlink" href="#config.INTRIM_CSV_PATH" title="Link to this definition"></a></dt>
+<dd><p>Directory to store interim processed CSV files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.KSS_BIN_LABELS">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">KSS_BIN_LABELS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3,</span> <span class="pre">4,</span> <span class="pre">5,</span> <span class="pre">7,</span> <span class="pre">8,</span> <span class="pre">9]</span></em><a class="headerlink" href="#config.KSS_BIN_LABELS" title="Link to this definition"></a></dt>
+<dd><p>Original Karolinska Sleepiness Scale (KSS) labels in dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.KSS_LABEL_MAP">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">KSS_LABEL_MAP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{1:</span> <span class="pre">0,</span> <span class="pre">2:</span> <span class="pre">0,</span> <span class="pre">3:</span> <span class="pre">0,</span> <span class="pre">4:</span> <span class="pre">0,</span> <span class="pre">5:</span> <span class="pre">1,</span> <span class="pre">6:</span> <span class="pre">1,</span> <span class="pre">7:</span> <span class="pre">1,</span> <span class="pre">8:</span> <span class="pre">1,</span> <span class="pre">9:</span> <span class="pre">1}</span></em><a class="headerlink" href="#config.KSS_LABEL_MAP" title="Link to this definition"></a></dt>
+<dd><p>Mapping of KSS labels to binary states (0=Alert, 1=Drowsy).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.MODEL_CHOICES">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">MODEL_CHOICES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['SvmA',</span> <span class="pre">'SvmW',</span> <span class="pre">'Lstm',</span> <span class="pre">'RF',</span> <span class="pre">'BalancedRF',</span> <span class="pre">'DecisionTree',</span> <span class="pre">'AdaBoost',</span> <span class="pre">'GradientBoosting',</span> <span class="pre">'XGBoost',</span> <span class="pre">'LightGBM',</span> <span class="pre">'CatBoost',</span> <span class="pre">'LogisticRegression',</span> <span class="pre">'SVM',</span> <span class="pre">'K-Nearest</span> <span class="pre">Neighbors',</span> <span class="pre">'MLP']</span></em><a class="headerlink" href="#config.MODEL_CHOICES" title="Link to this definition"></a></dt>
+<dd><p>Supported machine learning models for training and evaluation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.MODEL_PKL_PATH">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">MODEL_PKL_PATH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'./model/'</span></em><a class="headerlink" href="#config.MODEL_PKL_PATH" title="Link to this definition"></a></dt>
+<dd><p>Directory to save trained machine learning models (e.g., <cite>.pkl</cite>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.MODEL_WINDOW_CONFIG">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">MODEL_WINDOW_CONFIG</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'Lstm':</span> <span class="pre">{'step_sec':</span> <span class="pre">1.5,</span> <span class="pre">'window_sec':</span> <span class="pre">3},</span> <span class="pre">'SvmA':</span> <span class="pre">{'step_sec':</span> <span class="pre">1.5,</span> <span class="pre">'window_sec':</span> <span class="pre">3},</span> <span class="pre">'SvmW':</span> <span class="pre">{'step_sec':</span> <span class="pre">1.5,</span> <span class="pre">'window_sec':</span> <span class="pre">3},</span> <span class="pre">'common':</span> <span class="pre">{'step_sec':</span> <span class="pre">1.5,</span> <span class="pre">'window_sec':</span> <span class="pre">3}}</span></em><a class="headerlink" href="#config.MODEL_WINDOW_CONFIG" title="Link to this definition"></a></dt>
+<dd><p>Windowing configuration (window length and step size in seconds).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.N_TRIALS">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">N_TRIALS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">100</span></em><a class="headerlink" href="#config.N_TRIALS" title="Link to this definition"></a></dt>
+<dd><p>Number of trials for hyperparameter optimization using Optuna.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.OUTPUT_SVG_PATH">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">OUTPUT_SVG_PATH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'./output/svg'</span></em><a class="headerlink" href="#config.OUTPUT_SVG_PATH" title="Link to this definition"></a></dt>
+<dd><p>Directory to save generated SVG plots and visualizations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.PROCESS_CSV_PATH">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">PROCESS_CSV_PATH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'./data/processed'</span></em><a class="headerlink" href="#config.PROCESS_CSV_PATH" title="Link to this definition"></a></dt>
+<dd><p>Directory to store final processed CSV files ready for model training.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.SAMPLE_RATE_EEG">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">SAMPLE_RATE_EEG</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">500</span></em><a class="headerlink" href="#config.SAMPLE_RATE_EEG" title="Link to this definition"></a></dt>
+<dd><p>Sampling rate for EEG (Electroencephalography) data [Hz].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.SAMPLE_RATE_SIMLSL">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">SAMPLE_RATE_SIMLSL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">60</span></em><a class="headerlink" href="#config.SAMPLE_RATE_SIMLSL" title="Link to this definition"></a></dt>
+<dd><p>Sampling rate for SIMLSL (Simulated Lane-keeping System) data [Hz].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.SCALING_FILTER">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">SCALING_FILTER</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">array([</span> <span class="pre">0.48296,</span>&#160; <span class="pre">0.83652,</span>&#160; <span class="pre">0.22414,</span> <span class="pre">-0.12941])</span></em><a class="headerlink" href="#config.SCALING_FILTER" title="Link to this definition"></a></dt>
+<dd><p>Scaling filter coefficients for Discrete Wavelet Transform (DWT).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.SUBJECT_LIST_PATH">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">SUBJECT_LIST_PATH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'../../dataset/mdapbe/subject_list.txt'</span></em><a class="headerlink" href="#config.SUBJECT_LIST_PATH" title="Link to this definition"></a></dt>
+<dd><p>Path to the file containing the list of all subject IDs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.SUBJECT_LIST_PATH_FOLD">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">SUBJECT_LIST_PATH_FOLD</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'../../dataset/mdapbe/subject_folds'</span></em><a class="headerlink" href="#config.SUBJECT_LIST_PATH_FOLD" title="Link to this definition"></a></dt>
+<dd><p>Base path for subject fold definitions, used in cross-validation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.SUBJECT_LIST_PATH_TRAIN">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">SUBJECT_LIST_PATH_TRAIN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'../../dataset/mdapbe/subject_list_train.txt'</span></em><a class="headerlink" href="#config.SUBJECT_LIST_PATH_TRAIN" title="Link to this definition"></a></dt>
+<dd><p>Path to the file containing the list of subject IDs for training.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.TOP_K_FEATURES">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">TOP_K_FEATURES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></em><a class="headerlink" href="#config.TOP_K_FEATURES" title="Link to this definition"></a></dt>
+<dd><p>Number of top features to select during feature selection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.WAVELET_FILTER">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">WAVELET_FILTER</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">array([-0.12941,</span> <span class="pre">-0.22414,</span>&#160; <span class="pre">0.83652,</span> <span class="pre">-0.48296])</span></em><a class="headerlink" href="#config.WAVELET_FILTER" title="Link to this definition"></a></dt>
+<dd><p>Wavelet filter coefficients for Discrete Wavelet Transform (DWT).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="config.WAVELET_LEV">
+<span class="sig-prename descclassname"><span class="pre">config.</span></span><span class="sig-name descname"><span class="pre">WAVELET_LEV</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#config.WAVELET_LEV" title="Link to this definition"></a></dt>
+<dd><p>Decomposition level for wavelet transformation of EEG signals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="analysis.html" class="btn btn-neutral float-left" title="analysis package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="data_pipeline.html" class="btn btn-neutral float-right" title="data_pipeline package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, ynakagama.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
