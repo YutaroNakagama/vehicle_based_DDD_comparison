@@ -13,9 +13,35 @@ def make_radar(
     metrics: list[str],
     ylim: tuple[float, float] = (0.0, 1.0),
 ) -> Path:
-    """
-    wide_df needs 'group' and '{metric}_finetune' / '{metric}_only10' column.s
-    output each group png and summary PDF in  out_dir
+    """Generate radar plots comparing finetune vs only10 metrics.
+
+    This function creates individual radar charts for each group in the input
+    DataFrame and saves them as PNG images. It also generates a combined PDF
+    containing all radar plots.
+
+    Parameters
+    ----------
+    wide_df : pandas.DataFrame
+        Wide-form DataFrame containing per-group metrics.
+        Must include a ``group`` column and columns of the form
+        ``{metric}_finetune`` and ``{metric}_only10`` for each metric.
+    out_dir : Path or str
+        Directory where output PNG and PDF files will be saved.
+    metrics : list of str
+        List of metric names to plot (e.g., ``["accuracy", "f1", "auc"]``).
+    ylim : tuple of float, default=(0.0, 1.0)
+        Limits for the radial axis (y-axis).
+
+    Returns
+    -------
+    Path
+        Path to the combined PDF file containing all radar plots.
+
+    Notes
+    -----
+    - Saves one PNG per group in the format ``radar_{group}.png``.
+    - Saves a combined PDF named ``radar_finetune_vs_only10.pdf`` in the
+      output directory.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)

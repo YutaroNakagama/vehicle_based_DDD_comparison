@@ -41,23 +41,27 @@ FEATURES_BY_MODEL = {
 
 
 def load_feature_csv(feature: str, timestamp_col: str, model: str, subject_id: str, version: str) -> pd.DataFrame | None:
-    """Loads a specific feature CSV file and standardizes its timestamp column to 'Timestamp'.
+    """
+    Load a feature CSV and standardize its timestamp column.
 
-    This function constructs the expected file path for an interim feature CSV,
-    loads it into a Pandas DataFrame, and renames the specified `timestamp_col`
-    to a generic 'Timestamp' for consistent merging. It handles cases where the
-    file might not exist.
+    Parameters
+    ----------
+    feature : str
+        Feature name (e.g., ``"eeg"``, ``"wavelet"``, ``"smooth_std_pe"``).
+    timestamp_col : str
+        Name of the timestamp column in the original CSV.
+    model : str
+        Model type (e.g., ``"common"``, ``"SvmA"``, ``"Lstm"``).
+    subject_id : str
+        Subject identifier (e.g., ``"S0210"``).
+    version : str
+        Session or version identifier (e.g., ``"1"``).
 
-    Args:
-        feature (str): The name of the feature (e.g., 'eeg', 'wavelet', 'smooth_std_pe').
-        timestamp_col (str): The original name of the timestamp column within the CSV file.
-        model (str): The model type (e.g., 'common', 'SvmA', 'Lstm'), used to locate the file.
-        subject_id (str): The subject's identifier (e.g., "S0210").
-        version (str): The session or version identifier (e.g., "1").
-
-    Returns:
-        pd.DataFrame | None: The loaded DataFrame with a standardized 'Timestamp' column
-                             if the file is found and loaded successfully; otherwise, None.
+    Returns
+    -------
+    pandas.DataFrame or None
+        DataFrame with standardized ``Timestamp`` column if the file is found,
+        otherwise ``None``.
     """
     file_path = os.path.join(INTRIM_CSV_PATH, feature, model, f"{feature}_{subject_id}_{version}.csv")
     if os.path.exists(file_path):
@@ -69,24 +73,25 @@ def load_feature_csv(feature: str, timestamp_col: str, model: str, subject_id: s
 
 
 def merge_features(features: dict, model: str, subject_id: str, version: str) -> pd.DataFrame:
-    """Merges multiple feature DataFrames for a given subject based on timestamp alignment.
+    """
+    Merge multiple feature DataFrames for a subject based on timestamp alignment.
 
-    This function iterates through a dictionary of features, loads each feature's
-    CSV file, and performs a time-series merge (`pd.merge_asof`) to align them
-    by their timestamps. The merging is done with a 'nearest' direction to find
-    the closest timestamp match.
+    Parameters
+    ----------
+    features : dict
+        Mapping of feature names to their timestamp column names.
+    model : str
+        Model type (e.g., ``"common"``, ``"SvmA"``).
+    subject_id : str
+        Subject identifier (e.g., ``"S0210"``).
+    version : str
+        Session or version identifier (e.g., ``"1"``).
 
-    Args:
-        features (dict): A dictionary where keys are feature names (str) and values
-                         are the original timestamp column names (str) within those feature CSVs.
-        model (str): The model type (e.g., 'common', 'SvmA', etc.), used to locate feature files.
-        subject_id (str): The subject's identifier (e.g., "S0210").
-        version (str): The session or version identifier (e.g., "1").
-
-    Returns:
-        pd.DataFrame: A single, merged DataFrame containing all specified features,
-                      aligned and sorted by the 'Timestamp' column. Returns an empty
-                      DataFrame if no features could be loaded or merged.
+    Returns
+    -------
+    pandas.DataFrame
+        Merged DataFrame aligned by ``Timestamp``.  
+        Returns an empty DataFrame if no features are loaded.
     """
     merged_df = pd.DataFrame()
     for feature, timestamp_col in features.items():
@@ -105,18 +110,20 @@ def merge_features(features: dict, model: str, subject_id: str, version: str) ->
 
 
 def merge_process(subject: str, model: str) -> None:
-    """Merges selected features for a given subject and model, and saves the combined data to disk.
+    """
+    Merge and save features for a given subject and model.
 
-    This is the main entry point for the merging process. It identifies the relevant
-    features based on the specified model, loads and merges them, and then saves
-    the resulting comprehensive dataset as a 'merged' CSV file in the processed data directory.
+    Parameters
+    ----------
+    subject : str
+        Subject string in the format ``"subjectID_version"`` (e.g., ``"S0120_2"``).
+    model : str
+        Model type determining which features to merge.
 
-    Args:
-        subject (str): The subject string in 'subjectID_version' format (e.g., 'S0120_2').
-        model (str): The model type, used to select the specific set of features to merge.
-
-    Returns:
-        None: The function saves the merged data to a CSV file and does not return any value.
+    Returns
+    -------
+    None
+        The merged dataset is saved as CSV.
     """
     parts = subject.split('_')
     if len(parts) != 2:
@@ -136,19 +143,18 @@ def merge_process(subject: str, model: str) -> None:
 
 
 def combine_file(subject: str) -> list[pd.DataFrame] | None:
-    """Loads a processed CSV file for a given subject (legacy function).
+    """
+    Load a processed CSV for a subject (legacy function).
 
-    This function is intended for loading previously processed and saved CSV files
-    for a specific subject. It is marked as legacy, suggesting newer approaches
-    might be preferred for data loading.
+    Parameters
+    ----------
+    subject : str
+        Subject string in the format ``"subjectID_version"``.
 
-    Args:
-        subject (str): The subject string in 'subjectID_version' format (e.g., 'S0120_2').
-
-    Returns:
-        list[pd.DataFrame] | None: A list containing a single Pandas DataFrame if the file
-                                   is successfully loaded; otherwise, None if the file is
-                                   not found or the subject format is incorrect.
+    Returns
+    -------
+    list of pandas.DataFrame or None
+        List containing the loaded DataFrame if found, otherwise ``None``.
     """
     dfs = []
     parts = subject.split('_')

@@ -6,7 +6,8 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project     = 'ddd'
+project     = "Vehicle-based DDD Comparison"
+html_title  = "Vehicle-based DDD Docs"
 copyright   = '2025, ynakagama'
 author      = 'ynakagama'
 release     = '0.0'

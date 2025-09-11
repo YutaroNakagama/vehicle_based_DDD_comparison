@@ -21,13 +21,23 @@ from src.config import MODEL_PKL_PATH
 
 
 def load_model_and_features(model: str):
-    """Load the trained SVM-ANFIS model and selected feature list.
+    """
+    Load the trained SVM-ANFIS model and its selected feature list.
 
-    Args:
-        model (str): Name of the model directory.
+    Parameters
+    ----------
+    model : str
+        Name of the model directory under ``MODEL_PKL_PATH``.
 
-    Returns:
-        tuple: (trained SVM model, list of selected feature names)
+    Returns
+    -------
+    tuple
+        A tuple containing:
+
+        - ``svm_model`` : sklearn.svm.SVC
+            Trained SVM-ANFIS model.
+        - ``selected_features`` : list of str
+            List of selected feature names used during training.
     """
     model_path = f'{MODEL_PKL_PATH}/{model}/svm_model_final.pkl'
     features_path = f'{MODEL_PKL_PATH}/{model}/selected_features_train.pkl'
@@ -39,14 +49,29 @@ def load_model_and_features(model: str):
 
 
 def calculate_metrics(y_true: np.ndarray, y_pred: np.ndarray):
-    """Calculate accuracy, precision, recall, and F1 score.
+    """
+    Calculate accuracy, precision, recall, and F1 score.
 
-    Args:
-        y_true (np.ndarray): Ground truth labels.
-        y_pred (np.ndarray): Predicted labels.
+    Parameters
+    ----------
+    y_true : numpy.ndarray of shape (n_samples,)
+        Ground truth labels.
+    y_pred : numpy.ndarray of shape (n_samples,)
+        Predicted labels.
 
-    Returns:
-        tuple: (accuracy, precision array, recall array, F1 score array)
+    Returns
+    -------
+    tuple
+        A tuple containing:
+
+        - ``accuracy`` : float
+            Overall classification accuracy.
+        - ``precision`` : numpy.ndarray
+            Class-wise precision values.
+        - ``recall`` : numpy.ndarray
+            Class-wise recall values.
+        - ``f1`` : numpy.ndarray
+            Class-wise F1 scores.
     """
     accuracy = accuracy_score(y_true, y_pred)
     precision = precision_score(y_true, y_pred, average=None)
@@ -57,15 +82,23 @@ def calculate_metrics(y_true: np.ndarray, y_pred: np.ndarray):
 
 
 def evaluate_model(svm_model, X_test: pd.DataFrame, y_test: pd.Series):
-    """Evaluate the model on the test set and print metrics.
+    """
+    Evaluate the trained SVM-ANFIS model on a test set and print metrics.
 
-    Args:
-        svm_model: Trained SVM model.
-        X_test (pd.DataFrame): Test features.
-        y_test (pd.Series): Test labels.
+    Parameters
+    ----------
+    svm_model : sklearn.svm.SVC
+        Trained SVM classifier.
+    X_test : pandas.DataFrame
+        Test feature matrix.
+    y_test : pandas.Series
+        Ground truth labels corresponding to ``X_test``.
 
-    Returns:
-        None
+    Returns
+    -------
+    None
+        This function prints evaluation results (accuracy, precision, recall,
+        F1 score, and confusion matrix) to the console.
     """
     y_pred = svm_model.predict(X_test)
     accuracy, precision, recall, f1 = calculate_metrics(y_test, y_pred)
@@ -86,17 +119,40 @@ def SvmA_eval(
     clf,
     selected_features: list
 ) -> dict:
-    """Main evaluation entry point for SVM-ANFIS model.
+    """
+    Main evaluation entry point for SVM-ANFIS model.
 
-    Args:
-        X_test (pd.DataFrame): Test features.
-        y_test (pd.Series): Test labels.
-        model (str): Model name used for saving.
-        clf: Trained SVM classifier (from pickle).
-        selected_features (list): List of selected features.
+    Parameters
+    ----------
+    X_test : pandas.DataFrame
+        Test feature matrix. Columns will be aligned and missing features
+        filled with zeros if necessary.
+    y_test : pandas.Series
+        Ground truth labels corresponding to ``X_test``.
+    model : str
+        Model name used for saving and logging.
+    clf : sklearn.svm.SVC
+        Trained SVM classifier loaded from pickle.
+    selected_features : list of str
+        List of selected feature names used for training.
 
-    Returns:
-        dict: Evaluation metrics (for JSON export).
+    Returns
+    -------
+    dict
+        Dictionary containing evaluation metrics:
+
+        - ``"model"`` : str
+            Model name.
+        - ``"accuracy"`` : float
+            Classification accuracy.
+        - ``"precision"`` : list of float
+            Class-wise precision values.
+        - ``"recall"`` : list of float
+            Class-wise recall values.
+        - ``"f1_score"`` : list of float
+            Class-wise F1 scores.
+        - ``"confusion_matrix"`` : list of list of int
+            Confusion matrix as a nested list.
     """
 
     # Clean column names

@@ -4,12 +4,15 @@ This script executes the training pipeline for a specified model architecture.
 Users can optionally enable data augmentation or domain generalization techniques
 such as Domain Mixup, CORAL (Correlation Alignment), and VAE-based feature augmentation.
 
-Examples:
-    Train an LSTM model with all augmentation methods enabled:
-        $ python train.py --model Lstm --domain_mixup --coral --vae
+Examples
+--------
+Train an LSTM model with all augmentation methods enabled:
 
-    Train a Random Forest model without any augmentation:
-        $ python train.py --model RF
+    $ python train.py --model Lstm --domain_mixup --coral --vae
+
+Train a Random Forest model without any augmentation:
+
+    $ python train.py --model RF
 """
 
 import sys
@@ -30,6 +33,13 @@ import src.config
 import src.models.model_pipeline as mp
 
 def log_train_args(args):
+    """Log training arguments in a consistent format.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments containing training settings.
+    """
     logging.info(
         "[RUN] model=%s | domain_mixup=%s | coral=%s | vae=%s | sample_size=%s | seed=%s | fold=%s | tag=%s | subject_wise_split=%s | feature_selection=%s | data_leak=%s",
         args.model,
@@ -49,20 +59,76 @@ def log_train_args(args):
 def main():
     """Parse command-line arguments and invoke the training pipeline.
 
-    This function handles the parsing of command-line arguments for model selection
-    and optional data augmentation strategies. Based on user input, it triggers
-    the appropriate training routine.
+    This function parses CLI arguments for model selection, augmentation
+    options, cross-validation, and subject split strategies. It then calls
+    the centralized training pipeline.
 
-    Command-line Arguments:
-        --model (str): Required. Specifies the model architecture to train.
-            Must be one of the model names defined in `src.config.MODEL_CHOICES`.
-        --domain_mixup (bool): Optional. If set, applies Domain Mixup-based
-            feature interpolation.
-        --coral (bool): Optional. If set, applies CORAL-based domain alignment.
-        --vae (bool): Optional. If set, applies VAE-based feature augmentation.
+    Parameters
+    ----------
+    None
 
-    Raises:
-        SystemExit: Raised by argparse if invalid or missing arguments are given.
+    Other Parameters
+    ----------------
+    --model : str
+        Required. Model architecture to train. Must be one of
+        ``src.config.MODEL_CHOICES``.
+    --domain_mixup : bool, optional
+        Apply Domain Mixup augmentation during training.
+    --coral : bool, optional
+        Apply CORAL domain alignment during training.
+    --vae : bool, optional
+        Apply VAE-based feature augmentation during training.
+    --sample_size : int, optional
+        Number of subjects to randomly sample for small-scale experiments.
+    --seed : int, optional
+        Random seed for reproducibility. Default is 42.
+    --n_folds : int, optional
+        Number of folds for cross-validation. If set, runs sequentially.
+    --fold : int, optional
+        Fold number for single-fold training. Ignored if ``n_folds`` is set.
+    --tag : str, optional
+        Optional tag suffix for model saving.
+    --subject_wise_split : bool, optional
+        Prevent data leakage across subjects by using subject-wise split.
+    --feature_selection : {"rf", "mi", "anova"}, default="rf"
+        Feature selection method: RandomForest importance, Mutual Information, or ANOVA F-test.
+    --data_leak : bool, optional
+        Intentionally allow data leakage for feature selection (for ablation).
+    --subject_split_strategy : {"random", "leave-one-out", "custom", \
+"isolate_target_subjects", "finetune_target_subjects", "single_subject_data_split", "subject_time_split"}, default="random"
+        Strategy for splitting subjects into train/val/test.
+    --target_subjects, --train_subjects, --val_subjects, --test_subjects, --general_subjects : list of str, optional
+        Lists of subject IDs used with specific split strategies.
+    --finetune_setting : str, optional
+        Path to pretrained settings (pickle file).
+    --save_pretrain : str, optional
+        Path to save pretrain settings (feature list, scaler, model params).
+    --eval_only_pretrained : bool, optional
+        Skip fine-tuning and directly evaluate a pretrained model.
+    --time_stratify_labels : bool, optional
+        Adjust time-ordered split boundaries so each split matches the global
+        positive/negative ratio.
+    --time_stratify_tolerance : float, default=0.02
+        Allowed deviation in class ratio per split.
+    --time_stratify_window : float, default=0.10
+        Window size (fraction of N) to adjust split boundaries.
+    --time_stratify_min_chunk : int, default=100
+        Minimum rows per split to avoid degenerate segments.
+    --balance_labels : bool, optional
+        Rebalance each split to 50/50 class distribution.
+    --balance_method : {"undersample", "oversample"}, default="undersample"
+        Method for label balancing.
+    --mode : {"only_target", "only_general", "eval_only", "finetune"}, optional
+        Experiment mode controlling subject splits.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    SystemExit
+        If invalid or missing arguments are provided.
     """
     parser = argparse.ArgumentParser(
         description="Train a model for driver drowsiness detection with optional augmentation."
@@ -179,13 +245,78 @@ def main():
     )
 
     parser.add_argument(
+        "--eval_only_pretrained",
+        action="store_true",
+        help="Skip fine-tuning on target subjects and directly evaluate using a model pretrained on non-target subjects."
+    )
+
+    parser.add_argument(
         "--save_pretrain", type=str, default=None,
         help="Path to save pretrain settings (feature list, scaler, model params)."
     )
+    parser.add_argument(
+        "--time_stratify_labels",
+        action="store_true",
+        help="Adjust time-ordered split boundaries so that each split's pos/neg ratio matches the global ratio (no resampling)."
+    )
+    parser.add_argument(
+        "--time_stratify_tolerance",
+        type=float,
+        default=0.02,
+        help="Allowed absolute deviation of positive ratio per split from the global ratio (e.g., 0.02 = ±2%)."
+    )
+    parser.add_argument(
+        "--time_stratify_window",
+        type=float,
+        default=0.10,
+        help="Search window size around nominal cut positions as a fraction of N (e.g., 0.10 = ±10%)."
+    )
+    parser.add_argument(
+        "--time_stratify_min_chunk",
+        type=int,
+        default=100,
+        help="Minimum number of rows per split to avoid degenerate segments."
+    )
+    parser.add_argument(
+        "--balance_labels", 
+        action="store_true",
+        help="Rebalance each split (train/val/test) to 50/50 positive/negative."
+    )
+    parser.add_argument(
+        "--balance_method", 
+        choices=["undersample", "oversample"],
+        default="undersample", 
+        help="How to balance labels within each split."
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["only_target", "only_general", "eval_only", "finetune"],
+        default=None,
+        help="Exp mode: only_target / only_general(eval_only) / finetune"
+    )
+
 
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     tag_msg = f", tag={args.tag}" if args.tag else ""
+
+    if args.mode in ("only_general", "eval_only"):
+        args.subject_split_strategy = "finetune_target_subjects"
+        args.eval_only_pretrained = True
+        if not args.target_subjects:
+            raise SystemExit("[ERROR] --mode=only_general(eval_only) では --target_subjects が必須です。")
+    
+    elif args.mode == "finetune":
+        args.subject_split_strategy = "finetune_target_subjects"
+        if not args.target_subjects:
+            raise SystemExit("[ERROR] --mode=finetune では --target_subjects が必須です。")
+        if (args.finetune_setting is None) and (args.save_pretrain is None):
+            raise SystemExit("[ERROR] --mode=finetune では --finetune_setting か --save_pretrain のどちらかが必要です。")
+    
+    elif args.mode == "only_target":
+        args.subject_split_strategy = "subject_time_split"
+        if not args.target_subjects:
+            raise SystemExit("[ERROR] --mode=only_target では --target_subjects が必須です。")
 
     # Centralize the call to the training pipeline
     pipeline_args = {
@@ -198,7 +329,7 @@ def main():
         "tag": args.tag,
         "subject_wise_split": args.subject_wise_split,
         "feature_selection_method": args.feature_selection,
-        "data_leak": False,
+        "data_leak": args.data_leak,
         "subject_split_strategy": args.subject_split_strategy,
         "target_subjects": args.target_subjects,
         "train_subjects": args.train_subjects,
@@ -206,7 +337,14 @@ def main():
         "test_subjects": args.test_subjects,
         "general_subjects": args.general_subjects,
         "finetune_setting": args.finetune_setting,
-        "save_pretrain": args.save_pretrain,    # ← 追加
+        "save_pretrain": args.save_pretrain,   
+        "eval_only_pretrained": args.eval_only_pretrained,
+        "balance_labels": args.balance_labels,          # if you kept previous balancing option
+        "balance_method": args.balance_method,
+        "time_stratify_labels": args.time_stratify_labels,
+        "time_stratify_tolerance": args.time_stratify_tolerance,
+        "time_stratify_window": args.time_stratify_window,
+        "time_stratify_min_chunk": args.time_stratify_min_chunk,
     }
 
     if args.n_folds is not None:

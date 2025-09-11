@@ -33,17 +33,18 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 
 def get_simlsl_window_params(model: str) -> tuple[int, int]:
-    """Retrieves the window size and step size in samples for SIMlsl data
-    based on the specified model configuration.
+    """Retrieve window size and step size in samples for SIMlsl data.
 
-    Args:
-        model (str): The name of the model for which to retrieve window parameters.
-                     This key is used to look up the configuration in `MODEL_WINDOW_CONFIG`.
+    Parameters
+    ----------
+    model : str
+        Model name used to look up parameters in ``MODEL_WINDOW_CONFIG``.
 
-    Returns:
-        tuple[int, int]: A tuple containing two integers:
-                         - The window size in samples.
-                         - The step size in samples.
+    Returns
+    -------
+    tuple of (int, int)
+        - Window size in samples.
+        - Step size in samples.
     """
     config = MODEL_WINDOW_CONFIG[model]
     window_samples = int(config["window_sec"] * SAMPLE_RATE_SIMLSL)
@@ -52,19 +53,20 @@ def get_simlsl_window_params(model: str) -> tuple[int, int]:
 
 
 def ghm_wavelet_transform(signal: np.ndarray) -> list[tuple[np.ndarray, np.ndarray]]:
-    """Applies the GHM (Generalized Haar Multiwavelet) wavelet transform to a 1D signal.
+    """Apply GHM wavelet transform to a 1D signal.
 
-    This function performs a multi-level wavelet decomposition using predefined
-    scaling and wavelet filters. It iteratively decomposes the approximation
-    coefficients to generate detail and new approximation coefficients at each level.
+    Performs multi-level decomposition using predefined scaling and
+    wavelet filters.
 
-    Args:
-        signal (np.ndarray): The 1D input signal to be transformed.
+    Parameters
+    ----------
+    signal : ndarray
+        Input 1D signal.
 
-    Returns:
-        list[tuple[np.ndarray, np.ndarray]]: A list of tuples, where each tuple contains
-                                             (scaling_coefficients, wavelet_coefficients)
-                                             for each decomposition level.
+    Returns
+    -------
+    list of tuple of (ndarray, ndarray)
+        List of (scaling_coeffs, wavelet_coeffs) for each level.
     """
     coeffs = []
     approx = signal
@@ -77,38 +79,36 @@ def ghm_wavelet_transform(signal: np.ndarray) -> list[tuple[np.ndarray, np.ndarr
 
 
 def adjust_and_add(coeff1: np.ndarray, coeff2: np.ndarray) -> np.ndarray:
-    """Aligns two wavelet coefficient arrays to the same length and performs element-wise summation.
+    """Align and sum two coefficient arrays.
 
-    This function is used to combine coefficients from different decomposition paths
-    by truncating the longer array to match the length of the shorter one, ensuring
-    compatible dimensions for summation.
+    Parameters
+    ----------
+    coeff1 : ndarray
+        First coefficient array.
+    coeff2 : ndarray
+        Second coefficient array.
 
-    Args:
-        coeff1 (np.ndarray): The first NumPy array of wavelet coefficients.
-        coeff2 (np.ndarray): The second NumPy array of wavelet coefficients.
-
-    Returns:
-        np.ndarray: A new NumPy array representing the element-wise sum of the
-                    trimmed input arrays.
+    Returns
+    -------
+    ndarray
+        Element-wise sum of trimmed arrays.
     """
     min_len = min(len(coeff1), len(coeff2))
     return coeff1[:min_len] + coeff2[:min_len]
 
 
 def generate_decomposition_signals(coeffs: list[tuple[np.ndarray, np.ndarray]]) -> list[np.ndarray]:
-    """Generates 8 specific wavelet decomposition paths from a list of wavelet coefficients.
+    """Generate 8 wavelet decomposition paths.
 
-    These paths represent different combinations of detail (D) and approximation (A) coefficients
-    across multiple decomposition levels, crucial for feature extraction in certain DDD models.
-    The combinations are based on a predefined structure (e.g., DDD, DDA, ADA, AAA).
+    Parameters
+    ----------
+    coeffs : list of tuple of (ndarray, ndarray)
+        Wavelet coefficients per level.
 
-    Args:
-        coeffs (list): A list of tuples, where each tuple contains (scaling_coefficients, wavelet_coefficients)
-                       for each level of wavelet decomposition.
-
-    Returns:
-        list[np.ndarray]: A list of 8 NumPy arrays, each representing a specific wavelet
-                          decomposition signal (e.g., DDD, DDA, ... AAA).
+    Returns
+    -------
+    list of ndarray
+        Eight decomposition signals (DDD, DDA, ... AAA).
     """
     return [
         coeffs[0][1],  # D
@@ -123,33 +123,33 @@ def generate_decomposition_signals(coeffs: list[tuple[np.ndarray, np.ndarray]]) 
 
 
 def calculate_power(signal: np.ndarray) -> float:
-    """Calculates the mean power (mean squared value) of a 1D signal.
+    """Calculate mean power of a 1D signal.
 
-    This function is used to quantify the energy content within different
-    wavelet decomposition paths, serving as a feature for drowsiness detection.
+    Parameters
+    ----------
+    signal : ndarray
+        Input signal.
 
-    Args:
-        signal (np.ndarray): The 1D input signal.
-
-    Returns:
-        float: The mean power of the signal.
+    Returns
+    -------
+    float
+        Mean squared value of the signal.
     """
     return np.mean(signal ** 2)
 
 
 def process_window(signal_window: np.ndarray) -> list[float]:
-    """Applies GHM wavelet transform to a single signal window and computes power for each decomposition path.
+    """Apply wavelet transform to a signal window and compute powers.
 
-    This function serves as a core processing step within a sliding window approach,
-    transforming raw signal segments into a set of power features based on their
-    wavelet decomposition.
+    Parameters
+    ----------
+    signal_window : ndarray
+        A 1D signal segment.
 
-    Args:
-        signal_window (np.ndarray): A 1D NumPy array representing a segment (window) of a signal.
-
-    Returns:
-        list[float]: A list of floating-point numbers, where each value is the
-                     calculated power for one of the 8 wavelet decomposition paths.
+    Returns
+    -------
+    list of float
+        Power values for 8 decomposition paths.
     """
     coeffs = ghm_wavelet_transform(signal_window)
     decomposition_signals = generate_decomposition_signals(coeffs)
@@ -157,22 +157,24 @@ def process_window(signal_window: np.ndarray) -> list[float]:
 
 
 def wavelet_process(subject: str, model: str, use_jittering: bool = False) -> None:
-    """Main function to extract wavelet-based features from vehicle dynamics signals for a given subject.
+    """Extract wavelet-based features for a subject.
 
-    This function orchestrates the process of loading SIMlsl data, extracting relevant
-    vehicle signals (steering, steering speed, longitudinal acceleration, lateral acceleration,
-    and lane offset), applying optional jittering for data augmentation, and then performing
-    multi-resolution GHM wavelet decomposition on these signals within sliding windows.
-    The power of each decomposition path is computed and saved as features to a CSV file.
+    Loads SIMlsl data, applies optional jittering, performs
+    wavelet decomposition, computes power per path, and saves results.
 
-    Args:
-        subject (str): The subject identifier in 'subjectID_version' format (e.g., 'S0120_2').
-        model (str): The model name, used to determine window settings for feature extraction.
-        use_jittering (bool): If True, jittering-based data augmentation is applied to signals.
-                              Defaults to False.
+    Parameters
+    ----------
+    subject : str
+        Subject identifier (format: ``"<id>_<version>"``).
+    model : str
+        Model name used to determine windowing.
+    use_jittering : bool, default=False
+        Whether to apply jittering-based augmentation.
 
-    Returns:
-        None: The function saves the processed features to a CSV file and does not return any value.
+    Returns
+    -------
+    None
+        Processed features are saved to CSV.
     """
     parts = subject.split('_')
     if len(parts) != 2:

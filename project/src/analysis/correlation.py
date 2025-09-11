@@ -1,4 +1,26 @@
-# src/analysis/correlation.py
+"""Correlation analysis between group-level distances and evaluation deltas.
+
+This module provides functions to compute correlations between group distances
+(e.g., mean inter-group distance d(U,G), within-group dispersion disp(G)) and
+changes in evaluation metrics (Δ accuracy, Δ F1, Δ AUC, etc.).
+
+It supports both CSV and NPY distance matrices and generates correlation tables
+and scatter plots as output.
+
+Functions
+---------
+_read_group_members(groups_dir, group_names_file)
+    Read group definitions from text files.
+_mean_cross_distance(D, A, B)
+    Compute mean pairwise distance between two sets of subjects.
+_mean_within_distance(D, A)
+    Compute mean pairwise distance within a group of subjects.
+_load_distance_matrix(distance_path, subjects_json)
+    Load a square distance matrix from CSV or NPY format.
+run_distance_vs_delta(summary_csv, distance_path, groups_dir, group_names_file, ...)
+    Compute correlations between group distances and evaluation deltas.
+"""
+
 from __future__ import annotations
 import os
 from pathlib import Path
@@ -12,6 +34,20 @@ from scipy.stats import pearsonr, spearmanr
 
 
 def _read_group_members(groups_dir: str | Path, group_names_file: str | Path) -> dict[str, list[str]]:
+    """Read group member lists from text files.
+
+    Parameters
+    ----------
+    groups_dir : str or Path
+        Directory containing text files with subject IDs for each group.
+    group_names_file : str or Path
+        File listing group names, one per line.
+
+    Returns
+    -------
+    dict of {str: list of str}
+        Mapping from group name to list of subject IDs.
+    """
     names = [ln.strip() for ln in Path(group_names_file).read_text(encoding="utf-8").splitlines() if ln.strip()]
     groups: dict[str, list[str]] = {}
     for name in names:
@@ -22,6 +58,22 @@ def _read_group_members(groups_dir: str | Path, group_names_file: str | Path) ->
 
 
 def _mean_cross_distance(D: pd.DataFrame, A: list[str], B: list[str]) -> float:
+    """Compute mean pairwise distance between two sets of subjects.
+
+    Parameters
+    ----------
+    D : pandas.DataFrame
+        Square distance matrix (subjects × subjects).
+    A : list of str
+        Subject IDs for set A.
+    B : list of str
+        Subject IDs for set B.
+
+    Returns
+    -------
+    float
+        Mean distance between subjects in A and B, or NaN if invalid.
+    """
     A2 = [a for a in A if a in D.index]
     B2 = [b for b in B if b in D.columns]
     if not A2 or not B2:
@@ -30,6 +82,20 @@ def _mean_cross_distance(D: pd.DataFrame, A: list[str], B: list[str]) -> float:
 
 
 def _mean_within_distance(D: pd.DataFrame, A: list[str]) -> float:
+    """Compute mean pairwise distance within a set of subjects.
+
+    Parameters
+    ----------
+    D : pandas.DataFrame
+        Square distance matrix (subjects × subjects).
+    A : list of str
+        Subject IDs for the group.
+
+    Returns
+    -------
+    float
+        Mean within-group distance, or NaN if insufficient subjects.
+    """
     A2 = [a for a in A if a in D.index]
     if len(A2) < 2:
         return float("nan")
@@ -48,11 +114,29 @@ def _load_distance_matrix(
     distance_path: str | Path,
     subjects_json: str | Path | None = None,
 ) -> pd.DataFrame:
-    """Load a square distance matrix as a DataFrame with index/columns = subject IDs.
+    """Load a square distance matrix as a DataFrame.
 
     Supports:
-      - CSV: distance_path=*.csv (header+index assumed)
-      - NPY: distance_path=*.npy with subjects_json pointing to a JSON list of IDs
+    - CSV: ``*.csv`` file with header and index.
+    - NPY: ``*.npy`` file with subjects specified in ``subjects_json``.
+
+    Parameters
+    ----------
+    distance_path : str or Path
+        Path to the distance matrix file (.csv or .npy).
+    subjects_json : str or Path, optional
+        JSON file containing subject IDs. Required if ``distance_path`` is ``.npy``.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Square distance matrix with subject IDs as both index and columns.
+
+    Raises
+    ------
+    ValueError
+        If file type is unsupported or the number of subjects does not match
+        the matrix shape.
     """
     distance_path = Path(distance_path)
     if distance_path.suffix.lower() == ".csv":
@@ -87,13 +171,45 @@ def run_distance_vs_delta(
     subjects_json: str | Path | None = None,
     subject_list: str | Path | None = None,
 ) -> int:
-    """Correlate group-level distances (d(U,G), disp(G)) with delta metrics from summary CSV.
+    """Correlate group-level distances with evaluation deltas.
 
-    - summary_csv: wide format with columns: group, accuracy_delta, f1_delta, auc_delta, precision_delta, recall_delta
-    - distance_path: CSV (square matrix with header+index) or NPY (use subjects_json)
-    - groups_dir & group_names_file: group members and ordered group names
-    - outdir: output directory
-    - subject_list: optional full list of subjects; otherwise inferred from distance matrix
+    This function computes:
+    - d(U,G): mean distance between group G and the complement U
+    - disp(G): within-group dispersion of G
+
+    These are then correlated with Δ metrics (accuracy, F1, AUC, precision, recall)
+    from the summary CSV.
+
+    Parameters
+    ----------
+    summary_csv : str or Path
+        Path to summary CSV containing columns ``group`` and Δ metrics.
+    distance_path : str or Path
+        Path to distance matrix (.csv or .npy).
+    groups_dir : str or Path
+        Directory containing group membership files.
+    group_names_file : str or Path
+        File listing group names, one per line.
+    outdir : str or Path, default="model/common/dist_corr"
+        Output directory for correlation results.
+    subjects_json : str or Path, optional
+        Required if ``distance_path`` is ``.npy``. JSON file with subject IDs.
+    subject_list : str or Path, optional
+        Path to text file with the global subject list. If omitted, inferred
+        from the distance matrix.
+
+    Returns
+    -------
+    int
+        Return code (0 indicates success).
+
+    Notes
+    -----
+    This function generates the following output files:
+    - ``distance_vs_delta_merged.csv``: merged table of distances and deltas
+    - ``correlations_dUG_vs_deltas.csv``: correlations between d(U,G) and Δ metrics
+    - ``correlations_dispG_vs_deltas.csv``: correlations between disp(G) and Δ metrics
+    - scatter plots (PNG) for each Δ metric
     """
     out = Path(outdir)
     out.mkdir(parents=True, exist_ok=True)

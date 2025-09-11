@@ -2,60 +2,75 @@
 # -*- coding: utf-8 -*-
 """Unified CLI for analysis tasks.
 
+This script provides a unified command-line interface (CLI) for various
+analysis-related tasks in the DDD pipeline, such as computing distance
+matrices, correlating group distances with evaluation metrics, summarising
+results, and exporting rankings.
+
 Subcommands
 -----------
 comp-dist
     Compute MMD / Wasserstein / DTW distance matrices and summaries.
-
 corr
     Correlate group distances (d(U,G), disp(G)) with Δ metrics (finetune - only10).
-
 summarize
     Summarize only10 vs finetune for a group list (6グループ/任意リスト対応, レーダー出力可).
-
 summarize-metrics
     Scan model_dir for metrics_*.csv and build a long-form summary.
-
 make-table
     Build a wide table (only10 vs finetune) from the summary; create summary if missing.
-
 report-pretrain-groups
     For 10-vs-78 pretrain groups, compute Intra/Inter/NN and export JSON/CSV/PNG.
-
 corr-collect
-    (Optional) Collect correlation CSVs (MMD/Wasserstein/DTW) and draw a heatmap.
+    Collect correlation CSVs (MMD/Wasserstein/DTW) and draw a heatmap.
+rank-export
+    Export top/bottom-k subject lists from mean/std rankings.
 
 Examples
 --------
-# 1) 距離行列の作成
-python bin/analyze.py comp-dist --subject_list ../../dataset/mdapbe/subject_list.txt \
-    --data_root data/processed/common --groups_file ../misc/target_groups.txt
+Compute distance matrices:
 
-# 2) d(U,G) と Δ 指標の相関
-python bin/analyze.py corr --summary_csv model/common/summary_6groups_only10_vs_finetune_wide.csv \
-    --distance results/mmd/mmd_matrix.npy --subjects_json results/mmd/mmd_subjects.json \
-    --groups_dir misc/pretrain_groups --group_names_file misc/pretrain_groups/group_names.txt \
-    --outdir model/common/dist_corr_mmd
+    $ python bin/analyze.py comp-dist \
+        --subject_list ../../dataset/mdapbe/subject_list.txt \
+        --data_root data/processed/common \
+        --groups_file ../misc/target_groups.txt
 
-# 3) only10 vs finetune の要約（6グループ, レーダーも作成）
-python bin/analyze.py summarize --make_radar
+Compute correlation between d(U,G) and Δ metrics:
 
-# 4) metrics_* をまとめたサマリ
-python bin/analyze.py summarize-metrics --model_dir model/common --model_tag RF
+    $ python bin/analyze.py corr \
+        --summary_csv model/common/summary_6groups_only10_vs_finetune_wide.csv \
+        --distance results/mmd/mmd_matrix.npy \
+        --subjects_json results/mmd/mmd_subjects.json \
+        --groups_dir misc/pretrain_groups \
+        --group_names_file misc/pretrain_groups/group_names.txt \
+        --outdir model/common/dist_corr_mmd
 
-# 5) wide テーブル作成
-python bin/analyze.py make-table --model_dir model/common --model_tag RF
+Summarize only10 vs finetune (6 groups, with radar plot):
 
-# 6) 10 vs 78 の Intra/Inter/NN レポート
-python bin/analyze.py report-pretrain-groups --group_dir misc/pretrain_groups
+    $ python bin/analyze.py summarize --make_radar
 
-# 7) 相関CSVをまとめてヒートマップ化（任意）
-python bin/analyze.py corr-collect \
-  --mmd model/common/dist_corr_mmd/correlations_dUG_vs_deltas.csv \
-  --wass model/common/dist_corr_wasserstein/correlations_dUG_vs_deltas.csv \
-  --dtw model/common/dist_corr_dtw/correlations_dUG_vs_deltas.csv \
-  --out_csv correlation_summary_all.csv --out_png correlation_heatmap_all.png
+Aggregate metrics_* CSVs:
+
+    $ python bin/analyze.py summarize-metrics --model_dir model/common --model_tag RF
+
+Make a wide comparison table:
+
+    $ python bin/analyze.py make-table --model_dir model/common --model_tag RF
+
+Report intra/inter/NN distances for 10 vs 78 groups:
+
+    $ python bin/analyze.py report-pretrain-groups --group_dir misc/pretrain_groups
+
+Collect multiple correlation CSVs and draw heatmap:
+
+    $ python bin/analyze.py corr-collect \
+        --mmd model/common/dist_corr_mmd/correlations_dUG_vs_deltas.csv \
+        --wass model/common/dist_corr_wasserstein/correlations_dUG_vs_deltas.csv \
+        --dtw model/common/dist_corr_dtw/correlations_dUG_vs_deltas.csv \
+        --out_csv correlation_summary_all.csv \
+        --out_png correlation_heatmap_all.png
 """
+
 import os
 import sys
 import argparse
@@ -78,10 +93,22 @@ from src.analysis.correlation import run_distance_vs_delta
 from src.analysis.summary_groups import run_summarize_only10_vs_finetune
 from src.analysis.metrics_tables import summarize_metrics, make_comparison_table
 from src.analysis.pretrain_groups_report import run_report_pretrain_groups
-
+from src.analysis.rank_export import run_rank_export
 
 # ---------------------- subcommand handlers ----------------------
 def cmd_comp_dist(args) -> int:
+    """Compute distance matrices (MMD, Wasserstein, DTW) and summaries.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments parsed from CLI.
+
+    Returns
+    -------
+    int
+        Return code (0 = success, non-zero = error).
+    """
     logging.info(
         "[RUN] comp-dist | subject_list=%s | data_root=%s | groups_file=%s",
         args.subject_list, args.data_root, args.groups_file
@@ -98,6 +125,18 @@ def cmd_comp_dist(args) -> int:
 
 
 def cmd_corr(args) -> int:
+    """Correlate group distances with Δ metrics.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments parsed from CLI.
+
+    Returns
+    -------
+    int
+        Return code (0 = success, non-zero = error).
+    """
     logging.info(
         "[RUN] corr | summary=%s | distance=%s | outdir=%s",
         args.summary_csv, args.distance, args.outdir
@@ -116,6 +155,18 @@ def cmd_corr(args) -> int:
 
 
 def cmd_summarize(args) -> int:
+    """Summarize only10 vs finetune results.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments parsed from CLI.
+
+    Returns
+    -------
+    int
+        Always 0 (success).
+    """
     PRJ = Path(__file__).resolve().parents[1]
     logging.info(
         "[RUN] summarize | names=%s | model_dir=%s | out_prefix=%s | make_radar=%s",
@@ -136,6 +187,18 @@ def cmd_summarize(args) -> int:
 
 
 def cmd_summarize_metrics(args) -> int:
+    """Generate a wide-format comparison table (only10 vs finetune).
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments parsed from CLI.
+
+    Returns
+    -------
+    int
+        Return code (0 = success, non-zero = error).
+    """
     out_csv = Path(args.out_csv) if args.out_csv else (Path(args.model_dir) / "summary_only10_vs_finetune.csv")
     logging.info(
         "[RUN] summarize-metrics | model_dir=%s | model_tag=%s | split=%s | out=%s",
@@ -158,6 +221,18 @@ def cmd_summarize_metrics(args) -> int:
 
 
 def cmd_make_table(args) -> int:
+    """Generate a wide-format comparison table (only10 vs finetune).
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments parsed from CLI.
+
+    Returns
+    -------
+    int
+        Return code (0 = success, non-zero = error).
+    """
     model_dir = Path(args.model_dir)
     summary_csv = Path(args.summary_csv) if args.summary_csv else (model_dir / "summary_only10_vs_finetune.csv")
     out_csv = Path(args.out_csv) if args.out_csv else (model_dir / "table_only10_vs_finetune_wide.csv")
@@ -178,6 +253,18 @@ def cmd_make_table(args) -> int:
 
 
 def cmd_report_pretrain_groups(args) -> int:
+    """Report intra/inter/NN statistics for pretrain groups.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments parsed from CLI.
+
+    Returns
+    -------
+    int
+        Return code (0 = success, non-zero = error).
+    """
     logging.info("[RUN] report-pretrain-groups | group_dir=%s", args.group_dir)
     run_report_pretrain_groups(
         group_dir=Path(args.group_dir),
@@ -194,7 +281,18 @@ def cmd_report_pretrain_groups(args) -> int:
 
 
 def cmd_corr_collect(args) -> int:
-    """Collect correlation CSVs and draw heatmap (optional convenience)."""
+    """Collect correlation CSVs and draw a Pearson heatmap.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments parsed from CLI.
+
+    Returns
+    -------
+    int
+        Return code (0 = success, non-zero = error).
+    """
     import pandas as pd
     import matplotlib.pyplot as plt
     import seaborn as sns
@@ -226,6 +324,35 @@ def cmd_corr_collect(args) -> int:
     logging.info("Saved: %s", args.out_png)
     return 0
 
+def cmd_rank_export(args) -> int:
+    """Export top/bottom-k subject rankings from distance matrices.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments parsed from CLI.
+
+    Returns
+    -------
+    int
+        Return code (0 = success, non-zero = error).
+    """
+    logging.info(
+        "[RUN] rank-export | outdir=%s | k=%s", args.outdir, args.k
+    )
+    rc = run_rank_export(
+        outdir=Path(args.outdir),
+        k=int(args.k),
+        # MMD
+        mmd_matrix=Path(args.mmd_matrix) if args.mmd_matrix else None,
+        mmd_subjects=Path(args.mmd_subjects) if args.mmd_subjects else None,
+        # Wasserstein / DTW
+        wasserstein_matrix=Path(args.wasserstein_matrix) if args.wasserstein_matrix else None,
+        dtw_matrix=Path(args.dtw_matrix) if args.dtw_matrix else None,
+        dist_subjects=Path(args.dist_subjects) if args.dist_subjects else None,
+    )
+    logging.info("[DONE] rank-export rc=%s", rc)
+    return rc
 
 # ---------------------- CLI setup ----------------------
 def build_parser() -> argparse.ArgumentParser:
@@ -302,6 +429,19 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--out_csv", default="correlation_summary_all.csv")
     s.add_argument("--out_png", default="correlation_heatmap_all.png")
     s.set_defaults(func=cmd_corr_collect)
+
+    # rank-export (neutral, research-friendly naming)
+    s = sub.add_parser("rank-export", help="Export top/bottom-k subject lists from mean/std rankings (MMD/Wasserstein/DTW).")
+    s.add_argument("--outdir", default="results/ranks")
+    s.add_argument("--k", type=int, default=10)
+    # MMD
+    s.add_argument("--mmd_matrix", default=str(PRJ / "results" / "mmd" / "mmd_matrix.npy"))
+    s.add_argument("--mmd_subjects", default=str(PRJ / "results" / "mmd" / "mmd_subjects.json"))
+    # Wasserstein / DTW (share subjects.json)
+    s.add_argument("--wasserstein_matrix", default=str(PRJ / "results" / "distances" / "wasserstein_matrix.npy"))
+    s.add_argument("--dtw_matrix", default=str(PRJ / "results" / "distances" / "dtw_matrix.npy"))
+    s.add_argument("--dist_subjects", default=str(PRJ / "results" / "distances" / "subjects.json"))
+    s.set_defaults(func=cmd_rank_export)
 
     return p
 

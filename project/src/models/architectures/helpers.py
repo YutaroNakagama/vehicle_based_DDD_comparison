@@ -21,23 +21,38 @@ from imblearn.ensemble import BalancedRandomForestClassifier
 
 
 def get_classifier(model_name: str):
-    """Return a classifier instance based on the given model name.
+    """
+    Return a classifier instance based on the given model name.
 
     Supported model names include:
-    - 'RF': Random Forest
-    - 'SvmW': Support Vector Machine with RBF kernel
-    - 'XGBoost': XGBoost classifier
-    - 'LightGBM': LightGBM classifier
-    - 'LogisticRegression': Logistic regression
+    - ``"RF"`` : Random Forest
+    - ``"BalancedRF"`` : Balanced Random Forest
+    - ``"SvmW"`` : Support Vector Machine with RBF kernel
+    - ``"DecisionTree"`` : Decision Tree
+    - ``"AdaBoost"`` : AdaBoost classifier
+    - ``"GradientBoosting"`` : Gradient Boosting classifier
+    - ``"XGBoost"`` : XGBoost classifier
+    - ``"LightGBM"`` : LightGBM classifier
+    - ``"CatBoost"`` : CatBoost classifier
+    - ``"LogisticRegression"`` : Logistic Regression
+    - ``"SVM"`` : Linear Support Vector Machine
+    - ``"K-Nearest Neighbors"`` : KNN classifier
+    - ``"MLP"`` : Multi-layer Perceptron classifier
 
-    Args:
-        model_name (str): Identifier string for the classifier.
+    Parameters
+    ----------
+    model_name : str
+        Identifier string for the classifier.
 
-    Returns:
-        sklearn.base.BaseEstimator: Instantiated classifier object.
+    Returns
+    -------
+    sklearn.base.BaseEstimator
+        Instantiated classifier object.
 
-    Raises:
-        ValueError: If the given model_name is not supported.
+    Raises
+    ------
+    ValueError
+        If the given ``model_name`` is not supported.
     """
     classifiers = {
         "RF": RandomForestClassifier(random_state=42),

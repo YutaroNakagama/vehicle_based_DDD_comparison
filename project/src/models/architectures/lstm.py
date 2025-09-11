@@ -20,9 +20,15 @@ from src.config import MODEL_PKL_PATH
 
 
 class AttentionLayer(Layer):
-    """Custom attention layer for sequence input.
+    """
+    Custom attention layer for sequence input.
 
     Applies learned weights over LSTM outputs to focus on important time steps.
+
+    Parameters
+    ----------
+    **kwargs : dict
+        Additional keyword arguments passed to the base Layer class.
     """
 
     def __init__(self, **kwargs):
@@ -51,13 +57,18 @@ class AttentionLayer(Layer):
 
 
 def build_lstm_model(input_shape: tuple) -> Model:
-    """Construct the Bidirectional LSTM model with attention.
+    """
+    Construct the Bidirectional LSTM model with attention.
 
-    Args:
-        input_shape (tuple): Shape of the input tensor (timesteps, features).
+    Parameters
+    ----------
+    input_shape : tuple
+        Shape of the input tensor in the form ``(timesteps, features)``.
 
-    Returns:
-        keras.Model: Compiled LSTM model.
+    Returns
+    -------
+    tensorflow.keras.Model
+        Compiled LSTM model with attention mechanism.
     """
     inputs = Input(shape=input_shape)
     x = Bidirectional(LSTM(50, return_sequences=True))(inputs)
@@ -71,31 +82,40 @@ def build_lstm_model(input_shape: tuple) -> Model:
 
     return model
 
-def lstm_train(X: pd.DataFrame, y: pd.Series, model_name: str,
-               n_splits: int = 5, epochs: int = 10, batch_size: int = 16) -> None:
+def lstm_train(
+    X: pd.DataFrame,
+    y: pd.Series,
+    model_name: str,
+    n_splits: int = 5,
+    epochs: int = 10,
+    batch_size: int = 16
+) -> None:
     """
     Train a Bidirectional LSTM model with an attention mechanism using k-fold cross-validation.
 
     This function performs preprocessing, model construction, training, evaluation, and saving of
-    an LSTM model using a k-fold strategy. It selects numeric features, handles missing/infinite
+    an LSTM model using a k-fold strategy. It selects numeric features, handles missing or infinite
     values, and standardizes input before model training. Each fold’s model and scaler are saved.
 
-    Args:
-        X (pd.DataFrame): 
-            Input feature matrix. Only numeric columns are used.
-        y (pd.Series): 
-            Binary class labels (0 or 1) corresponding to `X`.
-        model_name (str): 
-            Name used for saving the model and scaler (e.g., 'Lstm') under `MODEL_PKL_PATH`.
-        n_splits (int, optional): 
-            Number of folds for K-Fold cross-validation. Default is 5.
-        epochs (int, optional): 
-            Number of training epochs for each fold. Default is 10.
-        batch_size (int, optional): 
-            Batch size used during training. Default is 16.
+    Parameters
+    ----------
+    X : pandas.DataFrame
+        Input feature matrix. Only numeric columns are used.
+    y : pandas.Series
+        Binary class labels (0 or 1) corresponding to ``X``.
+    model_name : str
+        Name used for saving the model and scaler (e.g., ``"Lstm"``) under ``MODEL_PKL_PATH``.
+    n_splits : int, default=5
+        Number of folds for K-Fold cross-validation.
+    epochs : int, default=10
+        Number of training epochs for each fold.
+    batch_size : int, default=16
+        Batch size used during training.
 
-    Returns:
-        None
+    Returns
+    -------
+    None
+        Trained models and scalers are saved to disk.
     """
     import joblib
 

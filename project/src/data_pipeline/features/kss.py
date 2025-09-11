@@ -22,19 +22,17 @@ from src.config import INTRIM_CSV_PATH, PROCESS_CSV_PATH, MODEL_WINDOW_CONFIG
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 def convert_theta_alpha_to_kss(theta_alpha_ratios: np.ndarray) -> np.ndarray:
-    """
-    Assigns KSS scores (1-9) based on Theta/Alpha ratio thresholds using a 9-bin linear distribution.
+    """Assign KSS scores (1–9) based on Theta/Alpha ratio thresholds.
 
-    This function takes an array of Theta/Alpha ratios and maps them to KSS scores
-    by dividing the range of ratios into 9 equal bins. This provides a quantized
-    estimation of drowsiness based on EEG spectral power.
+    Parameters
+    ----------
+    theta_alpha_ratios : ndarray
+        Array of Theta/Alpha ratio values.
 
-    Args:
-        theta_alpha_ratios (np.ndarray): A NumPy array of Theta/Alpha ratio values.
-
-    Returns:
-        np.ndarray: A NumPy array of estimated KSS scores (integers from 1 to 9)
-                    corresponding to each input ratio.
+    Returns
+    -------
+    ndarray
+        Estimated KSS scores (integers from 1 to 9).
     """
     min_value, max_value = np.min(theta_alpha_ratios), np.max(theta_alpha_ratios)
     # 9 bins = 8 thresholds (score=1~9), np.linspaceで10個→bins=1~9
@@ -43,56 +41,55 @@ def convert_theta_alpha_to_kss(theta_alpha_ratios: np.ndarray) -> np.ndarray:
     return kss_scores.tolist()
 
 def convert_theta_alpha_to_kss_percentile(theta_alpha_ratios: np.ndarray) -> np.ndarray:
-    """Assigns KSS scores (1-9) based on Theta/Alpha ratio percentiles.
+    """Assign KSS scores (1–9) based on Theta/Alpha ratio percentiles.
 
-    This method provides a percentile-based approach to KSS scoring, where
-    the range of Theta/Alpha ratios is divided into 9 bins based on their
-    distribution percentiles. This can be useful for relative scoring within
-    a dataset.
+    Parameters
+    ----------
+    theta_alpha_ratios : ndarray
+        Array of Theta/Alpha ratio values.
 
-    Args:
-        theta_alpha_ratios (np.ndarray): A NumPy array of Theta/Alpha ratio values.
-
-    Returns:
-        np.ndarray: A NumPy array of estimated KSS scores (integers from 1 to 9)
-                    corresponding to each input ratio, based on percentiles.
+    Returns
+    -------
+    ndarray
+        Estimated KSS scores (integers from 1 to 9), based on percentiles.
     """
     percentiles = np.percentile(theta_alpha_ratios, np.arange(0, 100, 100/9))[1:-1]
     kss_scores = np.digitize(theta_alpha_ratios, bins=percentiles) + 1
     return kss_scores.tolist()
 
 def remove_outliers(data: np.ndarray, threshold: float = 3) -> np.ndarray:
-    """Removes outliers from a 1D NumPy array based on a standard deviation threshold.
+    """Remove outliers from a 1D array based on a standard deviation threshold.
 
-    Outliers are defined as data points that fall outside a specified number of
-    standard deviations from the mean. This function helps in cleaning data
-    before further processing or analysis.
+    Parameters
+    ----------
+    data : ndarray
+        Input 1D array.
+    threshold : float, default=3
+        Number of standard deviations from the mean to define outliers.
 
-    Args:
-        data (np.ndarray): The input 1D NumPy array.
-        threshold (float): The number of standard deviations from the mean to define
-                           the outlier boundaries. Defaults to 3.
-
-    Returns:
-        np.ndarray: A new NumPy array with outliers removed.
+    Returns
+    -------
+    ndarray
+        Array with outliers removed.
     """
     mean, std_dev = np.mean(data), np.std(data)
     lower_bound, upper_bound = mean - threshold * std_dev, mean + threshold * std_dev
     return data[(data >= lower_bound) & (data <= upper_bound)]
 
 def adjust_scores_length(scores: list, target_length: int) -> list:
-    """Adjusts the length of a list of scores to match a target length.
+    """Adjust the length of a score list to a target length.
 
-    If the input `scores` list is shorter than `target_length`, it is padded
-    with NaN values. If it is longer, it is truncated. This ensures consistency
-    in data dimensions for subsequent processing or saving.
+    Parameters
+    ----------
+    scores : list
+        List of scores (e.g., KSS values).
+    target_length : int
+        Desired output length.
 
-    Args:
-        scores (list): The list of scores (e.g., KSS scores) to be adjusted.
-        target_length (int): The desired length of the scores list.
-
-    Returns:
-        list: The adjusted list of scores.
+    Returns
+    -------
+    list
+        Adjusted list of scores (padded with NaN or truncated).
     """
     arr = np.asarray(scores)
     if len(arr) < target_length:
@@ -102,20 +99,23 @@ def adjust_scores_length(scores: list, target_length: int) -> list:
     return arr.tolist()
 
 def kss_process(subject: str, model: str) -> None:
-    """Computes and saves KSS (Karolinska Sleepiness Scale) scores based on EEG band powers.
+    """Compute and save KSS (Karolinska Sleepiness Scale) scores.
 
-    This function loads preprocessed EEG data, calculates two types of KSS scores:
-    one based on the global (Theta + Alpha) / Beta ratio across all channels,
-    and another based on the (Theta + Alpha) / Beta ratio from specific FC1 and FC2 channels.
-    Outliers are removed before KSS score conversion. The estimated KSS scores
-    are then appended to the processed data and saved to a CSV file.
+    This function derives KSS scores from EEG band powers using:
+    - Global (Theta + Alpha) / Beta ratio.
+    - FC1/FC2-based (Theta + Alpha) / Beta ratio.
 
-    Args:
-        subject (str): The subject identifier in 'subjectID_version' format (e.g., 'S0120_2').
-        model (str): The model name, used for resolving file paths to the preprocessed data.
+    Parameters
+    ----------
+    subject : str
+        Subject identifier (format: ``"<id>_<version>"``).
+    model : str
+        Model name used for resolving file paths.
 
-    Returns:
-        None: The function saves the processed data with KSS scores to a CSV file and does not return any value.
+    Returns
+    -------
+    None
+        Processed data with KSS scores is saved to CSV.
     """
     parts = subject.split('_')
     if len(parts) != 2:

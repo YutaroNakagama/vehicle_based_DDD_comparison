@@ -4,9 +4,11 @@ This script executes the evaluation pipeline for a specified model. It loads the
 trained model and corresponding test data, computes evaluation metrics (e.g.,
 accuracy, precision, recall, confusion matrix), and prints the results to the console.
 
-Example:
-    Run evaluation for the LSTM model:
-        $ python evaluate.py --model Lstm
+Examples
+--------
+Run evaluation for the LSTM model:
+
+    $ python evaluate.py --model Lstm
 """
 
 import sys
@@ -25,19 +27,38 @@ import src.evaluation.eval_pipeline as mp
 def main():
     """Parse command-line arguments and run the evaluation pipeline.
 
-    This function parses the `--model` argument from the command line to determine
-    which model's evaluation pipeline to run. It then calls the `eval_pipeline`
-    function from the `src.evaluation.eval_pipeline` module.
+    This function parses CLI arguments to determine which model to evaluate,
+    then calls the `eval_pipeline` function from the
+    :mod:`src.evaluation.eval_pipeline` module.
 
-    Args:
-        None
+    Parameters
+    ----------
+    None
 
-    Command-line Arguments:
-        --model (str): Required. Specifies which model to evaluate. Must be one of
-            the options listed in `src.config.MODEL_CHOICES`.
+    Other Parameters
+    ----------------
+    --model : str
+        Required. Model to evaluate. Must be one of the options in
+        ``src.config.MODEL_CHOICES``.
+    --tag : str, optional
+        Optional tag to distinguish model variants (e.g., ``erm``, ``coral``).
+    --sample_size : int, optional
+        Number of subjects to evaluate (for subset evaluation).
+    --seed : int, default=42
+        Random seed for reproducibility in subset evaluation.
+    --fold : int, default=0
+        Fold number for cross validation.
+    --subject_wise_split : bool, optional
+        If set, perform subject-wise data splitting to prevent subject leakage.
 
-    Raises:
-        SystemExit: Raised automatically by argparse if invalid or missing arguments are provided.
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    SystemExit
+        If invalid or missing arguments are provided, or if the evaluation fails.
     """
     parser = argparse.ArgumentParser(
         description="Run the evaluation pipeline for a trained DDD model."

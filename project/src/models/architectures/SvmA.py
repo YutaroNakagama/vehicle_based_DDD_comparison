@@ -27,14 +27,24 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 
 def calculate_importance_degree(params: list[float], indices_df: pd.DataFrame) -> np.ndarray:
-    """Compute importance degree per feature using ANFIS-style weighted indices.
+    """
+    Compute importance degree per feature using ANFIS-style weighted indices.
 
-    Args:
-        params (list[float]): Weight parameters for each index [Fisher, Corr, T-test, MI].
-        indices_df (pd.DataFrame): DataFrame with feature index scores.
+    Parameters
+    ----------
+    params : list of float
+        Weight parameters for each index in the order:
+        [Fisher, Correlation, T-test, Mutual Information].
+    indices_df : pandas.DataFrame
+        DataFrame containing feature index scores.
 
-    Returns:
-        np.ndarray: Importance degree array (1: high, 0.5: medium, 0: low).
+    Returns
+    -------
+    numpy.ndarray
+        Importance degree array, where values are:
+        - 1   : High importance
+        - 0.5 : Medium importance
+        - 0   : Low importance
     """
     weighted_scores = (
         indices_df['Fisher_Index'] * params[0] +
@@ -46,14 +56,21 @@ def calculate_importance_degree(params: list[float], indices_df: pd.DataFrame) -
 
 
 def select_features(features_df: pd.DataFrame, importance_degree: np.ndarray) -> pd.DataFrame:
-    """Select features based on importance threshold.
+    """
+    Select features based on importance threshold.
 
-    Args:
-        features_df (pd.DataFrame): Feature matrix.
-        importance_degree (np.ndarray): Importance levels per feature (0, 0.5, 1).
+    Parameters
+    ----------
+    features_df : pandas.DataFrame
+        Input feature matrix.
+    importance_degree : numpy.ndarray
+        Importance levels per feature (0, 0.5, or 1).
 
-    Returns:
-        pd.DataFrame: Filtered features with importance == 1.
+    Returns
+    -------
+    pandas.DataFrame
+        Filtered DataFrame containing only features with
+        importance equal to 1.
     """
     return features_df.loc[:, importance_degree == 1]
 
@@ -63,17 +80,27 @@ def optimize_svm_anfis(
     X_val: pd.DataFrame, y_val: pd.Series,
     indices_df: pd.DataFrame
 ) -> list[float]:
-    """Optimize ANFIS feature weights and SVM hyperparameters using PSO.
+    """
+    Optimize ANFIS feature weights and SVM hyperparameters using PSO.
 
-    Args:
-        X_train (pd.DataFrame): Training features.
-        y_train (pd.Series): Training labels.
-        X_val (pd.DataFrame): Validation features.
-        y_val (pd.Series): Validation labels.
-        indices_df (pd.DataFrame): Feature importance index values.
+    Parameters
+    ----------
+    X_train : pandas.DataFrame
+        Training feature matrix.
+    y_train : pandas.Series
+        Training labels.
+    X_val : pandas.DataFrame
+        Validation feature matrix.
+    y_val : pandas.Series
+        Validation labels.
+    indices_df : pandas.DataFrame
+        Feature importance index values.
 
-    Returns:
-        list[float]: Optimal parameters [w1, w2, w3, w4, C, gamma].
+    Returns
+    -------
+    list of float
+        Optimal parameters in the form:
+        [w1, w2, w3, w4, C, gamma].
     """
     def objective(params):
         importance_degree = calculate_importance_degree(params[:4], indices_df)
@@ -96,16 +123,23 @@ def optimize_svm_anfis(
 
 
 def evaluate_model(model: SVC, X: pd.DataFrame, y: pd.Series, dataset_name: str) -> None:
-    """Log classification metrics for a given dataset.
+    """
+    Log classification metrics for a given dataset.
 
-    Args:
-        model (SVC): Trained SVM model.
-        X (pd.DataFrame): Input features.
-        y (pd.Series): Ground truth labels.
-        dataset_name (str): Label to display in logs (e.g. "Training").
+    Parameters
+    ----------
+    model : sklearn.svm.SVC
+        Trained SVM model.
+    X : pandas.DataFrame
+        Input feature matrix.
+    y : pandas.Series
+        Ground truth labels.
+    dataset_name : str
+        Label used in log messages (e.g., ``"Training"``).
 
-    Returns:
-        None
+    Returns
+    -------
+    None
     """
     y_pred = model.predict(X)
     accuracy = accuracy_score(y, y_pred)
@@ -126,20 +160,31 @@ def SvmA_train(
     y_train: pd.Series, y_val: pd.Series,
     indices_df: pd.DataFrame, model: str
 ) -> None:
-    """Train SVM using ANFIS-based feature weighting and PSO optimization.
+    """
+    Train SVM using ANFIS-based feature weighting and PSO optimization.
 
-    Saves the trained model and selected features to `model/{model}/`.
+    This function selects features, trains an SVM with optimized
+    hyperparameters, and saves the model and selected features.
 
-    Args:
-        X_train (pd.DataFrame): Training features.
-        X_val (pd.DataFrame): Validation features.
-        y_train (pd.Series): Training labels.
-        y_val (pd.Series): Validation labels.
-        indices_df (pd.DataFrame): Feature selection index scores.
-        model (str): Model name used for saving.
+    Parameters
+    ----------
+    X_train : pandas.DataFrame
+        Training feature matrix.
+    X_val : pandas.DataFrame
+        Validation feature matrix.
+    y_train : pandas.Series
+        Training labels.
+    y_val : pandas.Series
+        Validation labels.
+    indices_df : pandas.DataFrame
+        Feature selection index scores.
+    model : str
+        Model name used for saving artifacts.
 
-    Returns:
-        None
+    Returns
+    -------
+    None
+        Trained model and selected features are saved to disk.
     """
     logging.info("Starting SVM-ANFIS optimization...")
 

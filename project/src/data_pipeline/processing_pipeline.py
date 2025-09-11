@@ -1,15 +1,30 @@
 """
-Data Processing Pipeline for Driver Drowsiness Detection.
+Data Processing Pipeline for Driver Drowsiness Detection (DDD).
 
-This module orchestrates the entire data preprocessing workflow for the Driver Drowsiness Detection (DDD) system.
-It defines the `main_pipeline` function, which serves as the central entry point for
-applying various feature extraction techniques and data transformations to raw subject data.
+This module orchestrates the entire preprocessing workflow, including
+feature extraction, transformation, and labeling of raw subject data.
+It provides the main entry point :func:`main_pipeline` to prepare data
+for model training and evaluation.
 
-The pipeline dynamically selects and applies specific feature extraction methods
-(e.g., time-frequency analysis, wavelet decomposition, EEG feature extraction)
-based on the chosen model type. Processed data for each subject is initially stored
-in an interim directory, then merged and labeled, preparing it for subsequent
-model training and evaluation.
+Notes
+-----
+- The pipeline dynamically selects preprocessing steps based on the
+  chosen model type (e.g., common, SvmW, Lstm, LstmA).
+- Processed subject data are first saved in an interim directory,
+  then merged and labeled for downstream tasks.
+
+Modules
+-------
+features.simlsl : Time-frequency domain and smoothing/STD feature extraction.
+features.wavelet : Wavelet decomposition for EEG and related signals.
+features.physio : Physiological features such as pupil size and PERCLOS.
+features.eeg : EEG feature extraction.
+features.kss : KSS (Karolinska Sleepiness Scale) label processing.
+
+Functions
+---------
+main_pipeline(model: str, use_jittering: bool = False) -> None
+    Run the full preprocessing pipeline for a given model.
 """
 
 import logging
@@ -31,13 +46,19 @@ def main_pipeline(model: str, use_jittering: bool = False) -> None:
     methods such as time-frequency domain analysis, wavelet transforms,
     EEG feature extraction, and merges the data for training.
 
-    Args:
-        model (str): Name of the model to determine which preprocessing steps to run.
-                     Must be one of ['common', 'SvmW', 'Lstm', 'LstmA'].
-        use_jittering (bool): Whether to apply jittering data augmentation.
+    Parameters
+    ----------
+    model : str
+        Name of the model to determine which preprocessing steps to run.
+        Must be one of ``["common", "SvmW", "Lstm", "LstmA"]``.
+    use_jittering : bool, default=False
+        Whether to apply jittering data augmentation.
 
-    Returns:
-        None
+    Returns
+    -------
+    None
+        This function performs preprocessing and saves the processed files,
+        but does not return any value.
     """
     # Read the list of subjects to be processed
     subject_list = read_subject_list()
