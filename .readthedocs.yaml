@@ -8,9 +8,11 @@ build:
 sphinx:
   configuration: docs/conf.py
 
+formats:
+  - htmlzip
+  - pdf
+  - epub
+
 python:
   install:
     - requirements: docs/requirements.txt
-
-formats: all   # pdf, epub, htmlzip を自動生成したい場合
-
