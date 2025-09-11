@@ -1,0 +1,258 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>models package &mdash; Vehicle-based DDD Docs</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=837179f8"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="utils package" href="utils.html" />
+    <link rel="prev" title="evaluation package" href="evaluation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Vehicle-based DDD Comparison
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="analysis.html">analysis package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html">config module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_pipeline.html">data_pipeline package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="evaluation.html">evaluation package</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">models package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-models.model_pipeline">models.model_pipeline module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#models.model_pipeline.remove_outliers_zscore"><code class="docutils literal notranslate"><span class="pre">remove_outliers_zscore()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#models.model_pipeline.save_feature_histograms"><code class="docutils literal notranslate"><span class="pre">save_feature_histograms()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#models.model_pipeline.train_pipeline"><code class="docutils literal notranslate"><span class="pre">train_pipeline()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-models">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html#bin">bin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html">analysis package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">config module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_pipeline.html">data_pipeline package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="evaluation.html">evaluation package</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">models package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-models.model_pipeline">models.model_pipeline module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#models.model_pipeline.remove_outliers_zscore"><code class="docutils literal notranslate"><span class="pre">remove_outliers_zscore()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#models.model_pipeline.save_feature_histograms"><code class="docutils literal notranslate"><span class="pre">save_feature_histograms()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#models.model_pipeline.train_pipeline"><code class="docutils literal notranslate"><span class="pre">train_pipeline()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-models">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">utils package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Vehicle-based DDD Comparison</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">src</a></li>
+      <li class="breadcrumb-item active">models package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/models.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="models-package">
+<h1>models package<a class="headerlink" href="#models-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-models.model_pipeline">
+<span id="models-model-pipeline-module"></span><h2>models.model_pipeline module<a class="headerlink" href="#module-models.model_pipeline" title="Link to this heading"></a></h2>
+<p>Model Training Pipeline for Driver Drowsiness Detection.</p>
+<p>This module orchestrates the entire model training workflow for the Driver Drowsiness Detection (DDD) system.
+It provides the <cite>train_pipeline</cite> function, which serves as the central entry point for:</p>
+<ul class="simple">
+<li><p>Loading preprocessed data for the selected model type.</p></li>
+<li><p>Splitting data into training, validation, and test sets, with options for subject-wise splitting and k-fold cross-validation.</p></li>
+<li><p>Applying optional domain generalization techniques such as Domain Mixup, CORAL (Correlation Alignment), and VAE-based augmentation.</p></li>
+<li><p>Performing feature selection using various methods (e.g., Random Forest importance, Mutual Information, ANOVA F-test).</p></li>
+<li><p>Training model-specific architectures (e.g., LSTM, SVM, various tree-based classifiers) based on the configuration.</p></li>
+<li><p>Saving trained models and relevant artifacts.</p></li>
+</ul>
+<dl class="py function">
+<dt class="sig sig-object py" id="models.model_pipeline.remove_outliers_zscore">
+<span class="sig-prename descclassname"><span class="pre">models.model_pipeline.</span></span><span class="sig-name descname"><span class="pre">remove_outliers_zscore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models/model_pipeline.html#remove_outliers_zscore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.model_pipeline.remove_outliers_zscore" title="Link to this definition"></a></dt>
+<dd><p>Remove rows from a DataFrame where any specified column’s Z-score exceeds the threshold.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – Input DataFrame.</p></li>
+<li><p><strong>cols</strong> (<em>list</em><em> of </em><em>str</em>) – Column names to check for outliers.</p></li>
+<li><p><strong>threshold</strong> (<em>float</em><em>, </em><em>default=5.0</em>) – Z-score threshold. Rows with Z-scores above this value are removed.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>DataFrame with outlier rows removed.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="models.model_pipeline.save_feature_histograms">
+<span class="sig-prename descclassname"><span class="pre">models.model_pipeline.</span></span><span class="sig-name descname"><span class="pre">save_feature_histograms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_columns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'feature_hist_svg'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models/model_pipeline.html#save_feature_histograms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.model_pipeline.save_feature_histograms" title="Link to this definition"></a></dt>
+<dd><p>Generate and save histograms for the specified feature columns as SVG files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – DataFrame containing feature data.</p></li>
+<li><p><strong>feature_columns</strong> (<em>list</em><em> of </em><em>str</em>) – List of column names for which to generate histograms.</p></li>
+<li><p><strong>outdir</strong> (<em>str</em><em>, </em><em>default=&quot;feature_hist_svg&quot;</em>) – Output directory to save the histogram SVG files.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>SVG files are saved to the specified directory.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="models.model_pipeline.train_pipeline">
+<span class="sig-prename descclassname"><span class="pre">models.model_pipeline.</span></span><span class="sig-name descname"><span class="pre">train_pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_domain_mixup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_coral</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_vae</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">42</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_folds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject_wise_split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_selection_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rf'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_leak</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject_split_strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'random'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_subjects</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_subjects</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_subjects</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_subjects</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">general_subjects</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">finetune_setting</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_pretrain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_only_pretrained</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">balance_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">balance_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'undersample'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_stratify_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_stratify_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_stratify_window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_stratify_min_chunk</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models/model_pipeline.html#train_pipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.model_pipeline.train_pipeline" title="Link to this definition"></a></dt>
+<dd><p>Train a machine learning model for driver drowsiness detection.</p>
+<p>This function loads processed feature data, applies optional domain
+generalization techniques (Domain Mixup, CORAL, VAE), performs feature
+selection, and trains a model based on the specified configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_name</strong> (<em>str</em>) – The model to train (e.g., <code class="docutils literal notranslate"><span class="pre">'Lstm'</span></code>, <code class="docutils literal notranslate"><span class="pre">'SvmA'</span></code>, <code class="docutils literal notranslate"><span class="pre">'RF'</span></code>).</p></li>
+<li><p><strong>use_domain_mixup</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Apply domain mixup augmentation.</p></li>
+<li><p><strong>use_coral</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Apply CORAL (Correlation Alignment) domain adaptation.</p></li>
+<li><p><strong>use_vae</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Apply VAE-based augmentation.</p></li>
+<li><p><strong>sample_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of subjects to subsample. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, use all subjects.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>default=42</em>) – Random seed for reproducibility.</p></li>
+<li><p><strong>fold</strong> (<em>int</em><em>, </em><em>optional</em>) – Fold index for cross-validation.</p></li>
+<li><p><strong>n_folds</strong> (<em>int</em><em>, </em><em>optional</em>) – Total number of folds for cross-validation.</p></li>
+<li><p><strong>tag</strong> (<em>str</em><em>, </em><em>optional</em>) – Identifier appended to saved model artifacts.</p></li>
+<li><p><strong>subject_wise_split</strong> (<em>bool</em><em>, </em><em>default=False</em>) – If True, ensures subjects are not mixed across splits.</p></li>
+<li><p><strong>feature_selection_method</strong> (<em>{&quot;rf&quot;</em><em>, </em><em>&quot;mi&quot;</em><em>, </em><em>&quot;anova&quot;}</em><em>, </em><em>default=&quot;rf&quot;</em>) – Feature selection method:
+- <code class="docutils literal notranslate"><span class="pre">&quot;rf&quot;</span></code> : Random Forest importance
+- <code class="docutils literal notranslate"><span class="pre">&quot;mi&quot;</span></code> : Mutual Information
+- <code class="docutils literal notranslate"><span class="pre">&quot;anova&quot;</span></code> : ANOVA F-test</p></li>
+<li><p><strong>data_leak</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Allow intentional data leakage (for ablation studies).</p></li>
+<li><p><strong>subject_split_strategy</strong> (<em>str</em><em>, </em><em>default=&quot;random&quot;</em>) – Strategy for subject splitting (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;random&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;finetune_target_subjects&quot;</span></code>).</p></li>
+<li><p><strong>target_subjects</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – List of subjects to treat as targets.</p></li>
+<li><p><strong>train_subjects</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Explicit subject list for training.</p></li>
+<li><p><strong>val_subjects</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Explicit subject list for validation.</p></li>
+<li><p><strong>test_subjects</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Explicit subject list for testing.</p></li>
+<li><p><strong>general_subjects</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – List of general subjects for pretraining or domain generalization.</p></li>
+<li><p><strong>finetune_setting</strong> (<em>str</em><em>, </em><em>optional</em>) – Path to pretrained feature/scaler configuration for fine-tuning.</p></li>
+<li><p><strong>save_pretrain</strong> (<em>str</em><em>, </em><em>optional</em>) – Path to save pretraining artifacts (features/scaler).</p></li>
+<li><p><strong>eval_only_pretrained</strong> (<em>bool</em><em>, </em><em>default=False</em>) – If True, skip fine-tuning and evaluate using pretrained model only.</p></li>
+<li><p><strong>balance_labels</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to balance class distribution.</p></li>
+<li><p><strong>balance_method</strong> (<em>str</em><em>, </em><em>default=&quot;undersample&quot;</em>) – Strategy for label balancing.</p></li>
+<li><p><strong>time_stratify_labels</strong> (<em>bool</em><em>, </em><em>default=False</em>) – If True, apply time-stratified label splitting.</p></li>
+<li><p><strong>time_stratify_tolerance</strong> (<em>float</em><em>, </em><em>default=0.02</em>) – Allowed tolerance for time-based stratification.</p></li>
+<li><p><strong>time_stratify_window</strong> (<em>float</em><em>, </em><em>default=0.10</em>) – Window proportion for time-based stratification.</p></li>
+<li><p><strong>time_stratify_min_chunk</strong> (<em>int</em><em>, </em><em>default=100</em>) – Minimum chunk size for time-based stratification.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Trained models and artifacts are saved to disk.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-models">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-models" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="evaluation.html" class="btn btn-neutral float-left" title="evaluation package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="utils.html" class="btn btn-neutral float-right" title="utils package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, ynakagama.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

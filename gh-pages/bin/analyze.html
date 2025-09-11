@@ -1,0 +1,349 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analyze &mdash; Vehicle-based DDD Docs</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=837179f8"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Evaluate" href="evaluate.html" />
+    <link rel="prev" title="utils package" href="../utils.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Vehicle-based DDD Comparison
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">src</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../modules.html#bin">bin</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Analyze</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#subcommands">Subcommands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#project.bin.analyze.build_parser"><code class="docutils literal notranslate"><span class="pre">build_parser()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#project.bin.analyze.cmd_comp_dist"><code class="docutils literal notranslate"><span class="pre">cmd_comp_dist()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#project.bin.analyze.cmd_corr"><code class="docutils literal notranslate"><span class="pre">cmd_corr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#project.bin.analyze.cmd_corr_collect"><code class="docutils literal notranslate"><span class="pre">cmd_corr_collect()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#project.bin.analyze.cmd_make_table"><code class="docutils literal notranslate"><span class="pre">cmd_make_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#project.bin.analyze.cmd_rank_export"><code class="docutils literal notranslate"><span class="pre">cmd_rank_export()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#project.bin.analyze.cmd_report_pretrain_groups"><code class="docutils literal notranslate"><span class="pre">cmd_report_pretrain_groups()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#project.bin.analyze.cmd_summarize"><code class="docutils literal notranslate"><span class="pre">cmd_summarize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#project.bin.analyze.cmd_summarize_metrics"><code class="docutils literal notranslate"><span class="pre">cmd_summarize_metrics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#project.bin.analyze.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="evaluate.html">Evaluate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="make_pretrain_groups.html">Make Pretrain Groups</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plot.html">Plot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preprocess.html">Preprocess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="train.html">Train</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../analysis.html">analysis package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../config.html">config module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_pipeline.html">data_pipeline package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../evaluation.html">evaluation package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models.html">models package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">utils package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Vehicle-based DDD Comparison</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../modules.html">src</a></li>
+      <li class="breadcrumb-item active">Analyze</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/bin/analyze.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-project.bin.analyze">
+<span id="analyze"></span><h1>Analyze<a class="headerlink" href="#module-project.bin.analyze" title="Link to this heading"></a></h1>
+<p>Unified CLI for analysis tasks.</p>
+<p>This script provides a unified command-line interface (CLI) for various
+analysis-related tasks in the DDD pipeline, such as computing distance
+matrices, correlating group distances with evaluation metrics, summarising
+results, and exporting rankings.</p>
+<section id="subcommands">
+<h2>Subcommands<a class="headerlink" href="#subcommands" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>comp-dist</dt><dd><p>Compute MMD / Wasserstein / DTW distance matrices and summaries.</p>
+</dd>
+<dt>corr</dt><dd><p>Correlate group distances (d(U,G), disp(G)) with Δ metrics (finetune - only10).</p>
+</dd>
+<dt>summarize</dt><dd><p>Summarize only10 vs finetune for a group list (6グループ/任意リスト対応, レーダー出力可).</p>
+</dd>
+<dt>summarize-metrics</dt><dd><p>Scan model_dir for metrics_*.csv and build a long-form summary.</p>
+</dd>
+<dt>make-table</dt><dd><p>Build a wide table (only10 vs finetune) from the summary; create summary if missing.</p>
+</dd>
+<dt>report-pretrain-groups</dt><dd><p>For 10-vs-78 pretrain groups, compute Intra/Inter/NN and export JSON/CSV/PNG.</p>
+</dd>
+<dt>corr-collect</dt><dd><p>Collect correlation CSVs (MMD/Wasserstein/DTW) and draw a heatmap.</p>
+</dd>
+<dt>rank-export</dt><dd><p>Export top/bottom-k subject lists from mean/std rankings.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Compute distance matrices:</p>
+<blockquote>
+<div><p>$ python bin/analyze.py comp-dist         –subject_list ../../dataset/mdapbe/subject_list.txt         –data_root data/processed/common         –groups_file ../misc/target_groups.txt</p>
+</div></blockquote>
+<p>Compute correlation between d(U,G) and Δ metrics:</p>
+<blockquote>
+<div><p>$ python bin/analyze.py corr         –summary_csv model/common/summary_6groups_only10_vs_finetune_wide.csv         –distance results/mmd/mmd_matrix.npy         –subjects_json results/mmd/mmd_subjects.json         –groups_dir misc/pretrain_groups         –group_names_file misc/pretrain_groups/group_names.txt         –outdir model/common/dist_corr_mmd</p>
+</div></blockquote>
+<p>Summarize only10 vs finetune (6 groups, with radar plot):</p>
+<blockquote>
+<div><p>$ python bin/analyze.py summarize –make_radar</p>
+</div></blockquote>
+<p>Aggregate metrics_* CSVs:</p>
+<blockquote>
+<div><p>$ python bin/analyze.py summarize-metrics –model_dir model/common –model_tag RF</p>
+</div></blockquote>
+<p>Make a wide comparison table:</p>
+<blockquote>
+<div><p>$ python bin/analyze.py make-table –model_dir model/common –model_tag RF</p>
+</div></blockquote>
+<p>Report intra/inter/NN distances for 10 vs 78 groups:</p>
+<blockquote>
+<div><p>$ python bin/analyze.py report-pretrain-groups –group_dir misc/pretrain_groups</p>
+</div></blockquote>
+<p>Collect multiple correlation CSVs and draw heatmap:</p>
+<blockquote>
+<div><p>$ python bin/analyze.py corr-collect         –mmd model/common/dist_corr_mmd/correlations_dUG_vs_deltas.csv         –wass model/common/dist_corr_wasserstein/correlations_dUG_vs_deltas.csv         –dtw model/common/dist_corr_dtw/correlations_dUG_vs_deltas.csv         –out_csv correlation_summary_all.csv         –out_png correlation_heatmap_all.png</p>
+</div></blockquote>
+</section>
+<dl class="py function">
+<dt class="sig sig-object py" id="project.bin.analyze.build_parser">
+<span class="sig-prename descclassname"><span class="pre">project.bin.analyze.</span></span><span class="sig-name descname"><span class="pre">build_parser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/project/bin/analyze.html#build_parser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#project.bin.analyze.build_parser" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentParser</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="project.bin.analyze.cmd_comp_dist">
+<span class="sig-prename descclassname"><span class="pre">project.bin.analyze.</span></span><span class="sig-name descname"><span class="pre">cmd_comp_dist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/project/bin/analyze.html#cmd_comp_dist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#project.bin.analyze.cmd_comp_dist" title="Link to this definition"></a></dt>
+<dd><p>Compute distance matrices (MMD, Wasserstein, DTW) and summaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<em>argparse.Namespace</em>) – Parsed command-line arguments parsed from CLI.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Return code (0 = success, non-zero = error).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="project.bin.analyze.cmd_corr">
+<span class="sig-prename descclassname"><span class="pre">project.bin.analyze.</span></span><span class="sig-name descname"><span class="pre">cmd_corr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/project/bin/analyze.html#cmd_corr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#project.bin.analyze.cmd_corr" title="Link to this definition"></a></dt>
+<dd><p>Correlate group distances with Δ metrics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<em>argparse.Namespace</em>) – Parsed command-line arguments parsed from CLI.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Return code (0 = success, non-zero = error).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="project.bin.analyze.cmd_corr_collect">
+<span class="sig-prename descclassname"><span class="pre">project.bin.analyze.</span></span><span class="sig-name descname"><span class="pre">cmd_corr_collect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/project/bin/analyze.html#cmd_corr_collect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#project.bin.analyze.cmd_corr_collect" title="Link to this definition"></a></dt>
+<dd><p>Collect correlation CSVs and draw a Pearson heatmap.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<em>argparse.Namespace</em>) – Parsed command-line arguments parsed from CLI.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Return code (0 = success, non-zero = error).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="project.bin.analyze.cmd_make_table">
+<span class="sig-prename descclassname"><span class="pre">project.bin.analyze.</span></span><span class="sig-name descname"><span class="pre">cmd_make_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/project/bin/analyze.html#cmd_make_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#project.bin.analyze.cmd_make_table" title="Link to this definition"></a></dt>
+<dd><p>Generate a wide-format comparison table (only10 vs finetune).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<em>argparse.Namespace</em>) – Parsed command-line arguments parsed from CLI.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Return code (0 = success, non-zero = error).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="project.bin.analyze.cmd_rank_export">
+<span class="sig-prename descclassname"><span class="pre">project.bin.analyze.</span></span><span class="sig-name descname"><span class="pre">cmd_rank_export</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/project/bin/analyze.html#cmd_rank_export"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#project.bin.analyze.cmd_rank_export" title="Link to this definition"></a></dt>
+<dd><p>Export top/bottom-k subject rankings from distance matrices.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<em>argparse.Namespace</em>) – Parsed command-line arguments parsed from CLI.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Return code (0 = success, non-zero = error).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="project.bin.analyze.cmd_report_pretrain_groups">
+<span class="sig-prename descclassname"><span class="pre">project.bin.analyze.</span></span><span class="sig-name descname"><span class="pre">cmd_report_pretrain_groups</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/project/bin/analyze.html#cmd_report_pretrain_groups"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#project.bin.analyze.cmd_report_pretrain_groups" title="Link to this definition"></a></dt>
+<dd><p>Report intra/inter/NN statistics for pretrain groups.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<em>argparse.Namespace</em>) – Parsed command-line arguments parsed from CLI.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Return code (0 = success, non-zero = error).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="project.bin.analyze.cmd_summarize">
+<span class="sig-prename descclassname"><span class="pre">project.bin.analyze.</span></span><span class="sig-name descname"><span class="pre">cmd_summarize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/project/bin/analyze.html#cmd_summarize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#project.bin.analyze.cmd_summarize" title="Link to this definition"></a></dt>
+<dd><p>Summarize only10 vs finetune results.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<em>argparse.Namespace</em>) – Parsed command-line arguments parsed from CLI.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Always 0 (success).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="project.bin.analyze.cmd_summarize_metrics">
+<span class="sig-prename descclassname"><span class="pre">project.bin.analyze.</span></span><span class="sig-name descname"><span class="pre">cmd_summarize_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/project/bin/analyze.html#cmd_summarize_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#project.bin.analyze.cmd_summarize_metrics" title="Link to this definition"></a></dt>
+<dd><p>Generate a wide-format comparison table (only10 vs finetune).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<em>argparse.Namespace</em>) – Parsed command-line arguments parsed from CLI.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Return code (0 = success, non-zero = error).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="project.bin.analyze.main">
+<span class="sig-prename descclassname"><span class="pre">project.bin.analyze.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/project/bin/analyze.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#project.bin.analyze.main" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../utils.html" class="btn btn-neutral float-left" title="utils package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="evaluate.html" class="btn btn-neutral float-right" title="Evaluate" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, ynakagama.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

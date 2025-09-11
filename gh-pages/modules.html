@@ -1,0 +1,254 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src &mdash; Vehicle-based DDD Docs</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=837179f8"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="analysis package" href="analysis.html" />
+    <link rel="prev" title="Vehicle-based Driver Drowsiness Detection" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Vehicle-based DDD Comparison
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">src</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html">analysis package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html">config module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_pipeline.html">data_pipeline package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="evaluation.html">evaluation package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html">models package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#bin">bin</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="bin/analyze.html">Analyze</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bin/evaluate.html">Evaluate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bin/make_pretrain_groups.html">Make Pretrain Groups</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bin/plot.html">Plot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bin/preprocess.html">Preprocess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bin/train.html">Train</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html">analysis package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">config module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_pipeline.html">data_pipeline package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="evaluation.html">evaluation package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">models package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">utils package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Vehicle-based DDD Comparison</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">src</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/modules.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="src">
+<h1>src<a class="headerlink" href="#src" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html">analysis package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html#module-analysis.correlation">analysis.correlation module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#functions">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#analysis.correlation.run_distance_vs_delta"><code class="docutils literal notranslate"><span class="pre">run_distance_vs_delta()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html#module-analysis.distances">analysis.distances module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#analysis.distances.compute_mmd"><code class="docutils literal notranslate"><span class="pre">compute_mmd()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#analysis.distances.run_comp_dist"><code class="docutils literal notranslate"><span class="pre">run_comp_dist()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html#module-analysis.metrics_tables">analysis.metrics_tables module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#analysis.metrics_tables.make_comparison_table"><code class="docutils literal notranslate"><span class="pre">make_comparison_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#analysis.metrics_tables.summarize_metrics"><code class="docutils literal notranslate"><span class="pre">summarize_metrics()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html#module-analysis.pretrain_groups_report">analysis.pretrain_groups_report module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#analysis.pretrain_groups_report.ensure_dir"><code class="docutils literal notranslate"><span class="pre">ensure_dir()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#analysis.pretrain_groups_report.inter_mean"><code class="docutils literal notranslate"><span class="pre">inter_mean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#analysis.pretrain_groups_report.intra_mean"><code class="docutils literal notranslate"><span class="pre">intra_mean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#analysis.pretrain_groups_report.load_group_ids"><code class="docutils literal notranslate"><span class="pre">load_group_ids()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#analysis.pretrain_groups_report.load_matrix_subjects"><code class="docutils literal notranslate"><span class="pre">load_matrix_subjects()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#analysis.pretrain_groups_report.nn_T_to_S"><code class="docutils literal notranslate"><span class="pre">nn_T_to_S()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#analysis.pretrain_groups_report.plot_bars"><code class="docutils literal notranslate"><span class="pre">plot_bars()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#analysis.pretrain_groups_report.report_for_metric"><code class="docutils literal notranslate"><span class="pre">report_for_metric()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#analysis.pretrain_groups_report.run_report_pretrain_groups"><code class="docutils literal notranslate"><span class="pre">run_report_pretrain_groups()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#analysis.pretrain_groups_report.save_json"><code class="docutils literal notranslate"><span class="pre">save_json()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html#module-analysis.radar">analysis.radar module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#analysis.radar.make_radar"><code class="docutils literal notranslate"><span class="pre">make_radar()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html#module-analysis.summary_groups">analysis.summary_groups module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#analysis.summary_groups.run_summarize_only10_vs_finetune"><code class="docutils literal notranslate"><span class="pre">run_summarize_only10_vs_finetune()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html#module-analysis">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">config module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.DATASET_PATH"><code class="docutils literal notranslate"><span class="pre">DATASET_PATH</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.DATA_PROCESS_CHOICES"><code class="docutils literal notranslate"><span class="pre">DATA_PROCESS_CHOICES</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.INTRIM_CSV_PATH"><code class="docutils literal notranslate"><span class="pre">INTRIM_CSV_PATH</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.KSS_BIN_LABELS"><code class="docutils literal notranslate"><span class="pre">KSS_BIN_LABELS</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.KSS_LABEL_MAP"><code class="docutils literal notranslate"><span class="pre">KSS_LABEL_MAP</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.MODEL_CHOICES"><code class="docutils literal notranslate"><span class="pre">MODEL_CHOICES</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.MODEL_PKL_PATH"><code class="docutils literal notranslate"><span class="pre">MODEL_PKL_PATH</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.MODEL_WINDOW_CONFIG"><code class="docutils literal notranslate"><span class="pre">MODEL_WINDOW_CONFIG</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.N_TRIALS"><code class="docutils literal notranslate"><span class="pre">N_TRIALS</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.OUTPUT_SVG_PATH"><code class="docutils literal notranslate"><span class="pre">OUTPUT_SVG_PATH</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.PROCESS_CSV_PATH"><code class="docutils literal notranslate"><span class="pre">PROCESS_CSV_PATH</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.SAMPLE_RATE_EEG"><code class="docutils literal notranslate"><span class="pre">SAMPLE_RATE_EEG</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.SAMPLE_RATE_SIMLSL"><code class="docutils literal notranslate"><span class="pre">SAMPLE_RATE_SIMLSL</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.SCALING_FILTER"><code class="docutils literal notranslate"><span class="pre">SCALING_FILTER</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.SUBJECT_LIST_PATH"><code class="docutils literal notranslate"><span class="pre">SUBJECT_LIST_PATH</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.SUBJECT_LIST_PATH_FOLD"><code class="docutils literal notranslate"><span class="pre">SUBJECT_LIST_PATH_FOLD</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.SUBJECT_LIST_PATH_TRAIN"><code class="docutils literal notranslate"><span class="pre">SUBJECT_LIST_PATH_TRAIN</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.TOP_K_FEATURES"><code class="docutils literal notranslate"><span class="pre">TOP_K_FEATURES</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.WAVELET_FILTER"><code class="docutils literal notranslate"><span class="pre">WAVELET_FILTER</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#config.WAVELET_LEV"><code class="docutils literal notranslate"><span class="pre">WAVELET_LEV</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data_pipeline.html">data_pipeline package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data_pipeline.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_pipeline.html#module-data_pipeline.processing_pipeline">data_pipeline.processing_pipeline module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_pipeline.html#modules">Modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_pipeline.html#functions">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_pipeline.html#data_pipeline.processing_pipeline.main_pipeline"><code class="docutils literal notranslate"><span class="pre">main_pipeline()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_pipeline.html#module-data_pipeline.processing_pipeline_mp">data_pipeline.processing_pipeline_mp module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_pipeline.html#id1">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_pipeline.html#data_pipeline.processing_pipeline_mp.main_pipeline"><code class="docutils literal notranslate"><span class="pre">main_pipeline()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_pipeline.html#data_pipeline.processing_pipeline_mp.process_one_subject"><code class="docutils literal notranslate"><span class="pre">process_one_subject()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_pipeline.html#module-data_pipeline">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="evaluation.html">evaluation package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="evaluation.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="evaluation.html#module-evaluation.eval_pipeline">evaluation.eval_pipeline module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="evaluation.html#evaluation.eval_pipeline.eval_pipeline"><code class="docutils literal notranslate"><span class="pre">eval_pipeline()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="evaluation.html#module-evaluation">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">models package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="models.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#module-models.model_pipeline">models.model_pipeline module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="models.html#models.model_pipeline.remove_outliers_zscore"><code class="docutils literal notranslate"><span class="pre">remove_outliers_zscore()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="models.html#models.model_pipeline.save_feature_histograms"><code class="docutils literal notranslate"><span class="pre">save_feature_histograms()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="models.html#models.model_pipeline.train_pipeline"><code class="docutils literal notranslate"><span class="pre">train_pipeline()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#module-models">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">utils package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="utils.html#module-utils">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="bin">
+<h1>bin<a class="headerlink" href="#bin" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="bin/analyze.html">Analyze</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/evaluate.html">Evaluate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/make_pretrain_groups.html">Make Pretrain Groups</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/plot.html">Plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/preprocess.html">Preprocess</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bin/train.html">Train</a></li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Vehicle-based Driver Drowsiness Detection" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="analysis.html" class="btn btn-neutral float-right" title="analysis package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, ynakagama.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
