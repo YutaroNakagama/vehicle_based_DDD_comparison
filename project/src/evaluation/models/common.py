@@ -25,12 +25,40 @@ def common_eval(
     """
     Evaluate a classical ML model using test data and a trained classifier.
 
-    Assumes:
-    - X_test has already been scaled and filtered to selected features.
-    - y_test is aligned with X_test.
+    Assumes that ``X_test`` has already been scaled and filtered to the selected
+    features, and that ``y_test`` is aligned with ``X_test``.
 
-    Returns:
-        dict: Evaluation results suitable for JSON output.
+    Parameters
+    ----------
+    X_test : array-like of shape (n_samples, n_features)
+        Feature matrix for test data. Must be preprocessed and aligned with the
+        selected features used during training.
+    y_test : array-like of shape (n_samples,)
+        True labels corresponding to ``X_test``.
+    model_name : str
+        The name of the model (e.g., ``"RF"``, ``"SvmW"``).
+    model_type : str
+        The model type identifier, used to locate saved artifacts.
+    clf : sklearn.base.BaseEstimator
+        Trained classifier object (loaded from pickle).
+
+    Returns
+    -------
+    dict
+        Dictionary containing evaluation results, including:
+
+        - ``"model"`` : str
+            Model name.
+        - ``"mse"`` : float
+            Mean squared error between predictions and true labels.
+        - ``"roc_auc"`` : float or None
+            Area under the ROC curve (if probabilities are available).
+        - ``"classification_report"`` : dict
+            Classification metrics in scikit-learn report format.
+        - ``"confusion_matrix"`` : list of list of int
+            Confusion matrix as a nested list.
+        - ``"roc_curve"`` : dict, optional
+            Contains ``"fpr"``, ``"tpr"``, and ``"auc"`` if ROC data is available.
     """
     y_pred = clf.predict(X_test)
 

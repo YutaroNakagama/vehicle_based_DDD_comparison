@@ -1,7 +1,7 @@
-"""Variational Autoencoder (VAE) based feature augmentation for domain generalization.
+"""Variational Autoencoder (VAE)-based feature augmentation for domain generalization.
 
-This module allows for generating synthetic samples from learned latent distributions
-to enhance model robustness under domain shifts.
+This module trains a lightweight VAE on numeric features and generates synthetic
+samples from the latent space to improve model robustness against domain shifts.
 """
 
 import numpy as np
@@ -15,13 +15,20 @@ import tensorflow as tf
 
 
 def sampling(args):
-    """Reparameterization trick by sampling from N(0,1).
+    """
+    Reparameterization trick for sampling from a Gaussian distribution.
 
-    Args:
-        args (tuple): Mean and log-variance tensors from encoder.
+    Parameters
+    ----------
+    args : tuple of (tensor, tensor)
+        Tuple containing:
+        - ``z_mean`` : Mean tensor of shape (batch, latent_dim).
+        - ``z_log_var`` : Log-variance tensor of shape (batch, latent_dim).
 
-    Returns:
-        Tensor: Sampled latent vector.
+    Returns
+    -------
+    tensor
+        Sampled latent vector of shape (batch, latent_dim).
     """
     z_mean, z_log_var = args
     batch = K.shape(z_mean)[0]
@@ -31,14 +38,26 @@ def sampling(args):
 
 
 def build_vae(input_dim: int, latent_dim: int = 10):
-    """Construct a VAE model with encoder and decoder.
+    """
+    Construct a Variational Autoencoder (VAE) with encoder and decoder networks.
 
-    Args:
-        input_dim (int): Dimensionality of the input features.
-        latent_dim (int): Size of the latent space.
+    Parameters
+    ----------
+    input_dim : int
+        Dimensionality of the input features.
+    latent_dim : int, default=10
+        Size of the latent space.
 
-    Returns:
-        tuple: (vae, encoder, decoder) as compiled Keras models.
+    Returns
+    -------
+    tuple
+        A tuple ``(vae, encoder, decoder)`` where:
+        - ``vae`` : keras.Model  
+            Full VAE model with custom loss.  
+        - ``encoder`` : keras.Model  
+            Encoder mapping inputs to latent mean, log-variance, and sampled z.  
+        - ``decoder`` : keras.Model  
+            Decoder mapping latent vectors back to feature space.
     """
     # Encoder
     inputs = Input(shape=(input_dim,), name='encoder_input')
@@ -73,16 +92,24 @@ def build_vae(input_dim: int, latent_dim: int = 10):
 
 def vae_augmentation(X: pd.DataFrame, augment_ratio: float = 0.3,
                      epochs: int = 30, batch_size: int = 32) -> pd.DataFrame:
-    """Generate augmented samples using a trained VAE.
+    """
+    Generate augmented samples using a Variational Autoencoder (VAE).
 
-    Args:
-        X (pd.DataFrame): Original dataset containing numeric features.
-        augment_ratio (float): Fraction of synthetic samples to generate. Defaults to 0.3.
-        epochs (int): Number of epochs to train the VAE. Defaults to 30.
-        batch_size (int): Batch size during training. Defaults to 32.
+    Parameters
+    ----------
+    X : pandas.DataFrame
+        Original dataset containing numeric features.
+    augment_ratio : float, default=0.3
+        Fraction of synthetic samples to generate relative to ``len(X)``.
+    epochs : int, default=30
+        Number of training epochs for the VAE.
+    batch_size : int, default=32
+        Batch size used during VAE training.
 
-    Returns:
-        pd.DataFrame: Concatenated original and VAE-generated synthetic samples.
+    Returns
+    -------
+    pandas.DataFrame
+        Concatenated DataFrame of original and VAE-generated samples.
     """
     numeric_cols = X.select_dtypes(include=[np.number]).columns
     X_numeric = X[numeric_cols].values

@@ -27,35 +27,33 @@ import matplotlib.pyplot as plt
 
 
 def remove_outliers(data: list, threshold: float = 3) -> list:
-    """Removes outliers from a numerical dataset based on a standard deviation threshold.
+    """
+    Remove outliers based on standard deviation threshold.
 
-    Outliers are defined as data points that fall outside a specified number of
-    standard deviations from the mean. This function helps in cleaning data
-    for more representative visualizations.
+    Parameters
+    ----------
+    data : list or numpy.ndarray
+        Input numerical dataset.
+    threshold : float, default=3
+        Number of standard deviations from the mean to define outliers.
 
-    Args:
-        data (list | np.ndarray): The input numerical data (list or NumPy array).
-        threshold (float): The number of standard deviations from the mean to define
-                           the outlier boundaries. Defaults to 3.
-
-    Returns:
-        list: A new list containing the data with outliers removed.
+    Returns
+    -------
+    list
+        Data with outliers removed.
     """
     mean, std = np.mean(data), np.std(data)
     return [x for x in data if abs(x - mean) <= threshold * std]
 
 
 def colorize_histogram(patches):
-    """Applies custom color coding to histogram bins based on their position.
+    """
+    Apply custom colors to histogram bins.
 
-    This function is designed to visually segment a histogram into three conceptual
-    regions: 'negative' (green, lower bins), 'neutral' (gray, center bins), and
-    'positive' (yellow, upper bins). This helps in quickly interpreting the distribution
-    of data points across different ranges.
-
-    Args:
-        patches (list): A list of `matplotlib.patches.Rectangle` objects, typically
-                        obtained from the `plt.hist()` function, representing the bars of the histogram.
+    Parameters
+    ----------
+    patches : list of matplotlib.patches.Rectangle
+        Histogram patches from ``plt.hist``.
     """
     for i, patch in enumerate(patches):
         if i < 6:
@@ -67,24 +65,21 @@ def colorize_histogram(patches):
 
 
 def plot_custom_colored_distribution(data, output_path: str = None, threshold: float = None):
-    """Plots a histogram of numerical data with custom colored bins and an overlaid KDE curve.
+    """
+    Plot histogram with custom colored bins and KDE overlay.
 
-    This function provides a visually informative representation of data distribution.
-    It can optionally remove outliers and applies a predefined color scheme to histogram
-    bins (green for lower, gray for middle, yellow for upper) to highlight different ranges.
-    A Kernel Density Estimate (KDE) curve is overlaid to show the smoothed probability density.
+    Parameters
+    ----------
+    data : list or numpy.ndarray
+        Numerical data to visualize.
+    output_path : str, optional
+        File path to save the figure. If ``None``, shows interactively.
+    threshold : float, optional
+        If set, outliers beyond this threshold (std dev) are removed.
 
-    Args:
-        data (list | np.ndarray): The numerical data to be visualized.
-        output_path (str, optional): If specified, the plot will be saved to this file path.
-                                     Otherwise, the plot will be displayed interactively.
-                                     Defaults to None.
-        threshold (float, optional): If set, outliers beyond this number of standard deviations
-                                     from the mean will be removed from the data before plotting.
-                                     Defaults to None.
-
-    Returns:
-        None: The function either saves the plot to a file or displays it, and does not return any value.
+    Returns
+    -------
+    None
     """
     # Optional outlier removal
     if threshold is not None:
@@ -122,19 +117,18 @@ def plot_custom_colored_distribution(data, output_path: str = None, threshold: f
 
 
 def extract_model_and_time(filename: str) -> tuple[str | None, datetime | None]:
-    """Extracts the model name and timestamp from a metrics JSON filename.
+    """
+    Extract model name and timestamp from metrics JSON filename.
 
-    This function parses a standardized filename format (e.g., 'metrics_model_tag_YYYYMMDD_HHMMSS.json')
-    to extract the model identifier and the timestamp of the evaluation. This is useful
-    for organizing and retrieving specific evaluation results.
+    Parameters
+    ----------
+    filename : str
+        Filename in format ``metrics_<model>_<tag>_YYYYMMDD_HHMMSS.json``.
 
-    Args:
-        filename (str): The name of the metrics JSON file.
-
-    Returns:
-        tuple[str | None, datetime | None]: A tuple containing:
-            - str | None: The extracted model name, or None if not found.
-            - datetime | None: The parsed datetime object from the timestamp, or None if not found.
+    Returns
+    -------
+    tuple of (str or None, datetime or None)
+        Model name and timestamp if parsed successfully, otherwise ``(None, None)``.
     """
     match = re.match(r"metrics_(.+?)_.*?_(\d{8}_\d{6})\.json", filename)
     if match:
@@ -145,19 +139,18 @@ def extract_model_and_time(filename: str) -> tuple[str | None, datetime | None]:
 
 
 def find_latest_metric_files(directory: str) -> dict:
-    """Finds the latest metrics JSON file for each model within a specified directory.
+    """
+    Find the latest metrics JSON file per model in a directory.
 
-    This function scans a directory for files matching the 'metrics_*.json' pattern,
-    extracts the model name and timestamp from each, and identifies the most recent
-    file for each unique model. This is useful for ensuring that ROC curves or other
-    visualizations are generated from the most up-to-date evaluation results.
+    Parameters
+    ----------
+    directory : str
+        Path to directory containing metrics JSON files.
 
-    Args:
-        directory (str): The path to the directory containing the metrics JSON files.
-
-    Returns:
-        dict: A dictionary where keys are model names (str) and values are the filenames
-              (str) of the latest metrics JSON file for that model.
+    Returns
+    -------
+    dict
+        Mapping from model name (str) to latest JSON filename (str).
     """
     model_files = defaultdict(list)
 
@@ -175,19 +168,19 @@ def find_latest_metric_files(directory: str) -> dict:
 
 
 def plot_roc_curves_from_latest_json(results_dir: str, title: str = "ROC Curve Comparison"):
-    """Plots ROC curves for multiple models from their latest metrics JSON files.
+    """
+    Plot ROC curves for multiple models from their latest JSON files.
 
-    This function automatically identifies the most recent evaluation results for each model
-    within a specified directory, loads their ROC data (False Positive Rate, True Positive Rate,
-    and AUC), and plots them on a single graph for easy comparison. A diagonal line representing
-    random chance is also included.
+    Parameters
+    ----------
+    results_dir : str
+        Directory containing ``metrics_*.json`` files.
+    title : str, default="ROC Curve Comparison"
+        Plot title.
 
-    Args:
-        results_dir (str): The directory where the metrics JSON files (e.g., 'metrics_*.json') are stored.
-        title (str): The title of the ROC curve plot. Defaults to "ROC Curve Comparison".
-
-    Returns:
-        None: The function displays the plot and does not return any value.
+    Returns
+    -------
+    None
     """
     latest_files = find_latest_metric_files(results_dir)
 

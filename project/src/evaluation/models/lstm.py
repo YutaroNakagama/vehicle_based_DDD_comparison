@@ -53,22 +53,41 @@ def lstm_eval(
     scaler=None,
     fold_to_test: int = 1
 ) -> dict:
-    """Evaluate a saved LSTM model with attention on test data.
+    """
+    Evaluate a saved LSTM model with attention on test data.
 
-    Loads the model and its scaler, applies consistent preprocessing, and evaluates performance.
+    Loads the model and its scaler if not provided, applies consistent
+    preprocessing, and evaluates performance.
 
-    Args:
-        X_test (pd.DataFrame): Test features.
-        y_test (pd.Series): Test labels.
-        model_name (str): Name of model directory under `model/`.
-        fold_to_test (int): Fold index to load the correct model and scaler.
+    Parameters
+    ----------
+    X_test : pandas.DataFrame
+        Test feature matrix. Only numeric columns are used.
+    y_test : pandas.Series
+        Ground truth labels corresponding to ``X_test``.
+    model_name : str
+        Name of the model directory under ``model/``.
+    clf : keras.Model, optional
+        Preloaded LSTM model. If ``None``, the model is loaded from disk.
+    scaler : sklearn.preprocessing.StandardScaler, optional
+        Preloaded scaler for feature normalization. If ``None``, the scaler is
+        loaded from disk.
+    fold_to_test : int, default=1
+        Fold index used to load the correct model and scaler from disk.
 
-    Returns:
-        dict: Evaluation results including:
-              - 'loss': Test loss
-              - 'accuracy': Test accuracy
-              - 'classification_report': Text report
-              - 'confusion_matrix': Confusion matrix array
+    Returns
+    -------
+    dict
+        Dictionary containing evaluation results:
+
+        - ``"loss"`` : float
+            Test loss.
+        - ``"accuracy"`` : float
+            Test accuracy.
+        - ``"classification_report"`` : dict
+            Classification report in scikit-learn format.
+        - ``"confusion_matrix"`` : list of list of int
+            Confusion matrix as a nested list.
     """
 
     # Load model and scaler if not provided

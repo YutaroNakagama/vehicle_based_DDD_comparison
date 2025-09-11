@@ -45,24 +45,40 @@ def eval_pipeline(
     fold: int = 0, 
     subject_wise_split: bool = False
     ) -> None:
-    """Evaluate the specified trained model using appropriate method.
+    """
+    Evaluate the specified trained model using the appropriate method.
 
     This function orchestrates the evaluation process for a given model.
     It loads the necessary data and model, applies any required preprocessing
-    (like data splitting), and then calls the relevant evaluation function
-    based on the model type. Finally, it saves the evaluation results.
+    (such as subject-wise splitting), and then calls the relevant evaluation
+    function based on the model type. Finally, it saves the evaluation results.
 
-    Args:
-        model (str): The name of the model to evaluate (e.g., 'Lstm', 'SvmA', 'RF', 'SvmW').
-        tag (str, optional): An optional tag used to identify specific model variants or experiment runs.
-        sample_size (int, optional): If specified, a subset of subjects of this size will be sampled for evaluation.
-        seed (int): Random seed for reproducibility of subject sampling. Defaults to 42.
-        fold (int): The current fold number if performing k-fold cross-validation. Defaults to 0 (no specific fold).
-        subject_wise_split (bool): If True, data splitting will ensure subjects are not mixed across train/test sets.
-                                   Defaults to False.
+    Parameters
+    ----------
+    model : str
+        The name of the model to evaluate (e.g., ``'Lstm'``, ``'SvmA'``, ``'RF'``, ``'SvmW'``).
+    tag : str, optional
+        Optional tag to identify specific model variants or experiment runs.
+    sample_size : int, optional
+        Number of subjects to sample for evaluation. If ``None``, use all subjects.
+    seed : int, default=42
+        Random seed for reproducibility of subject sampling.
+    fold : int, default=0
+        Fold index for k-fold cross-validation. ``0`` means no specific fold is used.
+    subject_wise_split : bool, default=False
+        If True, data splitting ensures subjects are not mixed across train/test sets.
 
-    Returns:
-        None: The function saves evaluation metrics to a JSON file and does not return any value.
+    Returns
+    -------
+    None
+        Evaluation metrics are saved to a JSON file in the results directory.
+
+    Notes
+    -----
+    - Supports the following model types:
+      * Lstm (deep learning with attention)
+      * SvmA (SVM with ANFIS feature selection)
+      * Classical ML models (e.g., RF, SvmW, etc.)
     """
 
     logging.info(f"Evaluation split mode: {'subject-wise' if subject_wise_split else 'sample-wise'}")

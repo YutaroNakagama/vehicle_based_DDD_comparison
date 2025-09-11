@@ -30,7 +30,7 @@ from pyswarm import pso
 
 from src.config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, MODEL_PKL_PATH, TOP_K_FEATURES
 from src.utils.io.loaders import read_subject_list, read_train_subject_list_fold, get_model_type, load_subject_csvs
-from src.utils.io.split import data_split, data_split_by_subject, data_time_split_by_subject 
+from src.utils.io.split import data_split, data_split_by_subject, data_time_split_by_subject, time_stratified_three_way_split 
 from src.utils.domain_generalization.domain_mixup import generate_domain_labels, domain_mixup
 from src.utils.domain_generalization.coral import coral
 from src.utils.domain_generalization.vae_augment import vae_augmentation
@@ -46,17 +46,21 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 def remove_outliers_zscore(df, cols, threshold=5.0):
     """
-    Removes rows from a DataFrame where any specified column's value has a Z-score
-    exceeding a given threshold. This is used for outlier removal.
+    Remove rows from a DataFrame where any specified column's Z-score exceeds the threshold.
 
-    Args:
-        df (pd.DataFrame): The input DataFrame.
-        cols (list): A list of column names to check for outliers.
-        threshold (float): The Z-score threshold. Rows with Z-scores above this
-                           threshold in any of the specified columns will be removed.
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input DataFrame.
+    cols : list of str
+        Column names to check for outliers.
+    threshold : float, default=5.0
+        Z-score threshold. Rows with Z-scores above this value are removed.
 
-    Returns:
-        pd.DataFrame: The DataFrame with outliers removed.
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame with outlier rows removed.
     """
     z = np.abs(zscore(df[cols], nan_policy='omit'))
     mask = (z < threshold).all(axis=1)
@@ -64,14 +68,21 @@ def remove_outliers_zscore(df, cols, threshold=5.0):
 
 def save_feature_histograms(df, feature_columns, outdir="feature_hist_svg"):
     """
-    Generates and saves histograms for specified feature columns as SVG files.
-    Each histogram is saved as a separate SVG file in the specified output directory.
+    Generate and save histograms for the specified feature columns as SVG files.
 
-    Args:
-        df (pd.DataFrame): DataFrame containing the features.
-        feature_columns (list): A list of column names (features) for which to generate histograms.
-        outdir (str): The directory where the SVG histogram files will be saved.
-                      Defaults to "feature_hist_svg".
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame containing feature data.
+    feature_columns : list of str
+        List of column names for which to generate histograms.
+    outdir : str, default="feature_hist_svg"
+        Output directory to save the histogram SVG files.
+
+    Returns
+    -------
+    None
+        SVG files are saved to the specified directory.
     """
     os.makedirs(outdir, exist_ok=True)
     for col in feature_columns:
@@ -84,6 +95,71 @@ def save_feature_histograms(df, feature_columns, outdir="feature_hist_svg"):
         plt.savefig(os.path.join(outdir, f"{col}.svg"), format="svg")
         plt.close()
 
+def _prepare_df_with_label_and_features(df: pd.DataFrame):
+    """
+    Filter by KSS labels, add a binary ``label`` column, and return feature column names.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input DataFrame containing KSS labels and feature columns.
+
+    Returns
+    -------
+    tuple
+        A tuple containing:
+
+        - ``df`` : pandas.DataFrame
+            Filtered DataFrame with an added ``label`` column.
+        - ``feature_columns`` : list of str
+            List of feature column names including ``subject_id`` if present.
+    """
+    from src.config import KSS_BIN_LABELS, KSS_LABEL_MAP
+    df = df[df["KSS_Theta_Alpha_Beta"].isin(KSS_BIN_LABELS)].copy()
+    df["label"] = df["KSS_Theta_Alpha_Beta"].replace(KSS_LABEL_MAP)
+    start_col = "Steering_Range"
+    end_col = "LaneOffset_AAA"
+    feature_columns = df.loc[:, start_col:end_col].columns.tolist()
+    if "subject_id" in df.columns:
+        feature_columns.append("subject_id")
+    return df, feature_columns
+
+def _log_split_ratios(y_tr: pd.Series, y_va: pd.Series, y_te: pd.Series, tag: str = ""):
+    """
+    Log the sample counts, positive counts, and positive ratios for train, validation, and test splits.
+
+    Parameters
+    ----------
+    y_tr : pandas.Series
+        Training labels.
+    y_va : pandas.Series
+        Validation labels.
+    y_te : pandas.Series
+        Test labels.
+    tag : str, optional
+        Optional tag to include in log messages.
+
+    Returns
+    -------
+    None
+        Logs summary statistics for each split.
+    """
+    def _r(y):
+        n = int(y.shape[0])
+        p = int(y.sum()) if n else 0
+        r = p / n if n else float("nan")
+        return n, p, r
+    n_tr, p_tr, r_tr = _r(y_tr)
+    n_va, p_va, r_va = _r(y_va)
+    n_te, p_te, r_te = _r(y_te)
+    n_all = n_tr + n_va + n_te
+    p_all = p_tr + p_va + p_te
+    r_all = (p_all / n_all) if n_all else float("nan")
+
+    logging.info("[split%s] global  : n=%d, pos=%d, pos_ratio=%.3f", f":{tag}" if tag else "", n_all, p_all, r_all)
+    logging.info("[split%s] train   : n=%d, pos=%d, pos_ratio=%.3f, |Δ|=%.3f", f":{tag}" if tag else "", n_tr, p_tr, r_tr, abs(r_tr - r_all) if n_tr else float("nan"))
+    logging.info("[split%s] val     : n=%d, pos=%d, pos_ratio=%.3f, |Δ|=%.3f", f":{tag}" if tag else "", n_va, p_va, r_va, abs(r_va - r_all) if n_va else float("nan"))
+    logging.info("[split%s] test    : n=%d, pos=%d, pos_ratio=%.3f, |Δ|=%.3f", f":{tag}" if tag else "", n_te, p_te, r_te, abs(r_te - r_all) if n_te else float("nan"))
 
 def train_pipeline(
     model_name: str,
@@ -105,35 +181,86 @@ def train_pipeline(
     test_subjects: list = [],
     general_subjects: list = [],
     finetune_setting=None,   
-    save_pretrain: str = None,      # ← 追加！
+    save_pretrain: str = None,     
+    eval_only_pretrained: bool = False,
+    balance_labels: bool = False,
+    balance_method: str = "undersample",
+    time_stratify_labels: bool = False,
+    time_stratify_tolerance: float = 0.02,
+    time_stratify_window: float = 0.10,
+    time_stratify_min_chunk: int = 100,
 ) -> None:
-    """Train a machine learning model for drowsiness detection.
+    """
+    Train a machine learning model for driver drowsiness detection.
 
-    This function loads the processed feature data, applies optional
-    domain generalization methods (Domain Mixup, CORAL, VAE), performs
-    feature selection, and dispatches training to model-specific training
-    functions (LSTM, SVM, etc.).
+    This function loads processed feature data, applies optional domain
+    generalization techniques (Domain Mixup, CORAL, VAE), performs feature
+    selection, and trains a model based on the specified configuration.
 
-    Args:
-        model (str): The name of the model to train (e.g., 'Lstm', 'SvmA', 'RF').
-        use_domain_mixup (bool): If True, apply domain mixup augmentation to the training data.
-        use_coral (bool): If True, apply CORAL (Correlation Alignment) for domain adaptation.
-        use_vae (bool): If True, apply VAE-based data augmentation to the training data.
-        sample_size (int, optional): If specified, subsamples the given number of subjects.
-        seed (int): Random seed for reproducibility of data splitting and sampling. Defaults to 42.
-        fold (int, optional): The current fold number if performing k-fold cross-validation.
-        n_folds (int, optional): The total number of folds for cross-validation.
-        tag (str, optional): An optional tag to append to the saved model filename for identification.
-        subject_wise_split (bool): If True, ensures that subjects are not split across train/validation/test sets.
-        feature_selection_method (str): The method to use for feature selection. Options include
-                                        'rf' (Random Forest importance), 'mi' (Mutual Information),
-                                        and 'anova' (ANOVA F-test). Defaults to "rf".
-        data_leak (bool): If True, intentionally allows data leakage during feature selection or scaling
-                          (e.g., fitting scaler on both train and validation data). Use for ablation studies.
-                          Defaults to False.
+    Parameters
+    ----------
+    model_name : str
+        The model to train (e.g., ``'Lstm'``, ``'SvmA'``, ``'RF'``).
+    use_domain_mixup : bool, default=False
+        Apply domain mixup augmentation.
+    use_coral : bool, default=False
+        Apply CORAL (Correlation Alignment) domain adaptation.
+    use_vae : bool, default=False
+        Apply VAE-based augmentation.
+    sample_size : int, optional
+        Number of subjects to subsample. If ``None``, use all subjects.
+    seed : int, default=42
+        Random seed for reproducibility.
+    fold : int, optional
+        Fold index for cross-validation.
+    n_folds : int, optional
+        Total number of folds for cross-validation.
+    tag : str, optional
+        Identifier appended to saved model artifacts.
+    subject_wise_split : bool, default=False
+        If True, ensures subjects are not mixed across splits.
+    feature_selection_method : {"rf", "mi", "anova"}, default="rf"
+        Feature selection method:
+        - ``"rf"`` : Random Forest importance
+        - ``"mi"`` : Mutual Information
+        - ``"anova"`` : ANOVA F-test
+    data_leak : bool, default=False
+        Allow intentional data leakage (for ablation studies).
+    subject_split_strategy : str, default="random"
+        Strategy for subject splitting (e.g., ``"random"``, ``"finetune_target_subjects"``).
+    target_subjects : list of str, optional
+        List of subjects to treat as targets.
+    train_subjects : list of str, optional
+        Explicit subject list for training.
+    val_subjects : list of str, optional
+        Explicit subject list for validation.
+    test_subjects : list of str, optional
+        Explicit subject list for testing.
+    general_subjects : list of str, optional
+        List of general subjects for pretraining or domain generalization.
+    finetune_setting : str, optional
+        Path to pretrained feature/scaler configuration for fine-tuning.
+    save_pretrain : str, optional
+        Path to save pretraining artifacts (features/scaler).
+    eval_only_pretrained : bool, default=False
+        If True, skip fine-tuning and evaluate using pretrained model only.
+    balance_labels : bool, default=False
+        Whether to balance class distribution.
+    balance_method : str, default="undersample"
+        Strategy for label balancing.
+    time_stratify_labels : bool, default=False
+        If True, apply time-stratified label splitting.
+    time_stratify_tolerance : float, default=0.02
+        Allowed tolerance for time-based stratification.
+    time_stratify_window : float, default=0.10
+        Window proportion for time-based stratification.
+    time_stratify_min_chunk : int, default=100
+        Minimum chunk size for time-based stratification.
 
-    Returns:
-        None
+    Returns
+    -------
+    None
+        Trained models and artifacts are saved to disk.
     """
 
     # 1. Load subject list
@@ -187,37 +314,371 @@ def train_pipeline(
         else:
             general_subjects_list = [s for s in subject_list if s not in target_subjects]
 
-        # --- Step 1: general_subjectsでpretrain用の特徴量・scalerを保存 ---
+#        # --- Step 1: Pretrain artifacts on general_subjects (features/scaler; and model when eval_only) ---
+        # --- (helper) Build identical target splits for both FineTune and EvalOnly ---
+        def _build_target_splits_df(dataframe):
+            """
+            Build consistent target splits for both fine-tuning and evaluation-only modes.
+            
+            Validation and test splits are created identically across modes to ensure
+            fair comparison. In evaluation-only mode, the training split is ignored.
+            
+            Parameters
+            ----------
+            dataframe : pandas.DataFrame
+                Input DataFrame containing subject, timestamp, and label columns.
+            
+            Returns
+            -------
+            tuple
+                A tuple containing:
+            
+                - ``X_tr`` : pandas.DataFrame
+                    Training feature matrix.
+                - ``X_va`` : pandas.DataFrame
+                    Validation feature matrix.
+                - ``X_te`` : pandas.DataFrame
+                    Test feature matrix.
+                - ``y_tr`` : pandas.Series
+                    Training labels.
+                - ``y_va`` : pandas.Series
+                    Validation labels.
+                - ``y_te`` : pandas.Series
+                    Test labels.
+            """
+            if time_stratify_labels:
+                df_lab, feature_columns = _prepare_df_with_label_and_features(dataframe)
+                sort_keys = ("subject_id", "Timestamp")
+                idx_tr, idx_va, idx_te = time_stratified_three_way_split(
+                    df_lab, label_col="label", sort_keys=sort_keys,
+                    train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
+                    tolerance=time_stratify_tolerance, window_prop=time_stratify_window,
+                    min_chunk=time_stratify_min_chunk,
+                )
+                X_tr = df_lab.loc[idx_tr, feature_columns]
+                X_va = df_lab.loc[idx_va, feature_columns]
+                X_te = df_lab.loc[idx_te, feature_columns]
+                y_tr = df_lab.loc[idx_tr, "label"]
+                y_va = df_lab.loc[idx_va, "label"]
+                y_te = df_lab.loc[idx_te, "label"]
+            else:
+                X_tr, X_va, X_te, y_tr, y_va, y_te = data_time_split_by_subject(
+                    dataframe, subject_col="subject_id", time_col="Timestamp"
+                )
+            # Drop subject_id only at the very end so both paths are identical
+            X_tr = X_tr.drop(columns=["subject_id"], errors="ignore")
+            X_va = X_va.drop(columns=["subject_id"], errors="ignore")
+            X_te = X_te.drop(columns=["subject_id"], errors="ignore")
+            return X_tr, X_va, X_te, y_tr, y_va, y_te
+
+#        # --- Step 1: Save pretrain artifacts (features/scaler) on general_subjects ---
+#
+#        if save_pretrain:
+#        # Load general-subjects data once (used for pretrain artifacts and/or pretrain model)
+#        general_data, _ = load_subject_csvs(general_subjects_list, model_type, add_subject_id=True)
+#
+#        # --- Step 1: Save pretrain artifacts (features/scaler) on general_subjects ---
+#        if save_pretrain:
+        # Load general-subjects data once (used for pretrain artifacts and/or pretrain model)
+        general_data, _ = load_subject_csvs(general_subjects_list, model_type, add_subject_id=True)
+
+        # --- Step 1: Save pretrain artifacts (features/scaler) on general_subjects ---
         if save_pretrain:
             if not os.path.dirname(save_pretrain):
                 save_pretrain = os.path.join("model/common", save_pretrain)
 
-            # 1. general_subjectsだけでデータロード
-            general_data, _ = load_subject_csvs(general_subjects_list, model_type, add_subject_id=True)
-            # 2. 普通のランダム分割（または全部trainでもOK）
+#            # 1. data load for only general_subjects
+#            general_data, _ = load_subject_csvs(general_subjects_list, model_type, add_subject_id=True)
+            # 2. random separation
             X_gtrain, _, _, y_gtrain, _, _ = data_split(general_data, random_state=seed)
             X_gtrain_for_fs = X_gtrain.drop(columns=["subject_id"], errors='ignore')
     
-            # 3. 特徴量選択（例: RF importance）
+            # 3. Feature Selection (e.g. RF importance)
             selected_features = select_top_features_by_importance(X_gtrain_for_fs, y_gtrain, top_k=TOP_K_FEATURES)
     
-            # 4. スケーラー
+            # 4. Scaler
             scaler = StandardScaler()
             scaler.fit(X_gtrain_for_fs[selected_features])
     
-            # 5. 必要ならRFパラメータ等もここで決定（Optunaまではここでは不要？）
-            # 今は特徴量リストとスケーラーのみ保存
     
-            # 6. 保存
+            # 6. Save
             pretrain_dict = {
                 "selected_features": selected_features,
                 "scaler": scaler,
             }
+
+            try:
+                n_scale = getattr(scaler, "n_features_in_", None)
+                if n_scale is not None and n_scale != len(selected_features):
+                    logging.warning("[EvalOnly] scaler.n_features_in_=%d != len(selected_features)=%d",
+                                    n_scale, len(selected_features))
+            except Exception:
+                pass
+
             with open(save_pretrain, "wb") as f:
                 pickle.dump(pretrain_dict, f)
             logging.info(f"Saved pretrain setting (features/scaler) to {save_pretrain}")
 
-        # --- Step 2: finetune_setting指定時（pretrain設定の流用） ---
+#            # If we will do "evaluate-only" (no fine-tune), we also train and save a model on general_subjects here.
+#            if eval_only_pretrained:
+#                # Train a model using ONLY general_subjects, save as a distinct tag to avoid overwriting.
+#                from src.models.architectures.common import common_train
+#                clf = get_classifier(model_name)
+#                pretrain_tag = "_pretrain_general"
+#                logging.info("[EvalOnly] Training a model on general subjects only (no target data).")
+#                # Use a standard random split for general_data to let common_train tune params.
+#                X_gtr, X_gva, X_gte, y_gtr, y_gva, y_gte = data_split(general_data, random_state=seed)
+#                # Drop subject_id from features for training
+#                X_gtr_fs = X_gtr.drop(columns=["subject_id"], errors="ignore")
+#                X_gva_fs = X_gva.drop(columns=["subject_id"], errors="ignore")
+#                X_gte_fs = X_gte.drop(columns=["subject_id"], errors="ignore")
+#                # Fit scaler on general-train only for safety (already fit above; re-fit to keep isolation)
+#                scaler_general = StandardScaler().fit(X_gtr_fs[selected_features])
+#                common_train(
+#                    X_gtr_fs, X_gva_fs, X_gte_fs,
+#                    y_gtr, y_gva, y_gte,
+#                    selected_features,
+#                    model_name, model_type, clf,
+#                    scaler=scaler_general,
+#                    suffix=pretrain_tag,
+#                    data_leak=data_leak,
+#                )
+#                # Persist the scaler we actually used to train the saved model
+#                from src.config import MODEL_PKL_PATH
+#                out_dir = f"{MODEL_PKL_PATH}/{model_type}"
+#                with open(os.path.join(out_dir, f"scaler_{model_name}{pretrain_tag}.pkl"), "wb") as f:
+#                    pickle.dump(scaler_general, f)
+        # If eval-only, ensure a pretrained model on general subjects exists; if not, train and save it.
+        if eval_only_pretrained:
+            from src.config import MODEL_PKL_PATH
+            #from src.models.architectures.common import common_train
+            clf = get_classifier(model_name)
+            pretrain_tag = "_pretrain_general"
+            out_dir = os.path.join(MODEL_PKL_PATH, model_type)
+            os.makedirs(out_dir, exist_ok=True)
+            model_pkl  = os.path.join(out_dir, f"{model_name}{pretrain_tag}.pkl")
+            scaler_pkl = os.path.join(out_dir, f"scaler_{model_name}{pretrain_tag}.pkl")
+
+            if not (os.path.isfile(model_pkl) and os.path.isfile(scaler_pkl)):
+                logging.info("[EvalOnly] Pretrained model/scaler not found; training on general subjects only.")
+                # Prepare FS & scaler if not already computed via save_pretrain
+                X_gtr, X_gva, X_gte, y_gtr, y_gva, y_gte = data_split(general_data, random_state=seed)
+                X_gtr_fs = X_gtr.drop(columns=["subject_id"], errors="ignore")
+                X_gva_fs = X_gva.drop(columns=["subject_id"], errors="ignore")
+                X_gte_fs = X_gte.drop(columns=["subject_id"], errors="ignore")
+                selected_features_local = select_top_features_by_importance(X_gtr_fs, y_gtr, top_k=TOP_K_FEATURES)
+                scaler_general = StandardScaler().fit(X_gtr_fs[selected_features_local])
+                common_train(
+                    X_gtr_fs, X_gva_fs, X_gte_fs,
+                    y_gtr, y_gva, y_gte,
+                    selected_features_local,
+                    model_name, model_type, clf,
+                    scaler=scaler_general,
+                    suffix=pretrain_tag,
+                    data_leak=data_leak,
+                )
+                with open(scaler_pkl, "wb") as f:
+                    pickle.dump(scaler_general, f)
+            else:
+                logging.info("[EvalOnly] Found existing pretrained model/scaler. Skipping retrain.")
+
+#        # --- Step 2-A: Evaluate-Only mode (skip fine-tuning on targets, just evaluate) ---
+        # --- Step 2-A: Evaluate-only mode (skip fine-tuning; just evaluate on targets) ---
+#        if eval_only_pretrained:
+        if eval_only_pretrained:
+            # 2-A-1) Load pretrain artifacts
+#            if not finetune_setting:
+#                logging.error("`--eval_only_pretrained` requires `--finetune_setting` (features/scaler bundle).")
+#                return
+#            if not os.path.dirname(finetune_setting):
+#                finetune_setting = os.path.join("model/common", finetune_setting)
+#            with open(finetune_setting, "rb") as f:
+#                pretrain_dict = pickle.load(f)
+#            selected_features = pretrain_dict["selected_features"]
+            # NOTE: eval-only では、実際に一般被験者で学習・保存された
+            # selected_features_train_<MODEL>_pretrain_general.pkl を使う。
+            # Load the model & scaler trained on general subjects (saved with suffix "_pretrain_general")
+            from src.config import MODEL_PKL_PATH
+            pretrain_suffix = "_pretrain_general"
+            model_dir = os.path.join(MODEL_PKL_PATH, model_type)
+            model_pkl = os.path.join(model_dir, f"{model_name}{pretrain_suffix}.pkl")
+            scaler_pkl = os.path.join(model_dir, f"scaler_{model_name}{pretrain_suffix}.pkl")
+            feats_pkl  = os.path.join(model_dir, f"selected_features_train_{model_name}{pretrain_suffix}.pkl")
+            if not (os.path.isfile(model_pkl) and os.path.isfile(scaler_pkl)):
+                logging.error(f"[EvalOnly] Pretrained model or scaler not found: {model_pkl} / {scaler_pkl}")
+                return
+            with open(model_pkl, "rb") as f:
+                best_clf = pickle.load(f)
+            with open(scaler_pkl, "rb") as f:
+                scaler = pickle.load(f)
+            if os.path.isfile(feats_pkl):
+                with open(feats_pkl, "rb") as f:
+                    selected_features = pickle.load(f)
+                logging.info(f"[EvalOnly] Loaded model features: {feats_pkl} ({len(selected_features)} cols)")
+            else:
+                # 後方互換のため、見つからない場合は finetune_setting にフォールバック
+                if not finetune_setting:
+                    logging.error("[EvalOnly] Neither model feature file nor finetune_setting is available.")
+                    return
+                path_fs = finetune_setting if os.path.dirname(finetune_setting) else os.path.join("model/common", finetune_setting)
+                with open(path_fs, "rb") as f:
+                    pretrain_dict = pickle.load(f)
+                selected_features = pretrain_dict["selected_features"]
+                logging.warning(f"[EvalOnly] Feature file not found; fallback to finetune_setting features ({len(selected_features)} cols).")
+ 
+
+#            # 2-A-2) Build target splits (time-stratified or time-order split)
+#            data, _ = load_subject_csvs(target_subjects, model_type, add_subject_id=True)
+#            if time_stratify_labels:
+#                df_lab, feature_columns = _prepare_df_with_label_and_features(data)
+#                sort_keys = ("subject_id", "Timestamp")
+#                idx_tr, idx_va, idx_te = time_stratified_three_way_split(
+#                    df_lab, label_col="label", sort_keys=sort_keys,
+#                    train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
+#                    tolerance=time_stratify_tolerance, window_prop=time_stratify_window,
+#                    min_chunk=time_stratify_min_chunk,
+#                )
+#                X_val = df_lab.loc[idx_va, feature_columns].drop(columns=["subject_id"], errors="ignore")
+#                X_test = df_lab.loc[idx_te, feature_columns].drop(columns=["subject_id"], errors="ignore")
+#                y_val = df_lab.loc[idx_va, "label"]
+#                y_test = df_lab.loc[idx_te, "label"]
+#            else:
+#                # Use existing time-based split helper
+#                X_tr, X_val, X_test, y_tr, y_val, y_test = data_time_split_by_subject(
+#                    data, subject_col="subject_id", time_col="Timestamp"
+#                )
+#                # Only use val/test for evaluation; train part is ignored in eval-only mode
+#                X_val = X_val.drop(columns=["subject_id"], errors="ignore")
+#                X_test = X_test.drop(columns=["subject_id"], errors="ignore")
+            # Build target splits EXACTLY as in the fine-tune path; ignore train in eval-only
+            data, _ = load_subject_csvs(target_subjects, model_type, add_subject_id=True)
+            _X_train_tgt, X_val, X_test, _y_train_tgt, y_val, y_test = _build_target_splits_df(data)
+
+            # 2-A-3) Transform and evaluate on target Val/Test
+            from sklearn.metrics import (
+                accuracy_score, precision_score, recall_score, f1_score,
+                roc_auc_score, average_precision_score, confusion_matrix, roc_curve, auc, precision_recall_curve
+            )
+            #X_val_scaled  = scaler.transform(X_val[selected_features])
+            #X_test_scaled = scaler.transform(X_test[selected_features])
+
+            missing = [c for c in selected_features if c not in X_val.columns]
+            extra   = [c for c in X_val.columns if c not in selected_features]
+            if missing or extra:
+                logging.warning("[EvalOnly] feature mismatch before alignment: missing_in_val=%s extra_in_val=%s",
+                                missing[:5], extra[:5])
+
+            missing_t = [c for c in selected_features if c not in X_test.columns]
+            extra_t   = [c for c in X_test.columns if c not in selected_features]
+            if missing_t or extra_t:
+                logging.warning("[EvalOnly] feature mismatch (test) before alignment: missing_in_test=%s extra_in_test=%s",
+                                missing_t[:5], extra_t[:5])
+
+            # ---- align columns to training features (order + fill missing with scaler.mean_) ----
+            def _align_features(X_df, feature_names, scaler_obj):
+                # 確実に DataFrame で受け取る
+                X_df = pd.DataFrame(X_df).copy()
+                # 足りない列 -> scaler.mean_ で補完（標準化後 0 ）
+                filled = {}
+                for i, col in enumerate(feature_names):
+                    if col in X_df.columns:
+                        filled[col] = pd.to_numeric(X_df[col], errors="coerce")
+                    else:
+                        # 長さに合わせた定数 Series
+                        val = scaler_obj.mean_[i] if hasattr(scaler_obj, "mean_") and len(scaler_obj.mean_) == len(feature_names) else 0.0
+                        filled[col] = pd.Series(val, index=X_df.index, dtype="float64")
+                X_out = pd.DataFrame(filled, columns=feature_names, index=X_df.index)
+                # NaN は学習平均で埋める（安全策）
+                if hasattr(scaler_obj, "mean_") and len(scaler_obj.mean_) == len(feature_names):
+                    means = pd.Series(scaler_obj.mean_, index=feature_names)
+                    X_out = X_out.fillna(means)
+                else:
+                    X_out = X_out.fillna(0.0)
+                return X_out
+
+            X_val_aligned  = _align_features(X_val,  selected_features, scaler)
+            X_test_aligned = _align_features(X_test, selected_features, scaler)
+            try:
+                n_scale = getattr(scaler, "n_features_in_", None)
+                logging.info("[EvalOnly] scaler expects n_features=%s, aligned_features=%d",
+                             str(n_scale), len(selected_features))
+            except Exception:
+                pass
+            X_val_scaled   = scaler.transform(X_val_aligned)
+            X_test_scaled  = scaler.transform(X_test_aligned)
+
+            def _eval_block(Xs, ys):
+                out = {
+                    "accuracy": float(accuracy_score(ys, best_clf.predict(Xs))),
+                    "precision": float(precision_score(ys, best_clf.predict(Xs), zero_division=0)),
+                    "recall": float(recall_score(ys, best_clf.predict(Xs), zero_division=0)),
+                    "f1": float(f1_score(ys, best_clf.predict(Xs), zero_division=0)),
+                    "auc": float("nan"),
+                    "ap":  float("nan"),
+                }
+                try:
+                    proba = best_clf.predict_proba(Xs)[:,1]
+                    out["auc"] = float(roc_auc_score(ys, proba))
+                    out["ap"]  = float(average_precision_score(ys, proba))
+                except Exception:
+                    pass
+                return out
+
+            m_val  = _eval_block(X_val_scaled,  y_val)
+            m_test = _eval_block(X_test_scaled, y_test)
+            try:
+                from sklearn.metrics import confusion_matrix
+                y_val_pred  = best_clf.predict(X_val_scaled)
+                y_test_pred = best_clf.predict(X_test_scaled)
+                logging.info("[EvalOnly] val pos_ratio=%.3f, pred_pos_ratio=%.3f",
+                             float(y_val.mean()), float(y_val_pred.mean()))
+                logging.info("[EvalOnly] test pos_ratio=%.3f, pred_pos_ratio=%.3f",
+                             float(y_test.mean()), float(y_test_pred.mean()))
+                logging.info("[EvalOnly] val CM=\n%s", confusion_matrix(y_val,  y_val_pred))
+                logging.info("[EvalOnly] test CM=\n%s", confusion_matrix(y_test, y_test_pred))
+            except Exception as e:
+                logging.warning("[EvalOnly] could not print confusion matrices: %s", e)
+#            logging.info(f"[EvalOnly] {model_name} on targets (no fine-tune): "
+#                         f"val acc={m_val['accuracy']:.3f}, test acc={m_test['accuracy']:.3f}")
+            logging.info(
+                "[EvalOnly] %s on targets: "
+                "val acc=%.3f auc=%.3f ap=%.3f | "
+                "test acc=%.3f auc=%.3f ap=%.3f",
+                model_name,
+                m_val["accuracy"], m_val.get("auc", float("nan")), m_val.get("ap", float("nan")),
+                m_test["accuracy"], m_test.get("auc", float("nan")), m_test.get("ap", float("nan")),
+            )
+
+            # Save CSV (so it aligns with your usual artifacts)
+            from src.config import MODEL_PKL_PATH
+            out_dir = os.path.join(MODEL_PKL_PATH, model_type)
+            os.makedirs(out_dir, exist_ok=True)
+            #import pandas as pd, json
+            import json
+#            pd.DataFrame([
+#                {"split":"val", **m_val},
+#                {"split":"test", **m_test},
+#            ]).to_csv(os.path.join(out_dir, f"metrics_{model_name}_evalonly_on_targets.csv"), index=False)
+#            logging.info(f"[EvalOnly] Saved -> {out_dir}/metrics_{model_name}_evalonly_on_targets.csv")
+            # build suffix to avoid overwriting across groups
+            suffix = ""
+            if tag:
+                suffix += f"_{tag}"
+            elif target_subjects:
+                safe_targets = "-".join(map(str, target_subjects))[:40]
+                suffix += f"_targets-{safe_targets}"
+            elif os.getenv("PBS_ARRAY_INDEX"):
+                suffix += f"_group{os.getenv('PBS_ARRAY_INDEX')}"
+
+            pd.DataFrame(
+                [{"split":"val", **m_val}, {"split":"test", **m_test}]
+            ).to_csv(os.path.join(out_dir, f"metrics_{model_name}{suffix}_evalonly_on_targets.csv"), index=False)
+            logging.info(f"[EvalOnly] Saved -> {out_dir}/metrics_{model_name}{suffix}_evalonly_on_targets.csv")
+
+            return
+
+#        # --- Step 2-B: (Default) Fine-tuning path using finetune_setting ---
+        # --- Step 2-B: (Default) Fine-tuning path using finetune_setting ---
         if finetune_setting:
             if not os.path.dirname(finetune_setting):
                 finetune_setting = os.path.join("model/common", finetune_setting)
@@ -227,44 +688,32 @@ def train_pipeline(
             scaler = pretrain_dict["scaler"]
             logging.info(f"Loaded pretrain setting from {finetune_setting}: features={selected_features}")
 
-            # --- 10人分のデータロード（target_subjectsのみ） ---
+            # Use the SAME split builder so eval-only and fine-tune share val/test
             data, _ = load_subject_csvs(target_subjects, model_type, add_subject_id=True)
-            # --- 時系列分割 ---
-            X_train, X_val, X_test, y_train, y_val, y_test = data_time_split_by_subject(
-                data, subject_col="subject_id", time_col="Timestamp"
-            )
+            X_train, X_val, X_test, y_train, y_val, y_test = _build_target_splits_df(data)
 
-            # --- 特徴量選択・スケーリング ---
-#            X_train_for_fs = X_train[selected_features]
-#            X_val_for_fs = X_val[selected_features]
-#            X_train_scaled = pd.DataFrame(scaler.transform(X_train_for_fs), columns=selected_features)
-#            X_val_scaled = pd.DataFrame(scaler.transform(X_val_for_fs), columns=selected_features)
-#
-#            # --- あとは学習・保存 ---
+            _log_split_ratios(y_train, y_val, y_test, tag="finetune_setting")
+
+            # --- Feature selection and scaling ---
 #            clf = get_classifier(model_name)
 #            suffix = ""
 #            if tag:
-#                suffix += f"_{tag}_finetune"
-#            common_train(
-#                X_train_scaled, X_val_scaled, y_train, y_val,
-#                selected_features,
-#                model_name, model_type, clf,
-#                scaler=scaler, suffix=suffix, data_leak=data_leak,
-#            )
+#                suffix += f"_{tag}"
+##                # if finetune, add _finetune
+##                if "finetune" in tag:
+##                    suffix += "_finetune"
+#            elif target_subjects:
+#                # if there is no tag, add group number
+#                safe_targets = "-".join(map(str, target_subjects))[:40]  
+#                suffix += f"_targets-{safe_targets}"
+
             clf = get_classifier(model_name)
-#            suffix = ""
-#            if tag:
-#                suffix += f"_{tag}_finetune"
             suffix = ""
             if tag:
-                suffix += f"_{tag}"
-                # finetune の場合だけ _finetune を追加
-                if "finetune" in tag:
-                    suffix += "_finetune"
+                suffix += f"_{tag}_finetune"
             elif target_subjects:
-                # tag が無くてもグループ番号を付ける
-                safe_targets = "-".join(map(str, target_subjects))[:40]  # 長過ぎ防止
-                suffix += f"_targets-{safe_targets}"
+                safe_targets = "-".join(map(str, target_subjects))[:40]
+                suffix += f"_targets-{safe_targets}_finetune"
 
             common_train(
                 X_train, X_val, X_test, y_train, y_val, y_test,
@@ -272,7 +721,7 @@ def train_pipeline(
                 model_name, model_type, clf,
                 scaler=scaler, suffix=suffix, data_leak=data_leak,
             )
-            return  # finetune_setting時は以降の処理スキップ
+            return  
         
         # Split target subjects for validation and testing (if more than one target subject)
         if len(target_subjects) > 1:
@@ -319,9 +768,56 @@ def train_pipeline(
             data, _ = load_subject_csvs(target_subjects, model_type, add_subject_id=True)
         else:
             data, _ = load_subject_csvs(subject_list, model_type, add_subject_id=True)
-        X_train, X_val, X_test, y_train, y_val, y_test = data_time_split_by_subject(
-            data, subject_col="subject_id", time_col="Timestamp"
-        )
+##        X_train, X_val, X_test, y_train, y_val, y_test = data_time_split_by_subject(
+##            data, subject_col="subject_id", time_col="Timestamp"
+##        )
+#
+#        # ... after data is loaded as `data` and includes label column `label`
+#        if subject_split_strategy in ("subject_time_split", "single_subject_data_split") and time_stratify_labels:
+#            # build sort keys to keep per-subject chronology
+#            sort_keys = ("subject_id", "Timestamp")
+#            idx_tr, idx_va, idx_te = time_stratified_three_way_split(
+#                data,
+#                label_col="label",                 # <-- adjust to your actual binary label col
+#                sort_keys=sort_keys,
+#                train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
+#                tolerance=time_stratify_tolerance,
+#                window_prop=time_stratify_window,
+#                min_chunk=time_stratify_min_chunk,
+#            )
+#            # slice X/y (drop label/subject_id from X later in the pipeline as you already do)
+#            X_train, y_train = data.loc[idx_tr].drop(columns=[]), data.loc[idx_tr, "label"]
+#            X_val,   y_val   = data.loc[idx_va].drop(columns=[]), data.loc[idx_va, "label"]
+#            X_test,  y_test  = data.loc[idx_te].drop(columns=[]), data.loc[idx_te, "label"]
+#        else:
+#            # fall back to your existing splitting path
+#            X_train, X_val, X_test, y_train, y_val, y_test = data_time_split_by_subject(
+#                data, subject_col="subject_id", time_col="Timestamp"
+#            )
+
+        if time_stratify_labels:
+            df_lab, feature_columns = _prepare_df_with_label_and_features(data)
+            sort_keys = ("subject_id", "Timestamp")  # ここは実データ列名に合わせる
+            idx_tr, idx_va, idx_te = time_stratified_three_way_split(
+                df_lab,
+                label_col="label",
+                sort_keys=sort_keys,
+                train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
+                tolerance=time_stratify_tolerance,
+                window_prop=time_stratify_window,
+                min_chunk=time_stratify_min_chunk,
+            )
+            # 特徴から label を除外
+            X_train = df_lab.loc[idx_tr, feature_columns].drop(columns=["subject_id"], errors="ignore")
+            X_val   = df_lab.loc[idx_va, feature_columns].drop(columns=["subject_id"], errors="ignore")
+            X_test  = df_lab.loc[idx_te, feature_columns].drop(columns=["subject_id"], errors="ignore")
+            y_train = df_lab.loc[idx_tr, "label"]
+            y_val   = df_lab.loc[idx_va, "label"]
+            y_test  = df_lab.loc[idx_te, "label"]
+        else:
+            X_train, X_val, X_test, y_train, y_val, y_test = data_time_split_by_subject(
+                data, subject_col="subject_id", time_col="Timestamp"
+            )
 
     elif subject_wise_split and fold and fold > 0:
         # Existing logic for cross-validation
@@ -360,6 +856,8 @@ def train_pipeline(
         logging.info(f"X_val   shape after random data split: {X_val.shape}")
         logging.info(f"X_test  shape after random data split: {X_test.shape}")
 
+    _log_split_ratios(y_train, y_val, y_test, tag=f"{subject_split_strategy}|time_stratify={time_stratify_labels}")
+
     # 4. Data Validation: Check for empty splits or non-binary labels
     if y_train.nunique() < 2:
         logging.error(f"Training labels are not binary. Found: {y_train.value_counts().to_dict()}")
@@ -379,7 +877,7 @@ def train_pipeline(
 
     # Model-specific training dispatch
     if model_name == 'Lstm':
-        lstm_train(X_train, y_train, model)
+        lstm_train(X_train, y_train, model_name)
         logging.info("LSTM model training initiated.")
 
     elif model_name == 'SvmA':
@@ -454,27 +952,12 @@ def train_pipeline(
             scaler.fit(X_train_for_fs[selected_features])
             logging.info("Scaler was fit using only X_train (standard procedure).")
 
-#        X_train_scaled = scaler.transform(X_train_for_fs[selected_features])
-#        X_val_scaled = scaler.transform(X_val_for_fs[selected_features])
-#
-#        X_train_scaled = pd.DataFrame(X_train_scaled, columns=selected_features)
-#        X_val_scaled = pd.DataFrame(X_val_scaled, columns=selected_features)
         X_test_for_fs = X_test.drop(columns=["subject_id"], errors='ignore')
         X_test_for_fs = X_test_for_fs.reset_index(drop=True)
 
         # 9. Get Classifier and Train
         clf = get_classifier(model_name)
 
-#        # Construct suffix for model saving based on applied techniques
-#        suffix = ""
-#        if tag:
-#            suffix += f"_{tag}"
-#        if use_coral:
-#            suffix += "_coral"
-#        if use_domain_mixup:
-#            suffix += "_mixup"
-#        if use_vae:
-#            suffix += "_vae"
         # Construct suffix for model saving based on applied techniques
         suffix = ""
         if tag:
@@ -482,7 +965,6 @@ def train_pipeline(
         elif target_subjects:
             safe_targets = "-".join(map(str, target_subjects))[:40]
             suffix += f"_targets-{safe_targets}"
-        # 追加で任意: PBS_ARRAY_INDEX があればグループ番号を使う
         elif os.getenv("PBS_ARRAY_INDEX"):
             suffix += f"_group{os.getenv('PBS_ARRAY_INDEX')}"
         
@@ -493,16 +975,6 @@ def train_pipeline(
         if use_vae:
             suffix += "_vae"
 
-#        common_train(
-#            X_train_scaled,    
-#            X_val_scaled,      
-#            y_train, y_val,
-#            selected_features, 
-#            model_name, model_type, clf,
-#            scaler=scaler,    
-#            suffix=suffix,
-#            data_leak=data_leak,
-#        )
         common_train(
             X_train_for_fs, X_val_for_fs, X_test_for_fs,
             y_train, y_val, y_test,

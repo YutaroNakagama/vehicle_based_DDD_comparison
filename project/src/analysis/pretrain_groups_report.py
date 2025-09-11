@@ -16,15 +16,52 @@ import matplotlib.pyplot as plt
 # ---------- I/O helpers ----------
 
 def ensure_dir(p: Path) -> None:
+    """Ensure that a directory exists.
+
+    Parameters
+    ----------
+    p : Path
+        Directory path to create. Parent directories are also created
+        if they do not exist.
+    """
     p.mkdir(parents=True, exist_ok=True)
 
 def save_json(obj, path: Path) -> None:
+    """Save a Python object as JSON.
+
+    Parameters
+    ----------
+    obj : any
+        Object to serialize into JSON.
+    path : Path
+        Path to the output JSON file. Parent directories are created
+        automatically if they do not exist.
+    """
     ensure_dir(path.parent)
     with path.open("w", encoding="utf-8") as f:
         json.dump(obj, f, indent=2, ensure_ascii=False)
 
 def load_matrix_subjects(matrix_path: Path, subjects_path: Path) -> Tuple[np.ndarray, List[str]]:
-    """Load (N,N) distance matrix and subject id list; enforce zero diagonal."""
+    """Load a square distance matrix and subject IDs.
+
+    Parameters
+    ----------
+    matrix_path : Path
+        Path to the ``.npy`` file containing the distance matrix.
+    subjects_path : Path
+        Path to the ``.json`` file containing the list of subject IDs.
+
+    Returns
+    -------
+    tuple of (ndarray, list of str)
+        - 2D NumPy array of shape (N, N), with diagonal forced to zero.
+        - List of subject IDs.
+
+    Raises
+    ------
+    ValueError
+        If the matrix is not square or does not match the number of subjects.
+    """
     M = np.load(matrix_path)
     subs = json.loads(subjects_path.read_text())
     if M.shape[0] != M.shape[1] or M.shape[0] != len(subs):
@@ -33,13 +70,38 @@ def load_matrix_subjects(matrix_path: Path, subjects_path: Path) -> Tuple[np.nda
     return M, subs
 
 def load_group_ids(file: Path) -> List[str]:
-    """Read one-line text: 'Sxxxx_1 Syyyy_2 ...'"""
-    return file.read_text(encoding="utf-8").strip().split()
+    """Load subject IDs from a group file.
 
+    Parameters
+    ----------
+    file : Path
+        Path to a text file containing subject IDs separated by spaces.
+
+    Returns
+    -------
+    list of str
+        Subject IDs as a list.
+    """
+    return file.read_text(encoding="utf-8").strip().split()
 
 # ---------- metrics on T vs S ----------
 
 def intra_mean(M: np.ndarray, T: Set[int]) -> float:
+    """Compute mean intra-group distance.
+
+    Parameters
+    ----------
+    M : ndarray of shape (n_subjects, n_subjects)
+        Pairwise distance matrix.
+    T : set of int
+        Set of subject indices for the group.
+
+    Returns
+    -------
+    float
+        Mean pairwise distance within the group,
+        or NaN if fewer than two subjects are present.
+    """
     idx = list(T)
     if len(idx) < 2:
         return float("nan")
@@ -48,6 +110,22 @@ def intra_mean(M: np.ndarray, T: Set[int]) -> float:
     return float(np.nanmean(arr)) if arr.size else float("nan")
 
 def inter_mean(M: np.ndarray, T: Set[int], S: Set[int]) -> float:
+    """Compute mean inter-group distance.
+
+    Parameters
+    ----------
+    M : ndarray of shape (n_subjects, n_subjects)
+        Pairwise distance matrix.
+    T : set of int
+        Indices for the target group.
+    S : set of int
+        Indices for the comparison set.
+
+    Returns
+    -------
+    float
+        Mean distance between subjects in T and S, or NaN if empty.
+    """
     if not T or not S:
         return float("nan")
     vals = [M[i, j] for i in T for j in S]
@@ -55,7 +133,23 @@ def inter_mean(M: np.ndarray, T: Set[int], S: Set[int]) -> float:
     return float(np.nanmean(arr)) if arr.size else float("nan")
 
 def nn_T_to_S(M: np.ndarray, T: Set[int], S: Set[int]) -> float:
-    """Average over t in T of min distance to S (NaN-safe)."""
+    """Compute nearest-neighbour distance from T to S.
+
+    Parameters
+    ----------
+    M : ndarray of shape (n_subjects, n_subjects)
+        Pairwise distance matrix.
+    T : set of int
+        Indices for the source group.
+    S : set of int
+        Indices for the target group.
+
+    Returns
+    -------
+    float
+        Mean of nearest-neighbour distances from each element of T to S,
+        or NaN if groups are empty.
+    """
     if not T or not S:
         return float("nan")
     S_list = list(S)
@@ -75,11 +169,23 @@ def plot_bars(
     out_png: Path,
     ylabel: str = "Distance",
 ) -> None:
-    """
-    stats = {
-      "friendly": {"intra": x, "inter": y, "nn": z},
-      "hard":     {"intra": a, "inter": b, "nn": c}
-    }
+    """Plot a grouped bar chart comparing intra/inter/NN statistics.
+
+    Parameters
+    ----------
+    metric_name : str
+        Name of the metric (e.g., ``mmd``).
+    stats : dict of {str: dict of {str: float}}
+        Nested dict with keys ``friendly`` and ``hard``,
+        each containing ``intra``, ``inter``, and ``nn``.
+    out_png : Path
+        Path to save the output PNG file.
+    ylabel : str, default="Distance"
+        Label for the y-axis.
+
+    Returns
+    -------
+    None
     """
     labels = ["Intra", "Inter", "NN"]
     friendly_vals = [stats["friendly"]["intra"], stats["friendly"]["inter"], stats["friendly"]["nn"]]
@@ -111,9 +217,27 @@ def report_for_metric(
     group_hard_file: Path,
     out_dir: Path,
 ) -> Dict[str, Dict[str, float]]:
-    """
-    Compute stats for one metric and write per-metric JSON/CSV/PNG into out_dir.
-    Returns the stats dict.
+    """Generate a detailed report for a given metric.
+
+    Parameters
+    ----------
+    metric_name : str
+        Name of the metric (e.g., ``mmd``, ``wasserstein``, ``dtw``).
+    matrix_path : Path
+        Path to the distance matrix ``.npy`` file.
+    subjects_path : Path
+        Path to the subjects ``.json`` file.
+    group_friendly_file : Path
+        File containing subject IDs for the friendly group.
+    group_hard_file : Path
+        File containing subject IDs for the hard group.
+    out_dir : Path
+        Directory where JSON, CSV, and PNG outputs will be saved.
+
+    Returns
+    -------
+    dict of {str: dict of {str: float}}
+        Report containing intra, inter, nn distances for both groups.
     """
     M, subs = load_matrix_subjects(matrix_path, subjects_path)
     id2idx = {sid: i for i, sid in enumerate(subs)}
@@ -164,10 +288,31 @@ def run_report_pretrain_groups(
     dtw_matrix: Path  = Path("results/distances/dtw_matrix.npy"),
     dist_subjects: Path = Path("results/distances/subjects.json"),
 ) -> Dict[str, Dict[str, Dict[str, float]]]:
-    """
-    Run report for {mmd, wasserstein, dtw} using 10人グループ (friendly/hard) in `group_dir`.
-    Writes per-metric json/csv/png into group_dir, plus combined summary json/csv.
-    Returns a nested dict: metric -> {'friendly': {...}, 'hard': {...}}.
+    """Run reports for MMD, Wasserstein, and DTW distances.
+
+    Parameters
+    ----------
+    group_dir : Path, default="misc/pretrain_groups"
+        Directory containing friendly/hard group definitions.
+    out_summary_json : Path, default="misc/pretrain_groups/summary_report_ext.json"
+        Path to save combined summary JSON.
+    out_summary_csv : Path, default="misc/pretrain_groups/summary_report_ext.csv"
+        Path to save combined summary CSV.
+    mmd_matrix : Path, default="results/mmd/mmd_matrix.npy"
+        Path to MMD distance matrix.
+    mmd_subjects : Path, default="results/mmd/mmd_subjects.json"
+        Path to subject list for MMD.
+    wass_matrix : Path, default="results/distances/wasserstein_matrix.npy"
+        Path to Wasserstein distance matrix.
+    dtw_matrix : Path, default="results/distances/dtw_matrix.npy"
+        Path to DTW distance matrix.
+    dist_subjects : Path, default="results/distances/subjects.json"
+        Path to subject list for Wasserstein/DTW.
+
+    Returns
+    -------
+    dict of {str: dict of {str: dict of float}}
+        Nested dictionary: metric → group → {intra, inter, nn, ids}.
     """
     metrics = [
         ("mmd",         mmd_matrix,  mmd_subjects),

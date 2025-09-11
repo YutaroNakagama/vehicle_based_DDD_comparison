@@ -1,7 +1,8 @@
-"""CORrelation ALignment (CORAL) domain adaptation implementation.
+"""CORrelation ALignment (CORAL) domain adaptation.
 
-This module provides a function to align source domain feature distributions
-to match the target domain by whitening and recoloring using covariance matrices.
+This module implements the CORAL algorithm, which aligns the feature
+distribution of a source domain to match that of a target domain by
+adjusting their covariance structures.
 """
 
 import numpy as np
@@ -9,17 +10,25 @@ import scipy.linalg
 
 
 def coral(source: np.ndarray, target: np.ndarray) -> np.ndarray:
-    """Apply CORAL to align source features to the target domain.
+    """
+    Apply CORAL to align source features to the target domain.
 
-    This technique performs feature distribution alignment by
-    adjusting the covariance of the source domain to match the target domain.
+    CORAL (CORrelation ALignment) performs second-order feature
+    alignment by whitening the source distribution and re-coloring it
+    with the target distribution's covariance.
 
-    Args:
-        source (np.ndarray): Source domain data of shape (n_samples_source, n_features).
-        target (np.ndarray): Target domain data of shape (n_samples_target, n_features).
+    Parameters
+    ----------
+    source : np.ndarray of shape (n_samples_source, n_features)
+        Source domain feature matrix.
+    target : np.ndarray of shape (n_samples_target, n_features)
+        Target domain feature matrix.
 
-    Returns:
-        np.ndarray: CORAL-aligned source data with same shape as input.
+    Returns
+    -------
+    np.ndarray of shape (n_samples_source, n_features)
+        Source domain features transformed to be aligned with the
+        target domain distribution.
     """
     # Compute covariance matrices with identity regularization
     cov_source = np.cov(source, rowvar=False) + np.eye(source.shape[1])

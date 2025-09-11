@@ -1,6 +1,7 @@
 """Jittering augmentation for time-series data.
 
-This module adds Gaussian noise to numeric features in either NumPy arrays or pandas DataFrames.
+This module applies Gaussian noise to numeric features
+in NumPy arrays or pandas DataFrames to improve robustness.
 """
 
 import numpy as np
@@ -8,21 +9,31 @@ import pandas as pd
 
 
 def jittering(data: pd.DataFrame | np.ndarray, sigma: float = 0.03) -> pd.DataFrame | np.ndarray:
-    """Apply jittering (Gaussian noise) to time-series data.
+    """
+    Apply jittering (Gaussian noise) to time-series data.
 
-    Jittering is a form of data augmentation that helps improve generalization
-    by adding small random perturbations to numeric data.
+    Jittering is a lightweight data augmentation technique
+    that perturbs numeric values with small random noise
+    to improve model generalization.
 
-    Args:
-        data (pd.DataFrame or np.ndarray): Input data with shape (n_samples, n_features).
-            - If DataFrame: only numeric columns are modified.
-        sigma (float, optional): Standard deviation of the Gaussian noise. Defaults to 0.03.
+    Parameters
+    ----------
+    data : pandas.DataFrame or numpy.ndarray of shape (n_samples, n_features)
+        Input dataset.  
+        - If DataFrame: only numeric columns are perturbed.  
+        - If ndarray: all values are perturbed.
+    sigma : float, default=0.03
+        Standard deviation of the Gaussian noise.
 
-    Returns:
-        pd.DataFrame or np.ndarray: Noisy version of the input data, with the same shape and type.
+    Returns
+    -------
+    pandas.DataFrame or numpy.ndarray
+        Noisy version of the input data, same shape and type as input.
 
-    Raises:
-        TypeError: If the input is not a DataFrame or ndarray.
+    Raises
+    ------
+    TypeError
+        If the input is not a ``pandas.DataFrame`` or ``numpy.ndarray``.
     """
     if isinstance(data, pd.DataFrame):
         numeric_columns = data.select_dtypes(include=[np.number]).columns

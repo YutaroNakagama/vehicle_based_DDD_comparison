@@ -1,7 +1,8 @@
 """Domain Mixup data augmentation for domain generalization.
 
-This module enables cross-domain interpolation of features and labels
-to simulate domain shifts during training.
+This module implements Domain Mixup, a data augmentation technique
+that interpolates samples across different domains to improve
+generalization under domain shift.
 """
 
 import numpy as np
@@ -9,31 +10,59 @@ import pandas as pd
 
 
 def generate_domain_labels(subject_list, X: pd.DataFrame) -> np.ndarray:
-    """Generate domain labels based on the 'subject_id' column in feature matrix.
+    """
+    Generate domain labels from the ``subject_id`` column.
 
-    Args:
-        subject_list (list): List of subject identifiers (not used).
-        X (pd.DataFrame): Feature DataFrame containing 'subject_id' column.
+    Parameters
+    ----------
+    subject_list : list
+        List of subject identifiers. Currently unused.
+    X : pandas.DataFrame
+        Feature matrix containing a ``subject_id`` column.
 
-    Returns:
-        np.ndarray: Array of domain labels corresponding to each sample.
+    Returns
+    -------
+    np.ndarray of shape (n_samples,)
+        Domain label array aligned with rows of ``X``.
     """
     return X['subject_id'].values
 
+def domain_mixup(
+    X: pd.DataFrame,
+    y: pd.Series,
+    domain_labels: np.ndarray,
+    alpha: float = 0.2,
+    augment_ratio: float = 0.3,
+) -> tuple[pd.DataFrame, pd.Series]:
+    """
+    Perform Domain Mixup augmentation by interpolating samples from different domains.
 
-def domain_mixup(X: pd.DataFrame, y: pd.Series, domain_labels: np.ndarray,
-                 alpha: float = 0.2, augment_ratio: float = 0.3) -> tuple:
-    """Perform Domain Mixup by interpolating between samples from different domains.
+    Synthetic samples are created by linearly interpolating numeric features
+    between pairs of samples from distinct domains. Labels are inherited
+    from one of the source samples, weighted by interpolation.
 
-    Args:
-        X (pd.DataFrame): Original feature matrix (may include numeric & non-numeric columns).
-        y (pd.Series): Corresponding labels.
-        domain_labels (np.ndarray): Domain identifiers for each row in X.
-        alpha (float): Beta distribution parameter for interpolation weight lambda.
-        augment_ratio (float): Ratio of synthetic samples to generate.
+    Parameters
+    ----------
+    X : pandas.DataFrame
+        Original feature matrix. May contain both numeric and non-numeric columns.
+    y : pandas.Series
+        Labels corresponding to ``X``.
+    domain_labels : np.ndarray of shape (n_samples,)
+        Domain identifiers for each row in ``X``.
+    alpha : float, default=0.2
+        Beta distribution parameter controlling the interpolation weight ``λ``.
+    augment_ratio : float, default=0.3
+        Proportion of synthetic samples to generate relative to ``X``.
 
-    Returns:
-        tuple: (augmented_X, augmented_y) as pd.DataFrame and pd.Series
+    Returns
+    -------
+    tuple
+        A tuple containing:
+
+        - **X_combined** : pandas.DataFrame  
+          Original and augmented feature matrix, with numeric and non-numeric columns.
+        - **y_combined** : pandas.Series  
+          Corresponding labels for original and augmented samples.
     """
     X = X.reset_index(drop=True)
     y = y.reset_index(drop=True)

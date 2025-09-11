@@ -6,7 +6,8 @@ This module defines functions to calculate multiple feature importance indices:
 - T-test Index
 - Mutual Information
 
-Used for ranking features in classification models (e.g., SVM, RF).
+These metrics are used for ranking features in classification models
+(e.g., SVM, Random Forest).
 """
 
 import numpy as np
@@ -15,21 +16,29 @@ from sklearn.metrics import mutual_info_score
 
 
 def calculate_feature_indices(X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
-    """Calculate feature importance indices for each feature.
+    """
+    Calculate feature importance indices for each feature.
 
-    For each feature (column in X), the following indices are computed:
-    - Fisher Index: difference in means normalized by variance.
-    - Correlation Index: Pearson-like correlation to target.
-    - T-test Index: standard two-class t-test statistic.
-    - Mutual Information Index: discrete mutual information.
+    For each feature (column in ``X``), the following indices are computed:
 
-    Args:
-        X (pd.DataFrame): Feature matrix of shape (n_samples, n_features).
-        y (pd.Series): Target labels (assumed binary: 0 and 1).
+    - ``Fisher_Index`` : Difference in means normalised by variance.
+    - ``Correlation_Index`` : Pearson-like correlation to the target.
+    - ``T-test_Index`` : Standard two-class t-test statistic.
+    - ``Mutual_Information_Index`` : Discrete mutual information score.
 
-    Returns:
-        pd.DataFrame: Feature importance scores for all features,
-                      indexed by feature names and containing one row per feature.
+    Parameters
+    ----------
+    X : pandas.DataFrame
+        Feature matrix of shape ``(n_samples, n_features)``.
+    y : pandas.Series
+        Target labels (assumed binary: 0 and 1).
+
+    Returns
+    -------
+    pandas.DataFrame
+        Feature importance scores for all features.
+        The index corresponds to feature names, and the columns contain
+        one score per importance index.
     """
 
     X = X.reset_index(drop=True)

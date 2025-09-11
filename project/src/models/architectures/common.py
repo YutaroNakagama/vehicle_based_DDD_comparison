@@ -15,16 +15,6 @@ from collections import OrderedDict
 from lightgbm import LGBMClassifier
 from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
-#from sklearn.metrics import classification_report, roc_curve, auc, make_scorer, roc_auc_score
-#from sklearn.metrics import (
-#    classification_report, roc_curve, auc, make_scorer, roc_auc_score,
-#    accuracy_score, precision_score, recall_score, f1_score
-#)
-#from sklearn.metrics import (
-#    classification_report, roc_curve, auc, make_scorer, roc_auc_score,
-#    accuracy_score, precision_score, recall_score, f1_score,
-#    confusion_matrix
-#)
 from sklearn.metrics import (
     classification_report, roc_curve, auc, make_scorer, roc_auc_score,
     accuracy_score, precision_score, recall_score, f1_score,
@@ -44,17 +34,15 @@ from imblearn.ensemble import BalancedRandomForestClassifier
 from src.models.feature_selection.anfis import calculate_id
 from src.config import MODEL_PKL_PATH, N_TRIALS
 
-#def common_train(
-#    X_train, X_test, y_train, y_test,
 def common_train(
-#    X_train, X_val, X_test, y_train, y_val, y_test,
     X_train, X_val, X_test, y_train, y_val, y_test,
     selected_features,  
     model: str, model_type: str,
     clf=None, scaler=None, suffix: str = "",
     data_leak: bool = False,
 ):
-    """Train a classical ML model (RandomForest) using Optuna and ANFIS-based feature selection.
+    """
+    Train a classical ML model using Optuna and ANFIS-based feature selection.
 
     This function:
     - Performs feature importance estimation via ANFIS membership functions.
@@ -62,24 +50,42 @@ def common_train(
     - Trains the final model and saves it to disk.
     - Logs classification performance.
 
-    Args:
-        X_train (pd.DataFrame): Training feature matrix.
-        X_test (pd.DataFrame): Testing feature matrix.
-        y_train (pd.Series): Training labels.
-        y_test (pd.Series): Testing labels.
-        feature_indices (pd.DataFrame): Feature selection scores per feature (e.g., Fisher, MI).
-        model (str): Model name (used for file naming).
-        model_type (str): Model group (e.g., 'common', 'SvmA').
-        clf: Optional classifier (currently unused; default is RandomForest).
+    Parameters
+    ----------
+    X_train : pandas.DataFrame
+        Training feature matrix.
+    X_val : pandas.DataFrame
+        Validation feature matrix.
+    X_test : pandas.DataFrame
+        Test feature matrix.
+    y_train : pandas.Series
+        Training labels.
+    y_val : pandas.Series
+        Validation labels.
+    y_test : pandas.Series
+        Test labels.
+    selected_features : list of str
+        List of selected feature names.
+    model : str
+        Model name (used for file naming).
+    model_type : str
+        Model group (e.g., ``"common"``, ``"SvmA"``).
+    clf : object, optional
+        Classifier to train. If ``None``, a default model is selected internally.
+    scaler : sklearn.preprocessing.StandardScaler, optional
+        Pre-fitted scaler for feature normalization.
+    suffix : str, default=""
+        Suffix appended to saved file names (e.g., tags, strategies).
+    data_leak : bool, default=False
+        Whether to allow intentional data leakage (for ablation studies).
 
-    Returns:
-        None
+    Returns
+    -------
+    None
+        The trained model, selected features, scaler, and evaluation metrics
+        are saved to disk as pickle, JSON, and CSV artifacts.
     """
 
-#    # Remove duplicated column names while preserving order
-#    X_train = X_train.loc[:, ~X_train.columns.duplicated()]
-#    X_test = X_test.loc[:, ~X_test.columns.duplicated()]
-    # Remove duplicated column names while preserving order
     X_train = X_train.loc[:, ~X_train.columns.duplicated()]
     X_val   = X_val.loc[:,   ~X_val.columns.duplicated()]
     X_test  = X_test.loc[:,  ~X_test.columns.duplicated()]
@@ -136,6 +142,7 @@ def common_train(
                 "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 5),
                 "random_state": 42,
                 "class_weight": "balanced_subsample",
+#                "class_weight": "balanced",
                 "n_jobs": 1,  
             }
             clf = RandomForestClassifier(**params)
@@ -240,13 +247,17 @@ def common_train(
 
         roc_auc = "roc_auc" #make_scorer(roc_auc_score, needs_proba=True)
 
+#        try:
+#            if data_leak:
+#                X_all = np.vstack([X_train[selected_features], X_test[selected_features]])
+#                y_all = np.concatenate([y_train, y_test])
+#                scaler_local = StandardScaler()
+#                X_all_scaled = scaler_local.fit_transform(X_all)
         try:
             if data_leak:
-                # 全データでスケーリング＆学習（リーク用）
                 X_all = np.vstack([X_train[selected_features], X_test[selected_features]])
                 y_all = np.concatenate([y_train, y_test])
-                scaler_local = StandardScaler()
-                X_all_scaled = scaler_local.fit_transform(X_all)
+                X_all_scaled = scaler.transform(X_all)
                 cv = StratifiedKFold(n_splits=2, shuffle=True, random_state=42)
                 for i, (_, va_idx) in enumerate(cv.split(X_all_scaled, y_all)):
                     bincounts = np.bincount(y_all[va_idx].astype(int))
@@ -255,12 +266,13 @@ def common_train(
                         print(f"[CV-Leak] Fold {i} has only one class! Skipping trial.")
                         return 0.0
                 score_arr = cross_val_score(clf, X_all_scaled, y_all, cv=cv, scoring=roc_auc, n_jobs=1)
-            else:
+#            else:
 #                scaler_local = StandardScaler()
 #                X_train_scaled = scaler_local.fit_transform(X_train[selected_features])
-                scaler_local = StandardScaler()
-                X_train_scaled = scaler_local.fit_transform(X_train[selected_features])
-                cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)  # n_splitsを5など大きめに！
+            else:
+                # 目的関数内でも pretrain 済みスケーラを使用
+                X_train_scaled = scaler.transform(X_train[selected_features])
+                cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)  
 
                 auc_list = []
                 
@@ -281,20 +293,13 @@ def common_train(
                 
                 print("manual auc_list:", auc_list)
                 print("manual auc mean (ignore nan):", np.nanmean(auc_list))
-#                for i, (_, va_idx) in enumerate(cv.split(X_train_scaled, y_train)):
-#                    bincounts = np.bincount(y_train[va_idx].astype(int))
-#                    print(f"[CV] Fold {i} y_val bincount: {bincounts}")
-#                    if len(bincounts) < 2 or np.any(bincounts == 0):
-#                        print(f"[CV] Fold {i} has only one class! Skipping trial.")
-#                        return 0.0
                 try:
-                    # scoringでnanになったときにエラー内容を表示
                     score_arr = cross_val_score(
                         clf, X_train_scaled, y_train, 
                         cv=cv, 
                         scoring=roc_auc,
                         n_jobs=1,
-                        error_score='raise'  # 'nan' だと本当に理由がわからなくなるので
+                        error_score='raise'  
                     )
                     print("cross_val_score:", score_arr)
                     if np.any(np.isnan(score_arr)):
@@ -307,22 +312,12 @@ def common_train(
                     traceback.print_exc()
                     return 0.0
 
-#                score_arr = cross_val_score(clf, X_train_scaled, y_train, cv=cv, scoring='accuracy', n_jobs=1)
-# 
-#            print("cross_val_score:", score_arr)
-#            if np.any(np.isnan(score_arr)):
-#                print("Score nan detected: ", score_arr)
-#                return 0.0
-# 
-#            score = np.nanmean(score_arr)
         except Exception as e:
             logging.warning(f"Scoring failed: {e}")
             return 0.0
  
         return score
 
-
-    # Run Optuna study
     study = optuna.create_study(
         direction="maximize",
         pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=1, interval_steps=1)
@@ -337,17 +332,9 @@ def common_train(
     if scaler is None:
         raise ValueError("Scaler must be provided (pre-fitted in pipeline).")
 
-#    X_train_scaled = scaler.transform(X_train[selected_features])
-#    X_test_scaled = scaler.transform(X_test[selected_features])
-    # Scale all splits using pre-fitted scaler from pipeline
     X_train_scaled = scaler.transform(X_train[selected_features])
     X_val_scaled   = scaler.transform(X_val[selected_features])
     X_test_scaled  = scaler.transform(X_test[selected_features])
-
-#    # Final training
-#    scaler = StandardScaler()
-#    X_train_scaled = scaler.fit_transform(X_train[selected_features])
-#    X_test_scaled = scaler.transform(X_test[selected_features])
 
     if model == "LightGBM":
         best_clf = LGBMClassifier(**best_params)
@@ -361,7 +348,7 @@ def common_train(
     elif model == "RF":
         if "class_weight" in best_params:
             best_params.pop("class_weight")
-        best_clf = RandomForestClassifier(**best_params, class_weight="balanced_subsample")
+        best_clf = RandomForestClassifier(**best_params, class_weight="balanced_subsample", n_jobs=-1)
 
     elif model == "BalancedRF":
         best_clf = BalancedRandomForestClassifier(**best_params)
@@ -396,8 +383,6 @@ def common_train(
 
     if data_leak:
         best_clf.fit(
-#            np.vstack([X_train_scaled, X_test_scaled]),
-#            np.concatenate([y_train, y_test])
             np.vstack([X_train_scaled, X_val_scaled, X_test_scaled]),
             np.concatenate([y_train, y_val, y_test])
         )
@@ -423,8 +408,6 @@ def common_train(
     with open(f"{MODEL_PKL_PATH}/{model_type}/feature_meta_{model}{suffix}.json", "w") as f:
         json.dump(feature_meta, f, indent=2)
 
-#    # Evaluate
-#    y_pred = best_clf.predict(X_test_scaled)
     # ---------- Evaluate & Save per-split metrics ----------
     def _eval_split(Xs, ys):
         yhat = best_clf.predict(Xs)
@@ -467,24 +450,9 @@ def common_train(
     m_train = _eval_split(X_train_scaled, y_train)
     m_val   = _eval_split(X_val_scaled,   y_val)
     m_test  = _eval_split(X_test_scaled,  y_test)
-#    roc_auc = 0
-#
-#    if hasattr(best_clf, "predict_proba"):
-#        y_pred_proba = best_clf.predict_proba(X_test_scaled)[:, 1]
-#    elif hasattr(best_clf, "decision_function"):
-#        y_pred_proba = best_clf.decision_function(X_test_scaled)
-#    else:
-#        y_pred_proba = None
-#    
-#    if y_pred_proba is not None:
-#        fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
-#        roc_auc = auc(fpr, tpr)
-#
-#    logging.info(f"{model} (Optuna) trained with ROC AUC: {roc_auc:.2f}")
-#    logging.info(classification_report(y_test, y_pred))
     logging.info(f"{model} (Optuna) metrics: "
                  f"train acc={m_train['accuracy']:.3f}, val acc={m_val['accuracy']:.3f}, test acc={m_test['accuracy']:.3f}")
-    # Testの分類レポートをログに
+    # save log of Test classification report
     y_pred_test = best_clf.predict(X_test_scaled)
     logging.info("Test classification report:\n" + classification_report(y_test, y_pred_test))
 
@@ -545,7 +513,6 @@ def common_train(
             return
         # precision_recall_curve returns precision, recall, thresholds (len(thr)=len(prec)-1)
         prec, rec, thr = precision_recall_curve(y_true, scores)
-        # CSV（長さ差を埋めるために最後の閾値はNaNにして揃える）
         import numpy as np, pandas as pd
         thr_aligned = np.concatenate([thr, [np.nan]])
         pd.DataFrame({"precision":prec, "recall":rec, "threshold":thr_aligned}).to_csv(
@@ -564,15 +531,9 @@ def common_train(
     _save_pr(m_val["_y_true"],   m_val.get("_proba"),   "val",   suffix)
     _save_pr(m_test["_y_true"],  m_test.get("_proba"),  "test",  suffix)
 
-    # Threshold optimization (F1-score)
-#    if y_pred_proba is not None:
     # ---------- Threshold optimization on validation (maximize F1) ----------
-    # しきい値は妥当性のため「検証」で最適化 → その閾値をTestにも適用
-#    if m_val["_proba"] is not None:
     if m_val["_proba"] is not None:
-#        from sklearn.metrics import precision_recall_curve, f1_score
 
-#        precision, recall, thresholds = precision_recall_curve(y_test, y_pred_proba)
         precision, recall, thresholds = precision_recall_curve(y_val, m_val["_proba"])
         f1_scores = 2 * precision * recall / (precision + recall + 1e-8)
         best_idx = np.argmax(f1_scores)
@@ -580,9 +541,6 @@ def common_train(
 
         logging.info(f"Optimal threshold for F1: {best_threshold:.3f}")
         
-#        y_pred_opt = (y_pred_proba >= best_threshold).astype(int)
-#        logging.info("Classification Report with optimized threshold:")
-#        logging.info(classification_report(y_test, y_pred_opt))
         def _apply_thr(proba, y_true):
             yhat = (proba >= best_threshold).astype(int)
             return {
@@ -592,8 +550,6 @@ def common_train(
                 "f1": float(f1_score(y_true, yhat, zero_division=0)),
             }
 
-#        thr_val  = _apply_thr(m_val["_proba"],  y_val)
-#        thr_test = _apply_thr(m_test["_proba"], y_test) if m_test["_proba"] is not None else None
         thr_val  = _apply_thr(m_val["_proba"],  y_val)
         thr_test = _apply_thr(m_test["_proba"], y_test) if m_test["_proba"] is not None else None
 
@@ -616,9 +572,6 @@ def common_train(
 
     # ---------- Save metrics CSV ----------
     rows = []
-#    rows.append({"split":"train", **{k:v for k,v in m_train.items() if not k.startswith("_")}})
-#    rows.append({"split":"val",   **{k:v for k,v in m_val.items()   if not k.startswith("_")}})
-#    rows.append({"split":"test",  **{k:v for k,v in m_test.items()  if not k.startswith("_")}})
     rows.append({"split":"train", **{k:v for k,v in m_train.items() if not k.startswith("_")}})
     rows.append({"split":"val",   **{k:v for k,v in m_val.items()   if not k.startswith("_")}})
     rows.append({"split":"test",  **{k:v for k,v in m_test.items()  if not k.startswith("_")}})

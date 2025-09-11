@@ -14,11 +14,40 @@ from tqdm import tqdm
 CACHE_VERSION = "v1"  # bump this when feature layout/filters change
 
 def _cache_key(subjects, data_root: Path) -> str:
-#    s = "|".join(subjects) + "@" + str(data_root.resolve())
+    """Generate a unique cache key for feature extraction.
+
+    Parameters
+    ----------
+    subjects : list of str
+        List of subject identifiers.
+    data_root : Path
+        Path to the root directory of processed data.
+
+    Returns
+    -------
+    str
+        MD5 hash string used as cache key.
+    """
     s = CACHE_VERSION + "|" + "|".join(subjects) + "@" + str(data_root.resolve())
     return hashlib.md5(s.encode()).hexdigest()
 
 def _extract_features_with_cache(subjects, data_root: Path, cache_dir: Path = Path("results/.cache")):
+    """Extract features with caching.
+
+    Parameters
+    ----------
+    subjects : list of str
+        List of subject identifiers.
+    data_root : Path
+        Root directory where processed CSVs are stored.
+    cache_dir : Path, default="results/.cache"
+        Directory where cached features are saved.
+
+    Returns
+    -------
+    dict of {str: ndarray}
+        Mapping from subject ID to feature matrix.
+    """
     cache_dir.mkdir(parents=True, exist_ok=True)
     key = _cache_key(subjects, data_root)
     npz = cache_dir / f"features_{key}.npz"
@@ -38,7 +67,22 @@ os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
 
 # ===== Helpers =====
 def _median_gamma(X: np.ndarray, Y: np.ndarray, max_samples: int = 1000) -> float:
-    """Estimate RBF gamma via the median heuristic on squared L2 distances."""
+    """Estimate RBF kernel gamma using the median heuristic.
+
+    Parameters
+    ----------
+    X : ndarray of shape (n_samples_X, n_features)
+        Feature matrix for dataset X.
+    Y : ndarray of shape (n_samples_Y, n_features)
+        Feature matrix for dataset Y.
+    max_samples : int, default=1000
+        Maximum number of samples to use for distance estimation.
+
+    Returns
+    -------
+    float
+        Estimated gamma value.
+    """
     A = X if len(X) <= max_samples else X[np.random.choice(len(X), max_samples, replace=False)]
     B = Y if len(Y) <= max_samples else Y[np.random.choice(len(Y), max_samples, replace=False)]
     D = np.sum((A[:, None, :] - B[None, :, :]) ** 2, axis=2)
@@ -48,7 +92,22 @@ def _median_gamma(X: np.ndarray, Y: np.ndarray, max_samples: int = 1000) -> floa
     return 1.0 / (2.0 * med)
 
 def compute_mmd(X: np.ndarray, Y: np.ndarray, gamma: float | None = None) -> float:
-    """Biased MMD^2 estimate with RBF kernel (keeps previous behavior)."""
+    """Compute the Maximum Mean Discrepancy (MMD) between two datasets.
+
+    Parameters
+    ----------
+    X : ndarray of shape (n_samples_X, n_features)
+        Feature matrix for dataset X.
+    Y : ndarray of shape (n_samples_Y, n_features)
+        Feature matrix for dataset Y.
+    gamma : float, optional
+        RBF kernel width parameter. If ``None``, it is estimated using the median heuristic.
+
+    Returns
+    -------
+    float
+        Estimated MMD^2 value.
+    """
     if gamma is None:
         gamma = _median_gamma(X, Y)
     Kxx = rbf_kernel(X, X, gamma=gamma)
@@ -58,7 +117,20 @@ def compute_mmd(X: np.ndarray, Y: np.ndarray, gamma: float | None = None) -> flo
     return float(Kxx.sum() / (m * m) + Kyy.sum() / (n * n) - 2.0 * Kxy.sum() / (m * n))
 
 def _load_features_one(subject_str: str, data_root: Path) -> np.ndarray | None:
-    """Load a subject's feature matrix from processed CSV."""
+    """Load features for a single subject.
+
+    Parameters
+    ----------
+    subject_str : str
+        Identifier of the subject (format: "<id>_<version>").
+    data_root : Path
+        Path to directory containing processed CSVs.
+
+    Returns
+    -------
+    ndarray or None
+        Feature matrix for the subject, or ``None`` if missing.
+    """
     subject_id, version = subject_str.split("_")
     path = data_root / f"processed_{subject_id}_{version}.csv"
     if not path.exists():
@@ -75,6 +147,20 @@ def _load_features_one(subject_str: str, data_root: Path) -> np.ndarray | None:
     return df[feature_cols].dropna().to_numpy()
 
 def _extract_features(subjects: list[str], data_root: Path) -> dict[str, np.ndarray]:
+    """Extract features for a list of subjects.
+
+    Parameters
+    ----------
+    subjects : list of str
+        List of subject identifiers.
+    data_root : Path
+        Root directory where processed CSVs are stored.
+
+    Returns
+    -------
+    dict of {str: ndarray}
+        Mapping from subject ID to feature matrix.
+    """
     out: dict[str, np.ndarray] = {}
     for s in subjects:
         x = _load_features_one(s, data_root)
@@ -83,14 +169,62 @@ def _extract_features(subjects: list[str], data_root: Path) -> dict[str, np.ndar
     return out
 
 def _load_subject_list(path: Path) -> list[str]:
+    """Load a list of subject IDs from a text file.
+
+    Parameters
+    ----------
+    path : Path
+        Path to subject list file.
+
+    Returns
+    -------
+    list of str
+        List of subject identifiers.
+    """
     return [line.strip() for line in path.read_text().splitlines() if line.strip()]
 
 def _load_groups(path: Path) -> dict[str, list[str]]:
+    """Load subject groups from a text file.
+
+    Parameters
+    ----------
+    path : Path
+        Path to file where each line defines a group (subjects separated by spaces).
+
+    Returns
+    -------
+    dict of {str: list of str}
+        Mapping from group name (G1, G2, ...) to subject IDs.
+    """
     rows = [line.strip().split() for line in path.read_text().splitlines() if line.strip()]
     return {f"G{idx+1}": group for idx, group in enumerate(rows)}
 
 def _plot_heatmap(matrix: np.ndarray, row_labels: list[str], col_labels: list[str],
                   title: str, save_path: Path, annot: bool = True, fmt: str = ".2f") -> None:
+    """Plot and save a heatmap of a matrix.
+
+    Parameters
+    ----------
+    matrix : ndarray of shape (n_rows, n_cols)
+        The 2D matrix to visualize.
+    row_labels : list of str
+        Labels for the rows.
+    col_labels : list of str
+        Labels for the columns.
+    title : str
+        Title of the heatmap.
+    save_path : Path
+        Path to save the heatmap image.
+    annot : bool, default=True
+        Whether to annotate the heatmap cells with values.
+    fmt : str, default=".2f"
+        Format string for annotations.
+
+    Returns
+    -------
+    None
+        Saves the heatmap to the specified file path.
+    """
     plt.figure(figsize=(max(8, len(row_labels)//2), max(6, len(col_labels)//2)))
     sns.heatmap(matrix, xticklabels=col_labels, yticklabels=row_labels,
                 cmap="viridis", annot=annot, fmt=fmt)
@@ -101,6 +235,28 @@ def _plot_heatmap(matrix: np.ndarray, row_labels: list[str], col_labels: list[st
 
 def _plot_bar(labels: list[str], means: np.ndarray, stds: np.ndarray,
               title: str, ylabel: str, save_path: Path) -> None:
+    """Plot and save a bar chart with error bars.
+
+    Parameters
+    ----------
+    labels : list of str
+        Labels for the x-axis (e.g., subject or group names).
+    means : ndarray of shape (n_labels,)
+        Mean values to plot as bars.
+    stds : ndarray of shape (n_labels,)
+        Standard deviation values for error bars.
+    title : str
+        Title of the bar chart.
+    ylabel : str
+        Label for the y-axis.
+    save_path : Path
+        Path to save the bar chart image.
+
+    Returns
+    -------
+    None
+        Saves the bar chart to the specified file path.
+    """
     x = np.arange(len(labels))
     plt.figure(figsize=(max(12, len(labels)//2), 6))
     plt.bar(x, means, yerr=stds, capsize=5)
@@ -110,6 +266,26 @@ def _plot_bar(labels: list[str], means: np.ndarray, stds: np.ndarray,
 
 def _plot_group_projection(matrix: np.ndarray, subjects: list[str], groups: dict[str, list[str]],
                            method_name: str, save_path: Path) -> None:
+    """Plot a 2D projection of groups from a distance matrix using MDS.
+
+    Parameters
+    ----------
+    matrix : ndarray of shape (n_subjects, n_subjects)
+        Pairwise distance matrix between subjects.
+    subjects : list of str
+        Subject identifiers corresponding to rows/columns of the matrix.
+    groups : dict of {str: list of str}
+        Mapping of group names to lists of subject IDs.
+    method_name : str
+        Name of the distance method (e.g., 'MMD', 'Wasserstein').
+    save_path : Path
+        Path to save the projection plot.
+
+    Returns
+    -------
+    None
+        Saves the projection plot to the specified file path.
+    """
     coords = MDS(n_components=2, dissimilarity="precomputed", random_state=42)\
         .fit_transform(np.nan_to_num(matrix))
     s2xy = {s: coords[i] for i, s in enumerate(subjects)}
@@ -125,6 +301,20 @@ def _plot_group_projection(matrix: np.ndarray, subjects: list[str], groups: dict
     plt.legend(); plt.tight_layout(); plt.savefig(save_path); plt.close()
 
 def _compute_mmd_matrix(features: dict[str, np.ndarray]) -> tuple[np.ndarray, list[str]]:
+    """Compute the pairwise MMD distance matrix between subjects.
+
+    Parameters
+    ----------
+    features : dict of {str: ndarray}
+        Mapping from subject ID to feature matrix.
+
+    Returns
+    -------
+    matrix : ndarray of shape (n_subjects, n_subjects)
+        Symmetric MMD distance matrix.
+    subjects : list of str
+        Subject identifiers corresponding to the rows/columns.
+    """
     valid_subjects = list(features.keys())
     n = len(valid_subjects)
     M = np.zeros((n, n), dtype=np.float64)
@@ -143,6 +333,24 @@ def _compute_mmd_matrix(features: dict[str, np.ndarray]) -> tuple[np.ndarray, li
     return M, valid_subjects
 
 def _compute_group_dist_matrix(matrix: np.ndarray, subjects: list[str], groups: dict[str, list[str]]) -> tuple[np.ndarray, list[str]]:
+    """Compute average distances between groups.
+
+    Parameters
+    ----------
+    matrix : ndarray of shape (n_subjects, n_subjects)
+        Pairwise subject distance matrix.
+    subjects : list of str
+        Subject identifiers corresponding to the matrix.
+    groups : dict of {str: list of str}
+        Mapping from group names to subject IDs.
+
+    Returns
+    -------
+    group_matrix : ndarray of shape (n_groups, n_groups)
+        Symmetric matrix of mean distances between groups.
+    group_names : list of str
+        Names of the groups.
+    """
     s2i = {s: i for i, s in enumerate(subjects)}
     gnames = list(groups.keys()); n = len(gnames)
     G = np.zeros((n, n))
@@ -160,6 +368,22 @@ def _compute_group_dist_matrix(matrix: np.ndarray, subjects: list[str], groups: 
     return G, gnames
 
 def _compute_group_centroids_from_distance_matrix(matrix: np.ndarray, subjects: list[str], groups: dict[str, list[str]]) -> dict[str, np.ndarray]:
+    """Compute 2D centroids of groups from a distance matrix using MDS.
+
+    Parameters
+    ----------
+    matrix : ndarray of shape (n_subjects, n_subjects)
+        Pairwise subject distance matrix.
+    subjects : list of str
+        Subject identifiers.
+    groups : dict of {str: list of str}
+        Mapping from group names to subject IDs.
+
+    Returns
+    -------
+    centroids : dict of {str: ndarray of shape (2,)}
+        Mapping of group names to their centroid coordinates in 2D space.
+    """
     coords = MDS(n_components=2, dissimilarity="precomputed", random_state=42)\
         .fit_transform(np.nan_to_num(matrix))
     s2xy = {s: coords[i] for i, s in enumerate(subjects)}
@@ -171,6 +395,20 @@ def _compute_group_centroids_from_distance_matrix(matrix: np.ndarray, subjects: 
     return centroids
 
 def _compute_group_centroid_distances(centroids: dict[str, np.ndarray]) -> tuple[np.ndarray, list[str]]:
+    """Compute pairwise distances between group centroids.
+
+    Parameters
+    ----------
+    centroids : dict of {str: ndarray of shape (2,)}
+        Mapping of group names to centroid coordinates.
+
+    Returns
+    -------
+    distances : ndarray of shape (n_groups, n_groups)
+        Symmetric matrix of centroid-to-centroid distances.
+    group_names : list of str
+        Names of the groups.
+    """
     gnames = list(centroids.keys()); n = len(gnames)
     D = np.zeros((n, n))
     for i in range(n):
@@ -179,6 +417,24 @@ def _compute_group_centroid_distances(centroids: dict[str, np.ndarray]) -> tuple
     return D, gnames
 
 def _compute_intra_group_variability(matrix: np.ndarray, subjects: list[str], groups: dict[str, list[str]]) -> dict[str, dict[str, float]]:
+    """Compute within-group variability for each group.
+
+    Parameters
+    ----------
+    matrix : ndarray of shape (n_subjects, n_subjects)
+        Pairwise subject distance matrix.
+    subjects : list of str
+        Subject identifiers.
+    groups : dict of {str: list of str}
+        Mapping from group names to subject IDs.
+
+    Returns
+    -------
+    variability : dict of {str: dict[str, float]}
+        Mapping from group name to statistics:
+        - 'mean': mean within-group distance
+        - 'std': standard deviation of within-group distances
+    """
     s2i = {s: i for i, s in enumerate(subjects)}
     out: dict[str, dict[str, float]] = {}
     for gname, members in groups.items():
@@ -192,6 +448,26 @@ def _compute_intra_group_variability(matrix: np.ndarray, subjects: list[str], gr
     return out
 
 def _compute_intra_inter_stats(matrix: np.ndarray, subjects: list[str], groups: dict[str, list[str]]) -> dict[str, dict[str, float]]:
+    """Compute intra-group and inter-group statistics for each group.
+
+    Parameters
+    ----------
+    matrix : ndarray of shape (n_subjects, n_subjects)
+        Pairwise subject distance matrix.
+    subjects : list of str
+        Subject identifiers.
+    groups : dict of {str: list of str}
+        Mapping from group names to subject IDs.
+
+    Returns
+    -------
+    stats : dict of {str: dict[str, float]}
+        Mapping from group name to statistics:
+        - 'intra_mean': mean intra-group distance
+        - 'intra_std': standard deviation of intra-group distances
+        - 'inter_mean': mean distance to subjects outside the group
+        - 'inter_std': standard deviation of inter-group distances
+    """
     s2i = {s: i for i, s in enumerate(subjects)}
     stats: dict[str, dict[str, float]] = {}
     for gname, gmembers in groups.items():
@@ -208,6 +484,22 @@ def _compute_intra_inter_stats(matrix: np.ndarray, subjects: list[str], groups: 
     return stats
 
 def _plot_intra_inter(stats: dict[str, dict[str, float]], dist_name: str, save_path: Path) -> None:
+    """Plot a comparison of intra- vs inter-group distances.
+
+    Parameters
+    ----------
+    stats : dict of {str: dict[str, float]}
+        Mapping from group names to intra/inter distance statistics.
+    dist_name : str
+        Name of the distance type (e.g., 'MMD', 'Wasserstein', 'DTW').
+    save_path : Path
+        Path to save the plot.
+
+    Returns
+    -------
+    None
+        Saves the intra/inter comparison plot to the specified file path.
+    """
     gnames = list(stats.keys())
     intra_means = np.array([stats[g]["intra_mean"] for g in gnames])
     intra_stds  = np.array([stats[g]["intra_std"]  for g in gnames])
@@ -229,7 +521,45 @@ def run_comp_dist(
     out_dist_dir: str = "results/distances",
     groups_file: str = "../misc/target_groups.txt",
 ) -> int:
-    """Re-implementation of legacy bin/comp_dist.py with parametrized I/O."""
+    """Run the full computation pipeline for subject/group distances.
+
+    This orchestrator function performs the following steps:
+
+    1. Load subject list and extract features.
+    2. Normalize features across subjects.
+    3. Compute subject-level distance matrices:
+    
+       - MMD (Maximum Mean Discrepancy)
+       - Wasserstein distance
+       - Dynamic Time Warping (DTW)
+
+    4. Save results (NPY, JSON, PNG).
+    5. Compute group-level summaries:
+    
+       - Group distance matrices
+       - Group centroid distances
+       - Intra/inter-group variability
+
+    6. Generate plots (heatmaps, bar charts, projections).
+
+    Parameters
+    ----------
+    subject_list_path : str, default="../../dataset/mdapbe/subject_list.txt"
+        Path to subject list file.
+    data_root : str, default="data/processed/common"
+        Directory containing processed feature CSVs.
+    out_mmd_dir : str, default="results/mmd"
+        Output directory for MMD results.
+    out_dist_dir : str, default="results/distances"
+        Output directory for Wasserstein/DTW results.
+    groups_file : str, default="../misc/target_groups.txt"
+        Path to group definitions file.
+
+    Returns
+    -------
+    int
+        Return code (0 = success).
+    """
     # reproducibility for median-heuristic subsampling
     np.random.seed(42)
     subjects = _load_subject_list(Path(subject_list_path))

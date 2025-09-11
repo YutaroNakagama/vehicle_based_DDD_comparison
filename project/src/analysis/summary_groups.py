@@ -9,8 +9,23 @@ import pandas as pd
 METRICS = ["accuracy", "f1", "auc", "precision", "recall"]
 
 def _read_test_metrics(csv_path: Path, split: Optional[str]) -> Optional[Dict[str, float]]:
-    """
-    metrics_*.csv を読み、split列があれば指定splitで1行抽出。無ければ先頭行。
+    """Read evaluation metrics from a metrics CSV file.
+
+    Parameters
+    ----------
+    csv_path : Path
+        Path to the metrics CSV file (e.g., ``metrics_RF.csv``).
+    split : str, optional
+        Dataset split to filter (e.g., ``"test"``). If provided, only rows
+        where ``split`` matches are used. If no ``split`` column exists,
+        the first row is used.
+
+    Returns
+    -------
+    dict of {str: float} or None
+        Dictionary of metric values for the selected row.
+        Keys are from ``METRICS`` = ["accuracy", "f1", "auc", "precision", "recall"].
+        Returns ``None`` if the file does not exist, cannot be read, or no rows match.
     """
     if not csv_path.exists():
         return None
@@ -38,9 +53,47 @@ def run_summarize_only10_vs_finetune(
     only10_pattern: str = "metrics_{model}_only10_{group}.csv",
     finetune_pattern: str = "metrics_{model}_finetune_{group}_finetune.csv",
 ) -> Dict[str, Path]:
-    """
-    collects  only10 / finetune for each groups, and outputs long, wide, improve summary CSV, and Markdown
-    generate rador diagram if needed (png+PDF)
+    """Summarize only10 vs finetune results across groups.
+
+    This function collects per-group metrics from the specified model directory,
+    compares ``only10`` and ``finetune`` schemes, and generates multiple outputs:
+    long-form CSV, wide-form CSV with deltas, improvement summary, and Markdown.
+    Optionally, radar plots are generated.
+
+    Parameters
+    ----------
+    names_file : Path
+        Path to a text file listing group names, one per line.
+    model_dir : Path
+        Directory containing metrics CSV files.
+    out_prefix : str
+        Prefix for output filenames.
+    model : str, default="RF"
+        Model identifier used in metrics filenames.
+    split : str, optional, default="test"
+        Dataset split to filter (e.g., ``"test"``). If ``None``, use all rows.
+    make_radar : bool, default=False
+        Whether to generate radar plots for all groups.
+    only10_pattern : str, default="metrics_{model}_only10_{group}.csv"
+        Filename pattern for only10 metrics.
+    finetune_pattern : str, default="metrics_{model}_finetune_{group}_finetune.csv"
+        Filename pattern for finetune metrics.
+
+    Returns
+    -------
+    dict of {str: Path}
+        Dictionary containing paths to generated output files:
+        - ``"long"`` : long-form CSV
+        - ``"wide"`` : wide-form CSV with deltas
+        - ``"markdown"`` : Markdown summary
+        - ``"improvements"`` : improvement summary CSV
+
+    Raises
+    ------
+    FileNotFoundError
+        If the group names file is missing.
+    RuntimeError
+        If no metrics are found in the given directory.
     """
     names_file = Path(names_file)
     model_dir  = Path(model_dir)

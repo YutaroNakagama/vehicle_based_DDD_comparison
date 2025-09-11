@@ -1,15 +1,18 @@
 """Preprocess data for training or evaluation in the DDD pipeline.
 
-This script dispatches a model-specific preprocessing routine, optionally applying
-jittering-based data augmentation. It is intended to be used as a command-line interface
-and invokes `main_pipeline()` from `src.data_pipeline.processing_pipeline`.
+This script is the command-line entry point to the preprocessing stage. It selects a
+model-specific preprocessing routine from :mod:`src.data_pipeline.processing_pipeline`
+or :mod:`src.data_pipeline.processing_pipeline_mp`.
 
-Examples:
-    Run preprocessing for the LSTM model with jittering augmentation:
-        $ python preprocess.py --model Lstm --jittering
+Examples
+--------
+Run preprocessing for the LSTM model with jittering augmentation:
 
-    Run preprocessing for the Random Forest model without augmentation:
-        $ python preprocess.py --model RF
+    $ python preprocess.py --model Lstm --jittering
+
+Run preprocessing for the Random Forest model without augmentation:
+
+    $ python preprocess.py --model RF
 """
 
 import sys
@@ -27,22 +30,33 @@ import src.data_pipeline.processing_pipeline_mp as dp_mp
 def main():
     """Parse command-line arguments and execute the preprocessing pipeline.
 
-    This function uses argparse to parse CLI arguments specifying the model type and
-    whether jittering should be applied. It then calls the `main_pipeline` function
-    with the selected configuration.
+    This function parses CLI arguments specifying the model type and whether
+    jittering or multiprocessing should be applied. It then delegates to
+    the appropriate preprocessing pipeline.
 
-    Args:
-        None
+    Parameters
+    ----------
+    None
 
-    Command-line Arguments:
-        --model (str): Required. Must be one of the supported model types defined in
-            `src.config.DATA_PROCESS_CHOICES`. Specifies which model's preprocessing
-            pipeline to run.
-        --jittering (bool): Optional. If provided, applies jittering augmentation to
-            the input data.
+    Other Parameters
+    ----------------
+    --model : str
+        Required. Must be one of the supported model types defined in
+        ``src.config.DATA_PROCESS_CHOICES``. Specifies which model's
+        preprocessing pipeline to run.
+    --jittering : bool, optional
+        If provided, applies jittering augmentation to the input data.
+    --multi_process : bool, optional
+        If provided, uses the multiprocessing variant of the pipeline.
 
-    Raises:
-        SystemExit: If argument parsing fails due to invalid or missing input.
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    SystemExit
+        If argument parsing fails due to invalid or missing input.
     """
     parser = argparse.ArgumentParser(
         description="Preprocess data for a selected model in the DDD pipeline."
