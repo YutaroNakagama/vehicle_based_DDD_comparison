@@ -12,3 +12,5 @@ python:
   install:
     - requirements: docs/requirements.txt
 
+formats: all   # pdf, epub, htmlzip を自動生成したい場合
+
