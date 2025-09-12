@@ -17,10 +17,3 @@ Contents
    :caption: API Reference
 
    modules
-   analysis
-   config
-   data_pipeline
-   evaluation
-   models
-   utils
-
