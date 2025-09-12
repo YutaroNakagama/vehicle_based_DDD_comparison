@@ -4,6 +4,7 @@ This module applies Gaussian noise to numeric features
 in NumPy arrays or pandas DataFrames to improve robustness.
 """
 
+from __future__ import annotations
 import numpy as np
 import pandas as pd
 

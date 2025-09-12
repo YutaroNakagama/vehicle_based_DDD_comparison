@@ -19,6 +19,8 @@ Functions:
     - `pupil_process()`: Main function to process and save pupil diameter data.
 """
 
+from __future__ import annotations   
+
 import pandas as pd
 import numpy as np
 import logging

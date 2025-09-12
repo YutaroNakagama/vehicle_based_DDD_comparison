@@ -38,3 +38,6 @@ project/misc/
 project/data/log/*.svg
 
 docs/_build/
+
+# Python virtual environments
+.venv/
