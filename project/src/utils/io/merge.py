@@ -7,6 +7,8 @@ and saves the combined data to the processed dataset directory. This is crucial
 for creating a unified feature set for machine learning models.
 """
 
+from __future__ import annotations   
+
 import os
 import pandas as pd
 import logging
