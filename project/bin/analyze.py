@@ -14,7 +14,7 @@ comp-dist
 corr
     Correlate group distances (d(U,G), disp(G)) with Δ metrics (finetune - only10).
 summarize
-    Summarize only10 vs finetune for a group list (6グループ/任意リスト対応, レーダー出力可).
+    Summarize only10 vs finetune for a group list (supports 6 groups / arbitrary lists, with radar plot output).
 summarize-metrics
     Scan model_dir for metrics_*.csv and build a long-form summary.
 make-table
