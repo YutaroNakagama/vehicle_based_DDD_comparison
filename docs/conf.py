@@ -48,8 +48,10 @@ html_theme = "sphinx_rtd_theme"
 #html_static_path = ['_static']
 
 autodoc_mock_imports = [
-    "tensorflow",
-    "tensorflow.keras",
-    "optuna",
+    "tensorflow", "tensorflow.keras",
+    "optuna", "numpy", "pandas", "scipy",
+    "matplotlib", "seaborn", "joblib", "numba", "sklearn",
+    "tslearn", "pyswarm", "xgboost", "lightgbm", "catboost",
+    "tqdm", "imblearn",   
 ]
 
