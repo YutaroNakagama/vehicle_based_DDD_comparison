@@ -190,6 +190,7 @@ def train_pipeline(
     time_stratify_window: float = 0.10,
     time_stratify_min_chunk: int = 100,
     eval_only: bool = False,   
+    train_only: bool = False,  
 ) -> None:
     """
     Train a machine learning model for driver drowsiness detection.
@@ -869,4 +870,5 @@ def train_pipeline(
             suffix=suffix,
             data_leak=data_leak,
             eval_only=eval_only,   
+            train_only=train_only,   
         )

@@ -290,14 +290,19 @@ def main():
     )
     parser.add_argument(
         "--mode",
-        choices=["only_target", "only_general", "eval_only", "finetune"],
+        choices=["only_target", "only_general", "eval_only", "finetune", "train_only"],
         default=None,
-        help="Exp mode: only_target / only_general(eval_only) / finetune"
+        help="Exp mode: only_target / only_general / eval_only / finetune / train_only"
     )
     parser.add_argument(
         "--eval_only",
         action="store_true",
         help="If set, skip training and only evaluate using an already saved model."
+    )
+    parser.add_argument(
+        "--train_only",
+        action="store_true",
+        help="If set, save model and scaler but skip evaluation (no metrics/plots are generated)."
     )
 
     args = parser.parse_args()
@@ -306,7 +311,9 @@ def main():
 
     if args.mode in ("only_general", "eval_only"):
         args.subject_split_strategy = "finetune_target_subjects"
-        args.eval_only_pretrained = True
+        # train_only の場合は eval_only を強制しない
+        if not args.train_only and args.mode != "train_only":
+            args.eval_only_pretrained = True
         if not args.target_subjects:
             raise SystemExit("[ERROR] --mode=only_general(eval_only) では --target_subjects が必須です。")
     
@@ -321,6 +328,12 @@ def main():
         args.subject_split_strategy = "subject_time_split"
         if not args.target_subjects:
             raise SystemExit("[ERROR] --mode=only_target では --target_subjects が必須です。")
+
+    elif args.mode == "train_only":
+        if args.target_subjects:
+            args.subject_split_strategy = "subject_time_split"
+        else:
+            args.subject_split_strategy = "finetune_target_subjects"
 
     # Centralize the call to the training pipeline
     pipeline_args = {
@@ -350,6 +363,7 @@ def main():
         "time_stratify_window": args.time_stratify_window,
         "time_stratify_min_chunk": args.time_stratify_min_chunk,
         "eval_only": args.eval_only,   
+        "train_only": args.train_only or args.mode == "train_only",
     }
 
     if args.n_folds is not None:
