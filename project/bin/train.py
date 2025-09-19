@@ -294,7 +294,11 @@ def main():
         default=None,
         help="Exp mode: only_target / only_general(eval_only) / finetune"
     )
-
+    parser.add_argument(
+        "--eval_only",
+        action="store_true",
+        help="If set, skip training and only evaluate using an already saved model."
+    )
 
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -345,6 +349,7 @@ def main():
         "time_stratify_tolerance": args.time_stratify_tolerance,
         "time_stratify_window": args.time_stratify_window,
         "time_stratify_min_chunk": args.time_stratify_min_chunk,
+        "eval_only": args.eval_only,   
     }
 
     if args.n_folds is not None:

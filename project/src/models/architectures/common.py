@@ -40,6 +40,7 @@ def common_train(
     model: str, model_type: str,
     clf=None, scaler=None, suffix: str = "",
     data_leak: bool = False,
+    eval_only: bool = False,   
 ):
     """
     Train a classical ML model using Optuna and ANFIS-based feature selection.
@@ -85,6 +86,47 @@ def common_train(
         The trained model, selected features, scaler, and evaluation metrics
         are saved to disk as pickle, JSON, and CSV artifacts.
     """
+
+    import pickle, json
+
+    out_dir = f"{MODEL_PKL_PATH}/{model_type}"
+    os.makedirs(out_dir, exist_ok=True)
+
+    if eval_only:
+        # ====== eval_onlyモード ======
+        logging.info("[EVAL_ONLY] Loading pre-trained model and scaler...")
+        with open(f"{out_dir}/{model}{suffix}.pkl", "rb") as f:
+            best_clf = pickle.load(f)
+        with open(f"{out_dir}/selected_features_train_{model}{suffix}.pkl", "rb") as f:
+            selected_features = pickle.load(f)
+        with open(f"{out_dir}/scaler_{model}{suffix}.pkl", "rb") as f:
+            scaler = pickle.load(f)
+
+        # スケーリング
+        X_val_scaled  = scaler.transform(X_val[selected_features])
+        X_test_scaled = scaler.transform(X_test[selected_features])
+
+        # 評価関数の再利用
+        def _eval_split(Xs, ys):
+            yhat = best_clf.predict(Xs)
+            out = {
+                "accuracy": float(accuracy_score(ys, yhat)),
+                "precision": float(precision_score(ys, yhat, zero_division=0)),
+                "recall": float(recall_score(ys, yhat, zero_division=0)),
+                "f1": float(f1_score(ys, yhat, zero_division=0)),
+            }
+            if hasattr(best_clf, "predict_proba"):
+                proba = best_clf.predict_proba(Xs)[:, 1]
+                out["auc"] = float(roc_auc_score(ys, proba))
+                out["ap"] = float(average_precision_score(ys, proba))
+            return out
+
+        m_val  = _eval_split(X_val_scaled, y_val)
+        m_test = _eval_split(X_test_scaled, y_test)
+
+        logging.info(f"[EVAL_ONLY] Validation metrics: {json.dumps(m_val, indent=2)}")
+        logging.info(f"[EVAL_ONLY] Test metrics: {json.dumps(m_test, indent=2)}")
+        return {"val": m_val, "test": m_test}
 
     X_train = X_train.loc[:, ~X_train.columns.duplicated()]
     X_val   = X_val.loc[:,   ~X_val.columns.duplicated()]
