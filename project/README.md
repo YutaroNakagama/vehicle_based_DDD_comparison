@@ -38,7 +38,29 @@ model/common/
 
 ---
 
-## 3. Result files
+## 3. Train-only jobs (skip evaluation)
+
+When you want to **pre-train models only** (save model, features, scaler)
+without running validation/test, set the environment variable `TRAIN_ONLY=true`:
+
+```bash
+qsub -v TRAIN_ONLY=true jobs/pbs_rank_10_was_general_vs_target.sh
+```
+
+* Modes executed: `only_general (train_only)` and `only_target (train_only)`
+* No evaluation metrics are produced.
+* Saved artifacts (for later eval) include:
+
+```
+model/common/
+  RF_rank_*.pkl
+  selected_features_train_RF_*.pkl
+  scaler_RF_*.pkl
+```
+
+---
+
+## 4. Result files
 
 Training or eval-only artifacts are saved under:
 
@@ -57,7 +79,7 @@ Suffix examples: `mmd_mean_high`, `mmd_mean_middle`, `mmd_mean_low`.
 
 ---
 
-## 4. Aggregation & analysis
+## 5. Aggregation & analysis
 
 Run the helper script:
 
@@ -80,7 +102,7 @@ results/analysis/summary_40cases_test_mode_compare.csv
 
 ---
 
-## 5. Plotting
+## 6. Plotting
 
 To generate figures from the aggregated results:
 
@@ -102,7 +124,7 @@ results/analysis/diff_heatmap_auc_ap_40_tri.png
 
 ---
 
-## 6. Notes
+## 7. Notes
 
 * Scripts in `misc/` are **temporary** and can be refactored into
   `src/analysis/` + `bin/` if they become part of the main workflow.

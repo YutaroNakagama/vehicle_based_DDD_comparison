@@ -41,6 +41,7 @@ def common_train(
     clf=None, scaler=None, suffix: str = "",
     data_leak: bool = False,
     eval_only: bool = False,   
+    train_only: bool = False,  
 ):
     """
     Train a classical ML model using Optuna and ANFIS-based feature selection.
@@ -441,6 +442,10 @@ def common_train(
     # Save fitted scaler
     with open(f"{MODEL_PKL_PATH}/{model_type}/scaler_{model}{suffix}.pkl", "wb") as f:
         pickle.dump(scaler, f)
+
+    if train_only:
+        logging.info(f"[TRAIN_ONLY] Saved model, features, scaler -> {suffix}. Skipping evaluation.")
+        return
 
     # Save metadata (feature source info)
     feature_meta = {
