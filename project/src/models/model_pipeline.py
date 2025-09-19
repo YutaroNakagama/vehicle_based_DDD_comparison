@@ -314,7 +314,6 @@ def train_pipeline(
         else:
             general_subjects_list = [s for s in subject_list if s not in target_subjects]
 
-#        # --- Step 1: Pretrain artifacts on general_subjects (features/scaler; and model when eval_only) ---
         # --- (helper) Build identical target splits for both FineTune and EvalOnly ---
         def _build_target_splits_df(dataframe):
             """
@@ -371,14 +370,6 @@ def train_pipeline(
             X_te = X_te.drop(columns=["subject_id"], errors="ignore")
             return X_tr, X_va, X_te, y_tr, y_va, y_te
 
-#        # --- Step 1: Save pretrain artifacts (features/scaler) on general_subjects ---
-#
-#        if save_pretrain:
-#        # Load general-subjects data once (used for pretrain artifacts and/or pretrain model)
-#        general_data, _ = load_subject_csvs(general_subjects_list, model_type, add_subject_id=True)
-#
-#        # --- Step 1: Save pretrain artifacts (features/scaler) on general_subjects ---
-#        if save_pretrain:
         # Load general-subjects data once (used for pretrain artifacts and/or pretrain model)
         general_data, _ = load_subject_csvs(general_subjects_list, model_type, add_subject_id=True)
 
@@ -387,8 +378,6 @@ def train_pipeline(
             if not os.path.dirname(save_pretrain):
                 save_pretrain = os.path.join("model/common", save_pretrain)
 
-#            # 1. data load for only general_subjects
-#            general_data, _ = load_subject_csvs(general_subjects_list, model_type, add_subject_id=True)
             # 2. random separation
             X_gtrain, _, _, y_gtrain, _, _ = data_split(general_data, random_state=seed)
             X_gtrain_for_fs = X_gtrain.drop(columns=["subject_id"], errors='ignore')
@@ -399,7 +388,6 @@ def train_pipeline(
             # 4. Scaler
             scaler = StandardScaler()
             scaler.fit(X_gtrain_for_fs[selected_features])
-    
     
             # 6. Save
             pretrain_dict = {
@@ -419,36 +407,6 @@ def train_pipeline(
                 pickle.dump(pretrain_dict, f)
             logging.info(f"Saved pretrain setting (features/scaler) to {save_pretrain}")
 
-#            # If we will do "evaluate-only" (no fine-tune), we also train and save a model on general_subjects here.
-#            if eval_only_pretrained:
-#                # Train a model using ONLY general_subjects, save as a distinct tag to avoid overwriting.
-#                from src.models.architectures.common import common_train
-#                clf = get_classifier(model_name)
-#                pretrain_tag = "_pretrain_general"
-#                logging.info("[EvalOnly] Training a model on general subjects only (no target data).")
-#                # Use a standard random split for general_data to let common_train tune params.
-#                X_gtr, X_gva, X_gte, y_gtr, y_gva, y_gte = data_split(general_data, random_state=seed)
-#                # Drop subject_id from features for training
-#                X_gtr_fs = X_gtr.drop(columns=["subject_id"], errors="ignore")
-#                X_gva_fs = X_gva.drop(columns=["subject_id"], errors="ignore")
-#                X_gte_fs = X_gte.drop(columns=["subject_id"], errors="ignore")
-#                # Fit scaler on general-train only for safety (already fit above; re-fit to keep isolation)
-#                scaler_general = StandardScaler().fit(X_gtr_fs[selected_features])
-#                common_train(
-#                    X_gtr_fs, X_gva_fs, X_gte_fs,
-#                    y_gtr, y_gva, y_gte,
-#                    selected_features,
-#                    model_name, model_type, clf,
-#                    scaler=scaler_general,
-#                    suffix=pretrain_tag,
-#                    data_leak=data_leak,
-#                )
-#                # Persist the scaler we actually used to train the saved model
-#                from src.config import MODEL_PKL_PATH
-#                out_dir = f"{MODEL_PKL_PATH}/{model_type}"
-#                with open(os.path.join(out_dir, f"scaler_{model_name}{pretrain_tag}.pkl"), "wb") as f:
-#                    pickle.dump(scaler_general, f)
-        # If eval-only, ensure a pretrained model on general subjects exists; if not, train and save it.
         if eval_only_pretrained:
             from src.config import MODEL_PKL_PATH
             #from src.models.architectures.common import common_train
@@ -482,28 +440,14 @@ def train_pipeline(
             else:
                 logging.info("[EvalOnly] Found existing pretrained model/scaler. Skipping retrain.")
 
-#        # --- Step 2-A: Evaluate-Only mode (skip fine-tuning on targets, just evaluate) ---
-        # --- Step 2-A: Evaluate-only mode (skip fine-tuning; just evaluate on targets) ---
-#        if eval_only_pretrained:
         if eval_only_pretrained:
-            # 2-A-1) Load pretrain artifacts
-#            if not finetune_setting:
-#                logging.error("`--eval_only_pretrained` requires `--finetune_setting` (features/scaler bundle).")
-#                return
-#            if not os.path.dirname(finetune_setting):
-#                finetune_setting = os.path.join("model/common", finetune_setting)
-#            with open(finetune_setting, "rb") as f:
-#                pretrain_dict = pickle.load(f)
-#            selected_features = pretrain_dict["selected_features"]
-            # NOTE: eval-only では、実際に一般被験者で学習・保存された
-            # selected_features_train_<MODEL>_pretrain_general.pkl を使う。
-            # Load the model & scaler trained on general subjects (saved with suffix "_pretrain_general")
             from src.config import MODEL_PKL_PATH
             pretrain_suffix = "_pretrain_general"
             model_dir = os.path.join(MODEL_PKL_PATH, model_type)
             model_pkl = os.path.join(model_dir, f"{model_name}{pretrain_suffix}.pkl")
             scaler_pkl = os.path.join(model_dir, f"scaler_{model_name}{pretrain_suffix}.pkl")
             feats_pkl  = os.path.join(model_dir, f"selected_features_train_{model_name}{pretrain_suffix}.pkl")
+
             if not (os.path.isfile(model_pkl) and os.path.isfile(scaler_pkl)):
                 logging.error(f"[EvalOnly] Pretrained model or scaler not found: {model_pkl} / {scaler_pkl}")
                 return
@@ -527,29 +471,6 @@ def train_pipeline(
                 logging.warning(f"[EvalOnly] Feature file not found; fallback to finetune_setting features ({len(selected_features)} cols).")
  
 
-#            # 2-A-2) Build target splits (time-stratified or time-order split)
-#            data, _ = load_subject_csvs(target_subjects, model_type, add_subject_id=True)
-#            if time_stratify_labels:
-#                df_lab, feature_columns = _prepare_df_with_label_and_features(data)
-#                sort_keys = ("subject_id", "Timestamp")
-#                idx_tr, idx_va, idx_te = time_stratified_three_way_split(
-#                    df_lab, label_col="label", sort_keys=sort_keys,
-#                    train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
-#                    tolerance=time_stratify_tolerance, window_prop=time_stratify_window,
-#                    min_chunk=time_stratify_min_chunk,
-#                )
-#                X_val = df_lab.loc[idx_va, feature_columns].drop(columns=["subject_id"], errors="ignore")
-#                X_test = df_lab.loc[idx_te, feature_columns].drop(columns=["subject_id"], errors="ignore")
-#                y_val = df_lab.loc[idx_va, "label"]
-#                y_test = df_lab.loc[idx_te, "label"]
-#            else:
-#                # Use existing time-based split helper
-#                X_tr, X_val, X_test, y_tr, y_val, y_test = data_time_split_by_subject(
-#                    data, subject_col="subject_id", time_col="Timestamp"
-#                )
-#                # Only use val/test for evaluation; train part is ignored in eval-only mode
-#                X_val = X_val.drop(columns=["subject_id"], errors="ignore")
-#                X_test = X_test.drop(columns=["subject_id"], errors="ignore")
             # Build target splits EXACTLY as in the fine-tune path; ignore train in eval-only
             data, _ = load_subject_csvs(target_subjects, model_type, add_subject_id=True)
             _X_train_tgt, X_val, X_test, _y_train_tgt, y_val, y_test = _build_target_splits_df(data)
@@ -695,17 +616,6 @@ def train_pipeline(
             _log_split_ratios(y_train, y_val, y_test, tag="finetune_setting")
 
             # --- Feature selection and scaling ---
-#            clf = get_classifier(model_name)
-#            suffix = ""
-#            if tag:
-#                suffix += f"_{tag}"
-##                # if finetune, add _finetune
-##                if "finetune" in tag:
-##                    suffix += "_finetune"
-#            elif target_subjects:
-#                # if there is no tag, add group number
-#                safe_targets = "-".join(map(str, target_subjects))[:40]  
-#                suffix += f"_targets-{safe_targets}"
 
             clf = get_classifier(model_name)
             suffix = ""
@@ -768,32 +678,6 @@ def train_pipeline(
             data, _ = load_subject_csvs(target_subjects, model_type, add_subject_id=True)
         else:
             data, _ = load_subject_csvs(subject_list, model_type, add_subject_id=True)
-##        X_train, X_val, X_test, y_train, y_val, y_test = data_time_split_by_subject(
-##            data, subject_col="subject_id", time_col="Timestamp"
-##        )
-#
-#        # ... after data is loaded as `data` and includes label column `label`
-#        if subject_split_strategy in ("subject_time_split", "single_subject_data_split") and time_stratify_labels:
-#            # build sort keys to keep per-subject chronology
-#            sort_keys = ("subject_id", "Timestamp")
-#            idx_tr, idx_va, idx_te = time_stratified_three_way_split(
-#                data,
-#                label_col="label",                 # <-- adjust to your actual binary label col
-#                sort_keys=sort_keys,
-#                train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
-#                tolerance=time_stratify_tolerance,
-#                window_prop=time_stratify_window,
-#                min_chunk=time_stratify_min_chunk,
-#            )
-#            # slice X/y (drop label/subject_id from X later in the pipeline as you already do)
-#            X_train, y_train = data.loc[idx_tr].drop(columns=[]), data.loc[idx_tr, "label"]
-#            X_val,   y_val   = data.loc[idx_va].drop(columns=[]), data.loc[idx_va, "label"]
-#            X_test,  y_test  = data.loc[idx_te].drop(columns=[]), data.loc[idx_te, "label"]
-#        else:
-#            # fall back to your existing splitting path
-#            X_train, X_val, X_test, y_train, y_val, y_test = data_time_split_by_subject(
-#                data, subject_col="subject_id", time_col="Timestamp"
-#            )
 
         if time_stratify_labels:
             df_lab, feature_columns = _prepare_df_with_label_and_features(data)
