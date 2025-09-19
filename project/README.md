@@ -18,27 +18,7 @@ qsub jobs/pbs_rank_10.sh
 
 ---
 
-## 2. Eval-only jobs (skip retraining)
-
-When you want to **load pre-trained models** and run only validation & test
-(without retraining), set the environment variable `EVAL_ONLY=true` and use
-the job script with eval support:
-
-```bash
-qsub -v EVAL_ONLY=true jobs/pbs_rank_10_was_general_vs_target.sh
-```
-
-* Modes executed: `only_general (eval_only)` and `only_target (eval_only)`
-* Metrics are saved under:
-
-```
-model/common/
-  metrics_RF_rank_*_evalonly_on_targets.csv
-```
-
----
-
-## 3. Train-only jobs (skip evaluation)
+## 2. Train-only jobs (skip evaluation)
 
 When you want to **pre-train models only** (save model, features, scaler)
 without running validation/test, set the environment variable `TRAIN_ONLY=true`:
@@ -56,6 +36,26 @@ model/common/
   RF_rank_*.pkl
   selected_features_train_RF_*.pkl
   scaler_RF_*.pkl
+```
+
+---
+
+## 3. Eval-only jobs (skip retraining)
+
+When you want to **load pre-trained models** and run only validation & test
+(without retraining), set the environment variable `EVAL_ONLY=true` and use
+the job script with eval support:
+
+```bash
+qsub -v EVAL_ONLY=true jobs/pbs_rank_10_was_general_vs_target.sh
+```
+
+* Modes executed: `only_general (eval_only)` and `only_target (eval_only)`
+* Metrics are saved under:
+
+```
+model/common/
+  metrics_RF_rank_*_evalonly_on_targets.csv
 ```
 
 ---
@@ -132,5 +132,4 @@ results/analysis/diff_heatmap_auc_ap_40_tri.png
 * The fastest metric to compute (among DTW, Wasserstein, MMD) is **MMD**,
   so prefer MMD-only runs when testing.
 
-```
 
