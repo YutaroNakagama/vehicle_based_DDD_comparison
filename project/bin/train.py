@@ -364,6 +364,7 @@ def main():
         "time_stratify_min_chunk": args.time_stratify_min_chunk,
         "eval_only": args.eval_only,   
         "train_only": args.train_only or args.mode == "train_only",
+        "mode": args.mode,   
     }
 
     if args.n_folds is not None:

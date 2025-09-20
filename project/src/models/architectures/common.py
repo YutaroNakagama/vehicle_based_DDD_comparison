@@ -127,6 +127,21 @@ def common_train(
 
         logging.info(f"[EVAL_ONLY] Validation metrics: {json.dumps(m_val, indent=2)}")
         logging.info(f"[EVAL_ONLY] Test metrics: {json.dumps(m_test, indent=2)}")
+
+        # ===== Save metrics (eval only) =====
+        rows = []
+        rows.append({"split": "val",  **m_val})
+        rows.append({"split": "test", **m_test})
+        os.makedirs(f"{MODEL_PKL_PATH}/{model_type}", exist_ok=True)
+    
+        # suffix に mode を含める
+        eval_suffix = suffix + f"_{model_type}_evalonly"
+        pd.DataFrame(rows).to_csv(
+            f"{MODEL_PKL_PATH}/{model_type}/metrics_{model}{eval_suffix}.csv",
+            index=False
+        )
+        logging.info(f"[EVAL_ONLY] Saved metrics CSV -> metrics_{model}{eval_suffix}.csv")
+    
         return {"val": m_val, "test": m_test}
 
     X_train = X_train.loc[:, ~X_train.columns.duplicated()]

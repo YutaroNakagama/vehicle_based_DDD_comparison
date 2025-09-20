@@ -191,6 +191,7 @@ def train_pipeline(
     time_stratify_min_chunk: int = 100,
     eval_only: bool = False,   
     train_only: bool = False,  
+    mode: str = None,   
 ) -> None:
     """
     Train a machine learning model for driver drowsiness detection.
@@ -585,6 +586,8 @@ def train_pipeline(
 #            logging.info(f"[EvalOnly] Saved -> {out_dir}/metrics_{model_name}_evalonly_on_targets.csv")
             # build suffix to avoid overwriting across groups
             suffix = ""
+            if mode:
+                suffix += f"_{mode}" 
             if tag:
                 suffix += f"_{tag}"
             elif target_subjects:
@@ -593,10 +596,11 @@ def train_pipeline(
             elif os.getenv("PBS_ARRAY_INDEX"):
                 suffix += f"_group{os.getenv('PBS_ARRAY_INDEX')}"
 
+            out_path = os.path.join(out_dir, f"metrics_{model_name}{suffix}.csv")
             pd.DataFrame(
                 [{"split":"val", **m_val}, {"split":"test", **m_test}]
-            ).to_csv(os.path.join(out_dir, f"metrics_{model_name}{suffix}_evalonly_on_targets.csv"), index=False)
-            logging.info(f"[EvalOnly] Saved -> {out_dir}/metrics_{model_name}{suffix}_evalonly_on_targets.csv")
+            ).to_csv(out_path, index=False)
+            logging.info(f"[EvalOnly] Saved -> {out_path}")
 
             return
 
@@ -846,6 +850,8 @@ def train_pipeline(
 
         # Construct suffix for model saving based on applied techniques
         suffix = ""
+        if mode:
+            suffix += f"_{mode}"   # ← ここで必ず mode を入れる
         if tag:
             suffix += f"_{tag}"
         elif target_subjects:
