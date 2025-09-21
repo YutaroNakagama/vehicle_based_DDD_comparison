@@ -1,135 +1,78 @@
-# Rank-based RF Analysis (Temporary)
+# jobs/ directory
 
-This document describes how to analyze the results obtained from
-`pbs_rank_10.sh` with the RF model.
+This directory contains **PBS batch job scripts** and corresponding output logs for cluster processing.  
+These scripts automate preprocessing, training, evaluation, and analysis on HPC environments.
 
-## 1. Training jobs
+---
 
-Submit the array job:
+## Structure
+```
 
-```bash
-qsub jobs/pbs_rank_10.sh
+project/jobs/
+├── pbs\_distance\_pipeline.sh    # End-to-end distance → correlation analysis
+├── pbs\_only10\_6groups.sh       # Array job: isolate 10 subjects
+├── pbs\_finetune\_6groups.sh     # Array job: pretrain + finetune strategy
+├── pbs\_data\_preprocess.sh      # Multi-process preprocessing
+├── ...                         # Other PBS scripts
+└── \*.oXXXX / \*.eXXXX           # Output logs (stdout/stderr)
+
 ````
 
-* The job runs for each target group listed in `misc/rank_names_10.txt`.
-* Each index corresponds to a text file in `results/ranks10/`.
-* Model: RandomForest (`RF`)
-* Modes executed: `only_general → finetune → only_target`
+---
+
+## Notes
+- Always submit jobs **from `project/`** so that `PBS_O_WORKDIR` points to the correct project root.
+- Scripts typically rely on `misc/requirements.txt` for dependencies.  
+- Hidden parallelism is suppressed using:
+  ```bash
+  export OMP_NUM_THREADS=1
+````
 
 ---
 
-## 2. Train-only jobs (skip evaluation)
+## How to use
 
-When you want to **pre-train models only** (save model, features, scaler)
-without running validation/test, set the environment variable `TRAIN_ONLY=true`:
+### 1. Submit a single job
 
 ```bash
-qsub -v TRAIN_ONLY=true jobs/pbs_rank_10_was_general_vs_target.sh
+qsub jobs/pbs_distance_pipeline.sh
 ```
 
-* Modes executed: `only_general (train_only)` and `only_target (train_only)`
-* No evaluation metrics are produced.
-* Saved artifacts (for later eval) include:
-
-```
-model/common/
-  RF_rank_*.pkl
-  selected_features_train_RF_*.pkl
-  scaler_RF_*.pkl
-```
-
----
-
-## 3. Eval-only jobs (skip retraining)
-
-When you want to **load pre-trained models** and run only validation & test
-(without retraining), set the environment variable `EVAL_ONLY=true` and use
-the job script with eval support:
+### 2. Submit array jobs
 
 ```bash
-qsub -v EVAL_ONLY=true jobs/pbs_rank_10_was_general_vs_target.sh
+qsub -J 1-6 jobs/pbs_only10_6groups.sh
+qsub -J 1-6 jobs/pbs_finetune_6groups.sh
 ```
 
-* Modes executed: `only_general (eval_only)` and `only_target (eval_only)`
-* Metrics are saved under:
-
-```
-model/common/
-  metrics_RF_rank_*_evalonly_on_targets.csv
-```
-
----
-
-## 4. Result files
-
-Training or eval-only artifacts are saved under:
-
-```
-project/
-  model/common/
-    RF_rank_*.pkl
-    metrics_RF_rank_*.csv
-    metrics_RF_rank_*_evalonly_on_targets.csv
-    pr_*_RF_rank_*.{csv,png}
-    roc_*_RF_rank_*.{csv,png}
-    cm_*_RF_rank_*.{csv,png}
-```
-
-Suffix examples: `mmd_mean_high`, `mmd_mean_middle`, `mmd_mean_low`.
-
----
-
-## 5. Aggregation & analysis
-
-Run the helper script:
+### 3. Check job logs
 
 ```bash
-python misc/aggregate_summary_40cases.py
-```
-
-This script:
-
-* Collects metrics across all runs.
-* Produces summary CSVs for comparison.
-
-Output files:
-
-```
-results/analysis/summary_40cases_all_splits.csv
-results/analysis/summary_40cases_test.csv
-results/analysis/summary_40cases_test_mode_compare.csv
+ls jobs/*.o*
+tail -n 50 jobs/12345.o
 ```
 
 ---
 
-## 6. Plotting
+## Output
 
-To generate figures from the aggregated results:
+* Logs (`*.oXXXX`, `*.eXXXX`) are stored under `project/jobs/`
+* Results are stored under:
 
-```bash
-python misc/plot_summary_metrics_40.py
-```
-
-This produces:
-
-```
-results/analysis/summary_metrics_40_mean_tri_bar.png
-results/analysis/diff_heatmap_auc_ap_40_tri.png
-```
-
-* `summary_metrics_40_mean_tri_bar.png`: tri-bar plots comparing
-  General / Target / Finetune across distance metrics.
-* `diff_heatmap_auc_ap_40_tri.png`: heatmaps of AUC/AP differences
-  (General–Target, Finetune–Target, General–Finetune).
+  * `results/` → evaluation metrics, distance matrices, CSVs
+  * `models/` → trained models, scalers, feature metadata
+  * `figures/` → visualizations (plots, heatmaps, diagrams)
+  * `logs/` → runtime logs
 
 ---
 
-## 7. Notes
+## HPC Environment
 
-* Scripts in `misc/` are **temporary** and can be refactored into
-  `src/analysis/` + `bin/` if they become part of the main workflow.
-* For quick re-runs, adjust `rank_names_10.txt` to control which groups are processed.
-* The fastest metric to compute (among DTW, Wasserstein, MMD) is **MMD**,
-  so prefer MMD-only runs when testing.
+These scripts assume a **general PBS/Torque environment** with:
 
+* Job submission via `qsub`
+* Resource specification with `#PBS -l select=...`
+* Array jobs via `qsub -J`
+
+If your cluster differs (e.g., SLURM), adapt the submission lines accordingly.
 
