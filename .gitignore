@@ -24,8 +24,10 @@
 
 # Ignore generated files and directories
 project/data/log/
-project/model/
-project/results/
+project/model/*
+!project/model/README.md
+project/results/*
+!project/results/README.md
 project/.venv311/
 catboost_info/
 
