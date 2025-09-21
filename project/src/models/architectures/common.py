@@ -304,6 +304,7 @@ def common_train(
             raise ValueError(f"Optuna tuning not implemented for model: {model}")
 
         roc_auc = "roc_auc" #make_scorer(roc_auc_score, needs_proba=True)
+        ap_scorer = make_scorer(average_precision_score, needs_proba=True)
 
 #        try:
 #            if data_leak:
@@ -323,7 +324,12 @@ def common_train(
                     if len(bincounts) < 2 or np.any(bincounts == 0):
                         print(f"[CV-Leak] Fold {i} has only one class! Skipping trial.")
                         return 0.0
-                score_arr = cross_val_score(clf, X_all_scaled, y_all, cv=cv, scoring=roc_auc, n_jobs=1)
+                score_arr = cross_val_score(
+                    clf, X_all_scaled, y_all, 
+                    cv=cv, 
+                    scoring=roc_auc, #ap_scorer, 
+                    n_jobs=1
+                )
 #            else:
 #                scaler_local = StandardScaler()
 #                X_train_scaled = scaler_local.fit_transform(X_train[selected_features])
@@ -355,7 +361,7 @@ def common_train(
                     score_arr = cross_val_score(
                         clf, X_train_scaled, y_train, 
                         cv=cv, 
-                        scoring=roc_auc,
+                        scoring=roc_auc, #ap_scorer, #
                         n_jobs=1,
                         error_score='raise'  
                     )
