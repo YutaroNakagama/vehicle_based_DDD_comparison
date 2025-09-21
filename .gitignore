@@ -1,46 +1,50 @@
-# Ignore all .csv, .pkl, .npy, .keras files (output or cache data)
+# ===== Python cache & artifacts =====
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
+# ===== Dataset / Experiment outputs =====
 **/*.csv
 **/*.pkl
 **/*.npy
 **/*.keras
-
-# Ignore all PowerShell scripts (Windows, if unnecessary)
-**/*.ps1
-
-# Ignore all .sh files (shell scripts) except for jobs/pbs.sh
-**/*.sh
-!project/jobs/pbs.sh
-
-# Ignore all swap, object, and error files (common in cluster environments)
-**/*.swp
-**/*.o*
-**/*.e*
-
-# Ignore tags files (ctags, etags, etc.)
-**/tags
-
-# Ignore Python cache folders
-**/__pycache__/
-
-# Ignore generated files and directories
 project/data/log/
 project/model/*
 !project/model/README.md
 project/results/*
 !project/results/README.md
-project/.venv311/
-catboost_info/
 
-# Ignore documentation outputs (if needed)
-project/docs/
+# ===== Misc =====
+project/misc/rank_names*.txt
+project/misc/__pycache__/
+project/misc/*.log
+project/misc/*.tmp
+
+# ===== Jobs (HPC scripts & logs) =====
+project/jobs/*.sh
+!project/jobs/*.sh.example
 project/jobs/log/
-project/misc/*
-!project/misc/README.md
 
-# Ignore .svg log images (redundant, because project/data/log/ is already ignored)
-project/data/log/*.svg
+# ===== Cluster outputs =====
+**/*.o*
+**/*.e*
+**/*.swp
 
+# ===== Documentation build (Sphinx) =====
 docs/_build/
+docs/_modules/
+docs/_sources/
+docs/_static/
+docs/objects.inv
+docs/searchindex.js
+docs/**/*.html
+docs/conf.py   # actual config is local, keep conf.py.example in repo
 
-# Python virtual environments
+# ===== Other tooling =====
+catboost_info/
 .venv/
+project/.venv311/
+**/*.ps1
+**/tags
+
