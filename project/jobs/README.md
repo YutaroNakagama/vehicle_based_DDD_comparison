@@ -34,3 +34,20 @@ Then edit:
 * Logs under `jobs/log/` are ignored automatically.
 * Only representative `.example` scripts are version-controlled to keep the repository clean and reproducible.
 
+## Notes on Job Scripts
+
+- Only representative PBS job scripts are version-controlled as `.example` files:
+  - `pbs_preprocess.sh.example`
+  - `pbs_train.sh.example`
+  - `pbs_finetune.sh.example`
+  - `pbs_evaluate.sh.example`
+  - `pbs_analyze.sh.example`
+
+- To create an actual job script, copy and edit:
+  ```bash
+  cp pbs_train.sh.example pbs_train.sh
+  vi pbs_train.sh
+````
+
+* Variations (e.g., rank-based, only10 groups) should be managed locally and are excluded from version control.
+
