@@ -311,7 +311,7 @@ def main():
 
     if args.mode in ("only_general", "eval_only"):
         args.subject_split_strategy = "finetune_target_subjects"
-        # train_only の場合は eval_only を強制しない
+        # Do not force eval_only when train_only mode is set
         if not args.train_only and args.mode != "train_only":
             args.eval_only_pretrained = True
         if not args.target_subjects:
