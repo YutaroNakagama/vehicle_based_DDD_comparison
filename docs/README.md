@@ -174,7 +174,9 @@ flowchart TD
     A6 --> O6
     A7 --> O6
     A8 --> O7
+```
 
+```mermaid
 flowchart TD
     %% Inputs
     M1["Evaluation Metrics\n(results/[model]/metrics_* csv)"]
@@ -239,4 +241,4 @@ flowchart TD
         D7
         D8
     end
-
+```
