@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.use("Agg")  # HPCでも安全
+matplotlib.use("Agg") # Safe for HPC / non-GUI environments 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
