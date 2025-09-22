@@ -35,7 +35,7 @@ def convert_theta_alpha_to_kss(theta_alpha_ratios: np.ndarray) -> np.ndarray:
         Estimated KSS scores (integers from 1 to 9).
     """
     min_value, max_value = np.min(theta_alpha_ratios), np.max(theta_alpha_ratios)
-    # 9 bins = 8 thresholds (score=1~9), np.linspaceで10個→bins=1~9
+    # 9 bins = 8 thresholds (score=1~9), np.linspace generates 10 values → bins correspond to 1–9
     thresholds = np.linspace(min_value, max_value, 10)[1:-1]  # exclude min, max
     kss_scores = np.digitize(theta_alpha_ratios, bins=thresholds) + 1
     return kss_scores.tolist()
