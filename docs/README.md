@@ -43,13 +43,6 @@ docs/_build/html/index.html
 * Style can be customized in `_static/` and `conf.py`.
 * To add new modules, update `index.rst` and rebuild.
 
-````
-
----
-
-# 📄 `misc/README.md`（任意）
-
-```markdown
 # misc/ directory
 
 This directory contains utility scripts and configuration files used in experiments.
