@@ -157,7 +157,7 @@ def run_summarize_only10_vs_finetune(
     wide.to_csv(out_wide, index=False)
     print(f"Saved: {out_wide}")
 
-    # 改善サマリ
+    # Improvement summary
     imp_rows = []
     for m in METRICS:
         dcol = f"{m}_delta"
