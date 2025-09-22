@@ -119,32 +119,32 @@ def lstm_train(
     """
     import joblib
 
-    # 数値列の抽出
+    # Extract numeric columns
     X_numeric = X.select_dtypes(include=[np.number])
     
-    # inf/-inf を NaN に変換
+    # Convert inf/-inf to NaN
     X_numeric = X_numeric.replace([np.inf, -np.inf], np.nan)
     
-    # NaN を含む行を削除し、対応するラベルも揃える
+    # Drop rows with NaN and align corresponding labels
     X_numeric = X_numeric.dropna()
     y_cleaned = y.loc[X_numeric.index]
     
-    # 値が float32 の最大/最小を超えていないか確認（過剰な値をクリップ）
+    # Clip values to fit within float32 range
     X_numeric = X_numeric.clip(lower=np.finfo(np.float32).min, upper=np.finfo(np.float32).max)
     
-    # float32 に変換
+    # Convert to float32
     X_array = X_numeric.astype(np.float32).values
 
     kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
     accuracies = []
 
     for fold_no, (train_idx, test_idx) in enumerate(kf.split(X_array), start=1):
-        # 標準化（foldごとにfit）
+        # Standardize (fit per fold)
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X_array[train_idx])
         X_scaled_test = scaler.transform(X_array[test_idx])
 
-        # LSTM 用に reshape
+        # Reshape for LSTM
         X_train = np.expand_dims(X_scaled, axis=1)
         X_test = np.expand_dims(X_scaled_test, axis=1)
         y_train = y_cleaned.values[train_idx]
@@ -166,12 +166,12 @@ def lstm_train(
         scores = model.evaluate(X_test, y_test, verbose=0)
         accuracies.append(scores[1])
 
-        # モデル保存
+        # Save model
         model_path = f'{MODEL_PKL_PATH}/{model_name}/lstm_model_fold{fold_no}.keras'
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
         model.save(model_path)
 
-        # スケーラー保存
+        # Save scaler
         scaler_path = f"{MODEL_PKL_PATH}/{model_name}/scaler_fold{fold_no}.pkl"
         joblib.dump(scaler, scaler_path)
 
