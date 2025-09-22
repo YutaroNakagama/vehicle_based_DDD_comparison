@@ -114,7 +114,7 @@ def lstm_eval(
     # Apply scaling
     X_scaled = scaler.transform(X_array)
 
-    # LSTM入力形式に整形
+    # Reshape into LSTM input format
     X_test_3d = np.expand_dims(X_scaled, axis=1)
 
     # Evaluation
