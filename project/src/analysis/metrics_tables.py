@@ -189,8 +189,8 @@ def make_comparison_table(
 
     # normalize scheme labels just in case
     scheme_map = {
-        "pretrainあり(finetune)": "finetune",
-        "pretrainなし(only10)": "only10",
+        "with_pretrain(finetune)": "finetune",
+        "without_pretrain(only10)": "only10",
         "baseline": "baseline",
     }
     if "scheme" in df.columns:
