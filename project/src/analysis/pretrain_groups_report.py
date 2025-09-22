@@ -7,7 +7,7 @@ import json
 import numpy as np
 import pandas as pd
 
-# HPC/非GUI環境でも安全
+# Safe for HPC / non-GUI environments
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
