@@ -94,7 +94,7 @@ def common_train(
     os.makedirs(out_dir, exist_ok=True)
 
     if eval_only:
-        # ====== eval_onlyモード ======
+        # ====== eval_only mode ======
         logging.info("[EVAL_ONLY] Loading pre-trained model and scaler...")
         with open(f"{out_dir}/{model}{suffix}.pkl", "rb") as f:
             best_clf = pickle.load(f)
@@ -103,11 +103,11 @@ def common_train(
         with open(f"{out_dir}/scaler_{model}{suffix}.pkl", "rb") as f:
             scaler = pickle.load(f)
 
-        # スケーリング
+        # Scaling
         X_val_scaled  = scaler.transform(X_val[selected_features])
         X_test_scaled = scaler.transform(X_test[selected_features])
 
-        # 評価関数の再利用
+        # Reuse evaluation function
         def _eval_split(Xs, ys):
             yhat = best_clf.predict(Xs)
             out = {
@@ -134,7 +134,7 @@ def common_train(
         rows.append({"split": "test", **m_test})
         os.makedirs(f"{MODEL_PKL_PATH}/{model_type}", exist_ok=True)
     
-        # suffix に mode を含める
+        # Ensure mode is included in the suffix
         eval_suffix = suffix + f"_{model_type}_evalonly"
         pd.DataFrame(rows).to_csv(
             f"{MODEL_PKL_PATH}/{model_type}/metrics_{model}{eval_suffix}.csv",
@@ -330,11 +330,8 @@ def common_train(
                     scoring=roc_auc, #ap_scorer, 
                     n_jobs=1
                 )
-#            else:
-#                scaler_local = StandardScaler()
-#                X_train_scaled = scaler_local.fit_transform(X_train[selected_features])
             else:
-                # 目的関数内でも pretrain 済みスケーラを使用
+                # Use pre-trained scaler even inside the objective function
                 X_train_scaled = scaler.transform(X_train[selected_features])
                 cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)  
 
