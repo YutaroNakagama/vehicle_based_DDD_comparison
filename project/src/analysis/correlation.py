@@ -148,9 +148,6 @@ def _load_distance_matrix(
         if subjects_json is None:
             raise ValueError("subjects_json is required when using a .npy distance matrix.")
         arr = np.load(distance_path)
-        with open(subjects_json, "r", encoding="utf-8") as f:
-            subjects = [s.strip() for s in pd.read_json(f, typ="series").tolist()] if distance_path.name.endswith("_bad.json") else None
-        # safer JSON load:
         import json
         with open(subjects_json, "r", encoding="utf-8") as f:
             subjects = json.load(f)
@@ -347,7 +344,5 @@ def run_distance_vs_delta(
         plt.savefig(out / f"scatter_dispG_vs_{m}.png", dpi=200)
         plt.close()
 
-    # Save merged table again for convenience
-    merged_out.to_csv(out / "distance_vs_delta_merged.csv", index=False)
     return 0
 
