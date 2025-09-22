@@ -571,7 +571,6 @@ def run_comp_dist(
         all_X = np.vstack(list(features.values()))
         mu = all_X.mean(axis=0, keepdims=True)
         sigma = all_X.std(axis=0, keepdims=True) + 1e-12
-#        features = {k: (v - mu) / sigma for k, v in features.items()}
         features = {k: ((v - mu) / sigma).astype(np.float32, copy=False) for k, v in features.items()}
 
     # MMD
