@@ -94,11 +94,11 @@ def main_pipeline(model: str, use_jittering: bool = False) -> None:
     subject_list = read_subject_list()
     total = len(subject_list)
 
-    # プロセス数を環境変数から取得（なければmin(mp.cpu_count(), total)）
+    # Get number of processes from environment variable (default: min(mp.cpu_count(), total, 16))
     n_proc = int(os.environ.get("N_PROC", min(mp.cpu_count(), total, 16)))   # 16などのデフォルト上限
     logging.info(f"Parallel processing with {n_proc} processes.")
 
-    # 並列実行
+    # Parallel execution
     with mp.Pool(processes=n_proc) as pool:
         args_list = [(subject, model, use_jittering, idx, total) for idx, subject in enumerate(subject_list)]
         pool.map(process_one_subject, args_list)
