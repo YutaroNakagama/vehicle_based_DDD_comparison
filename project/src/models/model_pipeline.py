@@ -463,7 +463,7 @@ def train_pipeline(
                     selected_features = pickle.load(f)
                 logging.info(f"[EvalOnly] Loaded model features: {feats_pkl} ({len(selected_features)} cols)")
             else:
-                # 後方互換のため、見つからない場合は finetune_setting にフォールバック
+                # For backward compatibility: fall back to finetune_setting if not found
                 if not finetune_setting:
                     logging.error("[EvalOnly] Neither model feature file nor finetune_setting is available.")
                     return
@@ -512,7 +512,6 @@ def train_pipeline(
                         val = scaler_obj.mean_[i] if hasattr(scaler_obj, "mean_") and len(scaler_obj.mean_) == len(feature_names) else 0.0
                         filled[col] = pd.Series(val, index=X_df.index, dtype="float64")
                 X_out = pd.DataFrame(filled, columns=feature_names, index=X_df.index)
-                # NaN は学習平均で埋める（安全策）
                 if hasattr(scaler_obj, "mean_") and len(scaler_obj.mean_) == len(feature_names):
                     means = pd.Series(scaler_obj.mean_, index=feature_names)
                     X_out = X_out.fillna(means)
@@ -687,7 +686,7 @@ def train_pipeline(
 
         if time_stratify_labels:
             df_lab, feature_columns = _prepare_df_with_label_and_features(data)
-            sort_keys = ("subject_id", "Timestamp")  # ここは実データ列名に合わせる
+            sort_keys = ("subject_id", "Timestamp") # Adjust according to actual dataset column names 
             idx_tr, idx_va, idx_te = time_stratified_three_way_split(
                 df_lab,
                 label_col="label",
@@ -697,7 +696,7 @@ def train_pipeline(
                 window_prop=time_stratify_window,
                 min_chunk=time_stratify_min_chunk,
             )
-            # 特徴から label を除外
+            # Exclude label column from features
             X_train = df_lab.loc[idx_tr, feature_columns].drop(columns=["subject_id"], errors="ignore")
             X_val   = df_lab.loc[idx_va, feature_columns].drop(columns=["subject_id"], errors="ignore")
             X_test  = df_lab.loc[idx_te, feature_columns].drop(columns=["subject_id"], errors="ignore")
@@ -851,7 +850,7 @@ def train_pipeline(
         # Construct suffix for model saving based on applied techniques
         suffix = ""
         if mode:
-            suffix += f"_{mode}"   # ← ここで必ず mode を入れる
+            suffix += f"_{mode}"  
         if tag:
             suffix += f"_{tag}"
         elif target_subjects:

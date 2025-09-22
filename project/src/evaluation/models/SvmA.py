@@ -43,7 +43,7 @@ def load_model_and_features(model: str):
     features_path = f'{MODEL_PKL_PATH}/{model}/selected_features_train.pkl'
 
     svm_model = joblib.load(model_path)
-    selected_features = joblib.load(features_path)  # これは list[str]
+    selected_features = joblib.load(features_path) 
 
     return svm_model, selected_features
 
