@@ -1,0 +1,101 @@
+=== JOB INFO ===
+IDX=7
+GROUP_FILE=/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/results/ranks10/wasserstein_mean_high.txt
+BASENAME=wasserstein_mean_high
+TARGETS(first few)=S0154_2 S0120_2 S0154_1 S0120_1 S0135_2 S0209_1 S0178_2 S0186_2 S0206_1 S0156_1
+[PRETRAIN] pretrain_setting exists. Reusing: /home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/model/common_k10/pretrain_setting_wasserstein_mean_high.pkl
+----- RUN: ONLY_GENERAL (general model → target 評価のみ) -----
+2025-09-18 01:40:39.089526: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-18 01:40:39.525513: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-18 01:40:39.877631: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1758127240.171447 1515175 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1758127240.244942 1515175 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1758127240.945558 1515175 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758127240.945593 1515175 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758127240.945596 1515175 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758127240.945598 1515175 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-18 01:40:41.019351: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-09-18 01:40:48,784 - INFO - [RUN] model=RF | domain_mixup=disabled | coral=disabled | vae=disabled | sample_size=None | seed=42 | fold=None | tag=rank_wasserstein_mean_high | subject_wise_split=disabled | feature_selection=rf | data_leak=disabled
+2025-09-18 01:40:48,786 - INFO - Model type: common
+2025-09-18 01:40:48,786 - INFO - Finetuning with target subjects: ['S0154_2', 'S0120_2', 'S0154_1', 'S0120_1', 'S0135_2', 'S0209_1', 'S0178_2', 'S0186_2', 'S0206_1', 'S0156_1']
+2025-09-18 01:40:48,843 - INFO - Loaded: ./data/processed/common/processed_S0139_1.csv
+2025-09-18 01:40:48,909 - INFO - Loaded: ./data/processed/common/processed_S0116_2.csv
+2025-09-18 01:40:48,956 - INFO - Loaded: ./data/processed/common/processed_S0116_1.csv
+2025-09-18 01:40:49,007 - INFO - Loaded: ./data/processed/common/processed_S0204_1.csv
+2025-09-18 01:40:49,050 - INFO - Loaded: ./data/processed/common/processed_S0148_1.csv
+2025-09-18 01:40:49,093 - INFO - Loaded: ./data/processed/common/processed_S0189_1.csv
+2025-09-18 01:40:49,141 - INFO - Loaded: ./data/processed/common/processed_S0171_1.csv
+2025-09-18 01:40:49,206 - INFO - Loaded: ./data/processed/common/processed_S0197_1.csv
+2025-09-18 01:40:49,249 - INFO - Loaded: ./data/processed/common/processed_S0134_1.csv
+2025-09-18 01:40:49,311 - INFO - Loaded: ./data/processed/common/processed_S0196_1.csv
+2025-09-18 01:40:49,335 - INFO - Loaded: ./data/processed/common/processed_S0178_1.csv
+2025-09-18 01:40:49,360 - INFO - Loaded: ./data/processed/common/processed_S0134_2.csv
+2025-09-18 01:40:49,404 - INFO - Loaded: ./data/processed/common/processed_S0140_1.csv
+2025-09-18 01:40:49,449 - INFO - Loaded: ./data/processed/common/processed_S0181_1.csv
+2025-09-18 01:40:49,494 - INFO - Loaded: ./data/processed/common/processed_S0174_2.csv
+2025-09-18 01:40:49,541 - INFO - Loaded: ./data/processed/common/processed_S0113_1.csv
+2025-09-18 01:40:49,586 - INFO - Loaded: ./data/processed/common/processed_S0181_2.csv
+2025-09-18 01:40:49,634 - INFO - Loaded: ./data/processed/common/processed_S0140_2.csv
+2025-09-18 01:40:49,680 - INFO - Loaded: ./data/processed/common/processed_S0155_1.csv
+2025-09-18 01:40:49,726 - INFO - Loaded: ./data/processed/common/processed_S0171_2.csv
+2025-09-18 01:40:49,772 - INFO - Loaded: ./data/processed/common/processed_S0172_1.csv
+2025-09-18 01:40:49,815 - INFO - Loaded: ./data/processed/common/processed_S0167_1.csv
+2025-09-18 01:40:49,860 - INFO - Loaded: ./data/processed/common/processed_S0198_1.csv
+2025-09-18 01:40:49,903 - INFO - Loaded: ./data/processed/common/processed_S0202_1.csv
+2025-09-18 01:40:49,949 - INFO - Loaded: ./data/processed/common/processed_S0153_2.csv
+2025-09-18 01:40:49,992 - INFO - Loaded: ./data/processed/common/processed_S0155_2.csv
+2025-09-18 01:40:50,037 - INFO - Loaded: ./data/processed/common/processed_S0189_2.csv
+2025-09-18 01:40:50,081 - INFO - Loaded: ./data/processed/common/processed_S0204_2.csv
+2025-09-18 01:40:50,127 - INFO - Loaded: ./data/processed/common/processed_S0170_1.csv
+2025-09-18 01:40:50,187 - INFO - Loaded: ./data/processed/common/processed_S0201_1.csv
+2025-09-18 01:40:50,226 - INFO - Loaded: ./data/processed/common/processed_S0194_1.csv
+2025-09-18 01:40:50,269 - INFO - Loaded: ./data/processed/common/processed_S0207_1.csv
+2025-09-18 01:40:50,329 - INFO - Loaded: ./data/processed/common/processed_S0207_2.csv
+2025-09-18 01:40:50,353 - INFO - Loaded: ./data/processed/common/processed_S0198_2.csv
+2025-09-18 01:40:50,405 - INFO - Loaded: ./data/processed/common/processed_S0196_2.csv
+2025-09-18 01:40:50,428 - INFO - Loaded: ./data/processed/common/processed_S0201_2.csv
+2025-09-18 01:40:50,481 - INFO - Loaded: ./data/processed/common/processed_S0199_1.csv
+2025-09-18 01:40:50,532 - INFO - Loaded: ./data/processed/common/processed_S0173_1.csv
+2025-09-18 01:40:50,571 - INFO - Loaded: ./data/processed/common/processed_S0165_1.csv
+2025-09-18 01:40:50,616 - INFO - Loaded: ./data/processed/common/processed_S0172_2.csv
+2025-09-18 01:40:50,659 - INFO - Loaded: ./data/processed/common/processed_S0210_2.csv
+2025-09-18 01:40:50,699 - INFO - Loaded: ./data/processed/common/processed_S0200_1.csv
+2025-09-18 01:40:50,738 - INFO - Loaded: ./data/processed/common/processed_S0193_1.csv
+2025-09-18 01:40:50,781 - INFO - Loaded: ./data/processed/common/processed_S0165_2.csv
+2025-09-18 01:40:50,820 - INFO - Loaded: ./data/processed/common/processed_S0210_1.csv
+2025-09-18 01:40:50,864 - INFO - Loaded: ./data/processed/common/processed_S0205_1.csv
+2025-09-18 01:40:50,914 - INFO - Loaded: ./data/processed/common/processed_S0213_2.csv
+2025-09-18 01:40:50,951 - INFO - Loaded: ./data/processed/common/processed_S0205_2.csv
+2025-09-18 01:40:50,993 - INFO - Loaded: ./data/processed/common/processed_S0199_2.csv
+2025-09-18 01:40:51,037 - INFO - Loaded: ./data/processed/common/processed_S0202_2.csv
+2025-09-18 01:40:51,079 - INFO - Loaded: ./data/processed/common/processed_S0186_1.csv
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/bin/train.py", line 364, in <module>
+    main()
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/bin/train.py", line 361, in main
+    mp.train_pipeline(**pipeline_args)
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/model_pipeline.py", line 383, in train_pipeline
+    general_data, _ = load_subject_csvs(general_subjects_list, model_type, add_subject_id=True)
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/utils/io/loaders.py", line 204, in load_subject_csvs
+    df = pd.read_csv(file_path)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/pandas/io/parsers/readers.py", line 1026, in read_csv
+    return _read(filepath_or_buffer, kwds)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/pandas/io/parsers/readers.py", line 620, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/pandas/io/parsers/readers.py", line 1620, in __init__
+    self._engine = self._make_engine(f, self.engine)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/pandas/io/parsers/readers.py", line 1898, in _make_engine
+    return mapping[engine](f, **self.options)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/pandas/io/parsers/c_parser_wrapper.py", line 93, in __init__
+    self._reader = parsers.TextReader(src, **kwds)
+  File "pandas/_libs/parsers.pyx", line 581, in pandas._libs.parsers.TextReader.__cinit__
+pandas.errors.EmptyDataError: No columns to parse from file
+
+=================================== RESOURCE INFORMATION ===================================
+ Requested Resource:
+ mem=128gb,walltime=24:00:00,ncpus=8,place=pack 
+ Used Resource: 
+ mem=482196kb,walltime=00:00:20,ncpus=8,cpupercent=21,vmem=1570780kb
+============================================================================================

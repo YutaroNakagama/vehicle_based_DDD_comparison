@@ -1,0 +1,34 @@
+IDX=3
+NAME=wasserstein_friendly
+GROUP_FILE=/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/misc/pretrain_groups/wasserstein_friendly.txt
+TARGETS(first few)=S0116_2 S0204_1 S0199_1 S0165_1 S0168_1 S0200_1 S0113_1 S0190_2 S0210_1 S0155_2
+2025-08-11 18:17:29.983995: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-08-11 18:17:29.987115: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-08-11 18:17:29.996954: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1754903850.013130 1520354 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1754903850.017988 1520354 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1754903850.030467 1520354 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1754903850.030490 1520354 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1754903850.030493 1520354 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1754903850.030495 1520354 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-08-11 18:17:30.034327: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-08-11 18:17:34,378 - INFO - [RUN] model=RF | domain_mixup=disabled | coral=disabled | vae=disabled | sample_size=None | seed=42 | fold=None | tag=finetune_wasserstein_friendly | subject_wise_split=disabled | feature_selection=rf | data_leak=disabled
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/bin/train.py", line 226, in <module>
+    main()
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/bin/train.py", line 223, in main
+    mp.train_pipeline(**pipeline_args)
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/model_pipeline.py", line 140, in train_pipeline
+    subject_list = read_subject_list()
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/utils/io/loaders.py", line 69, in read_subject_list
+    with open(SUBJECT_LIST_PATH, 'r') as file:
+FileNotFoundError: [Errno 2] No such file or directory: '../../dataset/mdapbe/subject_list.txt'
+
+=================================== RESOURCE INFORMATION ===================================
+ Requested Resource:
+ mem=128gb,walltime=24:00:00,ncpus=8,place=pack 
+ Used Resource: 
+ mem=0kb,walltime=00:00:10,ncpus=8,cpupercent=55,vmem=0kb
+============================================================================================

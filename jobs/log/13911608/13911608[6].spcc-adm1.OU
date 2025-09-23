@@ -1,0 +1,26 @@
+=== JOB INFO ===
+IDX=6
+GROUP_FILE=/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/results/ranks/mmd_mean_low.txt
+BASENAME=mmd_mean_low
+TARGETS(first few)=S0190_2 S0194_2 S0196_2 S0207_2 S0148_2 S0169_1 S0200_2 S0185_1 S0196_1 S0136_2 S0185_2 S0171_2 S0171_1 S0155_1 S0147_2 S0200_1 S0172_2 S0199_1 S0139_2 S0204_1 
+[PRETRAIN] pretrain_setting exists. Reusing: /home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/model/common_k40/pretrain_setting_mmd_mean_low.pkl
+----- RUN: ONLY_GENERAL (general model → target 評価のみ) -----
+2025-09-14 11:29:22.424020: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-14 11:29:22.839988: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-14 11:29:23.193810: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1757816963.477541 1223655 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1757816963.555295 1223655 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1757816964.235674 1223655 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1757816964.235810 1223655 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1757816964.235813 1223655 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1757816964.235815 1223655 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-14 11:29:24.307691: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+
+=================================== RESOURCE INFORMATION ===================================
+ Requested Resource:
+ mem=128gb,walltime=24:00:00,ncpus=8,place=pack 
+ Used Resource: 
+ mem=498752kb,walltime=00:00:21,ncpus=8,cpupercent=21,vmem=1580564kb
+============================================================================================

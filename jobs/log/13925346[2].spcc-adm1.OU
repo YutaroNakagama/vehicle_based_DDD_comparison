@@ -1,0 +1,64 @@
+=== JOB INFO ===
+IDX=2
+GROUP_FILE=/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/results/ranks10/wasserstein_mean_middle.txt
+BASENAME=wasserstein_mean_middle
+TARGETS(first few)=S0181_2 S0147_2 S0204_2 S0169_2 S0116_1 S0189_2 S0140_1 S0139_2 S0193_1 S0185_2
+[PRETRAIN] pretrain_setting exists. Reusing: /home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/model/common_k10/pretrain_setting_wasserstein_mean_middle.pkl
+----- RUN: ONLY_TARGET -----
+2025-09-20 12:52:38.956087: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-20 12:52:38.962948: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-20 12:52:38.976789: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1758340358.999775 4087054 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1758340359.005954 4087054 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1758340359.023261 4087054 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758340359.023375 4087054 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758340359.023378 4087054 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758340359.023381 4087054 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-20 12:52:39.029007: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-09-20 12:52:45,557 - INFO - [RUN] model=RF | domain_mixup=disabled | coral=disabled | vae=disabled | sample_size=None | seed=42 | fold=None | tag=rank_wasserstein_mean_middle | subject_wise_split=disabled | feature_selection=rf | data_leak=disabled
+2025-09-20 12:52:45,559 - INFO - Model type: common
+2025-09-20 12:52:45,620 - INFO - Loaded: ./data/processed/common/processed_S0181_2.csv
+2025-09-20 12:52:45,670 - INFO - Loaded: ./data/processed/common/processed_S0147_2.csv
+2025-09-20 12:52:45,723 - INFO - Loaded: ./data/processed/common/processed_S0204_2.csv
+2025-09-20 12:52:45,772 - INFO - Loaded: ./data/processed/common/processed_S0169_2.csv
+2025-09-20 12:52:45,828 - INFO - Loaded: ./data/processed/common/processed_S0116_1.csv
+2025-09-20 12:52:45,881 - INFO - Loaded: ./data/processed/common/processed_S0189_2.csv
+2025-09-20 12:52:45,935 - INFO - Loaded: ./data/processed/common/processed_S0140_1.csv
+2025-09-20 12:52:45,987 - INFO - Loaded: ./data/processed/common/processed_S0139_2.csv
+2025-09-20 12:52:46,038 - INFO - Loaded: ./data/processed/common/processed_S0193_1.csv
+2025-09-20 12:52:46,090 - INFO - Loaded: ./data/processed/common/processed_S0185_2.csv
+2025-09-20 12:52:46,316 - INFO - [split:subject_time_split|time_stratify=False] global  : n=7691, pos=308, pos_ratio=0.040
+2025-09-20 12:52:46,316 - INFO - [split:subject_time_split|time_stratify=False] train   : n=6148, pos=241, pos_ratio=0.039, |Δ|=0.001
+2025-09-20 12:52:46,316 - INFO - [split:subject_time_split|time_stratify=False] val     : n=765, pos=34, pos_ratio=0.044, |Δ|=0.004
+2025-09-20 12:52:46,316 - INFO - [split:subject_time_split|time_stratify=False] test    : n=778, pos=33, pos_ratio=0.042, |Δ|=0.002
+2025-09-20 12:52:46,339 - INFO - y_train unique: [0. 1.], counts: {0.0: 5907, 1.0: 241}
+2025-09-20 12:52:53,036 - INFO - Selected features (RF importance): ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+2025-09-20 12:52:53,040 - INFO - Scaler was fit using only X_train (standard procedure).
+2025-09-20 12:52:53,044 - INFO - [EVAL_ONLY] Loading pre-trained model and scaler...
+2025-09-20 12:52:53,843 - INFO - [EVAL_ONLY] Validation metrics: {
+  "accuracy": 0.9555555555555556,
+  "precision": 0.0,
+  "recall": 0.0,
+  "f1": 0.0,
+  "auc": 0.5151484670475577,
+  "ap": 0.061355525371629395
+}
+2025-09-20 12:52:53,844 - INFO - [EVAL_ONLY] Test metrics: {
+  "accuracy": 0.9562982005141388,
+  "precision": 0.0,
+  "recall": 0.0,
+  "f1": 0.0,
+  "auc": 0.4991458206223307,
+  "ap": 0.04621789388413872
+}
+2025-09-20 12:52:53,855 - INFO - [EVAL_ONLY] Saved metrics CSV -> metrics_RF_only_target_rank_wasserstein_mean_middle_common_evalonly.csv
+=== DONE (BASENAME=wasserstein_mean_middle) ===
+
+=================================== RESOURCE INFORMATION ===================================
+ Requested Resource:
+ mem=128gb,walltime=24:00:00,ncpus=8,place=pack 
+ Used Resource: 
+ mem=580044kb,walltime=00:00:24,ncpus=8,cpupercent=72,vmem=1662784kb
+============================================================================================

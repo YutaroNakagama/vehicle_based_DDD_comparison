@@ -1,0 +1,41 @@
+IDX=6
+NAME=group_names
+GROUP_FILE=/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/misc/pretrain_groups/group_names.txt
+TARGETS(first few)=mmd_friendly mmd_hard wasserstein_friendly wasserstein_hard dtw_friendly dtw_hard
+2025-08-12 14:24:52.367273: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-08-12 14:24:52.802035: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-08-12 14:24:53.149882: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1754976293.430121  214085 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1754976293.506337  214085 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1754976294.175577  214085 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1754976294.175610  214085 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1754976294.175613  214085 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1754976294.175615  214085 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-08-12 14:24:54.245565: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-08-12 14:25:02,849 - INFO - [RUN] model=RF | domain_mixup=disabled | coral=disabled | vae=disabled | sample_size=None | seed=42 | fold=None | tag=only10_group_names | subject_wise_split=disabled | feature_selection=rf | data_leak=disabled
+2025-08-12 14:25:02,852 - INFO - Model type: common
+2025-08-12 14:25:02,855 - WARNING - File not found: processed_mmd_friendly.csv
+2025-08-12 14:25:02,855 - WARNING - File not found: processed_mmd_hard.csv
+2025-08-12 14:25:02,856 - WARNING - File not found: processed_wasserstein_friendly.csv
+2025-08-12 14:25:02,857 - WARNING - File not found: processed_wasserstein_hard.csv
+2025-08-12 14:25:02,857 - WARNING - File not found: processed_dtw_friendly.csv
+2025-08-12 14:25:02,857 - WARNING - File not found: processed_dtw_hard.csv
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/bin/train.py", line 226, in <module>
+    main()
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/bin/train.py", line 223, in main
+    mp.train_pipeline(**pipeline_args)
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/model_pipeline.py", line 322, in train_pipeline
+    X_train, X_val, X_test, y_train, y_val, y_test = data_time_split_by_subject(
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/utils/io/split.py", line 183, in data_time_split_by_subject
+    raise ValueError("KSS or KSS_Theta_Alpha_Beta column not found")
+ValueError: KSS or KSS_Theta_Alpha_Beta column not found
+
+=================================== RESOURCE INFORMATION ===================================
+ Requested Resource:
+ mem=128gb,walltime=24:00:00,ncpus=8,place=pack 
+ Used Resource: 
+ mem=355376kb,walltime=00:00:21,ncpus=8,cpupercent=12,vmem=1521792kb
+============================================================================================

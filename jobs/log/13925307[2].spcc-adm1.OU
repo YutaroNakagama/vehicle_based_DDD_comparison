@@ -1,0 +1,728 @@
+=== JOB INFO ===
+IDX=2
+GROUP_FILE=/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/results/ranks10/wasserstein_mean_middle.txt
+BASENAME=wasserstein_mean_middle
+TARGETS(first few)=S0181_2 S0147_2 S0204_2 S0169_2 S0116_1 S0189_2 S0140_1 S0139_2 S0193_1 S0185_2
+[PRETRAIN] pretrain_setting exists. Reusing: /home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/model/common_k10/pretrain_setting_wasserstein_mean_middle.pkl
+----- RUN: ONLY_TARGET -----
+2025-09-20 12:08:53.447924: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-20 12:08:53.867721: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-20 12:08:54.220601: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1758337734.507904 4085381 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1758337734.588146 4085381 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1758337735.269207 4085381 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758337735.269348 4085381 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758337735.269350 4085381 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758337735.269353 4085381 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-20 12:08:55.339651: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-09-20 12:09:03,128 - INFO - [RUN] model=RF | domain_mixup=disabled | coral=disabled | vae=disabled | sample_size=None | seed=42 | fold=None | tag=rank_wasserstein_mean_middle | subject_wise_split=disabled | feature_selection=rf | data_leak=disabled
+2025-09-20 12:09:03,129 - INFO - Model type: common
+2025-09-20 12:09:03,193 - INFO - Loaded: ./data/processed/common/processed_S0181_2.csv
+2025-09-20 12:09:03,249 - INFO - Loaded: ./data/processed/common/processed_S0147_2.csv
+2025-09-20 12:09:03,308 - INFO - Loaded: ./data/processed/common/processed_S0204_2.csv
+2025-09-20 12:09:03,356 - INFO - Loaded: ./data/processed/common/processed_S0169_2.csv
+2025-09-20 12:09:03,409 - INFO - Loaded: ./data/processed/common/processed_S0116_1.csv
+2025-09-20 12:09:03,463 - INFO - Loaded: ./data/processed/common/processed_S0189_2.csv
+2025-09-20 12:09:03,520 - INFO - Loaded: ./data/processed/common/processed_S0140_1.csv
+2025-09-20 12:09:03,571 - INFO - Loaded: ./data/processed/common/processed_S0139_2.csv
+2025-09-20 12:09:03,627 - INFO - Loaded: ./data/processed/common/processed_S0193_1.csv
+2025-09-20 12:09:03,678 - INFO - Loaded: ./data/processed/common/processed_S0185_2.csv
+2025-09-20 12:09:03,789 - INFO - [split:subject_time_split|time_stratify=False] global  : n=7691, pos=308, pos_ratio=0.040
+2025-09-20 12:09:03,790 - INFO - [split:subject_time_split|time_stratify=False] train   : n=6148, pos=241, pos_ratio=0.039, |Δ|=0.001
+2025-09-20 12:09:03,790 - INFO - [split:subject_time_split|time_stratify=False] val     : n=765, pos=34, pos_ratio=0.044, |Δ|=0.004
+2025-09-20 12:09:03,790 - INFO - [split:subject_time_split|time_stratify=False] test    : n=778, pos=33, pos_ratio=0.042, |Δ|=0.002
+2025-09-20 12:09:03,803 - INFO - y_train unique: [0. 1.], counts: {0.0: 5907, 1.0: 241}
+2025-09-20 12:09:09,947 - INFO - Selected features (RF importance): ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+2025-09-20 12:09:09,949 - INFO - Scaler was fit using only X_train (standard procedure).
+[I 2025-09-20 12:09:09,956] A new study created in memory with name: no-name-9bfad997-5dae-4e65-8591-d523c1194803
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:09:16,919] Trial 0 finished with value: 0.0 and parameters: {'n_estimators': 169, 'max_depth': 28, 'min_samples_split': 4, 'min_samples_leaf': 5}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:09:26,134] Trial 1 finished with value: 0.0 and parameters: {'n_estimators': 222, 'max_depth': 24, 'min_samples_split': 3, 'min_samples_leaf': 5}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:09:33,662] Trial 2 finished with value: 0.0 and parameters: {'n_estimators': 180, 'max_depth': 25, 'min_samples_split': 4, 'min_samples_leaf': 5}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:09:45,121] Trial 3 finished with value: 0.0 and parameters: {'n_estimators': 289, 'max_depth': 15, 'min_samples_split': 8, 'min_samples_leaf': 4}. Best is trial 0 with value: 0.0.
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1225    5]
+[CV] Fold 0: AUC = 0.5311089960518894
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1226    4]
+[CV] Fold 1: AUC = 0.5222081218274112
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1227    3]
+[CV] Fold 2: AUC = 0.6180511154504138
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1227    2]
+[CV] Fold 3: AUC = 0.5866144510302004
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1224    5]
+[CV] Fold 4: AUC = 0.6398179508890771
+manual auc_list: [np.float64(0.5311089960518894), np.float64(0.5222081218274112), np.float64(0.6180511154504138), np.float64(0.5866144510302004), np.float64(0.6398179508890771)]
+manual auc mean (ignore nan): 0.5795601270497983
+[cross_val_score error] name 'ap_scorer' is not defined
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1226    4]
+[CV] Fold 0: AUC = 0.5277865905245347
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1226    4]
+[CV] Fold 1: AUC = 0.5147877890580936
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1227    3]
+[CV] Fold 2: AUC = 0.613851976014792
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1227    2]
+[CV] Fold 3: AUC = 0.5863498447643241
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1225    4]
+[CV] Fold 4: AUC = 0.634984476432402
+manual auc_list: [np.float64(0.5277865905245347), np.float64(0.5147877890580936), np.float64(0.613851976014792), np.float64(0.5863498447643241), np.float64(0.634984476432402)]
+manual auc mean (ignore nan): 0.5755521353588293
+[cross_val_score error] name 'ap_scorer' is not defined
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1225    5]
+[CV] Fold 0: AUC = 0.5310649323181049
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1226    4]
+[CV] Fold 1: AUC = 0.5203045685279188
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1227    3]
+[CV] Fold 2: AUC = 0.6229760320724395
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1227    2]
+[CV] Fold 3: AUC = 0.586931978549252
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1225    4]
+[CV] Fold 4: AUC = 0.63847727914197
+manual auc_list: [np.float64(0.5310649323181049), np.float64(0.5203045685279188), np.float64(0.6229760320724395), np.float64(0.586931978549252), np.float64(0.63847727914197)]
+manual auc mean (ignore nan): 0.5799509581219371
+[cross_val_score error] name 'ap_scorer' is not defined
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1223    7]
+[CV] Fold 0: AUC = 0.5296637055837564
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1227    3]
+[CV] Fold 1: AUC = 0.5152636773829666
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1227    3]
+[CV] Fold 2: AUC = 0.6208505417408284
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1223    6]
+[CV] Fold 3: AUC = 0.6022085802991815
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1224    5]
+[CV] Fold 4: AUC = 0.6045900366920689
+manual auc_list: [np.float64(0.5296637055837564), np.float64(0.5152636773829666), np.float64(0.6208505417408284), np.float64(0.6022085802991815), np.float64(0.6045900366920689)]
+manual auc mean (ignore nan): 0.5745153083397604
+[cross_val_score error] name 'ap_scorer' is not defined
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1229    1]
+[CV] Fold 0: AUC = 0.5301043429216018
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1228    2]
+[CV] Fold 1: AUC = 0.5013395375070502
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1229    1]
+[CV] Fold 2: AUC = 0.6264493943216577
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1229]
+[CV] Fold 3: AUC = 0.5953464578041208
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1228    1]
+[CV] Fold 4: AUC = 0.6472445667513407
+manual auc_list: Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:09:55,976] Trial 4 finished with value: 0.0 and parameters: {'n_estimators': 256, 'max_depth': 22, 'min_samples_split': 10, 'min_samples_leaf': 1}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:10:04,479] Trial 5 finished with value: 0.0 and parameters: {'n_estimators': 203, 'max_depth': 24, 'min_samples_split': 5, 'min_samples_leaf': 3}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:10:16,778] Trial 6 finished with value: 0.0 and parameters: {'n_estimators': 299, 'max_depth': 29, 'min_samples_split': 7, 'min_samples_leaf': 5}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:10:21,553] Trial 7 finished with value: 0.0 and parameters: {'n_estimators': 115, 'max_depth': 27, 'min_samples_split': 7, 'min_samples_leaf': 4}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:10:26,391] Trial 8 finished with value: 0.0 and parameters: {'n_estimators': 113, 'max_depth': 28, 'min_samples_split': 9, 'min_samples_leaf': 1}. Best is trial 0 with value: 0.0.
+[np.float64(0.5301043429216018), np.float64(0.5013395375070502), np.float64(0.6264493943216577), np.float64(0.5953464578041208), np.float64(0.6472445667513407)]
+manual auc mean (ignore nan): 0.5800968598611542
+[cross_val_score error] name 'ap_scorer' is not defined
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1229    1]
+[CV] Fold 0: AUC = 0.5153518048505358
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1229    1]
+[CV] Fold 1: AUC = 0.4864724337281444
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1230]
+[CV] Fold 2: AUC = 0.616167550847604
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1228    1]
+[CV] Fold 3: AUC = 0.6144157493649449
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1228    1]
+[CV] Fold 4: AUC = 0.6158446232006773
+manual auc_list: [np.float64(0.5153518048505358), np.float64(0.4864724337281444), np.float64(0.616167550847604), np.float64(0.6144157493649449), np.float64(0.6158446232006773)]
+manual auc mean (ignore nan): 0.5696504323983813
+[cross_val_score error] name 'ap_scorer' is not defined
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1227    3]
+[CV] Fold 0: AUC = 0.5212827834179357
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1226    4]
+[CV] Fold 1: AUC = 0.5192470389170897
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1227    3]
+[CV] Fold 2: AUC = 0.6119511310027821
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1227    2]
+[CV] Fold 3: AUC = 0.5808107535986452
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1225    4]
+[CV] Fold 4: AUC = 0.6378069432684166
+manual auc_list: [np.float64(0.5212827834179357), np.float64(0.5192470389170897), np.float64(0.6119511310027821), np.float64(0.5808107535986452), np.float64(0.6378069432684166)]
+manual auc mean (ignore nan): 0.5742197300409738
+[cross_val_score error] name 'ap_scorer' is not defined
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1227    3]
+[CV] Fold 0: AUC = 0.5198110547095319
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1226    4]
+[CV] Fold 1: AUC = 0.5194056683587139
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1228    2]
+[CV] Fold 2: AUC = 0.629628989614474
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1224    5]
+[CV] Fold 3: AUC = 0.5885989980242732
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1225    4]
+[CV] Fold 4: AUC = 0.6267816821902342
+manual auc_list: [np.float64(0.5198110547095319), np.float64(0.5194056683587139), np.float64(0.629628989614474), np.float64(0.5885989980242732), np.float64(0.6267816821902342)]
+manual auc mean (ignore nan): 0.5768452785794456
+[cross_val_score error] name 'ap_scorer' is not defined
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1228    2]
+[CV] Fold 0: AUC = 0.5231775239706712
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1227    3]
+[CV] Fold 1: AUC = 0.5051995205865765
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1230]
+[CV] Fold 2: AUC = 0.6219564879296342
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1229]
+[CV] Fold 3: AUC = 0.5970046570702794
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1228    1]
+[CV] Fold 4: AUC = 0.632982289020604
+manual auc_list: [np.float64(0.5231775239706712), np.float64(0.5051995205865765), np.float64(0.6219564879296342), np.float64(0.5970046570702794), np.float64(0.632982289020604)]
+manual auc mean (ignore nan): 0.5760640957155531
+[cross_val_score error] name 'ap_scorer' is not defined
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1071  159]
+[CV] Fold 0: AUC = 0.5204720107163001
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1090  140]
+[CV] Fold 1: AUC = 0.5281214749012972
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1108  122]
+[CV] Fold 2: AUC = 0.5918367346938775
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1057  172]
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:10:32,349] Trial 9 finished with value: 0.0 and parameters: {'n_estimators': 158, 'max_depth': 7, 'min_samples_split': 9, 'min_samples_leaf': 5}. Best is trial 0 with value: 0.0.
+2025-09-20 12:10:32,349 - INFO - Best hyperparameters: {'n_estimators': 169, 'max_depth': 28, 'min_samples_split': 4, 'min_samples_leaf': 5}
+2025-09-20 12:10:32,349 - INFO - Selected features (from input): ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+2025-09-20 12:10:34,253 - INFO - Saving RF with 3 features.
+2025-09-20 12:10:34,361 - INFO - [TRAIN_ONLY] Saved model, features, scaler -> _only_target_rank_wasserstein_mean_middle. Skipping evaluation.
+[CV] Fold 3: AUC = 0.586931978549252
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1095  134]
+[CV] Fold 4: AUC = 0.5645992097092859
+manual auc_list: [np.float64(0.5204720107163001), np.float64(0.5281214749012972), np.float64(0.5918367346938775), np.float64(0.586931978549252), np.float64(0.5645992097092859)]
+manual auc mean (ignore nan): 0.5583922817140026
+[cross_val_score error] name 'ap_scorer' is not defined
+----- RUN: ONLY_TARGET -----
+2025-09-20 12:10:40.857679: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-20 12:10:40.865721: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-20 12:10:40.882183: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1758337840.909332 4085535 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1758337840.916625 4085535 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1758337840.939529 4085535 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758337840.939689 4085535 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758337840.939692 4085535 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758337840.939694 4085535 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-20 12:10:40.946186: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-09-20 12:10:46,568 - INFO - [RUN] model=RF | domain_mixup=disabled | coral=disabled | vae=disabled | sample_size=None | seed=42 | fold=None | tag=rank_wasserstein_mean_middle | subject_wise_split=disabled | feature_selection=rf | data_leak=disabled
+2025-09-20 12:10:46,569 - INFO - Model type: common
+2025-09-20 12:10:46,626 - INFO - Loaded: ./data/processed/common/processed_S0181_2.csv
+2025-09-20 12:10:46,675 - INFO - Loaded: ./data/processed/common/processed_S0147_2.csv
+2025-09-20 12:10:46,726 - INFO - Loaded: ./data/processed/common/processed_S0204_2.csv
+2025-09-20 12:10:46,775 - INFO - Loaded: ./data/processed/common/processed_S0169_2.csv
+2025-09-20 12:10:46,831 - INFO - Loaded: ./data/processed/common/processed_S0116_1.csv
+2025-09-20 12:10:46,883 - INFO - Loaded: ./data/processed/common/processed_S0189_2.csv
+2025-09-20 12:10:46,937 - INFO - Loaded: ./data/processed/common/processed_S0140_1.csv
+2025-09-20 12:10:46,986 - INFO - Loaded: ./data/processed/common/processed_S0139_2.csv
+2025-09-20 12:10:47,037 - INFO - Loaded: ./data/processed/common/processed_S0193_1.csv
+2025-09-20 12:10:47,087 - INFO - Loaded: ./data/processed/common/processed_S0185_2.csv
+2025-09-20 12:10:47,307 - INFO - [split:subject_time_split|time_stratify=False] global  : n=7691, pos=308, pos_ratio=0.040
+2025-09-20 12:10:47,307 - INFO - [split:subject_time_split|time_stratify=False] train   : n=6148, pos=241, pos_ratio=0.039, |Δ|=0.001
+2025-09-20 12:10:47,307 - INFO - [split:subject_time_split|time_stratify=False] val     : n=765, pos=34, pos_ratio=0.044, |Δ|=0.004
+2025-09-20 12:10:47,307 - INFO - [split:subject_time_split|time_stratify=False] test    : n=778, pos=33, pos_ratio=0.042, |Δ|=0.002
+2025-09-20 12:10:47,330 - INFO - y_train unique: [0. 1.], counts: {0.0: 5907, 1.0: 241}
+2025-09-20 12:10:53,956 - INFO - Selected features (RF importance): ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+2025-09-20 12:10:53,962 - INFO - Scaler was fit using only X_train (standard procedure).
+[I 2025-09-20 12:10:53,979] A new study created in memory with name: no-name-8185e219-bbe7-43af-a04e-763f845e8e1b
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:11:06,829] Trial 0 finished with value: 0.0 and parameters: {'n_estimators': 249, 'max_depth': 23, 'min_samples_split': 4, 'min_samples_leaf': 4}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:11:12,946] Trial 1 finished with value: 0.0 and parameters: {'n_estimators': 119, 'max_depth': 24, 'min_samples_split': 3, 'min_samples_leaf': 1}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:11:18,795] Trial 2 finished with value: 0.0 and parameters: {'n_estimators': 115, 'max_depth': 24, 'min_samples_split': 4, 'min_samples_leaf': 2}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:11:25,400] Trial 3 finished with value: 0.0 and parameters: {'n_estimators': 130, 'max_depth': 26, 'min_samples_split': 4, 'min_samples_leaf': 3}. Best is trial 0 with value: 0.0.
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1228    2]
+[CV] Fold 0: AUC = 0.523970671178793
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1227    3]
+[CV] Fold 1: AUC = 0.5027848279751833
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1229    1]
+[CV] Fold 2: AUC = 0.6347785515561009
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1226    3]
+[CV] Fold 3: AUC = 0.5948878069432684
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1226    3]
+[CV] Fold 4: AUC = 0.6259173017217048
+manual auc_list: [np.float64(0.523970671178793), np.float64(0.5027848279751833), np.float64(0.6347785515561009), np.float64(0.5948878069432684), np.float64(0.6259173017217048)]
+manual auc mean (ignore nan): 0.57646783187501
+[cross_val_score error] name 'ap_scorer' is not defined
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1230]
+[CV] Fold 0: AUC = 0.5325366610265088
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1230]
+[CV] Fold 1: AUC = 0.4841723068245911
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1230]
+[CV] Fold 2: AUC = 0.6531908275587965
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1229]
+[CV] Fold 3: AUC = 0.5737281258820209
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1229]
+[CV] Fold 4: AUC = 0.6261025261078181
+manual auc_list: [np.float64(0.5325366610265088), np.float64(0.4841723068245911), np.float64(0.6531908275587965), np.float64(0.5737281258820209), np.float64(0.6261025261078181)]
+manual auc mean (ignore nan): 0.5739460894799471
+[cross_val_score error] name 'ap_scorer' is not defined
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1228    2]
+[CV] Fold 0: AUC = 0.5325719120135364
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1230]
+[CV] Fold 1: AUC = 0.4800920050761421
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1230]
+[CV] Fold 2: AUC = 0.6192002626622198
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1229]
+[CV] Fold 3: AUC = 0.5991038667795654
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1227    2]
+[CV] Fold 4: AUC = 0.6243825853796218
+manual auc_list: [np.float64(0.5325719120135364), np.float64(0.4800920050761421), np.float64(0.6192002626622198), np.float64(0.5991038667795654), np.float64(0.6243825853796218)]
+manual auc mean (ignore nan): 0.5710701263822171
+[cross_val_score error] name 'ap_scorer' is not defined
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1228    2]
+[CV] Fold 0: AUC = 0.5196700507614213
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1228    2]
+[CV] Fold 1: AUC = 0.48574978849407785
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1230]
+[CV] Fold 2: AUC = 0.6164872384178057
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1228    1]
+[CV] Fold 3: AUC = 0.6232271380186283
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1227    2]
+[CV] Fold 4: AUC = 0.6164884984476433
+manual auc_list: [np.float64(0.5196700507614213), np.float64(0.48574978849407785), np.float64(0.6164872384178057), np.float64(0.6232271380186283), np.float64(0.6164884984476433)]
+manual auc mean (ignore nan): 0.5723245428279153
+[cross_val_score error] name 'ap_scorer' is not defined
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1228    2]
+[CV] Fold 0: AUC = 0.5192206006768189
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1229    1]
+[CV] Fold 1: AUC = 0.48502714326001123
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1230]
+[CV] Fold 2: AUC = 0.6202284470096252
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1228    1]
+[CV] Fold 3: AUC = 0.6129515946937624
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1228    1]
+[CV] Fold 4: AUC = 0.6130662574089756
+manual auc_list: Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:11:31,308] Trial 4 finished with value: 0.0 and parameters: {'n_estimators': 113, 'max_depth': 27, 'min_samples_split': 2, 'min_samples_leaf': 3}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:11:46,318] Trial 5 finished with value: 0.0 and parameters: {'n_estimators': 282, 'max_depth': 24, 'min_samples_split': 5, 'min_samples_leaf': 1}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:11:56,141] Trial 6 finished with value: 0.0 and parameters: {'n_estimators': 192, 'max_depth': 17, 'min_samples_split': 6, 'min_samples_leaf': 3}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:12:06,139] Trial 7 finished with value: 0.0 and parameters: {'n_estimators': 201, 'max_depth': 20, 'min_samples_split': 8, 'min_samples_leaf': 5}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:12:18,065] Trial 8 finished with value: 0.0 and parameters: {'n_estimators': 235, 'max_depth': 20, 'min_samples_split': 3, 'min_samples_leaf': 2}. Best is trial 0 with value: 0.0.
+[np.float64(0.5192206006768189), np.float64(0.48502714326001123), np.float64(0.6202284470096252), np.float64(0.6129515946937624), np.float64(0.6130662574089756)]
+manual auc mean (ignore nan): 0.5700988086098386
+[cross_val_score error] name 'ap_scorer' is not defined
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1230]
+[CV] Fold 0: AUC = 0.5444867456288777
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1230]
+[CV] Fold 1: AUC = 0.480585518894529
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1230]
+[CV] Fold 2: AUC = 0.6085987316179647
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1229]
+[CV] Fold 3: AUC = 0.6176174851820491
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1228    1]
+[CV] Fold 4: AUC = 0.6584991532599492
+manual auc_list: [np.float64(0.5444867456288777), np.float64(0.480585518894529), np.float64(0.6085987316179647), np.float64(0.6176174851820491), np.float64(0.6584991532599492)]
+manual auc mean (ignore nan): 0.581957526916674
+[cross_val_score error] name 'ap_scorer' is not defined
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1227    3]
+[CV] Fold 0: AUC = 0.5473861393119007
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1228    2]
+[CV] Fold 1: AUC = 0.5060984207557812
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1230]
+[CV] Fold 2: AUC = 0.6146987160655963
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1226    3]
+[CV] Fold 3: AUC = 0.604413632514818
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1226    3]
+[CV] Fold 4: AUC = 0.6107818233135761
+manual auc_list: [np.float64(0.5473861393119007), np.float64(0.5060984207557812), np.float64(0.6146987160655963), np.float64(0.604413632514818), np.float64(0.6107818233135761)]
+manual auc mean (ignore nan): 0.5766757463923345
+[cross_val_score error] name 'ap_scorer' is not defined
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1224    6]
+[CV] Fold 0: AUC = 0.5201723773265653
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1227    3]
+[CV] Fold 1: AUC = 0.5129371122391426
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1227    3]
+[CV] Fold 2: AUC = 0.61922618327602
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1226    3]
+[CV] Fold 3: AUC = 0.5946055602596669
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1226    3]
+[CV] Fold 4: AUC = 0.6146097939599209
+manual auc_list: [np.float64(0.5201723773265653), np.float64(0.5129371122391426), np.float64(0.61922618327602), np.float64(0.5946055602596669), np.float64(0.6146097939599209)]
+manual auc mean (ignore nan): 0.5723102054122631
+[cross_val_score error] name 'ap_scorer' is not defined
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1230]
+[CV] Fold 0: AUC = 0.5227280738860689
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1230]
+[CV] Fold 1: AUC = 0.4944920332769318
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1230]
+[CV] Fold 2: AUC = 0.6371459676165132
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1229]
+[CV] Fold 3: AUC = 0.587902201524132
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1227    2]
+[CV] Fold 4: AUC = 0.6206428168219024
+manual auc_list: [np.float64(0.5227280738860689), np.float64(0.4944920332769318), np.float64(0.6371459676165132), np.float64(0.587902201524132), np.float64(0.6206428168219024)]
+manual auc mean (ignore nan): 0.5725822186251096
+[cross_val_score error] name 'ap_scorer' is not defined
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1175   55]
+[CV] Fold 0: AUC = 0.5202428793006204
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1189   41]
+[CV] Fold 1: AUC = 0.5245699379582628
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1198   32]
+[CV] Fold 2: AUC = 0.604019423179941
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1183   46]
+[CV] Fold 3: AUC = 0.5822749082698279Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 363, in objective
+    scoring=ap_scorer, #roc_auc,
+NameError: name 'ap_scorer' is not defined. Did you mean: 'make_scorer'?
+[I 2025-09-20 12:12:26,343] Trial 9 finished with value: 0.0 and parameters: {'n_estimators': 187, 'max_depth': 10, 'min_samples_split': 5, 'min_samples_leaf': 5}. Best is trial 0 with value: 0.0.
+2025-09-20 12:12:26,343 - INFO - Best hyperparameters: {'n_estimators': 249, 'max_depth': 23, 'min_samples_split': 4, 'min_samples_leaf': 4}
+2025-09-20 12:12:26,343 - INFO - Selected features (from input): ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+2025-09-20 12:12:28,365 - INFO - Saving RF with 3 features.
+2025-09-20 12:12:28,486 - INFO - [TRAIN_ONLY] Saved model, features, scaler -> _only_target_rank_wasserstein_mean_middle. Skipping evaluation.
+
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1178   51]
+[CV] Fold 4: AUC = 0.5810400790290714
+manual auc_list: [np.float64(0.5202428793006204), np.float64(0.5245699379582628), np.float64(0.604019423179941), np.float64(0.5822749082698279), np.float64(0.5810400790290714)]
+manual auc mean (ignore nan): 0.5624294455475447
+[cross_val_score error] name 'ap_scorer' is not defined
+=== DONE (BASENAME=wasserstein_mean_middle) ===
+
+=================================== RESOURCE INFORMATION ===================================
+ Requested Resource:
+ mem=128gb,walltime=24:00:00,ncpus=8,place=pack 
+ Used Resource: 
+ mem=736948kb,walltime=00:05:33,ncpus=8,cpupercent=88,vmem=2154608kb
+============================================================================================

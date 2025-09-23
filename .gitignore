@@ -1,35 +1,25 @@
-# ===== Python cache & artifacts =====
+# ===== Python cache =====
 **/__pycache__/
-**/*.pyc
-**/*.pyo
-**/*.pyd
+**/*.py[cod]
 
-# ===== Dataset / Experiment outputs =====
-**/*.csv
-**/*.pkl
-**/*.npy
-**/*.keras
-project/data/log/
-project/model/*
-!project/model/README.md
-project/results/*
-!project/results/README.md
+# ===== Data (always ignore raw/processed/interim) =====
+data/**
 
-# ===== Misc =====
-project/misc/rank_names*.txt
-project/misc/__pycache__/
-project/misc/*.log
-project/misc/*.tmp
-
-# ===== Jobs (HPC scripts & logs) =====
-project/jobs/*.sh
-!project/jobs/*.sh.example
-project/jobs/log/
+# ===== Experiment outputs =====
+results/**
+models/**
+figures/**
+logs/**
+!results/README.md
+!models/README.md
+!figures/README.md
+!logs/README.md
+!data/README.md
 
 # ===== Cluster outputs =====
-**/*.o*
-**/*.e*
-**/*.swp
+*.o*
+*.e*
+*.swp
 
 # ===== Documentation build (Sphinx) =====
 docs/_build/
@@ -39,12 +29,10 @@ docs/_static/
 docs/objects.inv
 docs/searchindex.js
 docs/**/*.html
-docs/conf.py   # actual config is local, keep conf.py.example in repo
 
-# ===== Other tooling =====
-catboost_info/
+# ===== Virtual env & tooling =====
 .venv/
-project/.venv311/
 **/*.ps1
 **/tags
+catboost_info/
 

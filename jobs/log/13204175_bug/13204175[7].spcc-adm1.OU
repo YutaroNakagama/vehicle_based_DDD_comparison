@@ -1,0 +1,40 @@
+2025-07-20 11:10:17.310838: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-07-20 11:10:17.314547: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-07-20 11:10:17.325458: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1752977417.344022 2612216 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1752977417.349421 2612216 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1752977417.364050 2612216 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1752977417.364112 2612216 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1752977417.364114 2612216 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1752977417.364116 2612216 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-07-20 11:10:17.368476: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-07-20 11:10:21,143 - INFO - [RUN] model=RF | domain_mixup=disabled | coral=disabled | vae=disabled | sample_size=None | seed=42 | fold=None | tag=None | subject_wise_split=disabled | feature_selection=rf | data_leak=disabled
+2025-07-20 11:10:21,144 - INFO - Model type: common
+2025-07-20 11:10:21,172 - INFO - Loaded: ./data/processed/common/processed_S0136_1.csv
+2025-07-20 11:10:21,197 - INFO - Loaded: ./data/processed/common/processed_S0191_2.csv
+2025-07-20 11:10:21,220 - INFO - Loaded: ./data/processed/common/processed_S0206_2.csv
+2025-07-20 11:10:21,244 - INFO - Loaded: ./data/processed/common/processed_S0167_2.csv
+2025-07-20 11:10:21,268 - INFO - Loaded: ./data/processed/common/processed_S0209_2.csv
+2025-07-20 11:10:21,293 - INFO - Loaded: ./data/processed/common/processed_S0173_2.csv
+2025-07-20 11:10:21,316 - INFO - Loaded: ./data/processed/common/processed_S0169_1.csv
+2025-07-20 11:10:21,340 - INFO - Loaded: ./data/processed/common/processed_S0148_2.csv
+2025-07-20 11:10:21,364 - INFO - Loaded: ./data/processed/common/processed_S0200_2.csv
+2025-07-20 11:10:21,388 - INFO - Loaded: ./data/processed/common/processed_S0185_1.csv
+2025-07-20 11:10:21,445 - INFO - y_train unique: [1. 0.], counts: {0.0: 4744, 1.0: 1053}
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/bin/train.py", line 226, in <module>
+    main()
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/bin/train.py", line 223, in main
+    mp.train_pipeline(**pipeline_args)
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/model_pipeline.py", line 416, in train_pipeline
+    selected_features = select_top_features_by_importance(X_train_for_fs, y_train, top_k=TOP_K_FEATURES)
+UnboundLocalError: local variable 'select_top_features_by_importance' referenced before assignment
+
+=================================== RESOURCE INFORMATION ===================================
+ Requested Resource:
+ mem=128gb,walltime=48:00:00,ncpus=8,place=pack 
+ Used Resource: 
+ mem=0kb,walltime=00:00:09,ncpus=8,cpupercent=66,vmem=0kb
+============================================================================================

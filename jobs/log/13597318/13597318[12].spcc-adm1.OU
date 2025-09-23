@@ -1,0 +1,341 @@
+IDX=12
+GROUP_FILE=/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/results/ranks/mmd_std_middle.txt
+BASE=mmd_std_middle
+TARGETS(first few)=S0201_2 S0170_1 S0170_2 S0204_2 S0194_1 S0178_1 S0140_2 S0213_2 S0155_1 S0210_1
+2025-08-15 07:41:53.030681: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-08-15 07:41:53.472442: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-08-15 07:41:53.821741: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1755211314.098854 4023811 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1755211314.174336 4023811 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1755211314.852488 4023811 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1755211314.852528 4023811 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1755211314.852530 4023811 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1755211314.852533 4023811 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-08-15 07:41:54.923216: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-08-15 07:42:01,609 - INFO - [RUN] model=RF | domain_mixup=disabled | coral=disabled | vae=disabled | sample_size=None | seed=42 | fold=None | tag=None | subject_wise_split=disabled | feature_selection=rf | data_leak=disabled
+2025-08-15 07:42:01,611 - INFO - Model type: common
+2025-08-15 07:42:01,695 - INFO - Loaded: ./data/processed/common/processed_S0201_2.csv
+2025-08-15 07:42:01,778 - INFO - Loaded: ./data/processed/common/processed_S0170_1.csv
+2025-08-15 07:42:01,856 - INFO - Loaded: ./data/processed/common/processed_S0170_2.csv
+2025-08-15 07:42:01,934 - INFO - Loaded: ./data/processed/common/processed_S0204_2.csv
+2025-08-15 07:42:02,013 - INFO - Loaded: ./data/processed/common/processed_S0194_1.csv
+2025-08-15 07:42:02,098 - INFO - Loaded: ./data/processed/common/processed_S0178_1.csv
+2025-08-15 07:42:02,177 - INFO - Loaded: ./data/processed/common/processed_S0140_2.csv
+2025-08-15 07:42:02,247 - INFO - Loaded: ./data/processed/common/processed_S0213_2.csv
+2025-08-15 07:42:02,322 - INFO - Loaded: ./data/processed/common/processed_S0155_1.csv
+2025-08-15 07:42:02,344 - INFO - Loaded: ./data/processed/common/processed_S0210_1.csv
+2025-08-15 07:42:02,392 - INFO - [split:subject_time_split|time_stratify=False] global  : n=7447, pos=1861, pos_ratio=0.250
+2025-08-15 07:42:02,392 - INFO - [split:subject_time_split|time_stratify=False] train   : n=5952, pos=1427, pos_ratio=0.240, |Δ|=0.010
+2025-08-15 07:42:02,392 - INFO - [split:subject_time_split|time_stratify=False] val     : n=741, pos=199, pos_ratio=0.269, |Δ|=0.019
+2025-08-15 07:42:02,392 - INFO - [split:subject_time_split|time_stratify=False] test    : n=754, pos=235, pos_ratio=0.312, |Δ|=0.062
+2025-08-15 07:42:02,396 - INFO - y_train unique: [0. 1.], counts: {0.0: 4525, 1.0: 1427}
+2025-08-15 07:42:10,027 - INFO - Selected features (RF importance): ['steering_speed_pred_error', 'LongAcc_Median', 'LongAcc_SpectralEntropy', 'SteeringSpeed_Kurtosis', 'SteeringSpeed_SpectralEntropy', 'Lateral_Median', 'SteeringSpeed_Skewness', 'SteeringSpeed_SampleEntropy', 'LaneOffset_Kurtosis', 'Steering_Skewness']
+2025-08-15 07:42:10,029 - INFO - Scaler was fit using only X_train (standard procedure).
+[I 2025-08-15 07:42:10,032] A new study created in memory with name: no-name-a5731849-ff07-4b66-b561-9aaf186eecbc
+[I 2025-08-15 07:42:40,606] Trial 0 finished with value: 0.5354456349117587 and parameters: {'n_estimators': 164, 'max_depth': 20, 'min_samples_split': 10, 'min_samples_leaf': 5}. Best is trial 0 with value: 0.5354456349117587.
+[I 2025-08-15 07:43:22,889] Trial 1 finished with value: 0.5348871026230724 and parameters: {'n_estimators': 216, 'max_depth': 21, 'min_samples_split': 5, 'min_samples_leaf': 3}. Best is trial 0 with value: 0.5354456349117587.
+[I 2025-08-15 07:43:41,699] Trial 2 finished with value: 0.5319269018274543 and parameters: {'n_estimators': 152, 'max_depth': 8, 'min_samples_split': 7, 'min_samples_leaf': 3}. Best is trial 0 with value: 0.5354456349117587.
+[I 2025-08-15 07:44:39,047] Trial 3 finished with value: 0.533597442201106 and parameters: {'n_estimators': 284, 'max_depth': 28, 'min_samples_split': 9, 'min_samples_leaf': 2}. Best is trial 0 with value: 0.5354456349117587.
+X_train.shape: (5952, 135)
+X_train nan: 12 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  1  1  0  0  0  0  0  0 10  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'LongAcc_SpectralEntropy', 'SteeringSpeed_Kurtosis', 'SteeringSpeed_SpectralEntropy', 'Lateral_Median', 'SteeringSpeed_Skewness', 'SteeringSpeed_SampleEntropy', 'LaneOffset_Kurtosis', 'Steering_Skewness']
+y_train shape: (5952,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (5952, 10)
+X_train[selected_features] col nan: [0 0 0 0 0 0 0 0 1 0]
+[CV] Fold 0: y_val bincount: [905 286], y_pred bincount: [1137   54]
+[CV] Fold 0: AUC = 0.5476413089672758
+[CV] Fold 1: y_val bincount: [905 286], y_pred bincount: [1161   30]
+[CV] Fold 1: AUC = 0.5196770080747981
+[CV] Fold 2: y_val bincount: [905 285], y_pred bincount: [1152   38]
+[CV] Fold 2: AUC = 0.5637142580207424
+[CV] Fold 3: y_val bincount: [905 285], y_pred bincount: [1139   51]
+[CV] Fold 3: AUC = 0.5146961325966851
+[CV] Fold 4: y_val bincount: [905 285], y_pred bincount: [1166   24]
+[CV] Fold 4: AUC = 0.5314994668992924
+manual auc_list: [np.float64(0.5476413089672758), np.float64(0.5196770080747981), np.float64(0.5637142580207424), np.float64(0.5146961325966851), np.float64(0.5314994668992924)]
+manual auc mean (ignore nan): 0.5354456349117587
+cross_val_score: [0.54764131 0.51967701 0.56371426 0.51469613 0.53149947]
+X_train.shape: (5952, 135)
+X_train nan: 12 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  1  1  0  0  0  0  0  0 10  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'LongAcc_SpectralEntropy', 'SteeringSpeed_Kurtosis', 'SteeringSpeed_SpectralEntropy', 'Lateral_Median', 'SteeringSpeed_Skewness', 'SteeringSpeed_SampleEntropy', 'LaneOffset_Kurtosis', 'Steering_Skewness']
+y_train shape: (5952,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (5952, 10)
+X_train[selected_features] col nan: [0 0 0 0 0 0 0 0 1 0]
+[CV] Fold 0: y_val bincount: [905 286], y_pred bincount: [1165   26]
+[CV] Fold 0: AUC = 0.5324266893327667
+[CV] Fold 1: y_val bincount: [905 286], y_pred bincount: [1182    9]
+[CV] Fold 1: AUC = 0.5385349457172661
+[CV] Fold 2: y_val bincount: [905 285], y_pred bincount: [1170   20]
+[CV] Fold 2: AUC = 0.5774895803043519
+[CV] Fold 3: y_val bincount: [905 285], y_pred bincount: [1161   29]
+[CV] Fold 3: AUC = 0.5075622758553844
+[CV] Fold 4: y_val bincount: [905 285], y_pred bincount: [1174   16]
+[CV] Fold 4: AUC = 0.5184220219055927
+manual auc_list: [np.float64(0.5324266893327667), np.float64(0.5385349457172661), np.float64(0.5774895803043519), np.float64(0.5075622758553844), np.float64(0.5184220219055927)]
+manual auc mean (ignore nan): 0.5348871026230724
+cross_val_score: [0.53242669 0.53853495 0.57748958 0.50756228 0.51842202]
+X_train.shape: (5952, 135)
+X_train nan: 12 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  1  1  0  0  0  0  0  0 10  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'LongAcc_SpectralEntropy', 'SteeringSpeed_Kurtosis', 'SteeringSpeed_SpectralEntropy', 'Lateral_Median', 'SteeringSpeed_Skewness', 'SteeringSpeed_SampleEntropy', 'LaneOffset_Kurtosis', 'Steering_Skewness']
+y_train shape: (5952,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (5952, 10)
+X_train[selected_features] col nan: [0 0 0 0 0 0 0 0 1 0]
+[CV] Fold 0: y_val bincount: [905 286], y_pred bincount: [865 326]
+[CV] Fold 0: AUC = 0.5397017347293591
+[CV] Fold 1: y_val bincount: [905 286], y_pred bincount: [863 328]
+[CV] Fold 1: AUC = 0.5285515589382992
+[CV] Fold 2: y_val bincount: [905 285], y_pred bincount: [844 346]
+[CV] Fold 2: AUC = 0.5583289716002715
+[CV] Fold 3: y_val bincount: [905 285], y_pred bincount: [781 409]
+[CV] Fold 3: AUC = 0.5004051565377532
+[CV] Fold 4: y_val bincount: [905 285], y_pred bincount: [859 331]
+[CV] Fold 4: AUC = 0.5326470873315887
+manual auc_list: [np.float64(0.5397017347293591), np.float64(0.5285515589382992), np.float64(0.5583289716002715), np.float64(0.5004051565377532), np.float64(0.5326470873315887)]
+manual auc mean (ignore nan): 0.5319269018274543
+cross_val_score: [0.53970173 0.52855156 0.55832897 0.50040516 0.53264709]
+X_train.shape: (5952, 135)
+X_train nan: 12 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  1  1  0  0  0  0  0  0 10  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'LongAcc_SpectralEntropy', 'SteeringSpeed_Kurtosis', 'SteeringSpeed_SpectralEntropy', 'Lateral_Median', 'SteeringSpeed_Skewness', 'SteeringSpeed_SampleEntropy', 'LaneOffset_Kurtosis', 'Steering_Skewness']
+y_train shape: (5952,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (5952, 10)
+X_train[selected_features] col nan: [0 0 0 0 0 0 0 0 1 0]
+[CV] Fold 0: y_val bincount: [905 286], y_pred bincount: [1173   18]
+[CV] Fold 0: AUC = 0.5348800370899819
+[CV] Fold 1: y_val bincount: [905 286], y_pred bincount: [1182    9]
+[CV] Fold 1: AUC = 0.528543831858749
+[CV] Fold 2: y_val bincount: [905 285], y_pred bincount: [1172   18]
+[CV] Fold 2: AUC = 0.5808510225840845
+[CV] Fold 3: y_val bincount: [905 285], y_pred bincount: [1168   22]
+[CV] Fold 3: AUC = 0.5023437045652805
+[CV] Fold 4: y_val bincount: [905 285], y_pred bincount: [1186    4]
+[CV] Fold 4: AUC = 0.5213686149074344
+manual auc_list: [np.float64(0.5348800370899819), np.float64(0.528543831858749), np.float64(0.5808510225840845), np.float64(0.5023437045652805), np.float64(0.5213686149074344)]
+manual auc mean (ignore nan): 0.533597442201106
+cross_val_score: [0.53488004 0.52854383 0.58085102 0.5023437  0.52136861]
+X_train.shape: (5952, 135)
+X_train nan: 12 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  1  1  0  0  0  0  0  0 10  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: [I 2025-08-15 07:45:06,424] Trial 4 finished with value: 0.5370224607223735 and parameters: {'n_estimators': 179, 'max_depth': 11, 'min_samples_split': 4, 'min_samples_leaf': 2}. Best is trial 4 with value: 0.5370224607223735.
+[I 2025-08-15 07:45:49,693] Trial 5 finished with value: 0.5320135156110731 and parameters: {'n_estimators': 243, 'max_depth': 15, 'min_samples_split': 5, 'min_samples_leaf': 3}. Best is trial 4 with value: 0.5370224607223735.
+[I 2025-08-15 07:46:24,268] Trial 6 finished with value: 0.5307281715086309 and parameters: {'n_estimators': 192, 'max_depth': 17, 'min_samples_split': 4, 'min_samples_leaf': 5}. Best is trial 4 with value: 0.5370224607223735.
+[I 2025-08-15 07:47:17,240] Trial 7 finished with value: 0.5323579535710969 and parameters: {'n_estimators': 264, 'max_depth': 30, 'min_samples_split': 3, 'min_samples_leaf': 3}. Best is trial 4 with value: 0.5370224607223735.
+['steering_speed_pred_error', 'LongAcc_Median', 'LongAcc_SpectralEntropy', 'SteeringSpeed_Kurtosis', 'SteeringSpeed_SpectralEntropy', 'Lateral_Median', 'SteeringSpeed_Skewness', 'SteeringSpeed_SampleEntropy', 'LaneOffset_Kurtosis', 'Steering_Skewness']
+y_train shape: (5952,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (5952, 10)
+X_train[selected_features] col nan: [0 0 0 0 0 0 0 0 1 0]
+[CV] Fold 0: y_val bincount: [905 286], y_pred bincount: [1041  150]
+[CV] Fold 0: AUC = 0.5529652667774214
+[CV] Fold 1: y_val bincount: [905 286], y_pred bincount: [1040  151]
+[CV] Fold 1: AUC = 0.5369895298072094
+[CV] Fold 2: y_val bincount: [905 285], y_pred bincount: [1063  127]
+[CV] Fold 2: AUC = 0.5647688281477173
+[CV] Fold 3: y_val bincount: [905 285], y_pred bincount: [983 207]
+[CV] Fold 3: AUC = 0.49778811670059125
+[CV] Fold 4: y_val bincount: [905 285], y_pred bincount: [1055  135]
+[CV] Fold 4: AUC = 0.532600562178928
+manual auc_list: [np.float64(0.5529652667774214), np.float64(0.5369895298072094), np.float64(0.5647688281477173), np.float64(0.49778811670059125), np.float64(0.532600562178928)]
+manual auc mean (ignore nan): 0.5370224607223735
+cross_val_score: [0.55296527 0.53698953 0.56476883 0.49778812 0.53260056]
+X_train.shape: (5952, 135)
+X_train nan: 12 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  1  1  0  0  0  0  0  0 10  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'LongAcc_SpectralEntropy', 'SteeringSpeed_Kurtosis', 'SteeringSpeed_SpectralEntropy', 'Lateral_Median', 'SteeringSpeed_Skewness', 'SteeringSpeed_SampleEntropy', 'LaneOffset_Kurtosis', 'Steering_Skewness']
+y_train shape: (5952,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (5952, 10)
+X_train[selected_features] col nan: [0 0 0 0 0 0 0 0 1 0]
+[CV] Fold 0: y_val bincount: [905 286], y_pred bincount: [1126   65]
+[CV] Fold 0: AUC = 0.534748676737627
+[CV] Fold 1: y_val bincount: [905 286], y_pred bincount: [1153   38]
+[CV] Fold 1: AUC = 0.5371517984777654
+[CV] Fold 2: y_val bincount: [905 285], y_pred bincount: [1147   43]
+[CV] Fold 2: AUC = 0.5657032082969856
+[CV] Fold 3: y_val bincount: [905 285], y_pred bincount: [1122   68]
+[CV] Fold 3: AUC = 0.5044489677231754
+[CV] Fold 4: y_val bincount: [905 285], y_pred bincount: [1147   43]
+[CV] Fold 4: AUC = 0.518014926819812
+manual auc_list: [np.float64(0.534748676737627), np.float64(0.5371517984777654), np.float64(0.5657032082969856), np.float64(0.5044489677231754), np.float64(0.518014926819812)]
+manual auc mean (ignore nan): 0.5320135156110731
+cross_val_score: [0.53474868 0.5371518  0.56570321 0.50444897 0.51801493]
+X_train.shape: (5952, 135)
+X_train nan: 12 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  1  1  0  0  0  0  0  0 10  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'LongAcc_SpectralEntropy', 'SteeringSpeed_Kurtosis', 'SteeringSpeed_SpectralEntropy', 'Lateral_Median', 'SteeringSpeed_Skewness', 'SteeringSpeed_SampleEntropy', 'LaneOffset_Kurtosis', 'Steering_Skewness']
+y_train shape: (5952,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (5952, 10)
+X_train[selected_features] col nan: [0 0 0 0 0 0 0 0 1 0]
+[CV] Fold 0: y_val bincount: [905 286], y_pred bincount: [1133   58]
+[CV] Fold 0: AUC = 0.5389097090754549
+[CV] Fold 1: y_val bincount: [905 286], y_pred bincount: [1139   52]
+[CV] Fold 1: AUC = 0.531456940849206
+[CV] Fold 2: y_val bincount: [905 285], y_pred bincount: [1144   46]
+[CV] Fold 2: AUC = 0.5644392749830378
+[CV] Fold 3: y_val bincount: [905 285], y_pred bincount: [1128   62]
+[CV] Fold 3: AUC = 0.4957487641756324
+[CV] Fold 4: y_val bincount: [905 285], y_pred bincount: [1147   43]
+[CV] Fold 4: AUC = 0.5230861684598236
+manual auc_list: [np.float64(0.5389097090754549), np.float64(0.531456940849206), np.float64(0.5644392749830378), np.float64(0.4957487641756324), np.float64(0.5230861684598236)]
+manual auc mean (ignore nan): 0.5307281715086309
+cross_val_score: [0.53890971 0.53145694 0.56443927 0.49574876 0.52308617]
+X_train.shape: (5952, 135)
+X_train nan: 12 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  1  1  0  0  0  0  0  0 10  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'LongAcc_SpectralEntropy', 'SteeringSpeed_Kurtosis', 'SteeringSpeed_SpectralEntropy', 'Lateral_Median', 'SteeringSpeed_Skewness', 'SteeringSpeed_SampleEntropy', 'LaneOffset_Kurtosis', 'Steering_Skewness']
+y_train shape: (5952,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (5952, 10)
+X_train[selected_features] col nan: [0 0 0 0 0 0 0 0 1 0]
+[CV] Fold 0: y_val bincount: [905 286], y_pred bincount: [1177   14]
+[CV] Fold 0: AUC = 0.5407294363095468
+[CV] Fold 1: y_val bincount: [905 286], y_pred bincount: [1181   10]
+[CV] Fold 1: AUC = 0.5232198740486034
+[CV] Fold 2: y_val bincount: [905 285], y_pred bincount: [1180   10]
+[CV] Fold 2: AUC = 0.5611282349520209
+[CV] Fold 3: y_val bincount: [905 285], y_pred bincount: [1169   21]
+[CV] Fold 3: AUC = 0.5090665891247456
+[CV] Fold 4: y_val bincount: [905 285], y_pred bincount: [1182    8]
+[CV] Fold 4: AUC = 0.5276456334205679
+manual auc_list: [np.float64(0.5407294363095468), np.float64(0.5232198740486034), np.float64(0.5611282349520209), np.float64(0.5090665891247456), np.float64(0.5276456334205679)]
+manual auc mean (ignore nan): 0.5323579535710969
+cross_val_score: [0.54072944 0.52321987 0.56112823 0.50906659 0.52764563]
+X_train.shape: (5952, 135)
+X_train nan: 12 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  1  1  0  0  0  0  0  0 10  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'LongAcc_SpectralEntropy', 'SteeringSpeed_Kurtosis', 'SteeringSpeed_SpectralEntropy', 'Lateral_Median', 'SteeringSpeed_Skewness', 'SteeringSpeed_SampleEntropy', 'LaneOffset_Kurtosis', 'Steering_Skewness']
+y_train shape: (5952,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (5952, 10)
+X_train[selected_features] col nan: [0 0 0 0 0 0 0 0 1 0]
+[CV] Fold 0: y_val bincount: [905 286], y_pred bincount: [1164   27]
+[CV] Fold 0: AUC = 0.5372986129892208
+[CV] Fold 1: y_val bincount: [905 286], y_pred bincount: [1181   10]
+[CV] Fold 1: AUC = 0.5295947146775876
+[I 2025-08-15 07:48:04,200] Trial 8 finished with value: 0.5280926327719 and parameters: {'n_estimators': 240, 'max_depth': 28, 'min_samples_split': 3, 'min_samples_leaf': 4}. Best is trial 4 with value: 0.5370224607223735.
+[I 2025-08-15 07:48:46,767] Trial 9 finished with value: 0.5351237844253255 and parameters: {'n_estimators': 284, 'max_depth': 11, 'min_samples_split': 9, 'min_samples_leaf': 5}. Best is trial 4 with value: 0.5370224607223735.
+2025-08-15 07:48:46,768 - INFO - Best hyperparameters: {'n_estimators': 179, 'max_depth': 11, 'min_samples_split': 4, 'min_samples_leaf': 2}
+2025-08-15 07:48:46,768 - INFO - Selected features (from input): ['steering_speed_pred_error', 'LongAcc_Median', 'LongAcc_SpectralEntropy', 'SteeringSpeed_Kurtosis', 'SteeringSpeed_SpectralEntropy', 'Lateral_Median', 'SteeringSpeed_Skewness', 'SteeringSpeed_SampleEntropy', 'LaneOffset_Kurtosis', 'Steering_Skewness']
+2025-08-15 07:48:50,225 - INFO - Saving RF with 10 features.
+2025-08-15 07:48:50,522 - INFO - RF (Optuna) metrics: train acc=0.947, val acc=0.677, test acc=0.638
+2025-08-15 07:48:50,545 - INFO - Test classification report:
+              precision    recall  f1-score   support
+
+         0.0       0.69      0.86      0.77       519
+         1.0       0.32      0.15      0.20       235
+
+    accuracy                           0.64       754
+   macro avg       0.51      0.50      0.48       754
+weighted avg       0.58      0.64      0.59       754
+
+2025-08-15 07:48:51,668 - INFO - Optimal threshold for F1: 0.176
+2025-08-15 07:48:51,679 - INFO - Validation (F1-opt threshold) metrics: {"accuracy": 0.2739541160593792, "precision": 0.2700135685210312, "recall": 1.0, "f1": 0.4252136752136752}
+2025-08-15 07:48:51,679 - INFO - Test (F1-opt threshold from Val) metrics: {"accuracy": 0.3169761273209549, "precision": 0.31233243967828417, "recall": 0.9914893617021276, "f1": 0.4750254841997961}
+2025-08-15 07:48:51,684 - INFO - Saved metrics CSV -> ./model//common/metrics_RF_targets-S0201_2-S0170_1-S0170_2-S0204_2-S0194_1-.csv
+[CV] Fold 2: y_val bincount: [905 285], y_pred bincount: [1170   20]
+[CV] Fold 2: AUC = 0.5639236212077153
+[CV] Fold 3: y_val bincount: [905 285], y_pred bincount: [1155   35]
+[CV] Fold 3: AUC = 0.49382572453232526
+[CV] Fold 4: y_val bincount: [905 285], y_pred bincount: [1180   10]
+[CV] Fold 4: AUC = 0.5158204904526509
+manual auc_list: [np.float64(0.5372986129892208), np.float64(0.5295947146775876), np.float64(0.5639236212077153), np.float64(0.49382572453232526), np.float64(0.5158204904526509)]
+manual auc mean (ignore nan): 0.5280926327719
+cross_val_score: [0.53729861 0.52959471 0.56392362 0.49382572 0.51582049]
+X_train.shape: (5952, 135)
+X_train nan: 12 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  1  1  0  0  0  0  0  0 10  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'LongAcc_SpectralEntropy', 'SteeringSpeed_Kurtosis', 'SteeringSpeed_SpectralEntropy', 'Lateral_Median', 'SteeringSpeed_Skewness', 'SteeringSpeed_SampleEntropy', 'LaneOffset_Kurtosis', 'Steering_Skewness']
+y_train shape: (5952,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (5952, 10)
+X_train[selected_features] col nan: [0 0 0 0 0 0 0 0 1 0]
+[CV] Fold 0: y_val bincount: [905 286], y_pred bincount: [1009  182]
+[CV] Fold 0: AUC = 0.5484024263029788
+[CV] Fold 1: y_val bincount: [905 286], y_pred bincount: [1020  171]
+[CV] Fold 1: AUC = 0.5289340493760384
+[CV] Fold 2: y_val bincount: [905 285], y_pred bincount: [1043  147]
+[CV] Fold 2: AUC = 0.5676611418047881
+[CV] Fold 3: y_val bincount: [905 285], y_pred bincount: [967 223]
+[CV] Fold 3: AUC = 0.5042706213046428
+[CV] Fold 4: y_val bincount: [905 285], y_pred bincount: [1025  165]
+[CV] Fold 4: AUC = 0.5263506833381797
+manual auc_list: [np.float64(0.5484024263029788), np.float64(0.5289340493760384), np.float64(0.5676611418047881), np.float64(0.5042706213046428), np.float64(0.5263506833381797)]
+manual auc mean (ignore nan): 0.5351237844253255
+cross_val_score: [0.54840243 0.52893405 0.56766114 0.50427062 0.52635068]
+
+=================================== RESOURCE INFORMATION ===================================
+ Requested Resource:
+ mem=128gb,walltime=24:00:00,ncpus=8,place=pack 
+ Used Resource: 
+ mem=752452kb,walltime=00:07:07,ncpus=8,cpupercent=96,vmem=2175740kb
+============================================================================================

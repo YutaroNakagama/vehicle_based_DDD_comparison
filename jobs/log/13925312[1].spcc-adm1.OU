@@ -1,0 +1,1328 @@
+=== JOB INFO ===
+IDX=1
+GROUP_FILE=/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/results/ranks10/wasserstein_mean_high.txt
+BASENAME=wasserstein_mean_high
+TARGETS(first few)=S0154_2 S0120_2 S0154_1 S0120_1 S0135_2 S0209_1 S0178_2 S0186_2 S0206_1 S0156_1
+[PRETRAIN] pretrain_setting exists. Reusing: /home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/model/common_k10/pretrain_setting_wasserstein_mean_high.pkl
+----- RUN: ONLY_TARGET -----
+2025-09-20 12:16:37.367076: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-20 12:16:37.370034: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-20 12:16:37.379831: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1758338197.396433 3509516 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1758338197.401462 3509516 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1758338197.413857 3509516 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758338197.413880 3509516 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758338197.413882 3509516 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758338197.413884 3509516 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-20 12:16:37.417746: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-09-20 12:16:40,901 - INFO - [RUN] model=RF | domain_mixup=disabled | coral=disabled | vae=disabled | sample_size=None | seed=42 | fold=None | tag=rank_wasserstein_mean_high | subject_wise_split=disabled | feature_selection=rf | data_leak=disabled
+2025-09-20 12:16:40,902 - INFO - Model type: common
+2025-09-20 12:16:40,926 - INFO - Loaded: ./data/processed/common/processed_S0154_2.csv
+2025-09-20 12:16:40,950 - INFO - Loaded: ./data/processed/common/processed_S0120_2.csv
+2025-09-20 12:16:40,972 - INFO - Loaded: ./data/processed/common/processed_S0154_1.csv
+2025-09-20 12:16:40,996 - INFO - Loaded: ./data/processed/common/processed_S0120_1.csv
+2025-09-20 12:16:41,021 - INFO - Loaded: ./data/processed/common/processed_S0135_2.csv
+2025-09-20 12:16:41,043 - INFO - Loaded: ./data/processed/common/processed_S0209_1.csv
+2025-09-20 12:16:41,066 - INFO - Loaded: ./data/processed/common/processed_S0178_2.csv
+2025-09-20 12:16:41,088 - INFO - Loaded: ./data/processed/common/processed_S0186_2.csv
+2025-09-20 12:16:41,111 - INFO - Loaded: ./data/processed/common/processed_S0206_1.csv
+2025-09-20 12:16:41,133 - INFO - Loaded: ./data/processed/common/processed_S0156_1.csv
+2025-09-20 12:16:41,174 - INFO - [split:subject_time_split|time_stratify=False] global  : n=7848, pos=249, pos_ratio=0.032
+2025-09-20 12:16:41,174 - INFO - [split:subject_time_split|time_stratify=False] train   : n=6275, pos=212, pos_ratio=0.034, |Δ|=0.002
+2025-09-20 12:16:41,174 - INFO - [split:subject_time_split|time_stratify=False] val     : n=781, pos=12, pos_ratio=0.015, |Δ|=0.016
+2025-09-20 12:16:41,174 - INFO - [split:subject_time_split|time_stratify=False] test    : n=792, pos=25, pos_ratio=0.032, |Δ|=0.000
+2025-09-20 12:16:41,178 - INFO - y_train unique: [0. 1.], counts: {0.0: 6063, 1.0: 212}
+2025-09-20 12:16:46,963 - INFO - Selected features (RF importance): ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+2025-09-20 12:16:46,964 - INFO - Scaler was fit using only X_train (standard procedure).
+[I 2025-09-20 12:16:46,967] A new study created in memory with name: no-name-8e835e28-ab47-4012-b3a0-b0a003376221
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:16:54,974] Trial 0 finished with value: 0.0 and parameters: {'n_estimators': 185, 'max_depth': 17, 'min_samples_split': 7, 'min_samples_leaf': 5}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:16:58,972] Trial 1 finished with value: 0.0 and parameters: {'n_estimators': 100, 'max_depth': 11, 'min_samples_split': 3, 'min_samples_leaf': 3}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:17:07,939] Trial 2 finished with value: 0.0 and parameters: {'n_estimators': 201, 'max_depth': 29, 'min_samples_split': 4, 'min_samples_leaf': 3}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:17:15,018] Trial 3 finished with value: 0.0 and parameters: {'n_estimators': 201, 'max_depth': 8, 'min_samples_split': 2, 'min_samples_leaf': 2}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:17:26,160] Trial 4 finished with value: 0.0 and parameters: {'n_estimators': 251, 'max_depth': 19, 'min_samples_split': 7, 'min_samples_leaf': 1}. Best is trial 0 with value: 0.0.
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1252    3]
+[CV] Fold 0: AUC = 0.5544694382287128
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1251    4]
+[CV] Fold 1: AUC = 0.5849330663840145
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [1251    4]
+[CV] Fold 2: AUC = 0.48883131158481524
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1250    5]
+[CV] Fold 3: AUC = 0.5187850180366874
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1249    6]
+[CV] Fold 4: AUC = 0.5496200782868985
+manual auc_list: [np.float64(0.5544694382287128), np.float64(0.5849330663840145), np.float64(0.48883131158481524), np.float64(0.5187850180366874), np.float64(0.5496200782868985)]
+manual auc mean (ignore nan): 0.5393277825042256
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1212   43]
+[CV] Fold 0: AUC = 0.5603383975189415
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1233   22]
+[CV] Fold 1: AUC = 0.5679935618105446
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [1228   27]
+[CV] Fold 2: AUC = 0.4724610371766184
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1246    9]
+[CV] Fold 3: AUC = 0.5312763834522987
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1238   17]
+[CV] Fold 4: AUC = 0.601053419295418
+manual auc_list: [np.float64(0.5603383975189415), np.float64(0.5679935618105446), np.float64(0.4724610371766184), np.float64(0.5312763834522987), np.float64(0.601053419295418)]
+manual auc mean (ignore nan): 0.5466245598507642
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1255]
+[CV] Fold 0: AUC = 0.5513877438856829
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1254    1]
+[CV] Fold 1: AUC = 0.5962784124366977
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [1254    1]
+[CV] Fold 2: AUC = 0.4934734817257488
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1255]
+[CV] Fold 3: AUC = 0.496488602348607
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1254    1]
+[CV] Fold 4: AUC = 0.5306911505104
+manual auc_list: [np.float64(0.5513877438856829), np.float64(0.5962784124366977), np.float64(0.4934734817257488), np.float64(0.496488602348607), np.float64(0.5306911505104)]
+manual auc mean (ignore nan): 0.5336638781814272
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1131  124]
+[CV] Fold 0: AUC = 0.5512503435009618
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1140  115]
+[CV] Fold 1: AUC = 0.5826757743493111
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [1124  131]
+[CV] Fold 2: AUC = 0.4750618301731245
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1185   70]
+[CV] Fold 3: AUC = 0.5340586384219818
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1204   51]
+[CV] Fold 4: AUC = 0.5802152889707575
+manual auc_list: [np.float64(0.5512503435009618), np.float64(0.5826757743493111), np.float64(0.4750618301731245), np.float64(0.5340586384219818), np.float64(0.5802152889707575)]
+manual auc mean (ignore nan): 0.5446523750832273
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1255]
+[CV] Fold 0: AUC = 0.546519844541279
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1254    1]
+[CV] Fold 1: AUC = 0.6035213755741374
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [1254    1]
+[CV] Fold 2: AUC = 0.4733148824245279
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1255]
+[CV] Fold 3: AUC = 0.50458592370865
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1255]
+[CV] Fold 4: AUC = 0.5749194105457057
+manual auc_list: [np.float64(0.546519844541279), np.float64(0.6035213755741374), np.float64(0.4733148824245279), np.float64(0.50458592370865), np.float64(0.5749194105457057)]
+manual auc mean (ignore nan): 0.5405722873588601
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:17:31,069] Trial 5 finished with value: 0.0 and parameters: {'n_estimators': 111, 'max_depth': 27, 'min_samples_split': 2, 'min_samples_leaf': 4}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:17:41,048] Trial 6 finished with value: 0.0 and parameters: {'n_estimators': 229, 'max_depth': 18, 'min_samples_split': 10, 'min_samples_leaf': 3}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:17:46,936] Trial 7 finished with value: 0.0 and parameters: {'n_estimators': 189, 'max_depth': 6, 'min_samples_split': 3, 'min_samples_leaf': 2}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:17:54,110] Trial 8 finished with value: 0.0 and parameters: {'n_estimators': 166, 'max_depth': 17, 'min_samples_split': 5, 'min_samples_leaf': 4}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:17:58,604] Trial 9 finished with value: 0.0 and parameters: {'n_estimators': 156, 'max_depth': 5, 'min_samples_split': 2, 'min_samples_leaf': 2}. Best is trial 0 with value: 0.0.
+2025-09-20 12:17:58,604 - INFO - Best hyperparameters: {'n_estimators': 185, 'max_depth': 17, 'min_samples_split': 7, 'min_samples_leaf': 5}
+2025-09-20 12:17:58,604 - INFO - Selected features (from input): ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+2025-09-20 12:17:59,132 - INFO - Saving RF with 3 features.
+2025-09-20 12:17:59,207 - INFO - [TRAIN_ONLY] Saved model, features, scaler -> _only_target_rank_wasserstein_mean_high. Skipping evaluation.
+['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1253    2]
+[CV] Fold 0: AUC = 0.5245259686727124
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1253    2]
+[CV] Fold 1: AUC = 0.5939622345228281
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [1253    2]
+[CV] Fold 2: AUC = 0.44925018647195064
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1254    1]
+[CV] Fold 3: AUC = 0.49267019725228345
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1249    6]
+[CV] Fold 4: AUC = 0.5476629058254663
+manual auc_list: [np.float64(0.5245259686727124), np.float64(0.5939622345228281), np.float64(0.44925018647195064), np.float64(0.49267019725228345), np.float64(0.5476629058254663)]
+manual auc mean (ignore nan): 0.5216142985490482
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1254    1]
+[CV] Fold 0: AUC = 0.5656184980175087
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1253    2]
+[CV] Fold 1: AUC = 0.5884465905075963
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [1253    2]
+[CV] Fold 2: AUC = 0.4833647391355552
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1251    4]
+[CV] Fold 3: AUC = 0.4972944968915497
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1251    4]
+[CV] Fold 4: AUC = 0.5688847954562898
+manual auc_list: [np.float64(0.5656184980175087), np.float64(0.5884465905075963), np.float64(0.4833647391355552), np.float64(0.4972944968915497), np.float64(0.5688847954562898)]
+manual auc mean (ignore nan): 0.5407218240017
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1037  218]
+[CV] Fold 0: AUC = 0.548443449927374
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1001  254]
+[CV] Fold 1: AUC = 0.5856004396812311
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [919 336]
+[CV] Fold 2: AUC = 0.49191300592784515
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1087  168]
+[CV] Fold 3: AUC = 0.5304513009440479
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1092  163]
+[CV] Fold 4: AUC = 0.5880631667817945
+manual auc_list: [np.float64(0.548443449927374), np.float64(0.5856004396812311), np.float64(0.49191300592784515), np.float64(0.5304513009440479), np.float64(0.5880631667817945)]
+manual auc mean (ignore nan): 0.5488942726524586
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1253    2]
+[CV] Fold 0: AUC = 0.5391983668982845
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1252    3]
+[CV] Fold 1: AUC = 0.5785930200604561
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [1251    4]
+[CV] Fold 2: AUC = 0.47198013583009457
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1253    2]
+[CV] Fold 3: AUC = 0.507492900452836
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1251    4]
+[CV] Fold 4: AUC = 0.5661696983651854
+manual auc_list: [np.float64(0.5391983668982845), np.float64(0.5785930200604561), np.float64(0.47198013583009457), np.float64(0.507492900452836), np.float64(0.5661696983651854)]
+manual auc mean (ignore nan): 0.5326868243213714
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [988 267]
+[CV] Fold 0: AUC = 0.5440466376162997
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [904 351]
+[CV] Fold 1: AUC = 0.5911357123228518
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [835 420]
+[CV] Fold 2: AUC = 0.4846111569112394
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1036  219]
+[CV] Fold 3: AUC = 0.5404386368869446
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1007  248]
+[CV] Fold 4: AUC = 0.6031065315833908
+manual auc_list: [np.float64(0.5440466376162997), np.float64(0.5911357123228518), np.float64(0.4846111569112394), np.float64(0.5404386368869446), np.float64(0.6031065315833908)]
+manual auc mean (ignore nan): 0.5526677350641453
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+----- RUN: ONLY_TARGET -----
+2025-09-20 12:18:01.730807: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-20 12:18:01.733815: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-20 12:18:01.743821: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1758338281.760675 3509967 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1758338281.765819 3509967 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1758338281.778500 3509967 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758338281.778520 3509967 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758338281.778522 3509967 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758338281.778524 3509967 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-20 12:18:01.782451: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-09-20 12:18:04,742 - INFO - [RUN] model=RF | domain_mixup=disabled | coral=disabled | vae=disabled | sample_size=None | seed=42 | fold=None | tag=rank_wasserstein_mean_high | subject_wise_split=disabled | feature_selection=rf | data_leak=disabled
+2025-09-20 12:18:04,743 - INFO - Model type: common
+2025-09-20 12:18:04,767 - INFO - Loaded: ./data/processed/common/processed_S0154_2.csv
+2025-09-20 12:18:04,793 - INFO - Loaded: ./data/processed/common/processed_S0120_2.csv
+2025-09-20 12:18:04,815 - INFO - Loaded: ./data/processed/common/processed_S0154_1.csv
+2025-09-20 12:18:04,840 - INFO - Loaded: ./data/processed/common/processed_S0120_1.csv
+2025-09-20 12:18:04,865 - INFO - Loaded: ./data/processed/common/processed_S0135_2.csv
+2025-09-20 12:18:04,888 - INFO - Loaded: ./data/processed/common/processed_S0209_1.csv
+2025-09-20 12:18:04,912 - INFO - Loaded: ./data/processed/common/processed_S0178_2.csv
+2025-09-20 12:18:04,935 - INFO - Loaded: ./data/processed/common/processed_S0186_2.csv
+2025-09-20 12:18:04,958 - INFO - Loaded: ./data/processed/common/processed_S0206_1.csv
+2025-09-20 12:18:04,981 - INFO - Loaded: ./data/processed/common/processed_S0156_1.csv
+2025-09-20 12:18:05,022 - INFO - [split:subject_time_split|time_stratify=False] global  : n=7848, pos=249, pos_ratio=0.032
+2025-09-20 12:18:05,022 - INFO - [split:subject_time_split|time_stratify=False] train   : n=6275, pos=212, pos_ratio=0.034, |Δ|=0.002
+2025-09-20 12:18:05,022 - INFO - [split:subject_time_split|time_stratify=False] val     : n=781, pos=12, pos_ratio=0.015, |Δ|=0.016
+2025-09-20 12:18:05,022 - INFO - [split:subject_time_split|time_stratify=False] test    : n=792, pos=25, pos_ratio=0.032, |Δ|=0.000
+2025-09-20 12:18:05,025 - INFO - y_train unique: [0. 1.], counts: {0.0: 6063, 1.0: 212}
+2025-09-20 12:18:10,844 - INFO - Selected features (RF importance): ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+2025-09-20 12:18:10,846 - INFO - Scaler was fit using only X_train (standard procedure).
+[I 2025-09-20 12:18:10,849] A new study created in memory with name: no-name-05a9604a-6196-4161-b7bc-d725689da7f5
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:18:17,393] Trial 0 finished with value: 0.0 and parameters: {'n_estimators': 152, 'max_depth': 15, 'min_samples_split': 6, 'min_samples_leaf': 4}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:18:24,736] Trial 1 finished with value: 0.0 and parameters: {'n_estimators': 163, 'max_depth': 24, 'min_samples_split': 10, 'min_samples_leaf': 1}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:18:33,280] Trial 2 finished with value: 0.0 and parameters: {'n_estimators': 191, 'max_depth': 19, 'min_samples_split': 6, 'min_samples_leaf': 1}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:18:43,760] Trial 3 finished with value: 0.0 and parameters: {'n_estimators': 238, 'max_depth': 23, 'min_samples_split': 3, 'min_samples_leaf': 4}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:18:55,335] Trial 4 finished with value: 0.0 and parameters: {'n_estimators': 263, 'max_depth': 24, 'min_samples_split': 2, 'min_samples_leaf': 4}. Best is trial 0 with value: 0.0.
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1252    3]
+[CV] Fold 0: AUC = 0.5497781965218074
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1250    5]
+[CV] Fold 1: AUC = 0.5786322773132337
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [1250    5]
+[CV] Fold 2: AUC = 0.4644918148627959
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1252    3]
+[CV] Fold 3: AUC = 0.5220469721390744
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1251    4]
+[CV] Fold 4: AUC = 0.5815584465423287
+manual auc_list: [np.float64(0.5497781965218074), np.float64(0.5786322773132337), np.float64(0.4644918148627959), np.float64(0.5220469721390744), np.float64(0.5815584465423287)]
+manual auc mean (ignore nan): 0.539301541475848
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1255]
+[CV] Fold 0: AUC = 0.563675264005025
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1254    1]
+[CV] Fold 1: AUC = 0.5987123621088996
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [1253    2]
+[CV] Fold 2: AUC = 0.4591626427982569
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1255]
+[CV] Fold 3: AUC = 0.5000767518612326
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1253    2]
+[CV] Fold 4: AUC = 0.5517595364187582
+manual auc_list: [np.float64(0.563675264005025), np.float64(0.5987123621088996), np.float64(0.4591626427982569), np.float64(0.5000767518612326), np.float64(0.5517595364187582)]
+manual auc mean (ignore nan): 0.5346773114384344
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1255]
+[CV] Fold 0: AUC = 0.5502296549287481
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1255]
+[CV] Fold 1: AUC = 0.5769442154438033
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [1255]
+[CV] Fold 2: AUC = 0.4785753542967063
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1255]
+[CV] Fold 3: AUC = 0.5050656228413539
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1255]
+[CV] Fold 4: AUC = 0.5692973367104152
+manual auc_list: [np.float64(0.5502296549287481), np.float64(0.5769442154438033), np.float64(0.4785753542967063), np.float64(0.5050656228413539), np.float64(0.5692973367104152)]
+manual auc mean (ignore nan): 0.5360224368442054
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1253    2]
+[CV] Fold 0: AUC = 0.5371373611274682
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1253    2]
+[CV] Fold 1: AUC = 0.5919601146311781
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [1253    2]
+[CV] Fold 2: AUC = 0.4720782789620383
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1253    2]
+[CV] Fold 3: AUC = 0.48781564202931915
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1251    4]
+[CV] Fold 4: AUC = 0.5506754163788472
+manual auc_list: [np.float64(0.5371373611274682), np.float64(0.5919601146311781), np.float64(0.4720782789620383), np.float64(0.48781564202931915), np.float64(0.5506754163788472)]
+manual auc mean (ignore nan): 0.5279333626257703
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1253    2]
+[CV] Fold 0: AUC = 0.5363325874455306
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1253    2]
+[CV] Fold 1: AUC = 0.5942174066658815
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [1253    2]
+[CV] Fold 2: AUC = 0.48202999254112205
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1253    2]
+[CV] Fold 3: AUC = 0.485493898227032
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1251    4]
+[CV] Fold 4: AUC = 0.5515580627830226
+manual auc_list: [np.float64(0.5363325874455306), np.float64(0.5942174066658815), np.float64(0.48202999254112205), np.float64(0.485493898227032), np.float64(0.5515580627830226)]
+manual auc mean (ignore nan): 0.5299263895325177
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:19:07,979] Trial 5 finished with value: 0.0 and parameters: {'n_estimators': 291, 'max_depth': 19, 'min_samples_split': 4, 'min_samples_leaf': 5}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:19:16,652] Trial 6 finished with value: 0.0 and parameters: {'n_estimators': 193, 'max_depth': 25, 'min_samples_split': 7, 'min_samples_leaf': 2}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:19:25,212] Trial 7 finished with value: 0.0 and parameters: {'n_estimators': 243, 'max_depth': 8, 'min_samples_split': 2, 'min_samples_leaf': 4}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:19:30,644] Trial 8 finished with value: 0.0 and parameters: {'n_estimators': 122, 'max_depth': 18, 'min_samples_split': 5, 'min_samples_leaf': 2}. Best is trial 0 with value: 0.0.
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/architectures/common.py", line 361, in objective
+    score_arr = cross_val_score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 684, in cross_val_score
+    cv_results = cross_validate(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 411, in cross_validate
+    results = parallel(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 77, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1986, in __call__
+    return output if self.return_generator else list(output)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/joblib/parallel.py", line 1914, in _get_sequential_output
+    res = func(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/parallel.py", line 139, in __call__
+    return self.function(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 888, in _fit_and_score
+    test_scores = _score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/model_selection/_validation.py", line 949, in _score
+    scores = scorer(estimator, X_test, y_test, **score_params)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 148, in __call__
+    raise e
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 140, in __call__
+    score = scorer._score(
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/metrics/_scorer.py", line 388, in _score
+    return self._sign * self._score_func(y_true, y_pred, **scoring_kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 194, in wrapper
+    params = func_sig.bind(*args, **kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3186, in bind
+    return self._bind(args, kwargs)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/inspect.py", line 3175, in _bind
+    raise TypeError(
+TypeError: got an unexpected keyword argument 'needs_proba'
+[I 2025-09-20 12:19:39,595] Trial 9 finished with value: 0.0 and parameters: {'n_estimators': 201, 'max_depth': 19, 'min_samples_split': 2, 'min_samples_leaf': 2}. Best is trial 0 with value: 0.0.
+2025-09-20 12:19:39,595 - INFO - Best hyperparameters: {'n_estimators': 152, 'max_depth': 15, 'min_samples_split': 6, 'min_samples_leaf': 4}
+2025-09-20 12:19:39,595 - INFO - Selected features (from input): ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+2025-09-20 12:19:40,074 - INFO - Saving RF with 3 features.
+2025-09-20 12:19:40,136 - INFO - [TRAIN_ONLY] Saved model, features, scaler -> _only_target_rank_wasserstein_mean_high. Skipping evaluation.
+['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1253    2]
+[CV] Fold 0: AUC = 0.5713107996702391
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1250    5]
+[CV] Fold 1: AUC = 0.6084874180504848
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [1252    3]
+[CV] Fold 2: AUC = 0.489174812546618
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1252    3]
+[CV] Fold 3: AUC = 0.5074641185048737
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1250    5]
+[CV] Fold 4: AUC = 0.5564893698672193
+manual auc_list: [np.float64(0.5713107996702391), np.float64(0.6084874180504848), np.float64(0.489174812546618), np.float64(0.5074641185048737), np.float64(0.5564893698672193)]
+manual auc mean (ignore nan): 0.546585303727887
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1255]
+[CV] Fold 0: AUC = 0.5510344286106857
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1254    1]
+[CV] Fold 1: AUC = 0.599261963647784
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [1253    2]
+[CV] Fold 2: AUC = 0.49112786087229615
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1255]
+[CV] Fold 3: AUC = 0.4799773582009363
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1255]
+[CV] Fold 4: AUC = 0.5496488602348607
+manual auc_list: [np.float64(0.5510344286106857), np.float64(0.599261963647784), np.float64(0.49112786087229615), np.float64(0.4799773582009363), np.float64(0.5496488602348607)]
+manual auc mean (ignore nan): 0.5342100943133126
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1126  129]
+[CV] Fold 0: AUC = 0.5503474266870805
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1147  108]
+[CV] Fold 1: AUC = 0.5907627684214658
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [1104  151]
+[CV] Fold 2: AUC = 0.48141169080987706
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1186   69]
+[CV] Fold 3: AUC = 0.5288778877887789
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1192   63]
+[CV] Fold 4: AUC = 0.5896749558676797
+manual auc_list: [np.float64(0.5503474266870805), np.float64(0.5907627684214658), np.float64(0.48141169080987706), np.float64(0.5288778877887789), np.float64(0.5896749558676797)]
+manual auc mean (ignore nan): 0.5482149459149764
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1255]
+[CV] Fold 0: AUC = 0.5273819338122718
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1253    2]
+[CV] Fold 1: AUC = 0.6013524123581832
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [1253    2]
+[CV] Fold 2: AUC = 0.45892709928159225
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1255]
+[CV] Fold 3: AUC = 0.5217687466421059
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1254    1]
+[CV] Fold 4: AUC = 0.5853000997774197
+manual auc_list: [np.float64(0.5273819338122718), np.float64(0.6013524123581832), np.float64(0.45892709928159225), np.float64(0.5217687466421059), np.float64(0.5853000997774197)]
+manual auc mean (ignore nan): 0.5389460583743146
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+X_train.shape: (6275, 135)
+X_train nan: 7 inf: 0
+X_train col nan count: [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 7 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['SteeringSpeed_Skewness', 'steering_speed_pred_error', 'lat_acc_pred_error']
+y_train shape: (6275,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6275, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1213   42], y_pred bincount: [1255]
+[CV] Fold 0: AUC = 0.5662073568091704
+[CV] Fold 1: y_val bincount: [1213   42], y_pred bincount: [1254    1]
+[CV] Fold 1: AUC = 0.5943351784242139
+[CV] Fold 2: y_val bincount: [1213   42], y_pred bincount: [1253    2]
+[CV] Fold 2: AUC = 0.4526361245240058
+[CV] Fold 3: y_val bincount: [1212   43], y_pred bincount: [1255]
+[CV] Fold 3: AUC = 0.5150145828536341
+[CV] Fold 4: y_val bincount: [1212   43], y_pred bincount: [1254    1]
+[CV] Fold 4: AUC = 0.5732980274771663
+manual auc_list: [np.float64(0.5662073568091704), np.float64(0.5943351784242139), np.float64(0.4526361245240058), np.float64(0.5150145828536341), np.float64(0.5732980274771663)]
+manual auc mean (ignore nan): 0.5402982540176381
+[cross_val_score error] got an unexpected keyword argument 'needs_proba'
+=== DONE (BASENAME=wasserstein_mean_high) ===
+
+=================================== RESOURCE INFORMATION ===================================
+ Requested Resource:
+ mem=128gb,walltime=24:00:00,ncpus=8,place=pack 
+ Used Resource: 
+ mem=733228kb,walltime=00:03:07,ncpus=8,cpupercent=91,vmem=2146300kb
+============================================================================================

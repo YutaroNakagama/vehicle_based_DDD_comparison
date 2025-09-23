@@ -1,0 +1,37 @@
+2025-07-20 11:10:16.403215: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-07-20 11:10:16.406413: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-07-20 11:10:16.416361: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1752977416.433080 4004355 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1752977416.438150 4004355 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1752977416.451053 4004355 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1752977416.451071 4004355 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1752977416.451073 4004355 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1752977416.451076 4004355 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-07-20 11:10:16.454978: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-07-20 11:10:19,993 - INFO - [RUN] model=RF | domain_mixup=disabled | coral=disabled | vae=disabled | sample_size=None | seed=42 | fold=None | tag=None | subject_wise_split=disabled | feature_selection=rf | data_leak=disabled
+2025-07-20 11:10:19,994 - INFO - Model type: common
+2025-07-20 11:10:20,020 - INFO - Loaded: ./data/processed/common/processed_S0169_2.csv
+2025-07-20 11:10:20,041 - INFO - Loaded: ./data/processed/common/processed_S0188_2.csv
+2025-07-20 11:10:20,062 - INFO - Loaded: ./data/processed/common/processed_S0188_1.csv
+2025-07-20 11:10:20,083 - INFO - Loaded: ./data/processed/common/processed_S0190_2.csv
+2025-07-20 11:10:20,103 - INFO - Loaded: ./data/processed/common/processed_S0154_1.csv
+2025-07-20 11:10:20,123 - INFO - Loaded: ./data/processed/common/processed_S0153_1.csv
+2025-07-20 11:10:20,143 - INFO - Loaded: ./data/processed/common/processed_S0190_1.csv
+2025-07-20 11:10:20,193 - INFO - y_train unique: [1. 0.], counts: {0.0: 2952, 1.0: 813}
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/bin/train.py", line 226, in <module>
+    main()
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/bin/train.py", line 223, in main
+    mp.train_pipeline(**pipeline_args)
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/model_pipeline.py", line 416, in train_pipeline
+    selected_features = select_top_features_by_importance(X_train_for_fs, y_train, top_k=TOP_K_FEATURES)
+UnboundLocalError: local variable 'select_top_features_by_importance' referenced before assignment
+
+=================================== RESOURCE INFORMATION ===================================
+ Requested Resource:
+ mem=128gb,walltime=48:00:00,ncpus=8,place=pack 
+ Used Resource: 
+ mem=0kb,walltime=00:00:07,ncpus=8,cpupercent=71,vmem=0kb
+============================================================================================

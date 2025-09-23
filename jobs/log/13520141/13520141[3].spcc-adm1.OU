@@ -1,0 +1,36 @@
+sed: can't read ../misc/pretrain_groups/group_names.txt: No such file or directory
+cat: ./misc/pretrain_groups/.txt: No such file or directory
+2025-08-11 18:08:20.858796: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-08-11 18:08:20.862424: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-08-11 18:08:20.872751: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1754903300.889694 1695120 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1754903300.894846 1695120 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1754903300.908575 1695120 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1754903300.908603 1695120 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1754903300.908605 1695120 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1754903300.908607 1695120 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-08-11 18:08:20.912752: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+usage: train.py [-h] --model
+                {SvmA,SvmW,Lstm,RF,BalancedRF,DecisionTree,AdaBoost,GradientBoosting,XGBoost,LightGBM,CatBoost,LogisticRegression,SVM,K-Nearest
+                Neighbors,MLP} [--domain_mixup] [--coral] [--vae]
+                [--sample_size SAMPLE_SIZE] [--seed SEED] [--n_folds N_FOLDS]
+                [--fold FOLD] [--tag TAG] [--subject_wise_split]
+                [--feature_selection {rf,mi,anova}] [--data_leak]
+                [--subject_split_strategy {random,leave-one-out,custom,isolate_target_subjects,finetune_target_subjects,single_subject_data_split,subject_time_split}]
+                [--target_subjects TARGET_SUBJECTS [TARGET_SUBJECTS ...]]
+                [--train_subjects TRAIN_SUBJECTS [TRAIN_SUBJECTS ...]]
+                [--val_subjects VAL_SUBJECTS [VAL_SUBJECTS ...]]
+                [--test_subjects TEST_SUBJECTS [TEST_SUBJECTS ...]]
+                [--general_subjects GENERAL_SUBJECTS [GENERAL_SUBJECTS ...]]
+                [--finetune_setting FINETUNE_SETTING]
+                [--save_pretrain SAVE_PRETRAIN]
+train.py: error: argument --target_subjects: expected at least one argument
+
+=================================== RESOURCE INFORMATION ===================================
+ Requested Resource:
+ mem=128gb,walltime=24:00:00,ncpus=8,place=pack 
+ Used Resource: 
+ mem=0kb,walltime=00:00:08,ncpus=8,cpupercent=62,vmem=0kb
+============================================================================================

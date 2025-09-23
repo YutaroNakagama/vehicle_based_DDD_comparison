@@ -1,0 +1,107 @@
+=== JOB INFO ===
+IDX=2
+GROUP_FILE=/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/results/ranks10/wasserstein_mean_middle.txt
+BASENAME=wasserstein_mean_middle
+TARGETS(first few)=S0181_2 S0147_2 S0204_2 S0169_2 S0116_1 S0189_2 S0140_1 S0139_2 S0193_1 S0185_2
+[PRETRAIN] pretrain_setting exists. Reusing: /home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/model/common_k10/pretrain_setting_wasserstein_mean_middle.pkl
+----- RUN: ONLY_TARGET -----
+2025-09-20 11:11:56.552020: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-20 11:11:57.176443: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-20 11:11:57.544053: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1758334317.865216 4082529 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1758334317.952460 4082529 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1758334318.695936 4082529 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758334318.696116 4082529 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758334318.696121 4082529 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758334318.696124 4082529 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-20 11:11:58.773980: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-09-20 11:12:10,680 - INFO - [RUN] model=RF | domain_mixup=disabled | coral=disabled | vae=disabled | sample_size=None | seed=42 | fold=None | tag=rank_wasserstein_mean_middle | subject_wise_split=disabled | feature_selection=rf | data_leak=disabled
+2025-09-20 11:12:10,682 - INFO - Model type: common
+2025-09-20 11:12:10,751 - INFO - Loaded: ./data/processed/common/processed_S0181_2.csv
+2025-09-20 11:12:10,808 - INFO - Loaded: ./data/processed/common/processed_S0147_2.csv
+2025-09-20 11:12:10,866 - INFO - Loaded: ./data/processed/common/processed_S0204_2.csv
+2025-09-20 11:12:10,914 - INFO - Loaded: ./data/processed/common/processed_S0169_2.csv
+2025-09-20 11:12:10,969 - INFO - Loaded: ./data/processed/common/processed_S0116_1.csv
+2025-09-20 11:12:11,018 - INFO - Loaded: ./data/processed/common/processed_S0189_2.csv
+2025-09-20 11:12:11,072 - INFO - Loaded: ./data/processed/common/processed_S0140_1.csv
+2025-09-20 11:12:11,115 - INFO - Loaded: ./data/processed/common/processed_S0139_2.csv
+2025-09-20 11:12:11,160 - INFO - Loaded: ./data/processed/common/processed_S0193_1.csv
+2025-09-20 11:12:11,202 - INFO - Loaded: ./data/processed/common/processed_S0185_2.csv
+2025-09-20 11:12:11,277 - INFO - [split:subject_time_split|time_stratify=False] global  : n=7691, pos=308, pos_ratio=0.040
+2025-09-20 11:12:11,277 - INFO - [split:subject_time_split|time_stratify=False] train   : n=6148, pos=241, pos_ratio=0.039, |Δ|=0.001
+2025-09-20 11:12:11,277 - INFO - [split:subject_time_split|time_stratify=False] val     : n=765, pos=34, pos_ratio=0.044, |Δ|=0.004
+2025-09-20 11:12:11,277 - INFO - [split:subject_time_split|time_stratify=False] test    : n=778, pos=33, pos_ratio=0.042, |Δ|=0.002
+2025-09-20 11:12:11,284 - INFO - y_train unique: [0. 1.], counts: {0.0: 5907, 1.0: 241}
+2025-09-20 11:12:17,224 - INFO - Selected features (RF importance): ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+2025-09-20 11:12:17,225 - INFO - Scaler was fit using only X_train (standard procedure).
+[I 2025-09-20 11:12:17,231] A new study created in memory with name: no-name-ed10d8ee-92fd-4fe3-92d7-5324190c0a5a
+[I 2025-09-20 11:12:28,651] Trial 0 finished with value: 0.5757688014031868 and parameters: {'n_estimators': 123, 'max_depth': 20, 'min_samples_split': 10, 'min_samples_leaf': 2}. Best is trial 0 with value: 0.5757688014031868.
+[I 2025-09-20 11:12:43,805] Trial 1 finished with value: 0.5731262157506164 and parameters: {'n_estimators': 166, 'max_depth': 23, 'min_samples_split': 4, 'min_samples_leaf': 2}. Best is trial 0 with value: 0.5757688014031868.
+2025-09-20 11:12:43,805 - INFO - Best hyperparameters: {'n_estimators': 123, 'max_depth': 20, 'min_samples_split': 10, 'min_samples_leaf': 2}
+2025-09-20 11:12:43,805 - INFO - Selected features (from input): ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+2025-09-20 11:12:44,803 - INFO - Saving RF with 3 features.
+2025-09-20 11:12:44,969 - INFO - [TRAIN_ONLY] Saved model, features, scaler -> _only_target_rank_wasserstein_mean_middle. Skipping evaluation.
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1228    2]
+[CV] Fold 0: AUC = 0.5475359560067683
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1229    1]
+[CV] Fold 1: AUC = 0.5134570642978002
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1229    1]
+[CV] Fold 2: AUC = 0.6224921806148371
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1228    1]
+[CV] Fold 3: AUC = 0.5745836861416879
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1226    3]
+[CV] Fold 4: AUC = 0.6207751199548405
+manual auc_list: [np.float64(0.5475359560067683), np.float64(0.5134570642978002), np.float64(0.6224921806148371), np.float64(0.5745836861416879), np.float64(0.6207751199548405)]
+manual auc mean (ignore nan): 0.5757688014031868
+cross_val_score: [0.54753596 0.51345706 0.62249218 0.57458369 0.62077512]
+X_train.shape: (6148, 135)
+X_train nan: 24 inf: 0
+X_train col nan count: [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  2  2  0  0  0  0  0  0 20  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+X_train all const col: ['Steering_FreqVar', 'SteeringSpeed_FreqVar', 'Lateral_FreqVar', 'LaneOffset_FreqVar', 'LongAcc_FreqVar']
+selected_features: ['steering_speed_pred_error', 'LongAcc_Median', 'SteeringSpeed_Median']
+y_train shape: (6148,)
+y_train nan: 0 unique: [0. 1.]
+X_train[selected_features] shape: (6148, 3)
+X_train[selected_features] col nan: [0 0 0]
+[CV] Fold 0: y_val bincount: [1182   48], y_pred bincount: [1229    1]
+[CV] Fold 0: AUC = 0.5436230964467005
+[CV] Fold 1: y_val bincount: [1182   48], y_pred bincount: [1230]
+[CV] Fold 1: AUC = 0.47387901861252113
+[CV] Fold 2: y_val bincount: [1181   49], y_pred bincount: [1230]
+[CV] Fold 2: AUC = 0.6191916224576197
+[CV] Fold 3: y_val bincount: [1181   48], y_pred bincount: [1229]
+[CV] Fold 3: AUC = 0.6029935788879481
+[CV] Fold 4: y_val bincount: [1181   48], y_pred bincount: [1227    2]
+[CV] Fold 4: AUC = 0.6259437623482924
+manual auc_list: [np.float64(0.5436230964467005), np.float64(0.47387901861252113), np.float64(0.6191916224576197), np.float64(0.6029935788879481), np.float64(0.6259437623482924)]
+manual auc mean (ignore nan): 0.5731262157506164
+cross_val_score: [0.5436231  0.47387902 0.61919162 0.60299358 0.62594376]
+=== DONE (BASENAME=wasserstein_mean_middle) ===
+
+=================================== RESOURCE INFORMATION ===================================
+ Requested Resource:
+ mem=128gb,walltime=24:00:00,ncpus=8,place=pack 
+ Used Resource: 
+ mem=735124kb,walltime=00:00:59,ncpus=8,cpupercent=56,vmem=2154276kb
+============================================================================================

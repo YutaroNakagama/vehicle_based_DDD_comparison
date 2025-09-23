@@ -1,0 +1,126 @@
+2025-07-19 22:21:13.032743: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-07-19 22:21:13.416685: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-07-19 22:21:13.744045: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1752931274.010497 4132386 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1752931274.081783 4132386 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1752931274.715947 4132386 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1752931274.716003 4132386 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1752931274.716005 4132386 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1752931274.716008 4132386 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-07-19 22:21:14.783207: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-07-19 22:21:20,862 - INFO - [RUN] model=RF | domain_mixup=disabled | coral=disabled | vae=disabled | sample_size=None | seed=42 | fold=None | tag=prefinetune_group2 | subject_wise_split=disabled | feature_selection=rf | data_leak=disabled
+2025-07-19 22:21:20,864 - INFO - Model type: common
+2025-07-19 22:21:20,864 - INFO - Finetuning with target subjects: ['S0197_1', 'S0134_1', 'S0196_1', 'S0178_1', 'S0134_2', 'S0140_1', 'S0181_1', 'S0174_2', 'S0113_1', 'S0181_2']
+2025-07-19 22:21:20,930 - INFO - Loaded: ./data/processed/common/processed_S0194_2.csv
+2025-07-19 22:21:20,990 - INFO - Loaded: ./data/processed/common/processed_S0153_2.csv
+2025-07-19 22:21:21,030 - INFO - Loaded: ./data/processed/common/processed_S0194_1.csv
+2025-07-19 22:21:21,095 - INFO - Loaded: ./data/processed/common/processed_S0135_2.csv
+2025-07-19 22:21:21,154 - INFO - Loaded: ./data/processed/common/processed_S0191_2.csv
+2025-07-19 22:21:21,211 - INFO - Loaded: ./data/processed/common/processed_S0173_1.csv
+2025-07-19 22:21:21,270 - INFO - Loaded: ./data/processed/common/processed_S0165_1.csv
+2025-07-19 22:21:21,329 - INFO - Loaded: ./data/processed/common/processed_S0213_2.csv
+2025-07-19 22:21:21,367 - INFO - Loaded: ./data/processed/common/processed_S0169_2.csv
+2025-07-19 22:21:21,423 - INFO - Loaded: ./data/processed/common/processed_S0116_2.csv
+2025-07-19 22:21:21,473 - INFO - Loaded: ./data/processed/common/processed_S0171_2.csv
+2025-07-19 22:21:21,513 - INFO - Loaded: ./data/processed/common/processed_S0170_1.csv
+2025-07-19 22:21:21,562 - INFO - Loaded: ./data/processed/common/processed_S0173_2.csv
+2025-07-19 22:21:21,616 - INFO - Loaded: ./data/processed/common/processed_S0155_1.csv
+2025-07-19 22:21:21,657 - INFO - Loaded: ./data/processed/common/processed_S0189_2.csv
+2025-07-19 22:21:21,713 - INFO - Loaded: ./data/processed/common/processed_S0136_1.csv
+2025-07-19 22:21:21,774 - INFO - Loaded: ./data/processed/common/processed_S0172_1.csv
+2025-07-19 22:21:21,816 - INFO - Loaded: ./data/processed/common/processed_S0170_2.csv
+2025-07-19 22:21:21,869 - INFO - Loaded: ./data/processed/common/processed_S0200_1.csv
+2025-07-19 22:21:21,919 - INFO - Loaded: ./data/processed/common/processed_S0202_2.csv
+2025-07-19 22:21:21,959 - INFO - Loaded: ./data/processed/common/processed_S0153_1.csv
+2025-07-19 22:21:22,013 - INFO - Loaded: ./data/processed/common/processed_S0201_2.csv
+2025-07-19 22:21:22,075 - INFO - Loaded: ./data/processed/common/processed_S0140_1.csv
+2025-07-19 22:21:22,131 - INFO - Loaded: ./data/processed/common/processed_S0154_1.csv
+2025-07-19 22:21:22,154 - INFO - Loaded: ./data/processed/common/processed_S0205_1.csv
+2025-07-19 22:21:22,178 - INFO - Loaded: ./data/processed/common/processed_S0207_1.csv
+2025-07-19 22:21:22,201 - INFO - Loaded: ./data/processed/common/processed_S0200_2.csv
+2025-07-19 22:21:22,244 - INFO - Loaded: ./data/processed/common/processed_S0134_1.csv
+2025-07-19 22:21:22,306 - INFO - Loaded: ./data/processed/common/processed_S0120_2.csv
+2025-07-19 22:21:22,361 - INFO - Loaded: ./data/processed/common/processed_S0116_1.csv
+2025-07-19 22:21:22,402 - INFO - Loaded: ./data/processed/common/processed_S0178_2.csv
+2025-07-19 22:21:22,454 - INFO - Loaded: ./data/processed/common/processed_S0188_2.csv
+2025-07-19 22:21:22,509 - INFO - Loaded: ./data/processed/common/processed_S0165_2.csv
+2025-07-19 22:21:22,563 - INFO - Loaded: ./data/processed/common/processed_S0185_1.csv
+2025-07-19 22:21:22,585 - INFO - Loaded: ./data/processed/common/processed_S0185_2.csv
+2025-07-19 22:21:22,609 - INFO - Loaded: ./data/processed/common/processed_S0113_1.csv
+2025-07-19 22:21:22,663 - INFO - Loaded: ./data/processed/common/processed_S0188_1.csv
+2025-07-19 22:21:22,689 - INFO - Loaded: ./data/processed/common/processed_S0204_1.csv
+2025-07-19 22:21:22,731 - INFO - Loaded: ./data/processed/common/processed_S0209_1.csv
+2025-07-19 22:21:22,772 - INFO - Loaded: ./data/processed/common/processed_S0167_2.csv
+2025-07-19 22:21:22,798 - INFO - Loaded: ./data/processed/common/processed_S0197_1.csv
+2025-07-19 22:21:22,821 - INFO - Loaded: ./data/processed/common/processed_S0156_1.csv
+2025-07-19 22:21:22,844 - INFO - Loaded: ./data/processed/common/processed_S0210_1.csv
+2025-07-19 22:21:22,895 - INFO - Loaded: ./data/processed/common/processed_S0199_2.csv
+2025-07-19 22:21:22,918 - INFO - Loaded: ./data/processed/common/processed_S0168_2.csv
+2025-07-19 22:21:22,942 - INFO - Loaded: ./data/processed/common/processed_S0210_2.csv
+2025-07-19 22:21:22,966 - INFO - Loaded: ./data/processed/common/processed_S0193_1.csv
+2025-07-19 22:21:23,025 - INFO - Loaded: ./data/processed/common/processed_S0120_1.csv
+2025-07-19 22:21:23,048 - INFO - Loaded: ./data/processed/common/processed_S0202_1.csv
+2025-07-19 22:21:23,068 - INFO - Loaded: ./data/processed/common/processed_S0190_1.csv
+2025-07-19 22:21:23,092 - INFO - Loaded: ./data/processed/common/processed_S0207_2.csv
+2025-07-19 22:21:23,115 - INFO - Loaded: ./data/processed/common/processed_S0206_2.csv
+2025-07-19 22:21:23,160 - INFO - Loaded: ./data/processed/common/processed_S0139_2.csv
+2025-07-19 22:21:23,181 - INFO - Loaded: ./data/processed/common/processed_S0168_1.csv
+2025-07-19 22:21:23,232 - INFO - Loaded: ./data/processed/common/processed_S0139_1.csv
+2025-07-19 22:21:23,256 - INFO - Loaded: ./data/processed/common/processed_S0201_1.csv
+2025-07-19 22:21:23,282 - INFO - Loaded: ./data/processed/common/processed_S0148_1.csv
+2025-07-19 22:21:23,307 - INFO - Loaded: ./data/processed/common/processed_S0189_1.csv
+2025-07-19 22:21:23,350 - INFO - Loaded: ./data/processed/common/processed_S0196_1.csv
+2025-07-19 22:21:23,373 - INFO - Loaded: ./data/processed/common/processed_S0167_1.csv
+2025-07-19 22:21:23,424 - INFO - Loaded: ./data/processed/common/processed_S0206_1.csv
+2025-07-19 22:21:23,463 - INFO - Loaded: ./data/processed/common/processed_S0209_2.csv
+2025-07-19 22:21:23,485 - INFO - Loaded: ./data/processed/common/processed_S0154_2.csv
+2025-07-19 22:21:23,508 - INFO - Loaded: ./data/processed/common/processed_S0148_2.csv
+2025-07-19 22:21:23,559 - INFO - Loaded: ./data/processed/common/processed_S0169_1.csv
+2025-07-19 22:21:23,588 - INFO - Loaded: ./data/processed/common/processed_S0204_2.csv
+2025-07-19 22:21:23,611 - INFO - Loaded: ./data/processed/common/processed_S0147_2.csv
+2025-07-19 22:21:23,634 - INFO - Loaded: ./data/processed/common/processed_S0172_2.csv
+2025-07-19 22:21:23,656 - INFO - Loaded: ./data/processed/common/processed_S0136_2.csv
+2025-07-19 22:21:23,679 - INFO - Loaded: ./data/processed/common/processed_S0198_2.csv
+2025-07-19 22:21:23,702 - INFO - Loaded: ./data/processed/common/processed_S0193_2.csv
+2025-07-19 22:21:23,723 - INFO - Loaded: ./data/processed/common/processed_S0190_2.csv
+2025-07-19 22:21:23,765 - INFO - Loaded: ./data/processed/common/processed_S0181_2.csv
+2025-07-19 22:21:23,789 - INFO - Loaded: ./data/processed/common/processed_S0134_2.csv
+2025-07-19 22:21:23,814 - INFO - Loaded: ./data/processed/common/processed_S0181_1.csv
+2025-07-19 22:21:23,857 - INFO - Loaded: ./data/processed/common/processed_S0171_1.csv
+2025-07-19 22:21:23,913 - INFO - Loaded: ./data/processed/common/processed_S0174_2.csv
+2025-07-19 22:21:23,937 - INFO - Loaded: ./data/processed/common/processed_S0198_1.csv
+2025-07-19 22:21:23,960 - INFO - Loaded: ./data/processed/common/processed_S0205_2.csv
+2025-07-19 22:21:23,984 - INFO - Loaded: ./data/processed/common/processed_S0178_1.csv
+2025-07-19 22:21:24,008 - INFO - Loaded: ./data/processed/common/processed_S0199_1.csv
+2025-07-19 22:21:24,030 - INFO - Loaded: ./data/processed/common/processed_S0186_2.csv
+2025-07-19 22:21:24,053 - INFO - Loaded: ./data/processed/common/processed_S0156_2.csv
+2025-07-19 22:21:24,076 - INFO - Loaded: ./data/processed/common/processed_S0155_2.csv
+2025-07-19 22:21:24,100 - INFO - Loaded: ./data/processed/common/processed_S0140_2.csv
+2025-07-19 22:21:24,123 - INFO - Loaded: ./data/processed/common/processed_S0196_2.csv
+2025-07-19 22:21:24,146 - INFO - Loaded: ./data/processed/common/processed_S0186_1.csv
+2025-07-19 22:21:24,202 - INFO - Splitting data by subject.
+2025-07-19 22:21:24,202 - INFO -   Train subjects (85): ['S0139_1', 'S0120_1', 'S0116_2', 'S0120_2', 'S0116_1', 'S0204_1', 'S0148_1', 'S0189_1', 'S0171_1', 'S0135_2', 'S0140_2', 'S0155_1', 'S0171_2', 'S0172_1', 'S0167_1', 'S0198_1', 'S0202_1', 'S0153_2', 'S0155_2', 'S0189_2', 'S0204_2', 'S0170_1', 'S0178_2', 'S0201_1', 'S0194_1', 'S0207_1', 'S0207_2', 'S0198_2', 'S0156_1', 'S0196_2', 'S0201_2', 'S0206_1', 'S0186_2', 'S0199_1', 'S0173_1', 'S0165_1', 'S0209_1', 'S0172_2', 'S0210_2', 'S0200_1', 'S0193_1', 'S0165_2', 'S0210_1', 'S0205_1', 'S0213_2', 'S0205_2', 'S0199_2', 'S0202_2', 'S0186_1', 'S0156_2', 'S0136_1', 'S0191_2', 'S0206_2', 'S0167_2', 'S0209_2', 'S0173_2', 'S0169_1', 'S0148_2', 'S0200_2', 'S0185_1', 'S0136_2', 'S0193_2', 'S0194_2', 'S0147_2', 'S0185_2', 'S0170_2', 'S0139_2', 'S0168_2', 'S0168_1', 'S0154_2', 'S0169_2', 'S0188_2', 'S0188_1', 'S0190_2', 'S0154_1', 'S0153_1', 'S0190_1', 'S0140_1', 'S0197_1', 'S0174_2', 'S0196_1', 'S0181_2', 'S0134_2', 'S0178_1', 'S0181_1']
+2025-07-19 22:21:24,202 - INFO -   Validation subjects (1): ['S0113_1']
+2025-07-19 22:21:24,202 - INFO -   Test subjects (1): ['S0134_1']
+2025-07-19 22:21:24,262 - INFO - Filtered data from 70841 to 64622 rows based on KSS labels.
+2025-07-19 22:21:24,365 - INFO - Data splitting summary:
+2025-07-19 22:21:24,366 - INFO -   X_train shape: (62846, 136), y_train distribution: {0.0: 48483, 1.0: 14363}
+2025-07-19 22:21:24,366 - INFO -   X_val shape: (802, 136), y_val distribution: {0.0: 704, 1.0: 98}
+2025-07-19 22:21:24,366 - INFO -   X_test shape: (812, 136), y_test distribution: {0.0: 630, 1.0: 182}
+2025-07-19 22:21:24,400 - INFO - y_train unique: [0. 1.], counts: {0.0: 48483, 1.0: 14363}
+2025-07-19 22:23:42,402 - INFO - Selected features (RF importance): ['steering_pred_error', 'long_acc_pred_error', 'steering_speed_pred_error', 'Steering_Skewness', 'lat_acc_pred_error', 'Lateral_Kurtosis', 'SteeringSpeed_Skewness', 'LongAcc_Kurtosis', 'Steering_Kurtosis', 'SteeringSpeed_Kurtosis']
+2025-07-19 22:23:42,406 - INFO - Scaler was fit using only X_train (standard procedure).
+[I 2025-07-19 22:23:42,415] A new study created in memory with name: no-name-10e92670-cdcf-46d5-a369-918945d47ec5
+[I 2025-07-19 22:32:26,544] Trial 0 finished with value: 0.6902586904060469 and parameters: {'n_estimators': 146, 'max_depth': 15, 'min_samples_split': 7, 'min_samples_leaf': 4}. Best is trial 0 with value: 0.6902586904060469.
+[I 2025-07-19 22:44:30,520] Trial 1 finished with value: 0.7041498419575178 and parameters: {'n_estimators': 201, 'max_depth': 15, 'min_samples_split': 6, 'min_samples_leaf': 2}. Best is trial 1 with value: 0.7041498419575178.
+[I 2025-07-19 22:51:13,149] Trial 2 finished with value: 0.5813413448614879 and parameters: {'n_estimators': 171, 'max_depth': 9, 'min_samples_split': 7, 'min_samples_leaf': 5}. Best is trial 1 with value: 0.7041498419575178.
+=>> PBS: job killed: walltime 1822 exceeded limit 1800
+
+=================================== RESOURCE INFORMATION ===================================
+ Requested Resource:
+ mem=128gb,walltime=00:30:00,ncpus=8,place=pack 
+ Used Resource: 
+ mem=1060892kb,walltime=00:30:33,ncpus=8,cpupercent=100,vmem=2486428kb
+============================================================================================

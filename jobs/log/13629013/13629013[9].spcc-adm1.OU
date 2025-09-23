@@ -1,0 +1,131 @@
+=== JOB INFO ===
+IDX=9
+NAME(line)=results/ranks/mmd_mean_middle.txt
+GROUP_FILE=/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/results/ranks/mmd_mean_middle.txt
+BASENAME=mmd_mean_middle
+TARGETS(first few)=S0206_1 S0165_1 S0193_1 S0206_2 S0202_1 S0168_2 S0113_1 S0140_1 S0155_2 S0209_2
+[PRETRAIN] pretrain_setting exists. Reusing: /home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/model/common/pretrain_setting_mmd_mean_middle.pkl
+----- RUN: EVAL-ONLY (no fine-tune) -----
+2025-08-16 09:20:52.835410: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-08-16 09:20:53.227503: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-08-16 09:20:53.563963: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1755303653.829488 1684842 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1755303653.903520 1684842 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1755303654.544876 1684842 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1755303654.544922 1684842 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1755303654.544925 1684842 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1755303654.544927 1684842 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-08-16 09:20:54.615311: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-08-16 09:21:00,987 - INFO - [RUN] model=RF | domain_mixup=disabled | coral=disabled | vae=disabled | sample_size=None | seed=42 | fold=None | tag=rank_mmd_mean_middle | subject_wise_split=disabled | feature_selection=rf | data_leak=disabled
+2025-08-16 09:21:00,989 - INFO - Model type: common
+2025-08-16 09:21:00,989 - INFO - Finetuning with target subjects: ['S0206_1', 'S0165_1', 'S0193_1', 'S0206_2', 'S0202_1', 'S0168_2', 'S0113_1', 'S0140_1', 'S0155_2', 'S0209_2']
+2025-08-16 09:21:01,041 - INFO - Loaded: ./data/processed/common/processed_S0139_1.csv
+2025-08-16 09:21:01,091 - INFO - Loaded: ./data/processed/common/processed_S0120_1.csv
+2025-08-16 09:21:01,139 - INFO - Loaded: ./data/processed/common/processed_S0116_2.csv
+2025-08-16 09:21:01,188 - INFO - Loaded: ./data/processed/common/processed_S0120_2.csv
+2025-08-16 09:21:01,235 - INFO - Loaded: ./data/processed/common/processed_S0116_1.csv
+2025-08-16 09:21:01,281 - INFO - Loaded: ./data/processed/common/processed_S0204_1.csv
+2025-08-16 09:21:01,329 - INFO - Loaded: ./data/processed/common/processed_S0148_1.csv
+2025-08-16 09:21:01,376 - INFO - Loaded: ./data/processed/common/processed_S0189_1.csv
+2025-08-16 09:21:01,424 - INFO - Loaded: ./data/processed/common/processed_S0171_1.csv
+2025-08-16 09:21:01,471 - INFO - Loaded: ./data/processed/common/processed_S0135_2.csv
+2025-08-16 09:21:01,518 - INFO - Loaded: ./data/processed/common/processed_S0197_1.csv
+2025-08-16 09:21:01,564 - INFO - Loaded: ./data/processed/common/processed_S0134_1.csv
+2025-08-16 09:21:01,627 - INFO - Loaded: ./data/processed/common/processed_S0196_1.csv
+2025-08-16 09:21:01,651 - INFO - Loaded: ./data/processed/common/processed_S0178_1.csv
+2025-08-16 09:21:01,675 - INFO - Loaded: ./data/processed/common/processed_S0134_2.csv
+2025-08-16 09:21:01,736 - INFO - Loaded: ./data/processed/common/processed_S0181_1.csv
+2025-08-16 09:21:01,779 - INFO - Loaded: ./data/processed/common/processed_S0174_2.csv
+2025-08-16 09:21:01,840 - INFO - Loaded: ./data/processed/common/processed_S0181_2.csv
+2025-08-16 09:21:01,881 - INFO - Loaded: ./data/processed/common/processed_S0140_2.csv
+2025-08-16 09:21:01,923 - INFO - Loaded: ./data/processed/common/processed_S0155_1.csv
+2025-08-16 09:21:01,965 - INFO - Loaded: ./data/processed/common/processed_S0171_2.csv
+2025-08-16 09:21:02,013 - INFO - Loaded: ./data/processed/common/processed_S0172_1.csv
+2025-08-16 09:21:02,055 - INFO - Loaded: ./data/processed/common/processed_S0167_1.csv
+2025-08-16 09:21:02,100 - INFO - Loaded: ./data/processed/common/processed_S0198_1.csv
+2025-08-16 09:21:02,158 - INFO - Loaded: ./data/processed/common/processed_S0153_2.csv
+2025-08-16 09:21:02,199 - INFO - Loaded: ./data/processed/common/processed_S0189_2.csv
+2025-08-16 09:21:02,254 - INFO - Loaded: ./data/processed/common/processed_S0204_2.csv
+2025-08-16 09:21:02,294 - INFO - Loaded: ./data/processed/common/processed_S0170_1.csv
+2025-08-16 09:21:02,334 - INFO - Loaded: ./data/processed/common/processed_S0178_2.csv
+2025-08-16 09:21:02,374 - INFO - Loaded: ./data/processed/common/processed_S0201_1.csv
+2025-08-16 09:21:02,417 - INFO - Loaded: ./data/processed/common/processed_S0194_1.csv
+2025-08-16 09:21:02,461 - INFO - Loaded: ./data/processed/common/processed_S0207_1.csv
+2025-08-16 09:21:02,522 - INFO - Loaded: ./data/processed/common/processed_S0207_2.csv
+2025-08-16 09:21:02,555 - INFO - Loaded: ./data/processed/common/processed_S0198_2.csv
+2025-08-16 09:21:02,584 - INFO - Loaded: ./data/processed/common/processed_S0156_1.csv
+2025-08-16 09:21:02,642 - INFO - Loaded: ./data/processed/common/processed_S0196_2.csv
+2025-08-16 09:21:02,667 - INFO - Loaded: ./data/processed/common/processed_S0201_2.csv
+2025-08-16 09:21:02,708 - INFO - Loaded: ./data/processed/common/processed_S0186_2.csv
+2025-08-16 09:21:02,754 - INFO - Loaded: ./data/processed/common/processed_S0199_1.csv
+2025-08-16 09:21:02,800 - INFO - Loaded: ./data/processed/common/processed_S0173_1.csv
+2025-08-16 09:21:02,858 - INFO - Loaded: ./data/processed/common/processed_S0209_1.csv
+2025-08-16 09:21:02,901 - INFO - Loaded: ./data/processed/common/processed_S0172_2.csv
+2025-08-16 09:21:02,941 - INFO - Loaded: ./data/processed/common/processed_S0210_2.csv
+2025-08-16 09:21:02,984 - INFO - Loaded: ./data/processed/common/processed_S0200_1.csv
+2025-08-16 09:21:03,042 - INFO - Loaded: ./data/processed/common/processed_S0165_2.csv
+2025-08-16 09:21:03,081 - INFO - Loaded: ./data/processed/common/processed_S0210_1.csv
+2025-08-16 09:21:03,121 - INFO - Loaded: ./data/processed/common/processed_S0205_1.csv
+2025-08-16 09:21:03,164 - INFO - Loaded: ./data/processed/common/processed_S0213_2.csv
+2025-08-16 09:21:03,204 - INFO - Loaded: ./data/processed/common/processed_S0205_2.csv
+2025-08-16 09:21:03,245 - INFO - Loaded: ./data/processed/common/processed_S0199_2.csv
+2025-08-16 09:21:03,288 - INFO - Loaded: ./data/processed/common/processed_S0202_2.csv
+2025-08-16 09:21:03,329 - INFO - Loaded: ./data/processed/common/processed_S0186_1.csv
+2025-08-16 09:21:03,371 - INFO - Loaded: ./data/processed/common/processed_S0156_2.csv
+2025-08-16 09:21:03,413 - INFO - Loaded: ./data/processed/common/processed_S0136_1.csv
+2025-08-16 09:21:03,453 - INFO - Loaded: ./data/processed/common/processed_S0191_2.csv
+2025-08-16 09:21:03,510 - INFO - Loaded: ./data/processed/common/processed_S0167_2.csv
+2025-08-16 09:21:03,551 - INFO - Loaded: ./data/processed/common/processed_S0173_2.csv
+2025-08-16 09:21:03,600 - INFO - Loaded: ./data/processed/common/processed_S0169_1.csv
+2025-08-16 09:21:03,655 - INFO - Loaded: ./data/processed/common/processed_S0148_2.csv
+2025-08-16 09:21:03,710 - INFO - Loaded: ./data/processed/common/processed_S0200_2.csv
+2025-08-16 09:21:03,765 - INFO - Loaded: ./data/processed/common/processed_S0185_1.csv
+2025-08-16 09:21:03,819 - INFO - Loaded: ./data/processed/common/processed_S0136_2.csv
+2025-08-16 09:21:03,841 - INFO - Loaded: ./data/processed/common/processed_S0193_2.csv
+2025-08-16 09:21:03,893 - INFO - Loaded: ./data/processed/common/processed_S0194_2.csv
+2025-08-16 09:21:03,916 - INFO - Loaded: ./data/processed/common/processed_S0147_2.csv
+2025-08-16 09:21:03,939 - INFO - Loaded: ./data/processed/common/processed_S0185_2.csv
+2025-08-16 09:21:03,961 - INFO - Loaded: ./data/processed/common/processed_S0170_2.csv
+2025-08-16 09:21:03,982 - INFO - Loaded: ./data/processed/common/processed_S0139_2.csv
+2025-08-16 09:21:04,003 - INFO - Loaded: ./data/processed/common/processed_S0168_1.csv
+2025-08-16 09:21:04,026 - INFO - Loaded: ./data/processed/common/processed_S0154_2.csv
+2025-08-16 09:21:04,047 - INFO - Loaded: ./data/processed/common/processed_S0169_2.csv
+2025-08-16 09:21:04,069 - INFO - Loaded: ./data/processed/common/processed_S0188_2.csv
+2025-08-16 09:21:04,108 - INFO - Loaded: ./data/processed/common/processed_S0188_1.csv
+2025-08-16 09:21:04,161 - INFO - Loaded: ./data/processed/common/processed_S0190_2.csv
+2025-08-16 09:21:04,182 - INFO - Loaded: ./data/processed/common/processed_S0154_1.csv
+2025-08-16 09:21:04,202 - INFO - Loaded: ./data/processed/common/processed_S0153_1.csv
+2025-08-16 09:21:04,236 - INFO - Loaded: ./data/processed/common/processed_S0190_1.csv
+2025-08-16 09:21:04,282 - INFO - [EvalOnly] Found existing pretrained model/scaler. Skipping retrain.
+2025-08-16 09:21:04,633 - INFO - [EvalOnly] Loaded model features: ./model/common/selected_features_train_RF_pretrain_general.pkl (10 cols)
+2025-08-16 09:21:04,655 - INFO - Loaded: ./data/processed/common/processed_S0206_1.csv
+2025-08-16 09:21:04,676 - INFO - Loaded: ./data/processed/common/processed_S0165_1.csv
+2025-08-16 09:21:04,697 - INFO - Loaded: ./data/processed/common/processed_S0193_1.csv
+2025-08-16 09:21:04,718 - INFO - Loaded: ./data/processed/common/processed_S0206_2.csv
+2025-08-16 09:21:04,742 - INFO - Loaded: ./data/processed/common/processed_S0202_1.csv
+2025-08-16 09:21:04,763 - INFO - Loaded: ./data/processed/common/processed_S0168_2.csv
+2025-08-16 09:21:04,787 - INFO - Loaded: ./data/processed/common/processed_S0113_1.csv
+2025-08-16 09:21:04,811 - INFO - Loaded: ./data/processed/common/processed_S0140_1.csv
+2025-08-16 09:21:04,834 - INFO - Loaded: ./data/processed/common/processed_S0155_2.csv
+2025-08-16 09:21:04,856 - INFO - Loaded: ./data/processed/common/processed_S0209_2.csv
+2025-08-16 09:21:04,906 - WARNING - [EvalOnly] feature mismatch before alignment: missing_in_val=[] extra_in_val=['Steering_Range', 'Steering_StdDev', 'Steering_Energy', 'Steering_ZeroCrossingRate', 'Steering_Quartile25']
+2025-08-16 09:21:04,906 - WARNING - [EvalOnly] feature mismatch (test) before alignment: missing_in_test=[] extra_in_test=['Steering_Range', 'Steering_StdDev', 'Steering_Energy', 'Steering_ZeroCrossingRate', 'Steering_Quartile25']
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/bin/train.py", line 273, in <module>
+    main()
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/bin/train.py", line 270, in main
+    mp.train_pipeline(**pipeline_args)
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/model_pipeline.py", line 484, in train_pipeline
+    X_val_aligned  = _align_features(X_val,  selected_features, scaler)
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/model_pipeline.py", line 465, in _align_features
+    X_df = pd.DataFrame(X_df).copy()
+NameError: free variable 'pd' referenced before assignment in enclosing scope
+
+=================================== RESOURCE INFORMATION ===================================
+ Requested Resource:
+ mem=128gb,walltime=24:00:00,ncpus=8,place=pack 
+ Used Resource: 
+ mem=490508kb,walltime=00:00:20,ncpus=8,cpupercent=22,vmem=1579492kb
+============================================================================================

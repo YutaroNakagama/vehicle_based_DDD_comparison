@@ -1,0 +1,181 @@
+=== JOB INFO ===
+IDX=2
+GROUP_FILE=/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/results/ranks10/wasserstein_mean_middle.txt
+BASENAME=wasserstein_mean_middle
+TARGETS(first few)=S0181_2 S0147_2 S0204_2 S0169_2 S0116_1 S0189_2 S0140_1 S0139_2 S0193_1 S0185_2
+[PRETRAIN] pretrain_setting exists. Reusing: /home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/model/common_k10/pretrain_setting_wasserstein_mean_middle.pkl
+----- RUN: ONLY_GENERAL -----
+2025-09-19 21:13:14.859330: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-19 21:13:15.242085: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-19 21:13:15.580374: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1758283995.849151  490192 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1758283995.924912  490192 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1758283996.573016  490192 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758283996.573073  490192 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758283996.573075  490192 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758283996.573077  490192 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-19 21:13:16.644398: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-09-19 21:13:23,578 - INFO - [RUN] model=RF | domain_mixup=disabled | coral=disabled | vae=disabled | sample_size=None | seed=42 | fold=None | tag=rank_wasserstein_mean_middle | subject_wise_split=disabled | feature_selection=rf | data_leak=disabled
+2025-09-19 21:13:23,580 - INFO - Model type: common
+2025-09-19 21:13:23,580 - INFO - Finetuning with target subjects: ['S0181_2', 'S0147_2', 'S0204_2', 'S0169_2', 'S0116_1', 'S0189_2', 'S0140_1', 'S0139_2', 'S0193_1', 'S0185_2']
+2025-09-19 21:13:23,638 - INFO - Loaded: ./data/processed/common/processed_S0139_1.csv
+2025-09-19 21:13:23,694 - INFO - Loaded: ./data/processed/common/processed_S0120_1.csv
+2025-09-19 21:13:23,752 - INFO - Loaded: ./data/processed/common/processed_S0116_2.csv
+2025-09-19 21:13:23,806 - INFO - Loaded: ./data/processed/common/processed_S0120_2.csv
+2025-09-19 21:13:23,879 - INFO - Loaded: ./data/processed/common/processed_S0204_1.csv
+2025-09-19 21:13:23,932 - INFO - Loaded: ./data/processed/common/processed_S0148_1.csv
+2025-09-19 21:13:23,985 - INFO - Loaded: ./data/processed/common/processed_S0189_1.csv
+2025-09-19 21:13:24,038 - INFO - Loaded: ./data/processed/common/processed_S0171_1.csv
+2025-09-19 21:13:24,086 - INFO - Loaded: ./data/processed/common/processed_S0135_2.csv
+2025-09-19 21:13:24,138 - INFO - Loaded: ./data/processed/common/processed_S0197_1.csv
+2025-09-19 21:13:24,193 - INFO - Loaded: ./data/processed/common/processed_S0134_1.csv
+2025-09-19 21:13:24,264 - INFO - Loaded: ./data/processed/common/processed_S0196_1.csv
+2025-09-19 21:13:24,300 - INFO - Loaded: ./data/processed/common/processed_S0178_1.csv
+2025-09-19 21:13:24,333 - INFO - Loaded: ./data/processed/common/processed_S0134_2.csv
+2025-09-19 21:13:24,397 - INFO - Loaded: ./data/processed/common/processed_S0181_1.csv
+2025-09-19 21:13:24,449 - INFO - Loaded: ./data/processed/common/processed_S0174_2.csv
+2025-09-19 21:13:24,504 - INFO - Loaded: ./data/processed/common/processed_S0113_1.csv
+2025-09-19 21:13:24,569 - INFO - Loaded: ./data/processed/common/processed_S0140_2.csv
+2025-09-19 21:13:24,619 - INFO - Loaded: ./data/processed/common/processed_S0155_1.csv
+2025-09-19 21:13:24,652 - INFO - Loaded: ./data/processed/common/processed_S0171_2.csv
+2025-09-19 21:13:24,710 - INFO - Loaded: ./data/processed/common/processed_S0172_1.csv
+2025-09-19 21:13:24,766 - INFO - Loaded: ./data/processed/common/processed_S0167_1.csv
+2025-09-19 21:13:24,818 - INFO - Loaded: ./data/processed/common/processed_S0198_1.csv
+2025-09-19 21:13:24,871 - INFO - Loaded: ./data/processed/common/processed_S0202_1.csv
+2025-09-19 21:13:24,919 - INFO - Loaded: ./data/processed/common/processed_S0153_2.csv
+2025-09-19 21:13:24,967 - INFO - Loaded: ./data/processed/common/processed_S0155_2.csv
+2025-09-19 21:13:25,028 - INFO - Loaded: ./data/processed/common/processed_S0170_1.csv
+2025-09-19 21:13:25,088 - INFO - Loaded: ./data/processed/common/processed_S0178_2.csv
+2025-09-19 21:13:25,148 - INFO - Loaded: ./data/processed/common/processed_S0201_1.csv
+2025-09-19 21:13:25,204 - INFO - Loaded: ./data/processed/common/processed_S0194_1.csv
+2025-09-19 21:13:25,255 - INFO - Loaded: ./data/processed/common/processed_S0207_1.csv
+2025-09-19 21:13:25,311 - INFO - Loaded: ./data/processed/common/processed_S0207_2.csv
+2025-09-19 21:13:25,340 - INFO - Loaded: ./data/processed/common/processed_S0198_2.csv
+2025-09-19 21:13:25,370 - INFO - Loaded: ./data/processed/common/processed_S0156_1.csv
+2025-09-19 21:13:25,402 - INFO - Loaded: ./data/processed/common/processed_S0196_2.csv
+2025-09-19 21:13:25,448 - INFO - Loaded: ./data/processed/common/processed_S0201_2.csv
+2025-09-19 21:13:25,502 - INFO - Loaded: ./data/processed/common/processed_S0206_1.csv
+2025-09-19 21:13:25,557 - INFO - Loaded: ./data/processed/common/processed_S0186_2.csv
+2025-09-19 21:13:25,621 - INFO - Loaded: ./data/processed/common/processed_S0199_1.csv
+2025-09-19 21:13:25,652 - INFO - Loaded: ./data/processed/common/processed_S0173_1.csv
+2025-09-19 21:13:25,684 - INFO - Loaded: ./data/processed/common/processed_S0165_1.csv
+2025-09-19 21:13:25,722 - INFO - Loaded: ./data/processed/common/processed_S0209_1.csv
+2025-09-19 21:13:25,768 - INFO - Loaded: ./data/processed/common/processed_S0172_2.csv
+2025-09-19 21:13:25,820 - INFO - Loaded: ./data/processed/common/processed_S0210_2.csv
+2025-09-19 21:13:25,885 - INFO - Loaded: ./data/processed/common/processed_S0200_1.csv
+2025-09-19 21:13:25,947 - INFO - Loaded: ./data/processed/common/processed_S0165_2.csv
+2025-09-19 21:13:26,013 - INFO - Loaded: ./data/processed/common/processed_S0210_1.csv
+2025-09-19 21:13:26,046 - INFO - Loaded: ./data/processed/common/processed_S0205_1.csv
+2025-09-19 21:13:26,078 - INFO - Loaded: ./data/processed/common/processed_S0213_2.csv
+2025-09-19 21:13:26,110 - INFO - Loaded: ./data/processed/common/processed_S0205_2.csv
+2025-09-19 21:13:26,152 - INFO - Loaded: ./data/processed/common/processed_S0199_2.csv
+2025-09-19 21:13:26,188 - INFO - Loaded: ./data/processed/common/processed_S0202_2.csv
+2025-09-19 21:13:26,237 - INFO - Loaded: ./data/processed/common/processed_S0186_1.csv
+2025-09-19 21:13:26,288 - INFO - Loaded: ./data/processed/common/processed_S0156_2.csv
+2025-09-19 21:13:26,339 - INFO - Loaded: ./data/processed/common/processed_S0136_1.csv
+2025-09-19 21:13:26,392 - INFO - Loaded: ./data/processed/common/processed_S0191_2.csv
+2025-09-19 21:13:26,442 - INFO - Loaded: ./data/processed/common/processed_S0206_2.csv
+2025-09-19 21:13:26,490 - INFO - Loaded: ./data/processed/common/processed_S0167_2.csv
+2025-09-19 21:13:26,539 - INFO - Loaded: ./data/processed/common/processed_S0209_2.csv
+2025-09-19 21:13:26,587 - INFO - Loaded: ./data/processed/common/processed_S0173_2.csv
+2025-09-19 21:13:26,634 - INFO - Loaded: ./data/processed/common/processed_S0169_1.csv
+2025-09-19 21:13:26,681 - INFO - Loaded: ./data/processed/common/processed_S0148_2.csv
+2025-09-19 21:13:26,733 - INFO - Loaded: ./data/processed/common/processed_S0200_2.csv
+2025-09-19 21:13:26,782 - INFO - Loaded: ./data/processed/common/processed_S0185_1.csv
+2025-09-19 21:13:26,846 - INFO - Loaded: ./data/processed/common/processed_S0136_2.csv
+2025-09-19 21:13:26,877 - INFO - Loaded: ./data/processed/common/processed_S0193_2.csv
+2025-09-19 21:13:26,907 - INFO - Loaded: ./data/processed/common/processed_S0194_2.csv
+2025-09-19 21:13:26,962 - INFO - Loaded: ./data/processed/common/processed_S0170_2.csv
+2025-09-19 21:13:27,015 - INFO - Loaded: ./data/processed/common/processed_S0168_2.csv
+2025-09-19 21:13:27,062 - INFO - Loaded: ./data/processed/common/processed_S0168_1.csv
+2025-09-19 21:13:27,108 - INFO - Loaded: ./data/processed/common/processed_S0154_2.csv
+2025-09-19 21:13:27,151 - INFO - Loaded: ./data/processed/common/processed_S0188_2.csv
+2025-09-19 21:13:27,206 - INFO - Loaded: ./data/processed/common/processed_S0188_1.csv
+2025-09-19 21:13:27,251 - INFO - Loaded: ./data/processed/common/processed_S0190_2.csv
+2025-09-19 21:13:27,296 - INFO - Loaded: ./data/processed/common/processed_S0154_1.csv
+2025-09-19 21:13:27,340 - INFO - Loaded: ./data/processed/common/processed_S0153_1.csv
+2025-09-19 21:13:27,387 - INFO - Loaded: ./data/processed/common/processed_S0190_1.csv
+2025-09-19 21:13:27,505 - INFO - [EvalOnly] Found existing pretrained model/scaler. Skipping retrain.
+2025-09-19 21:13:27,875 - INFO - [EvalOnly] Loaded model features: ./model/common/selected_features_train_RF_pretrain_general.pkl (10 cols)
+2025-09-19 21:13:27,913 - INFO - Loaded: ./data/processed/common/processed_S0181_2.csv
+2025-09-19 21:13:27,943 - INFO - Loaded: ./data/processed/common/processed_S0147_2.csv
+2025-09-19 21:13:27,971 - INFO - Loaded: ./data/processed/common/processed_S0204_2.csv
+2025-09-19 21:13:28,000 - INFO - Loaded: ./data/processed/common/processed_S0169_2.csv
+2025-09-19 21:13:28,034 - INFO - Loaded: ./data/processed/common/processed_S0116_1.csv
+2025-09-19 21:13:28,064 - INFO - Loaded: ./data/processed/common/processed_S0189_2.csv
+2025-09-19 21:13:28,100 - INFO - Loaded: ./data/processed/common/processed_S0140_1.csv
+2025-09-19 21:13:28,130 - INFO - Loaded: ./data/processed/common/processed_S0139_2.csv
+2025-09-19 21:13:28,160 - INFO - Loaded: ./data/processed/common/processed_S0193_1.csv
+2025-09-19 21:13:28,190 - INFO - Loaded: ./data/processed/common/processed_S0185_2.csv
+2025-09-19 21:13:28,270 - WARNING - [EvalOnly] feature mismatch before alignment: missing_in_val=[] extra_in_val=['Steering_Range', 'Steering_StdDev', 'Steering_Energy', 'Steering_ZeroCrossingRate', 'Steering_Quartile25']
+2025-09-19 21:13:28,270 - WARNING - [EvalOnly] feature mismatch (test) before alignment: missing_in_test=[] extra_in_test=['Steering_Range', 'Steering_StdDev', 'Steering_Energy', 'Steering_ZeroCrossingRate', 'Steering_Quartile25']
+2025-09-19 21:13:28,277 - INFO - [EvalOnly] scaler expects n_features=10, aligned_features=10
+2025-09-19 21:13:28,776 - INFO - [EvalOnly] val pos_ratio=0.246, pred_pos_ratio=0.208
+2025-09-19 21:13:28,777 - INFO - [EvalOnly] test pos_ratio=0.273, pred_pos_ratio=0.221
+2025-09-19 21:13:28,780 - INFO - [EvalOnly] val CM=
+[[551   5]
+ [ 33 148]]
+2025-09-19 21:13:28,783 - INFO - [EvalOnly] test CM=
+[[538   6]
+ [ 45 159]]
+2025-09-19 21:13:28,783 - INFO - [EvalOnly] RF on targets: val acc=0.948 auc=0.942 ap=0.912 | test acc=0.932 auc=0.939 ap=0.919
+2025-09-19 21:13:28,792 - INFO - [EvalOnly] Saved -> ./model/common/metrics_RF_rank_wasserstein_mean_middle_evalonly_on_targets.csv
+----- RUN: ONLY_TARGET -----
+2025-09-19 21:13:32.497776: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-19 21:13:32.502603: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-19 21:13:32.513985: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1758284012.533475  490225 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1758284012.538802  490225 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1758284012.555633  490225 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758284012.555731  490225 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758284012.555734  490225 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758284012.555737  490225 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-19 21:13:32.560612: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-09-19 21:13:36,319 - INFO - [RUN] model=RF | domain_mixup=disabled | coral=disabled | vae=disabled | sample_size=None | seed=42 | fold=None | tag=rank_wasserstein_mean_middle | subject_wise_split=disabled | feature_selection=rf | data_leak=disabled
+2025-09-19 21:13:36,319 - INFO - Model type: common
+2025-09-19 21:13:36,353 - INFO - Loaded: ./data/processed/common/processed_S0181_2.csv
+2025-09-19 21:13:36,384 - INFO - Loaded: ./data/processed/common/processed_S0147_2.csv
+2025-09-19 21:13:36,415 - INFO - Loaded: ./data/processed/common/processed_S0204_2.csv
+2025-09-19 21:13:36,445 - INFO - Loaded: ./data/processed/common/processed_S0169_2.csv
+2025-09-19 21:13:36,479 - INFO - Loaded: ./data/processed/common/processed_S0116_1.csv
+2025-09-19 21:13:36,511 - INFO - Loaded: ./data/processed/common/processed_S0189_2.csv
+2025-09-19 21:13:36,543 - INFO - Loaded: ./data/processed/common/processed_S0140_1.csv
+2025-09-19 21:13:36,571 - INFO - Loaded: ./data/processed/common/processed_S0139_2.csv
+2025-09-19 21:13:36,602 - INFO - Loaded: ./data/processed/common/processed_S0193_1.csv
+2025-09-19 21:13:36,633 - INFO - Loaded: ./data/processed/common/processed_S0185_2.csv
+2025-09-19 21:13:36,696 - INFO - [split:subject_time_split|time_stratify=False] global  : n=7398, pos=1856, pos_ratio=0.251
+2025-09-19 21:13:36,696 - INFO - [split:subject_time_split|time_stratify=False] train   : n=5913, pos=1471, pos_ratio=0.249, |Δ|=0.002
+2025-09-19 21:13:36,697 - INFO - [split:subject_time_split|time_stratify=False] val     : n=737, pos=181, pos_ratio=0.246, |Δ|=0.005
+2025-09-19 21:13:36,697 - INFO - [split:subject_time_split|time_stratify=False] test    : n=748, pos=204, pos_ratio=0.273, |Δ|=0.022
+2025-09-19 21:13:36,704 - INFO - y_train unique: [0. 1.], counts: {0.0: 4442, 1.0: 1471}
+2025-09-19 21:13:44,878 - INFO - Selected features (RF importance): ['steering_speed_pred_error', 'steering_pred_error', 'SteeringSpeed_Median', 'Steering_Skewness', 'Steering_Kurtosis', 'lane_offset_pred_error', 'LaneOffset_SpectralEntropy', 'SteeringSpeed_SampleEntropy', 'Lateral_FreqCOG', 'SteeringWheel_DDD']
+2025-09-19 21:13:44,889 - INFO - Scaler was fit using only X_train (standard procedure).
+2025-09-19 21:13:44,893 - INFO - [EVAL_ONLY] Loading pre-trained model and scaler...
+2025-09-19 21:13:45,414 - INFO - [EVAL_ONLY] Validation metrics: {
+  "accuracy": 0.6132971506105834,
+  "precision": 0.25,
+  "recall": 0.287292817679558,
+  "f1": 0.26735218508997427,
+  "auc": 0.5167534480702731,
+  "ap": 0.254862753340129
+}
+2025-09-19 21:13:45,414 - INFO - [EVAL_ONLY] Test metrics: {
+  "accuracy": 0.6550802139037433,
+  "precision": 0.3269230769230769,
+  "recall": 0.25,
+  "f1": 0.2833333333333333,
+  "auc": 0.5486141147635525,
+  "ap": 0.31707344495161055
+}
+=== DONE (BASENAME=wasserstein_mean_middle) ===
+
+=================================== RESOURCE INFORMATION ===================================
+ Requested Resource:
+ mem=128gb,walltime=24:00:00,ncpus=8,place=pack 
+ Used Resource: 
+ mem=711684kb,walltime=00:00:39,ncpus=8,cpupercent=51,vmem=10851932kb
+============================================================================================

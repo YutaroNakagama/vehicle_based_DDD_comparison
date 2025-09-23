@@ -1,0 +1,3 @@
+results/ranks10/mmd_mean_high.txt
+results/ranks10/mmd_mean_middle.txt
+results/ranks10/mmd_mean_low.txt

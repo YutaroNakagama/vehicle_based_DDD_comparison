@@ -1,0 +1,150 @@
+=== JOB START (MODEL=Lstm, SEED=42) ===
+2025-09-17 01:32:34.520097: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-17 01:32:34.972985: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+2025-09-17 01:32:35.312833: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1758040355.590233 3129515 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1758040355.677403 3129515 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1758040356.352548 3129515 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758040356.352609 3129515 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758040356.352611 3129515 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1758040356.352614 3129515 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-17 01:32:36.424895: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-09-17 01:32:47,309 - INFO - [RUN] model=Lstm | domain_mixup=disabled | coral=disabled | vae=disabled | sample_size=None | seed=42 | fold=None | tag=None | subject_wise_split=enabled | feature_selection=rf | data_leak=disabled
+2025-09-17 01:32:47,311 - INFO - Model type: Lstm
+2025-09-17 01:32:47,351 - INFO - Loaded: ./data/processed/Lstm/processed_S0139_1.csv
+2025-09-17 01:32:47,375 - INFO - Loaded: ./data/processed/Lstm/processed_S0120_1.csv
+2025-09-17 01:32:47,399 - INFO - Loaded: ./data/processed/Lstm/processed_S0116_2.csv
+2025-09-17 01:32:47,427 - INFO - Loaded: ./data/processed/Lstm/processed_S0120_2.csv
+2025-09-17 01:32:47,450 - INFO - Loaded: ./data/processed/Lstm/processed_S0116_1.csv
+2025-09-17 01:32:47,477 - INFO - Loaded: ./data/processed/Lstm/processed_S0204_1.csv
+2025-09-17 01:32:47,499 - INFO - Loaded: ./data/processed/Lstm/processed_S0148_1.csv
+2025-09-17 01:32:47,524 - INFO - Loaded: ./data/processed/Lstm/processed_S0189_1.csv
+2025-09-17 01:32:47,549 - INFO - Loaded: ./data/processed/Lstm/processed_S0171_1.csv
+2025-09-17 01:32:47,570 - INFO - Loaded: ./data/processed/Lstm/processed_S0135_2.csv
+2025-09-17 01:32:47,596 - INFO - Loaded: ./data/processed/Lstm/processed_S0197_1.csv
+2025-09-17 01:32:47,621 - INFO - Loaded: ./data/processed/Lstm/processed_S0134_1.csv
+2025-09-17 01:32:47,643 - INFO - Loaded: ./data/processed/Lstm/processed_S0196_1.csv
+2025-09-17 01:32:47,669 - INFO - Loaded: ./data/processed/Lstm/processed_S0178_1.csv
+2025-09-17 01:32:47,688 - INFO - Loaded: ./data/processed/Lstm/processed_S0134_2.csv
+2025-09-17 01:32:47,714 - INFO - Loaded: ./data/processed/Lstm/processed_S0140_1.csv
+2025-09-17 01:32:47,738 - INFO - Loaded: ./data/processed/Lstm/processed_S0181_1.csv
+2025-09-17 01:32:47,760 - INFO - Loaded: ./data/processed/Lstm/processed_S0174_2.csv
+2025-09-17 01:32:47,787 - INFO - Loaded: ./data/processed/Lstm/processed_S0113_1.csv
+2025-09-17 01:32:47,808 - INFO - Loaded: ./data/processed/Lstm/processed_S0181_2.csv
+2025-09-17 01:32:47,834 - INFO - Loaded: ./data/processed/Lstm/processed_S0140_2.csv
+2025-09-17 01:32:47,859 - INFO - Loaded: ./data/processed/Lstm/processed_S0155_1.csv
+2025-09-17 01:32:47,879 - INFO - Loaded: ./data/processed/Lstm/processed_S0171_2.csv
+2025-09-17 01:32:47,905 - INFO - Loaded: ./data/processed/Lstm/processed_S0172_1.csv
+2025-09-17 01:32:47,926 - INFO - Loaded: ./data/processed/Lstm/processed_S0167_1.csv
+2025-09-17 01:32:47,950 - INFO - Loaded: ./data/processed/Lstm/processed_S0198_1.csv
+2025-09-17 01:32:47,979 - INFO - Loaded: ./data/processed/Lstm/processed_S0202_1.csv
+2025-09-17 01:32:47,999 - INFO - Loaded: ./data/processed/Lstm/processed_S0153_2.csv
+2025-09-17 01:32:48,025 - INFO - Loaded: ./data/processed/Lstm/processed_S0155_2.csv
+2025-09-17 01:32:48,048 - INFO - Loaded: ./data/processed/Lstm/processed_S0189_2.csv
+2025-09-17 01:32:48,075 - INFO - Loaded: ./data/processed/Lstm/processed_S0204_2.csv
+2025-09-17 01:32:48,102 - INFO - Loaded: ./data/processed/Lstm/processed_S0170_1.csv
+2025-09-17 01:32:48,129 - INFO - Loaded: ./data/processed/Lstm/processed_S0178_2.csv
+2025-09-17 01:32:48,167 - INFO - Loaded: ./data/processed/Lstm/processed_S0201_1.csv
+2025-09-17 01:32:48,204 - INFO - Loaded: ./data/processed/Lstm/processed_S0194_1.csv
+2025-09-17 01:32:48,239 - INFO - Loaded: ./data/processed/Lstm/processed_S0207_1.csv
+2025-09-17 01:32:48,266 - INFO - Loaded: ./data/processed/Lstm/processed_S0207_2.csv
+2025-09-17 01:32:48,287 - INFO - Loaded: ./data/processed/Lstm/processed_S0198_2.csv
+2025-09-17 01:32:48,312 - INFO - Loaded: ./data/processed/Lstm/processed_S0156_1.csv
+2025-09-17 01:32:48,333 - INFO - Loaded: ./data/processed/Lstm/processed_S0196_2.csv
+2025-09-17 01:32:48,357 - INFO - Loaded: ./data/processed/Lstm/processed_S0201_2.csv
+2025-09-17 01:32:48,382 - INFO - Loaded: ./data/processed/Lstm/processed_S0206_1.csv
+2025-09-17 01:32:48,404 - INFO - Loaded: ./data/processed/Lstm/processed_S0186_2.csv
+2025-09-17 01:32:48,430 - INFO - Loaded: ./data/processed/Lstm/processed_S0199_1.csv
+2025-09-17 01:32:48,453 - INFO - Loaded: ./data/processed/Lstm/processed_S0173_1.csv
+2025-09-17 01:32:48,475 - INFO - Loaded: ./data/processed/Lstm/processed_S0165_1.csv
+2025-09-17 01:32:48,500 - INFO - Loaded: ./data/processed/Lstm/processed_S0209_1.csv
+2025-09-17 01:32:48,519 - INFO - Loaded: ./data/processed/Lstm/processed_S0172_2.csv
+2025-09-17 01:32:48,544 - INFO - Loaded: ./data/processed/Lstm/processed_S0210_2.csv
+2025-09-17 01:32:48,566 - INFO - Loaded: ./data/processed/Lstm/processed_S0200_1.csv
+2025-09-17 01:32:48,589 - INFO - Loaded: ./data/processed/Lstm/processed_S0193_1.csv
+2025-09-17 01:32:48,613 - INFO - Loaded: ./data/processed/Lstm/processed_S0165_2.csv
+2025-09-17 01:32:48,634 - INFO - Loaded: ./data/processed/Lstm/processed_S0210_1.csv
+2025-09-17 01:32:48,657 - INFO - Loaded: ./data/processed/Lstm/processed_S0205_1.csv
+2025-09-17 01:32:48,681 - INFO - Loaded: ./data/processed/Lstm/processed_S0213_2.csv
+2025-09-17 01:32:48,700 - INFO - Loaded: ./data/processed/Lstm/processed_S0205_2.csv
+2025-09-17 01:32:48,725 - INFO - Loaded: ./data/processed/Lstm/processed_S0199_2.csv
+2025-09-17 01:32:48,748 - INFO - Loaded: ./data/processed/Lstm/processed_S0202_2.csv
+2025-09-17 01:32:48,771 - INFO - Loaded: ./data/processed/Lstm/processed_S0186_1.csv
+2025-09-17 01:32:48,796 - INFO - Loaded: ./data/processed/Lstm/processed_S0156_2.csv
+2025-09-17 01:32:48,815 - INFO - Loaded: ./data/processed/Lstm/processed_S0136_1.csv
+2025-09-17 01:32:48,840 - INFO - Loaded: ./data/processed/Lstm/processed_S0191_2.csv
+2025-09-17 01:32:48,864 - INFO - Loaded: ./data/processed/Lstm/processed_S0206_2.csv
+2025-09-17 01:32:48,887 - INFO - Loaded: ./data/processed/Lstm/processed_S0167_2.csv
+2025-09-17 01:32:48,911 - INFO - Loaded: ./data/processed/Lstm/processed_S0209_2.csv
+2025-09-17 01:32:48,930 - INFO - Loaded: ./data/processed/Lstm/processed_S0173_2.csv
+2025-09-17 01:32:48,954 - INFO - Loaded: ./data/processed/Lstm/processed_S0169_1.csv
+2025-09-17 01:32:48,976 - INFO - Loaded: ./data/processed/Lstm/processed_S0148_2.csv
+2025-09-17 01:32:48,999 - INFO - Loaded: ./data/processed/Lstm/processed_S0200_2.csv
+2025-09-17 01:32:49,023 - INFO - Loaded: ./data/processed/Lstm/processed_S0185_1.csv
+2025-09-17 01:32:49,042 - INFO - Loaded: ./data/processed/Lstm/processed_S0136_2.csv
+2025-09-17 01:32:49,066 - INFO - Loaded: ./data/processed/Lstm/processed_S0193_2.csv
+2025-09-17 01:32:49,087 - INFO - Loaded: ./data/processed/Lstm/processed_S0194_2.csv
+2025-09-17 01:32:49,110 - INFO - Loaded: ./data/processed/Lstm/processed_S0147_2.csv
+2025-09-17 01:32:49,135 - INFO - Loaded: ./data/processed/Lstm/processed_S0185_2.csv
+2025-09-17 01:32:49,153 - INFO - Loaded: ./data/processed/Lstm/processed_S0170_2.csv
+2025-09-17 01:32:49,177 - INFO - Loaded: ./data/processed/Lstm/processed_S0139_2.csv
+2025-09-17 01:32:49,200 - INFO - Loaded: ./data/processed/Lstm/processed_S0168_2.csv
+2025-09-17 01:32:49,223 - INFO - Loaded: ./data/processed/Lstm/processed_S0168_1.csv
+2025-09-17 01:32:49,248 - INFO - Loaded: ./data/processed/Lstm/processed_S0154_2.csv
+2025-09-17 01:32:49,267 - INFO - Loaded: ./data/processed/Lstm/processed_S0169_2.csv
+2025-09-17 01:32:49,291 - INFO - Loaded: ./data/processed/Lstm/processed_S0188_2.csv
+2025-09-17 01:32:49,313 - INFO - Loaded: ./data/processed/Lstm/processed_S0188_1.csv
+2025-09-17 01:32:49,336 - INFO - Loaded: ./data/processed/Lstm/processed_S0190_2.csv
+2025-09-17 01:32:49,361 - INFO - Loaded: ./data/processed/Lstm/processed_S0154_1.csv
+2025-09-17 01:32:49,378 - INFO - Loaded: ./data/processed/Lstm/processed_S0153_1.csv
+2025-09-17 01:32:49,401 - INFO - Loaded: ./data/processed/Lstm/processed_S0190_1.csv
+Traceback (most recent call last):
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/pandas/core/indexes/base.py", line 3812, in get_loc
+    return self._engine.get_loc(casted_key)
+  File "pandas/_libs/index.pyx", line 167, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/index.pyx", line 196, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7088, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7096, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'Steering_Range'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/bin/train.py", line 364, in <module>
+    main()
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/bin/train.py", line 361, in main
+    mp.train_pipeline(**pipeline_args)
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/models/model_pipeline.py", line 853, in train_pipeline
+    data, feature_columns = load_subject_csvs(subject_list, model_type, add_subject_id=True)
+  File "/home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/src/utils/io/loaders.py", line 216, in load_subject_csvs
+    feature_columns = df_all.loc[:, start_col:end_col].columns.tolist()
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/pandas/core/indexing.py", line 1184, in __getitem__
+    return self._getitem_tuple(key)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/pandas/core/indexing.py", line 1377, in _getitem_tuple
+    return self._getitem_tuple_same_dim(tup)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/pandas/core/indexing.py", line 1020, in _getitem_tuple_same_dim
+    retval = getattr(retval, self.name)._getitem_axis(key, axis=i)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/pandas/core/indexing.py", line 1411, in _getitem_axis
+    return self._get_slice_axis(key, axis=axis)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/pandas/core/indexing.py", line 1443, in _get_slice_axis
+    indexer = labels.slice_indexer(slice_obj.start, slice_obj.stop, slice_obj.step)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/pandas/core/indexes/base.py", line 6708, in slice_indexer
+    start_slice, end_slice = self.slice_locs(start, end, step=step)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/pandas/core/indexes/base.py", line 6934, in slice_locs
+    start_slice = self.get_slice_bound(start, "left")
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/pandas/core/indexes/base.py", line 6859, in get_slice_bound
+    raise err
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/pandas/core/indexes/base.py", line 6853, in get_slice_bound
+    slc = self.get_loc(label)
+  File "/home/s2240011/conda/envs/python310/lib/python3.10/site-packages/pandas/core/indexes/base.py", line 3819, in get_loc
+    raise KeyError(key) from err
+KeyError: 'Steering_Range'
+
+=================================== RESOURCE INFORMATION ===================================
+ Requested Resource:
+ mem=64gb,walltime=12:00:00,ncpus=8,place=pack 
+ Used Resource: 
+ mem=488324kb,walltime=00:00:24,ncpus=8,cpupercent=49,vmem=1579528kb
+============================================================================================
