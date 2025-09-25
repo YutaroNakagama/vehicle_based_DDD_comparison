@@ -450,28 +450,15 @@ def common_train(
     else:
         best_clf.fit(X_train_scaled, y_train)
 
-    # Save model and features
-    logging.info(f"Saving {model} with {len(selected_features)} features.")
-    os.makedirs(f"{MODEL_PKL_PATH}/{model_type}", exist_ok=True)
-    with open(f"{MODEL_PKL_PATH}/{model_type}/{model}{suffix}.pkl", "wb") as f:
-        pickle.dump(best_clf, f)
-    with open(f"{MODEL_PKL_PATH}/{model_type}/selected_features_train_{model}{suffix}.pkl", "wb") as f:
-        pickle.dump(selected_features, f)
-    # Save fitted scaler
-    with open(f"{MODEL_PKL_PATH}/{model_type}/scaler_{model}{suffix}.pkl", "wb") as f:
-        pickle.dump(scaler, f)
-
-    if train_only:
-        logging.info(f"[TRAIN_ONLY] Saved model, features, scaler -> {suffix}. Skipping evaluation.")
-        return
-
-    # Save metadata (feature source info)
+    # ---------- Prepare feature metadata ----------
     feature_meta = {
         "selected_features": selected_features,
-        "feature_source": model_type  # e.g., "common"
+        "feature_source": model_type
     }
-    with open(f"{MODEL_PKL_PATH}/{model_type}/feature_meta_{model}{suffix}.json", "w") as f:
-        json.dump(feature_meta, f, indent=2)
+
+    if train_only:
+        logging.info(f"[TRAIN_ONLY] Model trained, skipping evaluation/return.")
+        return best_clf, scaler, None, feature_meta, {}
 
     # ---------- Evaluate & Save per-split metrics ----------
     def _eval_split(Xs, ys):
@@ -521,56 +508,12 @@ def common_train(
     y_pred_test = best_clf.predict(X_test_scaled)
     logging.info("Test classification report:\n" + classification_report(y_test, y_pred_test))
 
-    # ---------- Save Confusion Matrices (default decision) ----------
-    out_dir = f"{MODEL_PKL_PATH}/{model_type}"
-    os.makedirs(out_dir, exist_ok=True)
-
-    def _save_cm(y_true, y_pred, split, tag_suffix):
-        cm = confusion_matrix(y_true, y_pred, labels=[0,1])
-        # CSV (2x2)
-        pd.DataFrame(cm, index=["true_0","true_1"], columns=["pred_0","pred_1"]).to_csv(
-            f"{out_dir}/cm_{split}_{model}{tag_suffix}.csv"
-        )
-        # PNG
-        import matplotlib.pyplot as plt
-        plt.figure(figsize=(3.6,3.2))
-        plt.imshow(cm, interpolation="nearest")
-        plt.title(f"CM ({split})")
-        plt.xlabel("Predicted"); plt.ylabel("True")
-        for (i,j), v in np.ndenumerate(cm):
-            plt.text(j, i, str(v), ha="center", va="center")
-        plt.tight_layout()
-        plt.savefig(f"{out_dir}/cm_{split}_{model}{tag_suffix}.png", dpi=160)
-        plt.close()
-
-    _save_cm(m_train["_y_true"], m_train["_y_pred"], "train", suffix)
-    _save_cm(m_val["_y_true"],   m_val["_y_pred"],   "val",   suffix)
-    _save_cm(m_test["_y_true"],  m_test["_y_pred"],  "test",  suffix)
-
-    # ---------- Save ROC curves (image + raw data) ----------
-    def _save_roc(y_true, scores, split, tag_suffix):
-        if scores is None:
-            return
-        fpr, tpr, thr = roc_curve(y_true, scores)
-        roc_auc = auc(fpr, tpr)
-        # data
-        pd.DataFrame({"fpr":fpr, "tpr":tpr, "threshold":thr}).to_csv(
-            f"{out_dir}/roc_{split}_{model}{tag_suffix}.csv", index=False
-        )
-        # plot
-        import matplotlib.pyplot as plt
-        plt.figure(figsize=(4.0,3.6))
-        plt.plot(fpr, tpr, label=f"AUC={roc_auc:.3f}")
-        plt.plot([0,1],[0,1], linestyle="--")
-        plt.xlabel("FPR"); plt.ylabel("TPR"); plt.title(f"ROC ({split})")
-        plt.legend(loc="lower right")
-        plt.tight_layout()
-        plt.savefig(f"{out_dir}/roc_{split}_{model}{tag_suffix}.png", dpi=160)
-        plt.close()
-
-    _save_roc(m_train["_y_true"], m_train.get("_proba"), "train", suffix)
-    _save_roc(m_val["_y_true"],   m_val.get("_proba"),   "val",   suffix)
-    _save_roc(m_test["_y_true"],  m_test.get("_proba"),  "test",  suffix)
+    # ---------- Post-process artifacts ----------
+    results = {
+        "train": {k:v for k,v in m_train.items() if not k.startswith("_")},
+        "val":   {k:v for k,v in m_val.items()   if not k.startswith("_")},
+        "test":  {k:v for k,v in m_test.items()  if not k.startswith("_")},
+    }
 
     # ---------- Save PR curves (image + raw data) ----------
     def _save_pr(y_true, scores, split, tag_suffix):
@@ -634,12 +577,5 @@ def common_train(
     else:
         logging.warning("Threshold optimization skipped: model does not support probability estimation.")
 
-
-    # ---------- Save metrics CSV ----------
-    rows = []
-    rows.append({"split":"train", **{k:v for k,v in m_train.items() if not k.startswith("_")}})
-    rows.append({"split":"val",   **{k:v for k,v in m_val.items()   if not k.startswith("_")}})
-    rows.append({"split":"test",  **{k:v for k,v in m_test.items()  if not k.startswith("_")}})
-    os.makedirs(f"{MODEL_PKL_PATH}/{model_type}", exist_ok=True)
-    pd.DataFrame(rows).to_csv(f"{MODEL_PKL_PATH}/{model_type}/metrics_{model}{suffix}.csv", index=False)
-    logging.info(f"Saved metrics CSV -> {MODEL_PKL_PATH}/{model_type}/metrics_{model}{suffix}.csv")
+    # ---------- Return all artifacts ----------
+    return best_clf, scaler, best_threshold, feature_meta, results
