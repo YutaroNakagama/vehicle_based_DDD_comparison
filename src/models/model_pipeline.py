@@ -170,9 +170,9 @@ def train_pipeline(
     seed: int = 42,
     fold: int = None,
     n_folds: int = None,
-    tag: str = None, 
-    subject_wise_split: bool = False, 
-    feature_selection_method: str = "rf", 
+    tag: str = None,
+    subject_wise_split: bool = False,
+    feature_selection_method: str = "rf",
     data_leak: bool = False,
     subject_split_strategy: str = "random",
     target_subjects: list = [],
@@ -180,18 +180,16 @@ def train_pipeline(
     val_subjects: list = [],
     test_subjects: list = [],
     general_subjects: list = [],
-    finetune_setting=None,   
-    save_pretrain: str = None,     
-    eval_only_pretrained: bool = False,
+    finetune_setting=None,
+    save_pretrain: str = None,
+    eval_only_pretrained: bool = False,  # 後で削除予定
     balance_labels: bool = False,
     balance_method: str = "undersample",
     time_stratify_labels: bool = False,
     time_stratify_tolerance: float = 0.02,
     time_stratify_window: float = 0.10,
     time_stratify_min_chunk: int = 100,
-    eval_only: bool = False,   
-    train_only: bool = False,  
-    mode: str = None,   
+    mode: str = None,
 ) -> None:
     """
     Train a machine learning model for driver drowsiness detection.
@@ -262,8 +260,10 @@ def train_pipeline(
 
     Returns
     -------
-    None
-        Trained models and artifacts are saved to disk.
+    NOTE:
+    -----
+    - Evaluation is no longer performed here.
+    - Use `eval_pipeline` for evaluation.
     """
 
     # 1. Load subject list
@@ -874,6 +874,6 @@ def train_pipeline(
             scaler=scaler,
             suffix=suffix,
             data_leak=data_leak,
-            eval_only=eval_only,   
-            train_only=train_only,   
         )
+
+    logging.info(f"[DONE] Training complete for model={model_name}, tag={tag}")

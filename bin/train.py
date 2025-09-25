@@ -309,6 +309,12 @@ def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     tag_msg = f", tag={args.tag}" if args.tag else ""
 
+    # Deprecated options
+    if args.eval_only:
+        logging.warning("--eval_only is deprecated. Please use evaluate.py instead (ignored).")
+    if args.train_only:
+        logging.warning("--train_only is deprecated. Training always runs, evaluation must be done via evaluate.py.")
+
     if args.mode in ("only_general", "eval_only"):
         args.subject_split_strategy = "finetune_target_subjects"
         # Do not force eval_only when train_only mode is set
