@@ -98,10 +98,16 @@ def main():
         action="store_true",
         help="Use subject-wise data splitting to prevent subject leakage"
     )
+    parser.add_argument(
+        "--mode",
+        choices=["only_target", "only_general", "finetune", "eval_only"],
+        default=None,
+        help="Optional experiment mode (kept for compatibility with train.py)."
+    )
 
     args = parser.parse_args()
 
-    logging.info(f"Running '{args.model}' model...")
+    logging.info(f"Running evaluation for model={args.model}, tag={args.tag}, mode={args.mode}")
 
     try:
         mp.eval_pipeline(
