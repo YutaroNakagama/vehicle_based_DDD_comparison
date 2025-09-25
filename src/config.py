@@ -10,21 +10,30 @@ All variables are defined as module-level constants. They are imported directly
 by other modules in the pipeline (e.g., preprocessing, training, evaluation).
 """
 
+import os
 import numpy as np
 
 # ---------------------------------------------------------------------
-# File paths
+# File paths (from environment variables, fallback to defaults)
 # ---------------------------------------------------------------------
-SUBJECT_LIST_PATH = '../../dataset/mdapbe/subject_list.txt'
+SUBJECT_LIST_PATH = os.environ.get(
+    "DDD_SUBJECT_LIST_PATH", "../dataset/mdapbe/subject_list.txt"
+)
 """str : Path to the file containing the list of all subject IDs."""
 
-SUBJECT_LIST_PATH_TRAIN = '../../dataset/mdapbe/subject_list_train.txt'
+SUBJECT_LIST_PATH_TRAIN = os.environ.get(
+    "DDD_SUBJECT_LIST_PATH_TRAIN", "../dataset/mdapbe/subject_list_train.txt"
+)
 """str : Path to the file containing the list of subject IDs for training."""
 
-SUBJECT_LIST_PATH_FOLD = '../../dataset/mdapbe/subject_folds'
+SUBJECT_LIST_PATH_FOLD = os.environ.get(
+    "DDD_SUBJECT_LIST_PATH_FOLD", "../dataset/mdapbe/subject_folds"
+)
 """str : Base path for subject fold definitions, used in cross-validation."""
 
-DATASET_PATH = '../../dataset/mdapbe/physio'
+DATASET_PATH = os.environ.get(
+    "DDD_DATASET_PATH", "../dataset/mdapbe/physio"
+)
 """str : Base path to the raw physiological data (e.g., SIMlsl, EEG)."""
 
 INTRIM_CSV_PATH = './data/interim'
