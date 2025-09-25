@@ -294,26 +294,10 @@ def main():
         default=None,
         help="Exp mode: only_target / only_general / eval_only / finetune / train_only"
     )
-    parser.add_argument(
-        "--eval_only",
-        action="store_true",
-        help="If set, skip training and only evaluate using an already saved model."
-    )
-    parser.add_argument(
-        "--train_only",
-        action="store_true",
-        help="If set, save model and scaler but skip evaluation (no metrics/plots are generated)."
-    )
 
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     tag_msg = f", tag={args.tag}" if args.tag else ""
-
-    # Deprecated options
-    if args.eval_only:
-        logging.warning("--eval_only is deprecated. Please use evaluate.py instead (ignored).")
-    if args.train_only:
-        logging.warning("--train_only is deprecated. Training always runs, evaluation must be done via evaluate.py.")
 
     if args.mode in ("only_general", "eval_only"):
         args.subject_split_strategy = "finetune_target_subjects"
@@ -334,12 +318,6 @@ def main():
         args.subject_split_strategy = "subject_time_split"
         if not args.target_subjects:
             raise SystemExit("[ERROR] --mode=only_target では --target_subjects が必須です。")
-
-    elif args.mode == "train_only":
-        if args.target_subjects:
-            args.subject_split_strategy = "subject_time_split"
-        else:
-            args.subject_split_strategy = "finetune_target_subjects"
 
     # Centralize the call to the training pipeline
     pipeline_args = {
@@ -368,8 +346,7 @@ def main():
         "time_stratify_tolerance": args.time_stratify_tolerance,
         "time_stratify_window": args.time_stratify_window,
         "time_stratify_min_chunk": args.time_stratify_min_chunk,
-        "eval_only": args.eval_only,   
-        "train_only": args.train_only or args.mode == "train_only",
+        # eval_only / train_only removed, handled in evaluate.py
         "mode": args.mode,   
     }
 
