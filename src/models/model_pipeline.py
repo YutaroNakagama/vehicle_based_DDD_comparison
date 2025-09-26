@@ -866,7 +866,7 @@ def train_pipeline(
         if use_vae:
             suffix += "_vae"
 
-        common_train(
+        best_clf, scaler, best_threshold, feature_meta, results = common_train(
             X_train_for_fs, X_val_for_fs, X_test_for_fs,
             y_train, y_val, y_test,
             selected_features,
@@ -875,5 +875,39 @@ def train_pipeline(
             suffix=suffix,
             data_leak=data_leak,
         )
+
+        # ===== Save artifacts =====
+        out_model_dir = f"models/{model_type}"
+        out_result_dir = f"results/{model_type}/{model_name}"
+        os.makedirs(out_model_dir, exist_ok=True)
+        os.makedirs(out_result_dir, exist_ok=True)
+
+        import pickle, json
+        # Save model and scaler
+        with open(f"{out_model_dir}/{model_name}{suffix}.pkl", "wb") as f:
+            pickle.dump(best_clf, f)
+        with open(f"{out_model_dir}/scaler_{model_name}{suffix}.pkl", "wb") as f:
+            pickle.dump(scaler, f)
+        with open(f"{out_model_dir}/feature_meta_{model_name}{suffix}.json", "w") as f:
+            json.dump(feature_meta, f, indent=2)
+
+        # Save threshold
+        if best_threshold is not None:
+            thr_meta = {
+                "model": model_name,
+                "threshold": float(best_threshold),
+                "metric": "F1-optimal",
+            }
+            with open(f"{out_result_dir}/threshold_{model_name}{suffix}.json", "w") as f:
+                json.dump(thr_meta, f, indent=2)
+
+        # Save metrics
+        if results:
+            rows = []
+            for split, m in results.items():
+                rows.append({"split": split, **m})
+            pd.DataFrame(rows).to_csv(f"{out_result_dir}/metrics_{model_name}{suffix}.csv", index=False)
+
+        logging.info(f"Artifacts saved under {out_model_dir} and {out_result_dir}")
 
     logging.info(f"[DONE] Training complete for model={model_name}, tag={tag}")
