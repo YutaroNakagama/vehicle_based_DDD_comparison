@@ -2,23 +2,29 @@
 **/__pycache__/
 **/*.py[cod]
 
-# ===== Data (large & reproducible) =====
-data/raw/
-data/interim/
-data/processed/
+# ===== Data (always ignore raw/processed/interim) =====
+data/**
+
+# ===== Experiment outputs =====
+results/**
+models/**
+model/**
+figures/**
+logs/**
+!results/README.md
+!models/README.md
+!figures/README.md
+!logs/README.md
 !data/README.md
 
-# ===== Experiment outputs (再生成可能なので ignore) =====
-models/
-results/
-jobs/log/
-!models/README.md
-!results/README.md
-
-# ===== HPC & Cluster outputs =====
+# ===== Cluster outputs =====
 *.o*
 *.e*
 *.swp
+jobs/log/*
+
+# ===== Job scripts =====
+*.sh
 
 # ===== Documentation build (Sphinx) =====
 docs/_build/
@@ -35,8 +41,12 @@ docs/**/*.html
 **/tags
 catboost_info/
 
-# ===== Project-specific =====
-# 論文用図表は version 管理対象とする
-# figures/ は無視しない
-!figures/**
+# Reproducible outputs
+models/*
+results/*
+!reports/figures/*
+
+# Data
+data/interim/
+data/processed/
 
