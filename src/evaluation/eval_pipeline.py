@@ -100,12 +100,22 @@ def eval_pipeline(
     model_type = get_model_type(model)
 
     # Load preprocessed feature data
-    combined_data = load_subject_csvs(subject_list, model_type, add_subject_id=True if subject_wise_split else False)
+    #combined_data = load_subject_csvs(subject_list, model_type, add_subject_id=True if subject_wise_split else False)
+    combined_data, feature_columns = load_subject_csvs(
+        subject_list, model_type, add_subject_id=True if subject_wise_split else False
+    )
     
     if subject_wise_split:
         X_train, X_val, X_test, y_train, y_val, y_test = data_split_by_subject(combined_data, subject_list, seed)
     else:
         X_train, X_val, X_test, y_train, y_val, y_test = data_split(combined_data)
+
+        # --- fallback for empty validation/test (to allow evaluation run) ---
+        if (X_test is None or len(X_test) == 0) and (X_train is not None and len(X_train) > 0):
+            logging.warning("Test split is empty. Falling back to using the entire dataset as test.")
+            X_test, y_test = X_train, y_train
+            X_train, y_train = None, None
+            X_val, y_val = None, None
 
     if y_test.nunique() < 2:
         logging.warning(f"Test labels are not binary or contain only one class. Found: {y_test.value_counts().to_dict()}")
