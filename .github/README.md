@@ -32,21 +32,27 @@ curl -L -O -J "https://dataverse.harvard.edu/api/access/dataset/:persistentId/?p
 ## Directory Structure
 
 ```
-├── docs/                  # Sphinx-based documentation (HTML, RST, etc.)
-├── misc/                  # Utility scripts, subject lists, requirements
-├── project/
-│   ├── bin/               # Entry-point scripts (preprocess, train, evaluate, analyze)
-│   ├── jobs/              # PBS job scripts & logs for HPC processing
-│   └── src/               # Core source code
-│       ├── analysis/      # Metrics, correlation, distance computations
-│       ├── data_pipeline/ # Preprocessing & feature extraction
-│       ├── evaluation/    # Evaluation pipeline
-│       ├── models/        # Model architectures & feature selection
-│       └── utils/         # Domain generalization, I/O, visualization helpers
-├── results/               # Metrics, evaluation results
-├── models/                # Trained models & feature selection metadata
-├── figures/               # Visualization outputs
-└── logs/                  # Logs from training/evaluation
+├── bin/                  # Entry-point scripts (preprocess, train, evaluate, analyze)
+├── data/                 # Data storage (not tracked, except README)
+│   ├── raw/              # Original immutable data
+│   ├── interim/          # Intermediate cleaned data
+│   ├── processed/        # Final datasets for modeling
+│   └── README.md
+├── docs/                 # Documentation (Sphinx, RST, HTML)
+├── jobs/                 # HPC job scripts & logs (ignored except README)
+├── logs/                 # Runtime logs (ignored except README)
+├── misc/                 # Utility scripts, configs, subject/group lists
+├── models/               # Generated models & feature metadata (ignored except README)
+├── reports/              # Final reports, figures, tables for papers
+│   └── figures/
+├── results/              # Generated evaluation metrics/plots (ignored except README)
+└── src/                  # Core source code
+    ├── analysis/
+    ├── data_pipeline/
+    ├── evaluation/
+    ├── models/
+    └── utils/
+
 ```
 
 ---
