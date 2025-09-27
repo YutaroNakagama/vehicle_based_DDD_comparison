@@ -227,7 +227,7 @@ def eval_pipeline(
         result["selected_features"] = selected_features
 
     # After each evaluation call (e.g., result = common_eval(...))
-    results_dir = os.path.join("results", model_type)
+    results_dir = os.path.join("results", "evaluation", model_type)
     os.makedirs(results_dir, exist_ok=True)
 
     # generate timestamp
