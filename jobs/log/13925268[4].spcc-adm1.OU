@@ -1,8 +1,0 @@
-NG: name empty (index=4)
-
-=================================== RESOURCE INFORMATION ===================================
- Requested Resource:
- mem=128gb,walltime=24:00:00,ncpus=8,place=pack 
- Used Resource: 
- mem=0kb,walltime=00:00:03,ncpus=8,cpupercent=50,vmem=0kb
-============================================================================================
