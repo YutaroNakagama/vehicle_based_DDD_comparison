@@ -2,7 +2,7 @@
 import os, re, glob
 import pandas as pd
 
-MODEL_DIR = "model/common"             # metrics_*.csv の保存先
+MODEL_DIR = "models/common"             # metrics_*.csv の保存先
 OUT_DIR   = "results/analysis"
 os.makedirs(OUT_DIR, exist_ok=True)
 
