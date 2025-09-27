@@ -240,8 +240,63 @@ def eval_pipeline(
         json.dump(result, f, indent=2)
     logging.info(f"Saved evaluation metrics to {results_path}")
 
-    # --- NEW: also save to CSV (for compatibility with train.py outputs) ---
+    # --- NEW: also save to CSV with flattened metrics ---
     csv_filename = f"metrics_{model}_{tag}.csv" if tag else f"metrics_{model}.csv"
     csv_path = os.path.join(results_dir, csv_filename)
-    pd.DataFrame([result]).to_csv(csv_path, index=False)
+
+    flat = {}
+    for k, v in result.items():
+        if isinstance(v, dict):
+            # flatten classification_report
+            if k == "classification_report":
+                for label, scores in v.items():
+                    safe_label = label.replace(" ", "_").replace(".", "")
+                    if isinstance(scores, dict):
+                        for met, val in scores.items():
+                            flat[f"{safe_label}_{met}"] = val
+                    else:
+                        flat[f"{safe_label}"] = scores
+            else:
+                # generic nested dict
+                for kk, vv in v.items():
+                    flat[f"{k}_{kk}"] = vv
+        else:
+            flat[k] = v
+
+    # --- ensure key metrics are present at top level ---
+    # some eval functions may store auc/f1 only inside nested dicts
+    if "auc" in result:
+        flat["auc"] = result["auc"]
+    if "f1" in result:
+        flat["f1"] = result["f1"]
+    if "accuracy" in result:
+        flat["accuracy"] = result["accuracy"]
+
+    pd.DataFrame([flat]).to_csv(csv_path, index=False)
     logging.info(f"Saved evaluation metrics to {csv_path}")
+
+    # --- Ensure auc is mapped correctly ---
+    if "roc_auc" in result and "auc" not in flat:
+        flat["auc"] = result["roc_auc"]
+
+    # overwrite CSV again with auc included
+    pd.DataFrame([flat]).to_csv(csv_path, index=False)
+    logging.info(f"Re-saved with auc included: {csv_path}")
+
+    # --- Debug: ensure key metrics are saved ---
+    debug_keys = ["auc", "f1", "accuracy", "precision", "recall"]
+    missing = [k for k in debug_keys if k not in flat]
+    if missing:
+        logging.warning(f"Missing keys in flat CSV: {missing}")
+
+    # fallback: derive f1/precision/recall if missing
+    if "f1" not in flat and "classification_report" in result:
+        if "macro avg" in result["classification_report"]:
+            flat["f1"] = result["classification_report"]["macro avg"].get("f1-score", None)
+    if "precision" not in flat and "classification_report" in result:
+        flat["precision"] = result["classification_report"]["macro avg"].get("precision", None)
+    if "recall" not in flat and "classification_report" in result:
+        flat["recall"] = result["classification_report"]["macro avg"].get("recall", None)
+
+    # overwrite CSV with ensured metrics
+    pd.DataFrame([flat]).to_csv(csv_path, index=False)
