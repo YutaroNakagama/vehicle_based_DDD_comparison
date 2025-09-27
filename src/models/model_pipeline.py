@@ -906,7 +906,7 @@ def train_pipeline(
             rows = []
             for split, m in results.items():
                 rows.append({"split": split, **m})
-            pd.DataFrame(rows).to_csv(f"{out_result_dir}/metrics_{model_name}{suffix}.csv", index=False)
+            #pd.DataFrame(rows).to_csv(f"{out_result_dir}/metrics_{model_name}{suffix}.csv", index=False)
 
         logging.info(f"Artifacts saved under {out_model_dir} and {out_result_dir}")
 

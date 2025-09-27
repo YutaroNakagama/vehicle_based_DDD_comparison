@@ -239,3 +239,9 @@ def eval_pipeline(
     with open(results_path, "w") as f:
         json.dump(result, f, indent=2)
     logging.info(f"Saved evaluation metrics to {results_path}")
+
+    # --- NEW: also save to CSV (for compatibility with train.py outputs) ---
+    csv_filename = f"metrics_{model}_{tag}.csv" if tag else f"metrics_{model}.csv"
+    csv_path = os.path.join(results_dir, csv_filename)
+    pd.DataFrame([result]).to_csv(csv_path, index=False)
+    logging.info(f"Saved evaluation metrics to {csv_path}")
