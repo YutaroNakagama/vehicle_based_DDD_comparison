@@ -42,7 +42,7 @@ INTRIM_CSV_PATH = './data/interim'
 PROCESS_CSV_PATH = './data/processed'
 """str : Directory to store final processed CSV files ready for model training."""
 
-MODEL_PKL_PATH = './model/'
+MODEL_PKL_PATH = './models/'
 """str : Directory to save trained machine learning models (e.g., `.pkl`)."""
 
 OUTPUT_SVG_PATH = './output/svg'
