@@ -6,19 +6,28 @@ import matplotlib.pyplot as plt
 
 IN   = "results/analysis/summary_40cases_test_mode_compare.csv"
 OUT1 = "results/analysis/summary_metrics_40_mean_tri_bar.png"
-OUT2 = "results/analysis/diff_heatmap_auc_ap_40_tri.png"
+OUT2 = "results/analysis/diff_heatmap_all5_40.png"
 
 df = pd.read_csv(IN)
 
-# 平均統計のみ利用
+print("=== DEBUG: Loaded CSV columns ===")
+print(df.columns.tolist())
+print("=== First rows ===")
+print(df.head())
+
 df = df[df["stat"] == "mean"].copy()
 
 dist_order  = ["dtw", "mmd", "wasserstein"]
 level_order = ["high", "middle", "low"]
 
-metrics = [("auc", "AUC"), ("ap", "AP"), ("acc", "Accuracy"), ("f1", "F1")]
+metrics = [
+    ("auc", "AUC"),
+    ("precision", "Precision"),
+    ("recall", "Recall"),
+    ("accuracy", "Accuracy"),
+    ("f1", "F1")
+]
 
-# finetune が無くても処理できるように定義
 modes = [("only_general", "General"), ("only_target", "Target"), ("finetune", "Finetune")]
 
 n_rows = len(dist_order)
@@ -41,7 +50,7 @@ for i, dist in enumerate(dist_order):
 
         vals = []
         for mode_key, _ in modes:
-            col_name = f"{mode_key}_{m_key}"
+            col_name = f"{m_key}_{mode_key}"
             if col_name not in sub_d.columns:
                 vals.append([np.nan] * len(level_order))
                 continue
@@ -52,10 +61,9 @@ for i, dist in enumerate(dist_order):
                 for lv in level_order
             ])
 
-        # 存在するモードだけ描画
         offsets = [-width, 0, width]
         for k, (mode_key, mode_label) in enumerate(modes):
-            if all(np.isnan(vals[k])):  # データ無ければスキップ
+            if all(np.isnan(vals[k])):  
                 continue
             ax.bar(x + offsets[k], vals[k], width=width, label=mode_label)
 
@@ -72,10 +80,6 @@ plt.tight_layout()
 os.makedirs(os.path.dirname(OUT1), exist_ok=True)
 plt.savefig(OUT1, dpi=200)
 print(f"Saved: {OUT1}")
-
-# ===============================
-# 差分ヒートマップ
-# ===============================
 
 comparisons = [
     ("only_general", "only_target",   "General - Target"),
@@ -94,11 +98,11 @@ def make_diff_df(metric_key: str):
             rec = {
                 "distance": dist,
                 "level": lv,
-                "only_general": r.get(f"only_general_{metric_key}", np.nan),
-                "only_target":  r.get(f"only_target_{metric_key}", np.nan),
+                "only_general": r.get(f"{metric_key}_only_general", np.nan),
+                "only_target":  r.get(f"{metric_key}_only_target", np.nan),
             }
-            if f"finetune_{metric_key}" in r.index:
-                rec["finetune"] = r[f"finetune_{metric_key}"]
+            if f"{metric_key}_finetune" in r.index:
+                rec["finetune"] = r[f"{metric_key}_finetune"]
             else:
                 rec["finetune"] = np.nan
             recs.append(rec)
@@ -127,9 +131,13 @@ def draw_heatmaps(metric_key: str, axs_row):
                 if not np.isnan(val):
                     ax.text(c, r, f"{val:.3f}", ha="center", va="center", fontsize=9)
 
-fig2, axes2 = plt.subplots(2, 3, figsize=(16, 8))
-draw_heatmaps("auc", axes2[0, :])
-draw_heatmaps("ap",  axes2[1, :])
+fig2, axes2 = plt.subplots(5, 3, figsize=(18, 20))
+draw_heatmaps("auc",       axes2[0, :])
+draw_heatmaps("precision", axes2[1, :])
+draw_heatmaps("recall",    axes2[2, :])
+draw_heatmaps("accuracy",  axes2[3, :])
+draw_heatmaps("f1",        axes2[4, :])
+
 plt.tight_layout()
 plt.savefig(OUT2, dpi=200)
 print(f"Saved: {OUT2}")
