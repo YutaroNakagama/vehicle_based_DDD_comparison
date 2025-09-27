@@ -5,27 +5,27 @@ This repository benchmarks **lightweight Driver Drowsiness Detection (DDD) model
 It compares the effectiveness and computational efficiency of multiple classical and neural ML models, with an emphasis on **domain generalization** across subjects.
 
 The project provides:
-- Preprocessing pipelines for EEG, vehicle dynamics, and physiological signals
-- Multiple ML models (classical + deep learning)
-- Feature selection and domain generalization techniques
-- HPC job scripts for large-scale experiments
-- Documentation (Sphinx, under `docs/`)
+- Preprocessing pipelines for EEG, vehicle dynamics, and physiological signals  
+- Multiple ML models (classical + deep learning)  
+- Feature selection and domain generalization techniques  
+- HPC job scripts for large-scale experiments  
+- Documentation (Sphinx, under `docs/`)  
 
 ---
 
 ## Dataset
 We use the **open dataset** from *Multi-modal Data Acquisition Platform for Behavioral Evaluation* (Aygun et al., 2024):
 
-- **Vehicle-based features**: steering angle, steering velocity, etc.
-- **EEG signals**
-- **Physiological signals**: GSR, blood pressure, heart rate, pupil size
-- **Annotations**: Karolinska Sleepiness Scale (KSS), vigilance state labels
+- **Vehicle-based features**: steering angle, steering velocity, etc.  
+- **EEG signals**  
+- **Physiological signals**: GSR, blood pressure, heart rate, pupil size  
+- **Annotations**: Karolinska Sleepiness Scale (KSS), vigilance state labels  
 
 **DOI:** [10.7910/DVN/HMZ5RG](https://doi.org/10.7910/DVN/HMZ5RG)
 
 ```sh
 curl -L -O -J "https://dataverse.harvard.edu/api/access/dataset/:persistentId/?persistentId=doi:10.7910/DVN/HMZ5RG"
-````
+```
 
 ---
 
@@ -34,25 +34,37 @@ curl -L -O -J "https://dataverse.harvard.edu/api/access/dataset/:persistentId/?p
 ```
 ├── bin/                  # Entry-point scripts (preprocess, train, evaluate, analyze)
 ├── data/                 # Data storage (not tracked, except README)
-│   ├── raw/              # Original immutable data
 │   ├── interim/          # Intermediate cleaned data
 │   ├── processed/        # Final datasets for modeling
 │   └── README.md
 ├── docs/                 # Documentation (Sphinx, RST, HTML)
-├── jobs/                 # HPC job scripts & logs (ignored except README)
-├── logs/                 # Runtime logs (ignored except README)
-├── misc/                 # Utility scripts, configs, subject/group lists
-├── models/               # Generated models & feature metadata (ignored except README)
-├── reports/              # Final reports, figures, tables for papers
+├── jobs/                 # HPC job scripts (PBS) organized by purpose
+│   ├── preprocess/       # Preprocessing jobs
+│   ├── train/            # Training jobs
+│   ├── evaluate/         # Evaluation jobs
+│   ├── domain_gen/       # Domain generalization jobs
+│   ├── examples/         # PBS templates
+│   └── log/              # PBS job logs (*.oXXXX, *.eXXXX)
+├── misc/                 # Experiment configs & ad-hoc analysis scripts
+│   ├── analysis/         # One-off analysis & plotting scripts
+│   ├── config/           # Subject/group definitions, rank lists, requirements
+│   └── README.md
+├── models/               # Trained models & feature metadata (ignored except README)
+├── reports/              # Reports, figures, tables for papers
 │   └── figures/
 ├── results/              # Generated evaluation metrics/plots (ignored except README)
+│   ├── analysis/
+│   ├── distances/
+│   ├── mmd/
+│   ├── wasserstein/
+│   └── ...
 └── src/                  # Core source code
-    ├── analysis/
-    ├── data_pipeline/
-    ├── evaluation/
-    ├── models/
-    └── utils/
-
+    ├── analysis/         # Distance metrics, correlation, summaries
+    ├── data/             # Data utilities (checks, subject grouping)
+    ├── data_pipeline/    # Preprocessing & feature extraction
+    ├── evaluation/       # Evaluation framework
+    ├── models/           # Model definitions & training pipelines
+    └── utils/            # Shared helpers (domain gen, I/O, visualization)
 ```
 
 ---
@@ -60,19 +72,19 @@ curl -L -O -J "https://dataverse.harvard.edu/api/access/dataset/:persistentId/?p
 ## Installation
 
 ```bash
-cd project
-pip install -r misc/requirements.txt
+cd vehicle_based_DDD_comparison
+pip install -r misc/config/requirements.txt
 ```
 
 * Python 3.10 is recommended.
 * For documentation build:
 
-  ```bash
-  cd docs
-  pip install -r requirements.txt
-  make html
-  open _build/html/index.html
-  ```
+```bash
+cd docs
+pip install -r requirements.txt
+make html
+open _build/html/index.html
+```
 
 ---
 
@@ -81,13 +93,13 @@ pip install -r misc/requirements.txt
 ### 1. Data Preprocessing
 
 ```bash
-python project/bin/preprocess.py --model [common|SvmA|SvmW|Lstm] [--jittering]
+python bin/preprocess.py --model [common|SvmA|SvmW|Lstm] [--jittering]
 ```
 
 ### 2. Model Training
 
 ```bash
-python project/bin/train.py \
+python bin/train.py \
     --model [RF|SvmA|SvmW|Lstm|BalancedRF|LightGBM|XGBoost|CatBoost|LogisticRegression|SVM|DecisionTree|AdaBoost|GradientBoosting|KNN|MLP] \
     [--domain_mixup] [--coral] [--vae] ...
 ```
@@ -95,34 +107,41 @@ python project/bin/train.py \
 ### 3. Model Evaluation
 
 ```bash
-python project/bin/evaluate.py --model RF [--subject_wise_split]
+python bin/evaluate.py --model RF [--subject_wise_split]
 ```
 
 ### 4. Analysis
 
 ```bash
-python project/bin/analyze.py comp-dist --subject_list misc/subject_list.txt ...
+python bin/analyze.py comp-dist --subject_list misc/config/subject_list.txt ...
 ```
 
 ---
 
 ## HPC Usage
 
-Batch job scripts are provided in [`project/jobs/`](project/jobs). Example:
+Batch job scripts are provided in [`jobs/`](jobs/). Example:
 
 ```bash
-cd project
-qsub jobs/pbs_distance_pipeline.sh
-qsub -J 1-6 jobs/pbs_only10_6groups.sh
+# Preprocessing
+qsub jobs/preprocess/pbs_preprocess.sh
+
+# Training
+qsub jobs/train/pbs_train_only10.sh
+
+# Evaluation
+qsub jobs/evaluate/pbs_evaluate.sh
+
+# Domain generalization
+qsub jobs/domain_gen/pbs_pretrain_coral.sh
 ```
 
-Logs appear as `*.oXXXX` / `*.eXXXX` under `project/jobs/`.
-Results will be saved under:
+Logs appear under `jobs/log/`.
+Results will be saved in:
 
 * `results/` (metrics, CSVs, NumPy arrays)
 * `models/` (trained models, scalers, feature metadata)
-* `figures/` (visualizations)
-* `logs/` (runtime logs)
+* `reports/figures/` (visualizations)
 
 ---
 
@@ -143,5 +162,4 @@ open _build/html/index.html
 1. Zhao et al. (2009) – Multiwavelet packet energy spectrum [DOI](http://dx.doi.org/10.1109/CISP.2009.5301253)
 2. Arefnezhad et al. (2019) – Adaptive neuro-fuzzy selection on steering [DOI](https://doi.org/10.3390/s19040943)
 3. Wang et al. (2022) – Vehicle dynamics + naturalistic driving [DOI](http://dx.doi.org/10.1016/j.trc.2022.103561)
-
 

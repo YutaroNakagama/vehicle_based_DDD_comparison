@@ -1,10 +1,7 @@
-# 📄 `project/misc/README.md`
-
-```markdown
 # misc/ directory
 
-This directory contains **utility scripts, configuration files, and subject lists** that support experiments.  
-They are not part of the main pipeline but are useful for dataset preparation, group definition, and analysis.
+This directory contains **experiment configurations and ad-hoc analysis scripts**.  
+They are not part of the main pipeline, but support dataset preparation, group definition, and result inspection.
 
 ---
 
@@ -15,24 +12,20 @@ They are not part of the main pipeline but are useful for dataset preparation, g
 - **general_subjects.txt** → Subjects used for general training (pretrain groups)  
 - **target_groups.txt** → Target subject groups for evaluation/finetuning  
 
-### Utility Scripts
-- **make_pretrain_group.py** → Generate subject groups for pretraining experiments  
-- **make_target_groups.py** → Generate subject groups for target experiments  
-- **run.sh** → Example script for launching jobs or preprocessing  
-- **unzip.sh** → Helper script to unzip dataset archives into the correct directory  
+### Analysis Scripts (`analysis/`)
+One-off scripts for aggregating results and plotting summary metrics.
 
-### Experiment Configs
-- **requirements.txt** → Python dependencies for preprocessing, training, and evaluation  
+### Experiment Configs (`config/`)
+- **subject_list.txt**, **target_groups.txt**, **general_subjects.txt**  
+- **rank_names_*.txt** files  
 - **filelist.txt** → File index (used for dataset integrity checks or preprocessing pipeline input)  
+- **requirements.txt** → Python dependencies for preprocessing, training, and evaluation  
 
 ---
 
 ## Notes
 - These scripts/files are mainly **helpers** for reproducibility of experiments.  
-- The subject/group lists are referenced in:
-  - `project/bin/preprocess.py`
-  - `project/bin/train.py`
-  - `project/bin/analyze.py`
+- The subject/group lists in `misc/config/` are referenced by preprocessing and training scripts under `bin/`.  
 - When adding new subjects or groups, update the relevant list file here.  
 
 ---
@@ -40,3 +33,5 @@ They are not part of the main pipeline but are useful for dataset preparation, g
 ## Tips
 - Keep subject IDs consistent with dataset file naming (e.g., `S0101_1`).  
 - If you run large-scale experiments, consider versioning `misc/` so that group splits are reproducible.  
+```
+

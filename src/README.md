@@ -13,24 +13,30 @@ src/
 ├── analysis/              # Correlation & distance analysis
 │   ├── correlation.py     # Correlation between domain metrics and model performance
 │   ├── distances.py       # Distance computation (MMD, Wasserstein, DTW)
-│   ├── metrics\_tables.py  # Table generation for metrics
-│   ├── pretrain\_groups\_report.py # Report generation for pretrain/target groups
+│   ├── metrics_tables.py  # Table generation for metrics
+│   ├── pretrain_groups_report.py # Report generation for pretrain/target groups
 │   ├── radar.py           # Radar chart visualization
-│   ├── rank\_export.py     # Export ranked feature/model results
-│   └── summary\_groups.py  # Group-based summaries
+│   ├── rank_export.py     # Export ranked feature/model results
+│   └── summary_groups.py  # Group-based summaries
 │
-├── data\_pipeline/         # Data preprocessing & feature extraction
+├── data/                  # Data-related utilities (checks, subject grouping)
+│   ├── check_feature_columns.py
+│   ├── check_only_modes.py
+│   ├── make_pretrain_group.py
+│   └── make_target_groups.py
+│
+├── data_pipeline/         # Data preprocessing & feature extraction
 │   ├── features/          # Feature definitions
 │   │   ├── eeg.py         # EEG feature extraction
 │   │   ├── kss.py         # Karolinska Sleepiness Scale label handling
 │   │   ├── physio.py      # Physiological features (GSR, HR, etc.)
 │   │   ├── simlsl.py      # Vehicle-based simulator features
 │   │   └── wavelet.py     # Wavelet decomposition features
-│   ├── processing\_pipeline.py     # Single-process preprocessing pipeline
-│   └── processing\_pipeline\_mp.py  # Multi-process preprocessing pipeline
+│   ├── processing_pipeline.py     # Single-process preprocessing pipeline
+│   └── processing_pipeline_mp.py  # Multi-process preprocessing pipeline
 │
 ├── evaluation/            # Evaluation pipelines
-│   ├── eval\_pipeline.py   # Unified evaluation entry point
+│   ├── eval_pipeline.py   # Unified evaluation entry point
 │   └── models/            # Evaluation models
 │       ├── common.py
 │       ├── lstm.py
@@ -41,40 +47,34 @@ src/
 │   │   ├── common.py
 │   │   ├── lstm.py
 │   │   └── SvmA.py
-│   ├── feature\_selection/ # Feature selection methods
+│   ├── feature_selection/ # Feature selection methods
 │   │   ├── anfis.py
-│   │   ├── rf\_importance.py
+│   │   ├── rf_importance.py
 │   │   └── index.py
-│   └── model\_pipeline.py  # End-to-end training pipeline
+│   └── model_pipeline.py  # End-to-end training pipeline
 │
 └── utils/                 # Utility functions
-├── domain\_generalization/ # Domain generalization methods
-│   ├── coral.py
-│   ├── domain\_mixup.py
-│   ├── jitter.py
-│   └── vae\_augment.py
-├── io/                # Data loading/saving utilities
-│   ├── loaders.py
-│   ├── merge.py
-│   └── split.py
-└── visualization/     # Visualization tools
-└── visualization.py
+├── domain_generalization/ # Domain generalization methods (CORAL, Mixup, VAE, etc.)
+├── io/                   # Data loading/saving utilities
+└── visualization/        # Visualization tools
 
 ```
 
 ---
 
 ## Notes
-- **analysis/**: for post-training evaluations and domain distance calculations  
+- **analysis/**: post-training evaluations and domain distance calculations  
+- **data/**: helper scripts for subject grouping and dataset checks  
 - **data_pipeline/**: converts raw data (EEG, vehicle, physio) into processed features  
-- **evaluation/**: runs evaluation using trained models  
-- **models/**: contains architectures and training pipelines  
-- **utils/**: shared helpers for domain generalization, I/O, and plotting  
+- **evaluation/**: evaluation framework using trained models  
+- **models/**: classical and neural architectures + training pipelines  
+- **utils/**: shared helpers for domain generalization, I/O, and visualization  
 
 ---
 
 ## Future Work
-- Add docstrings for all modules (Google/NumPy style)
-- Consider packaging `src/` as a Python module (`setup.py` or `pyproject.toml`)
+- Add comprehensive docstrings (Google/NumPy style)  
+- Consider packaging `src/` as a Python module (`setup.py` or `pyproject.toml`)  
+- Expand unit tests under a dedicated `tests/` directory  
 ```
 
