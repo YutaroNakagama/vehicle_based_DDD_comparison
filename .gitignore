@@ -42,3 +42,4 @@ docs/**/*.html
 **/tags
 catboost_info/
 
+misc/rank_names_10_was.txt
