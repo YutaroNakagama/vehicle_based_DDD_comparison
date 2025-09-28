@@ -12,11 +12,13 @@ results/**
 
 # ===== Reports (final figures are tracked) =====
 reports/figures/*
+!reports/README.md
 
-# ===== Jobs (temporary scripts & logs) =====
-jobs/**/*.sh
-jobs/log/**
-!jobs/README.md
+# ===== HPC job scripts =====
+scripts/hpc/**/*.sh
+scripts/hpc/log/**
+!scripts/hpc/README.md
+!scripts/hpc/examples/**
 
 # ===== Python cache =====
 **/__pycache__/
@@ -35,6 +37,7 @@ docs/_static/
 docs/objects.inv
 docs/searchindex.js
 docs/**/*.html
+docs/build/
 
 # ===== Virtual env & tooling =====
 .venv/
@@ -42,13 +45,6 @@ docs/**/*.html
 **/tags
 catboost_info/
 
+# ===== Misc =====
 misc/rank_names_10_was.txt
-
-# Sphinx build artifacts
-docs/build/
-docs/_build/
-docs/_static/
-docs/_sources/
-docs/objects.inv
-docs/searchindex.js
 
