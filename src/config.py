@@ -42,7 +42,7 @@ INTRIM_CSV_PATH = './data/interim'
 PROCESS_CSV_PATH = './data/processed'
 """str : Directory to store final processed CSV files ready for model training."""
 
-MODEL_PKL_PATH = './models/'
+MODEL_PKL_PATH = os.environ.get("DDD_MODEL_PKL_PATH", "./models/")
 """str : Directory to save trained machine learning models (e.g., `.pkl`)."""
 
 OUTPUT_SVG_PATH = './output/svg'
@@ -104,7 +104,7 @@ WAVELET_LEV = 3
 # ---------------------------------------------------------------------
 # Feature selection
 # ---------------------------------------------------------------------
-TOP_K_FEATURES = 3
+TOP_K_FEATURES = 10
 """int : Number of top features to select during feature selection."""
 
 # ---------------------------------------------------------------------
