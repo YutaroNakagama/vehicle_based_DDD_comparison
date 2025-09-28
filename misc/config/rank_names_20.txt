@@ -1,9 +1,0 @@
-results/ranks20/dtw_mean_high.txt
-results/ranks20/dtw_mean_middle.txt
-results/ranks20/dtw_mean_low.txt
-results/ranks20/mmd_mean_high.txt
-results/ranks20/mmd_mean_middle.txt
-results/ranks20/mmd_mean_low.txt
-results/ranks20/wasserstein_mean_high.txt
-results/ranks20/wasserstein_mean_middle.txt
-results/ranks20/wasserstein_mean_low.txt

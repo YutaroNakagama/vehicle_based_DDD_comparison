@@ -1,3 +1,0 @@
-results/ranks/wasserstein_mean_high.txt
-results/ranks/wasserstein_mean_middle.txt
-results/ranks/wasserstein_mean_low.txt

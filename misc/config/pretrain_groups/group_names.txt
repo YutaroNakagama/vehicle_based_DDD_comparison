@@ -1,7 +1,0 @@
-mmd_friendly
-mmd_hard
-wasserstein_friendly
-wasserstein_hard
-dtw_friendly
-dtw_hard
-
