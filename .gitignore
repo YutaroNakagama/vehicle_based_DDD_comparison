@@ -1,24 +1,26 @@
-# ===== Data =====
+# ===== Data (generated/large, not tracked) =====
 data/**
 !data/README.md
 
-# ===== Models (generated) =====
+# ===== Models (generated, not tracked) =====
 models/**
 !models/README.md
 
-# ===== Results (generated) =====
+# ===== Results (generated, not tracked) =====
 results/**
 !results/README.md
 
-# ===== Reports (final figures are tracked) =====
-reports/figures/*
-!reports/README.md
+# ===== Reports (only final figures/tables tracked) =====
+reports/figures/**
+!reports/figures/README.md
+reports/tables/**
+!reports/tables/README.md
 
-# ===== HPC job scripts =====
+# ===== HPC job scripts (only examples kept) =====
 scripts/hpc/**/*.sh
 scripts/hpc/log/**
-!scripts/hpc/README.md
 !scripts/hpc/examples/**
+!scripts/hpc/README.md
 
 # ===== Python cache =====
 **/__pycache__/
@@ -37,7 +39,6 @@ docs/_static/
 docs/objects.inv
 docs/searchindex.js
 docs/**/*.html
-docs/build/
 
 # ===== Virtual env & tooling =====
 .venv/
@@ -45,6 +46,10 @@ docs/build/
 **/tags
 catboost_info/
 
-# ===== Misc =====
+# ===== Misc old files =====
 misc/rank_names_10_was.txt
 
+# Sphinx build artifacts (redundant safety)
+docs/build/
+
+misc/
