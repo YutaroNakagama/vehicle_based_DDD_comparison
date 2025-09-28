@@ -38,6 +38,7 @@ def common_train(
     X_train, X_val, X_test, y_train, y_val, y_test,
     selected_features,  
     model: str, model_type: str,
+    mode: str,   
     clf=None, scaler=None, suffix: str = "",
     data_leak: bool = False,
     eval_only: bool = False,   
@@ -90,18 +91,18 @@ def common_train(
 
     import pickle, json
 
-    out_dir = f"{MODEL_PKL_PATH}/{model_type}"
-    os.makedirs(out_dir, exist_ok=True)
+    base_dir = f"{MODEL_PKL_PATH}/{model_type}"
+    os.makedirs(base_dir, exist_ok=True)
 
     if eval_only:
         # ====== eval_only mode ======
         logging.info("[EVAL_ONLY] Loading pre-trained model and scaler...")
-        with open(f"{out_dir}/{model}{suffix}.pkl", "rb") as f:
+        with open(f"{out_dir}/{model}_{mode}{suffix}.pkl", "rb") as f:
             best_clf = pickle.load(f)
-        with open(f"{out_dir}/selected_features_train_{model}{suffix}.pkl", "rb") as f:
-            selected_features = pickle.load(f)
-        with open(f"{out_dir}/scaler_{model}{suffix}.pkl", "rb") as f:
+        with open(f"{out_dir}/scaler_{model}_{mode}{suffix}.pkl", "rb") as f:
             scaler = pickle.load(f)
+        with open(f"{out_dir}/selected_features_train_{model}_{mode}{suffix}.pkl", "rb") as f:
+            selected_features = pickle.load(f)
 
         # Scaling
         X_val_scaled  = scaler.transform(X_val[selected_features])
@@ -137,10 +138,10 @@ def common_train(
         # Ensure mode is included in the suffix
         eval_suffix = suffix + f"_{model_type}_evalonly"
         pd.DataFrame(rows).to_csv(
-            f"{MODEL_PKL_PATH}/{model_type}/metrics_{model}{eval_suffix}.csv",
+            f"{MODEL_PKL_PATH}/{model_type}/metrics_{model}_{mode}{eval_suffix}.csv",
             index=False
         )
-        logging.info(f"[EVAL_ONLY] Saved metrics CSV -> metrics_{model}{eval_suffix}.csv")
+        logging.info(f"[EVAL_ONLY] Saved metrics CSV -> metrics_{model}_{mode}{eval_suffix}.csv")
     
         return {"val": m_val, "test": m_test}
 
@@ -515,29 +516,58 @@ def common_train(
         "test":  {k:v for k,v in m_test.items()  if not k.startswith("_")},
     }
 
-    # ---------- Save PR curves (image + raw data) ----------
-    def _save_pr(y_true, scores, split, tag_suffix):
-        if scores is None:
-            return
-        # precision_recall_curve returns precision, recall, thresholds (len(thr)=len(prec)-1)
-        prec, rec, thr = precision_recall_curve(y_true, scores)
-        import numpy as np, pandas as pd
-        thr_aligned = np.concatenate([thr, [np.nan]])
-        pd.DataFrame({"precision":prec, "recall":rec, "threshold":thr_aligned}).to_csv(
-            f"{out_dir}/pr_{split}_{model}{tag_suffix}.csv", index=False
-        )
-        # plot
-        import matplotlib.pyplot as plt
-        plt.figure(figsize=(4.0,3.6))
-        plt.plot(rec, prec)
-        plt.xlabel("Recall"); plt.ylabel("Precision"); plt.title(f"PR ({split})")
-        plt.tight_layout()
-        plt.savefig(f"{out_dir}/pr_{split}_{model}{tag_suffix}.png", dpi=160)
-        plt.close()
+    # ---------- Save artifacts (RF only: organized directories) ----------
+    if model == "RF":
+        dirs = {
+            "models":     os.path.join(base_dir, "models"),
+            "scalers":    os.path.join(base_dir, "scalers"),
+            "features":   os.path.join(base_dir, "features"),
+            "thresholds": os.path.join(base_dir, "thresholds"),
+            "pr_curves":  os.path.join(base_dir, "pr_curves"),
+        }
+        for d in dirs.values():
+            os.makedirs(d, exist_ok=True)
 
-    _save_pr(m_train["_y_true"], m_train.get("_proba"), "train", suffix)
-    _save_pr(m_val["_y_true"],   m_val.get("_proba"),   "val",   suffix)
-    _save_pr(m_test["_y_true"],  m_test.get("_proba"),  "test",  suffix)
+        # model / scaler / features
+        with open(f"{dirs['models']}/{model}_{mode}{suffix}.pkl", "wb") as f:
+            pickle.dump(best_clf, f)
+        with open(f"{dirs['scalers']}/scaler_{model}_{mode}{suffix}.pkl", "wb") as f:
+            pickle.dump(scaler, f)
+        with open(f"{dirs['features']}/selected_features_{model}_{mode}{suffix}.pkl", "wb") as f:
+            pickle.dump(selected_features, f)
+        with open(f"{dirs['features']}/feature_meta_{model}_{mode}{suffix}.json", "w") as f:
+            json.dump(feature_meta, f, indent=2)
+
+        # PR curves (train/val/test)
+        def _save_pr(y_true, scores, split):
+            if scores is None:
+                return
+            prec, rec, thr = precision_recall_curve(y_true, scores)
+            thr_aligned = np.concatenate([thr, [np.nan]])
+            pd.DataFrame({"precision": prec, "recall": rec, "threshold": thr_aligned}).to_csv(
+                f"{dirs['pr_curves']}/pr_{split}_{model}_{mode}{suffix}.csv", index=False
+            )
+            import matplotlib.pyplot as plt
+            plt.figure(figsize=(4.0,3.6))
+            plt.plot(rec, prec)
+            plt.xlabel("Recall"); plt.ylabel("Precision"); plt.title(f"PR ({split})")
+            plt.tight_layout()
+            plt.savefig(f"{dirs['pr_curves']}/pr_{split}_{model}_{mode}{suffix}.png", dpi=160)
+            plt.close()
+
+        _save_pr(m_train["_y_true"], m_train.get("_proba"), "train")
+        _save_pr(m_val["_y_true"],   m_val.get("_proba"),   "val")
+        _save_pr(m_test["_y_true"],  m_test.get("_proba"),  "test")
+
+        # Threshold
+        if m_val.get("_proba") is not None:
+            threshold_meta = {
+                "model": model,
+                "threshold": float(best_threshold) if 'best_threshold' in locals() else None,
+                "metric": "F1-optimal",
+            }
+            with open(f"{dirs['thresholds']}/threshold_{model}_{mode}{suffix}.json", "w") as f:
+                json.dump(threshold_meta, f, indent=2)
 
     # ---------- Threshold optimization on validation (maximize F1) ----------
     if m_val["_proba"] is not None:
@@ -571,7 +601,7 @@ def common_train(
             "threshold": best_threshold,
             "metric": "F1-optimal",
         }
-        with open(f"{MODEL_PKL_PATH}/{model_type}/threshold_{model}{suffix}.json", "w") as f:
+        with open(f"{MODEL_PKL_PATH}/{model_type}/threshold_{model}_{mode}{suffix}.json", "w") as f:
             json.dump(threshold_meta, f, indent=2)
 
     else:

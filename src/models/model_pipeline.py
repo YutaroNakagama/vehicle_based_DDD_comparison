@@ -15,18 +15,15 @@ It provides the `train_pipeline` function, which serves as the central entry poi
 import os
 import sys
 import pickle
+import json
 import numpy as np
 import pandas as pd
 import logging
 import matplotlib.pyplot as plt
 from scipy.stats import zscore
-from sklearn.metrics import classification_report, accuracy_score, roc_curve, auc, mean_squared_error
 from sklearn.model_selection import train_test_split, GroupKFold
 from sklearn.feature_selection import SelectKBest, mutual_info_classif, f_classif  
 from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
-from pyswarm import pso
 
 from src.config import SUBJECT_LIST_PATH, PROCESS_CSV_PATH, MODEL_PKL_PATH, TOP_K_FEATURES
 from src.utils.io.loaders import read_subject_list, read_train_subject_list_fold, get_model_type, load_subject_csvs
@@ -182,7 +179,6 @@ def train_pipeline(
     general_subjects: list = [],
     finetune_setting=None,
     save_pretrain: str = None,
-    eval_only_pretrained: bool = False,  # 後で削除予定
     balance_labels: bool = False,
     balance_method: str = "undersample",
     time_stratify_labels: bool = False,
@@ -243,8 +239,6 @@ def train_pipeline(
         Path to pretrained feature/scaler configuration for fine-tuning.
     save_pretrain : str, optional
         Path to save pretraining artifacts (features/scaler).
-    eval_only_pretrained : bool, default=False
-        If True, skip fine-tuning and evaluate using pretrained model only.
     balance_labels : bool, default=False
         Whether to balance class distribution.
     balance_method : str, default="undersample"
@@ -410,200 +404,6 @@ def train_pipeline(
                 pickle.dump(pretrain_dict, f)
             logging.info(f"Saved pretrain setting (features/scaler) to {save_pretrain}")
 
-        if eval_only_pretrained:
-            from src.config import MODEL_PKL_PATH
-            #from src.models.architectures.common import common_train
-            clf = get_classifier(model_name)
-            pretrain_tag = "_pretrain_general"
-            out_dir = os.path.join(MODEL_PKL_PATH, model_type)
-            os.makedirs(out_dir, exist_ok=True)
-            model_pkl  = os.path.join(out_dir, f"{model_name}{pretrain_tag}.pkl")
-            scaler_pkl = os.path.join(out_dir, f"scaler_{model_name}{pretrain_tag}.pkl")
-
-            if not (os.path.isfile(model_pkl) and os.path.isfile(scaler_pkl)):
-                logging.info("[EvalOnly] Pretrained model/scaler not found; training on general subjects only.")
-                # Prepare FS & scaler if not already computed via save_pretrain
-                X_gtr, X_gva, X_gte, y_gtr, y_gva, y_gte = data_split(general_data, random_state=seed)
-                X_gtr_fs = X_gtr.drop(columns=["subject_id"], errors="ignore")
-                X_gva_fs = X_gva.drop(columns=["subject_id"], errors="ignore")
-                X_gte_fs = X_gte.drop(columns=["subject_id"], errors="ignore")
-                selected_features_local = select_top_features_by_importance(X_gtr_fs, y_gtr, top_k=TOP_K_FEATURES)
-                scaler_general = StandardScaler().fit(X_gtr_fs[selected_features_local])
-                common_train(
-                    X_gtr_fs, X_gva_fs, X_gte_fs,
-                    y_gtr, y_gva, y_gte,
-                    selected_features_local,
-                    model_name, model_type, clf,
-                    scaler=scaler_general,
-                    suffix=pretrain_tag,
-                    data_leak=data_leak,
-                )
-                with open(scaler_pkl, "wb") as f:
-                    pickle.dump(scaler_general, f)
-            else:
-                logging.info("[EvalOnly] Found existing pretrained model/scaler. Skipping retrain.")
-
-        if eval_only_pretrained:
-            from src.config import MODEL_PKL_PATH
-            pretrain_suffix = "_pretrain_general"
-            model_dir = os.path.join(MODEL_PKL_PATH, model_type)
-            model_pkl = os.path.join(model_dir, f"{model_name}{pretrain_suffix}.pkl")
-            scaler_pkl = os.path.join(model_dir, f"scaler_{model_name}{pretrain_suffix}.pkl")
-            feats_pkl  = os.path.join(model_dir, f"selected_features_train_{model_name}{pretrain_suffix}.pkl")
-
-            if not (os.path.isfile(model_pkl) and os.path.isfile(scaler_pkl)):
-                logging.error(f"[EvalOnly] Pretrained model or scaler not found: {model_pkl} / {scaler_pkl}")
-                return
-            with open(model_pkl, "rb") as f:
-                best_clf = pickle.load(f)
-            with open(scaler_pkl, "rb") as f:
-                scaler = pickle.load(f)
-            if os.path.isfile(feats_pkl):
-                with open(feats_pkl, "rb") as f:
-                    selected_features = pickle.load(f)
-                logging.info(f"[EvalOnly] Loaded model features: {feats_pkl} ({len(selected_features)} cols)")
-            else:
-                # For backward compatibility: fall back to finetune_setting if not found
-                if not finetune_setting:
-                    logging.error("[EvalOnly] Neither model feature file nor finetune_setting is available.")
-                    return
-                path_fs = finetune_setting if os.path.dirname(finetune_setting) else os.path.join("model/common", finetune_setting)
-                with open(path_fs, "rb") as f:
-                    pretrain_dict = pickle.load(f)
-                selected_features = pretrain_dict["selected_features"]
-                logging.warning(f"[EvalOnly] Feature file not found; fallback to finetune_setting features ({len(selected_features)} cols).")
- 
-
-            # Build target splits EXACTLY as in the fine-tune path; ignore train in eval-only
-            data, _ = load_subject_csvs(target_subjects, model_type, add_subject_id=True)
-            _X_train_tgt, X_val, X_test, _y_train_tgt, y_val, y_test = _build_target_splits_df(data)
-
-            # 2-A-3) Transform and evaluate on target Val/Test
-            from sklearn.metrics import (
-                accuracy_score, precision_score, recall_score, f1_score,
-                roc_auc_score, average_precision_score, confusion_matrix, roc_curve, auc, precision_recall_curve
-            )
-            #X_val_scaled  = scaler.transform(X_val[selected_features])
-            #X_test_scaled = scaler.transform(X_test[selected_features])
-
-            missing = [c for c in selected_features if c not in X_val.columns]
-            extra   = [c for c in X_val.columns if c not in selected_features]
-            if missing or extra:
-                logging.warning("[EvalOnly] feature mismatch before alignment: missing_in_val=%s extra_in_val=%s",
-                                missing[:5], extra[:5])
-
-            missing_t = [c for c in selected_features if c not in X_test.columns]
-            extra_t   = [c for c in X_test.columns if c not in selected_features]
-            if missing_t or extra_t:
-                logging.warning("[EvalOnly] feature mismatch (test) before alignment: missing_in_test=%s extra_in_test=%s",
-                                missing_t[:5], extra_t[:5])
-
-            # ---- align columns to training features (order + fill missing with scaler.mean_) ----
-            def _align_features(X_df, feature_names, scaler_obj):
-                # 確実に DataFrame で受け取る
-                X_df = pd.DataFrame(X_df).copy()
-                # 足りない列 -> scaler.mean_ で補完（標準化後 0 ）
-                filled = {}
-                for i, col in enumerate(feature_names):
-                    if col in X_df.columns:
-                        filled[col] = pd.to_numeric(X_df[col], errors="coerce")
-                    else:
-                        # 長さに合わせた定数 Series
-                        val = scaler_obj.mean_[i] if hasattr(scaler_obj, "mean_") and len(scaler_obj.mean_) == len(feature_names) else 0.0
-                        filled[col] = pd.Series(val, index=X_df.index, dtype="float64")
-                X_out = pd.DataFrame(filled, columns=feature_names, index=X_df.index)
-                if hasattr(scaler_obj, "mean_") and len(scaler_obj.mean_) == len(feature_names):
-                    means = pd.Series(scaler_obj.mean_, index=feature_names)
-                    X_out = X_out.fillna(means)
-                else:
-                    X_out = X_out.fillna(0.0)
-                return X_out
-
-            X_val_aligned  = _align_features(X_val,  selected_features, scaler)
-            X_test_aligned = _align_features(X_test, selected_features, scaler)
-            try:
-                n_scale = getattr(scaler, "n_features_in_", None)
-                logging.info("[EvalOnly] scaler expects n_features=%s, aligned_features=%d",
-                             str(n_scale), len(selected_features))
-            except Exception:
-                pass
-            X_val_scaled   = scaler.transform(X_val_aligned)
-            X_test_scaled  = scaler.transform(X_test_aligned)
-
-            def _eval_block(Xs, ys):
-                out = {
-                    "accuracy": float(accuracy_score(ys, best_clf.predict(Xs))),
-                    "precision": float(precision_score(ys, best_clf.predict(Xs), zero_division=0)),
-                    "recall": float(recall_score(ys, best_clf.predict(Xs), zero_division=0)),
-                    "f1": float(f1_score(ys, best_clf.predict(Xs), zero_division=0)),
-                    "auc": float("nan"),
-                    "ap":  float("nan"),
-                }
-                try:
-                    proba = best_clf.predict_proba(Xs)[:,1]
-                    out["auc"] = float(roc_auc_score(ys, proba))
-                    out["ap"]  = float(average_precision_score(ys, proba))
-                except Exception:
-                    pass
-                return out
-
-            m_val  = _eval_block(X_val_scaled,  y_val)
-            m_test = _eval_block(X_test_scaled, y_test)
-            try:
-                from sklearn.metrics import confusion_matrix
-                y_val_pred  = best_clf.predict(X_val_scaled)
-                y_test_pred = best_clf.predict(X_test_scaled)
-                logging.info("[EvalOnly] val pos_ratio=%.3f, pred_pos_ratio=%.3f",
-                             float(y_val.mean()), float(y_val_pred.mean()))
-                logging.info("[EvalOnly] test pos_ratio=%.3f, pred_pos_ratio=%.3f",
-                             float(y_test.mean()), float(y_test_pred.mean()))
-                logging.info("[EvalOnly] val CM=\n%s", confusion_matrix(y_val,  y_val_pred))
-                logging.info("[EvalOnly] test CM=\n%s", confusion_matrix(y_test, y_test_pred))
-            except Exception as e:
-                logging.warning("[EvalOnly] could not print confusion matrices: %s", e)
-#            logging.info(f"[EvalOnly] {model_name} on targets (no fine-tune): "
-#                         f"val acc={m_val['accuracy']:.3f}, test acc={m_test['accuracy']:.3f}")
-            logging.info(
-                "[EvalOnly] %s on targets: "
-                "val acc=%.3f auc=%.3f ap=%.3f | "
-                "test acc=%.3f auc=%.3f ap=%.3f",
-                model_name,
-                m_val["accuracy"], m_val.get("auc", float("nan")), m_val.get("ap", float("nan")),
-                m_test["accuracy"], m_test.get("auc", float("nan")), m_test.get("ap", float("nan")),
-            )
-
-            # Save CSV (so it aligns with your usual artifacts)
-            from src.config import MODEL_PKL_PATH
-            out_dir = os.path.join(MODEL_PKL_PATH, model_type)
-            os.makedirs(out_dir, exist_ok=True)
-            #import pandas as pd, json
-            import json
-#            pd.DataFrame([
-#                {"split":"val", **m_val},
-#                {"split":"test", **m_test},
-#            ]).to_csv(os.path.join(out_dir, f"metrics_{model_name}_evalonly_on_targets.csv"), index=False)
-#            logging.info(f"[EvalOnly] Saved -> {out_dir}/metrics_{model_name}_evalonly_on_targets.csv")
-            # build suffix to avoid overwriting across groups
-            suffix = ""
-            if mode:
-                suffix += f"_{mode}" 
-            if tag:
-                suffix += f"_{tag}"
-            elif target_subjects:
-                safe_targets = "-".join(map(str, target_subjects))[:40]
-                suffix += f"_targets-{safe_targets}"
-            elif os.getenv("PBS_ARRAY_INDEX"):
-                suffix += f"_group{os.getenv('PBS_ARRAY_INDEX')}"
-
-            out_path = os.path.join(out_dir, f"metrics_{model_name}{suffix}.csv")
-            pd.DataFrame(
-                [{"split":"val", **m_val}, {"split":"test", **m_test}]
-            ).to_csv(out_path, index=False)
-            logging.info(f"[EvalOnly] Saved -> {out_path}")
-
-            return
-
-#        # --- Step 2-B: (Default) Fine-tuning path using finetune_setting ---
         # --- Step 2-B: (Default) Fine-tuning path using finetune_setting ---
         if finetune_setting:
             if not os.path.dirname(finetune_setting):
@@ -846,11 +646,12 @@ def train_pipeline(
 
         # 9. Get Classifier and Train
         clf = get_classifier(model_name)
-
+        model_key = model_name  
+        
         # Construct suffix for model saving based on applied techniques
         suffix = ""
         if mode:
-            suffix += f"_{mode}"  
+            suffix += f"_{mode}"
         if tag:
             suffix += f"_{tag}"
         elif target_subjects:
@@ -878,35 +679,50 @@ def train_pipeline(
 
         # ===== Save artifacts =====
         out_model_dir = f"models/{model_type}"
-        out_result_dir = f"results/{model_type}/{model_name}"
+        out_result_dir = f"results/{model_type}/{model_key}"
         os.makedirs(out_model_dir, exist_ok=True)
         os.makedirs(out_result_dir, exist_ok=True)
 
-        import pickle, json
         # Save model and scaler
-        with open(f"{out_model_dir}/{model_name}{suffix}.pkl", "wb") as f:
+        with open(f"{out_model_dir}/{model_key}{suffix}.pkl", "wb") as f:
             pickle.dump(best_clf, f)
-        with open(f"{out_model_dir}/scaler_{model_name}{suffix}.pkl", "wb") as f:
+        with open(f"{out_model_dir}/scaler_{model_key}{suffix}.pkl", "wb") as f:
             pickle.dump(scaler, f)
-        with open(f"{out_model_dir}/feature_meta_{model_name}{suffix}.json", "w") as f:
+        with open(f"{out_model_dir}/feature_meta_{model_key}{suffix}.json", "w") as f:
             json.dump(feature_meta, f, indent=2)
-
+        
+        # Save selected features
+        with open(f"{out_model_dir}/selected_features_{model_key}{suffix}.pkl", "wb") as f:
+            pickle.dump(selected_features, f)
+        
         # Save threshold
         if best_threshold is not None:
             thr_meta = {
-                "model": model_name,
+                "model": model_key,
                 "threshold": float(best_threshold),
                 "metric": "F1-optimal",
             }
-            with open(f"{out_result_dir}/threshold_{model_name}{suffix}.json", "w") as f:
+            with open(f"{out_result_dir}/threshold_{model_key}{suffix}.json", "w") as f:
                 json.dump(thr_meta, f, indent=2)
 
-        # Save metrics
+        # Save metrics (training-time only)
         if results:
             rows = []
             for split, m in results.items():
-                rows.append({"split": split, **m})
-            #pd.DataFrame(rows).to_csv(f"{out_result_dir}/metrics_{model_name}{suffix}.csv", index=False)
+                rows.append({
+                    "phase": "training",   
+                    "split": split,
+                    **m
+                })
+
+            df_results = pd.DataFrame(rows)
+            df_results.to_csv(f"{out_result_dir}/trainmetrics_{model_key}{suffix}.csv", index=False)
+
+            with open(f"{out_result_dir}/trainmetrics_{model_key}{suffix}.json", "w") as f:
+                json.dump(rows, f, indent=2)
+
+            logging.info(f"Training-time metrics saved to "
+                         f"{out_result_dir}/trainmetrics_{model_key}{suffix}.csv/json")
 
         logging.info(f"Artifacts saved under {out_model_dir} and {out_result_dir}")
 

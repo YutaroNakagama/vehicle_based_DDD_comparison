@@ -103,8 +103,6 @@ def main():
         Path to pretrained settings (pickle file).
     --save_pretrain : str, optional
         Path to save pretrain settings (feature list, scaler, model params).
-    --eval_only_pretrained : bool, optional
-        Skip fine-tuning and directly evaluate a pretrained model.
     --time_stratify_labels : bool, optional
         Adjust time-ordered split boundaries so each split matches the global
         positive/negative ratio.
@@ -118,7 +116,7 @@ def main():
         Rebalance each split to 50/50 class distribution.
     --balance_method : {"undersample", "oversample"}, default="undersample"
         Method for label balancing.
-    --mode : {"only_target", "only_general", "eval_only", "finetune"}, optional
+    --mode : {"only_target", "only_general", "finetune"}, optional
         Experiment mode controlling subject splits.
 
     Returns
@@ -245,12 +243,6 @@ def main():
     )
 
     parser.add_argument(
-        "--eval_only_pretrained",
-        action="store_true",
-        help="Skip fine-tuning on target subjects and directly evaluate using a model pretrained on non-target subjects."
-    )
-
-    parser.add_argument(
         "--save_pretrain", type=str, default=None,
         help="Path to save pretrain settings (feature list, scaler, model params)."
     )
@@ -290,22 +282,19 @@ def main():
     )
     parser.add_argument(
         "--mode",
-        choices=["only_target", "only_general", "eval_only", "finetune", "train_only"],
+        choices=["only_target", "only_general", "finetune"],
         default=None,
-        help="Exp mode: only_target / only_general / eval_only / finetune / train_only"
+        help="Exp mode: only_target / only_general / finetune"
     )
 
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     tag_msg = f", tag={args.tag}" if args.tag else ""
 
-    if args.mode in ("only_general", "eval_only"):
+    if args.mode == "only_general":
         args.subject_split_strategy = "finetune_target_subjects"
-        # Do not force eval_only when train_only mode is set
-        if not args.train_only and args.mode != "train_only":
-            args.eval_only_pretrained = True
         if not args.target_subjects:
-            raise SystemExit("[ERROR] --mode=only_general(eval_only) では --target_subjects が必須です。")
+            raise SystemExit("[ERROR] --mode=only_general では --target_subjects が必須です。")
     
     elif args.mode == "finetune":
         args.subject_split_strategy = "finetune_target_subjects"
@@ -339,14 +328,12 @@ def main():
         "general_subjects": args.general_subjects,
         "finetune_setting": args.finetune_setting,
         "save_pretrain": args.save_pretrain,   
-        "eval_only_pretrained": args.eval_only_pretrained,
         "balance_labels": args.balance_labels,          # if you kept previous balancing option
         "balance_method": args.balance_method,
         "time_stratify_labels": args.time_stratify_labels,
         "time_stratify_tolerance": args.time_stratify_tolerance,
         "time_stratify_window": args.time_stratify_window,
         "time_stratify_min_chunk": args.time_stratify_min_chunk,
-        # eval_only / train_only removed, handled in evaluate.py
         "mode": args.mode,   
     }
 
