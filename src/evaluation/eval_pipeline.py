@@ -38,11 +38,12 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 
 def eval_pipeline(
-    model: str, 
-    tag: str = None, 
-    sample_size: int = None, 
-    seed: int = 42, 
-    fold: int = 0, 
+    model: str,
+    mode: str,
+    tag: str = None,
+    sample_size: int = None,
+    seed: int = 42,
+    fold: int = 0,
     subject_wise_split: bool = False
     ) -> None:
     """
@@ -125,12 +126,16 @@ def eval_pipeline(
         return
 
     # Load trained model
+    suffix = f"_{mode}" if mode else ""
+    if tag:
+        suffix += f"_{tag}"
+
     if model == "SvmA":
         model_file = "svm_model_final.pkl"
     elif model == "Lstm":
         model_file = "lstm_model_fold1.keras"
     else:
-        model_file = f"{model}{f'_{tag}' if tag else ''}.pkl"
+        model_file = f"{model}{suffix}.pkl"
     model_path = os.path.join(MODEL_PKL_PATH, model_type, model_file)
 
     if not os.path.exists(model_path):
@@ -148,7 +153,7 @@ def eval_pipeline(
 
     # Call evaluation functions based on model type
     if model == 'Lstm':
-        scaler_path = os.path.join(MODEL_PKL_PATH, model_type, f"scaler_fold1{f'_{tag}' if tag else ''}.pkl")
+        scaler_path = os.path.join(MODEL_PKL_PATH, model_type, f"scaler_{model}{suffix}.pkl")
         if not os.path.exists(scaler_path):
             logging.error(f"Scaler file not found: {scaler_path}")
             return
@@ -157,7 +162,7 @@ def eval_pipeline(
         result = lstm_eval(X_test, y_test, model_type, clf, scaler)
 
     elif model == 'SvmA':
-        feature_file = f"selected_features_train_{model}{f'_{tag}' if tag else ''}.pkl"
+        feature_file = f"selected_features_{model}{suffix}.pkl"
         feature_path = os.path.join(MODEL_PKL_PATH, model_type, feature_file)
         if not os.path.exists(feature_path):
             logging.error(f"Feature file not found: {feature_path}")
@@ -167,7 +172,7 @@ def eval_pipeline(
         result = SvmA_eval(X_test, y_test, model, clf, selected_features)
 
     else:
-        feature_file = f"selected_features_train_{model}{f'_{tag}' if tag else ''}.pkl"
+        feature_file = f"selected_features_{model}{suffix}.pkl"
         feature_path = os.path.join(MODEL_PKL_PATH, model_type, feature_file)
         if not os.path.exists(feature_path):
             logging.error(f"Feature file not found: {feature_path}")
@@ -178,7 +183,7 @@ def eval_pipeline(
         if not isinstance(selected_features, list):
             selected_features = list(selected_features)
 
-        scaler_path = os.path.join(MODEL_PKL_PATH, model_type, f"scaler_{model}{f'_{tag}' if tag else ''}.pkl")
+        scaler_path = os.path.join(MODEL_PKL_PATH, model_type, f"scaler_{model}{suffix}.pkl")
         if not os.path.exists(scaler_path):
             logging.error(f"Scaler file not found: {scaler_path}")
             return
@@ -233,15 +238,25 @@ def eval_pipeline(
     # generate timestamp
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") 
 
-    # save results
-    results_filename = f"metrics_{model}_{tag}_{timestamp}.json" if tag else f"metrics_{model}_{timestamp}.json"
+    # --- include mode in filenames ---
+    mode_suffix = f"_{mode}" if mode else ""
+
+    # save results (JSON)
+    results_filename = (
+        f"metrics_{model}{mode_suffix}_{tag}_{timestamp}.json"
+        if tag else f"metrics_{model}{mode_suffix}_{timestamp}.json"
+    )
+
     results_path = os.path.join(results_dir, results_filename)
     with open(results_path, "w") as f:
         json.dump(result, f, indent=2)
     logging.info(f"Saved evaluation metrics to {results_path}")
 
-    # --- NEW: also save to CSV with flattened metrics ---
-    csv_filename = f"metrics_{model}_{tag}.csv" if tag else f"metrics_{model}.csv"
+    # --- also save to CSV with flattened metrics ---
+    csv_filename = (
+        f"metrics_{model}{mode_suffix}_{tag}.csv"
+        if tag else f"metrics_{model}{mode_suffix}.csv"
+    )
     csv_path = os.path.join(results_dir, csv_filename)
 
     flat = {}
