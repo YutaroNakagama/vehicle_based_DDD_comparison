@@ -100,9 +100,9 @@ def main():
     )
     parser.add_argument(
         "--mode",
-        choices=["only_target", "only_general", "finetune", "eval_only"],
-        default=None,
-        help="Optional experiment mode (kept for compatibility with train.py)."
+        choices=["only_target", "only_general", "finetune"],
+        required=True,
+        help="Experiment mode: only_target / only_general / finetune"
     )
 
     args = parser.parse_args()
@@ -112,6 +112,7 @@ def main():
     try:
         mp.eval_pipeline(
             args.model,
+            mode=args.mode,
             tag=args.tag,
             sample_size=args.sample_size,
             seed=args.seed,
