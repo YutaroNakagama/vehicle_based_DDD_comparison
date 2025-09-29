@@ -32,39 +32,34 @@ curl -L -O -J "https://dataverse.harvard.edu/api/access/dataset/:persistentId/?p
 ## Directory Structure
 
 ```
-├── bin/                  # Entry-point scripts (preprocess, train, evaluate, analyze)
+├── config/               # Subject/group definitions, requirements
+│   ├── subject_list.txt
+│   ├── target_groups.txt
+│   └── requirements.txt
 ├── data/                 # Data storage (not tracked, except README)
 │   ├── interim/          # Intermediate cleaned data
 │   ├── processed/        # Final datasets for modeling
 │   └── README.md
 ├── docs/                 # Documentation (Sphinx, RST, HTML)
-├── jobs/                 # HPC job scripts (PBS) organized by purpose
-│   ├── preprocess/       # Preprocessing jobs
-│   ├── train/            # Training jobs
-│   ├── evaluate/         # Evaluation jobs
-│   ├── domain_gen/       # Domain generalization jobs
-│   ├── examples/         # PBS templates
-│   └── log/              # PBS job logs (*.oXXXX, *.eXXXX)
-├── misc/                 # Experiment configs & ad-hoc analysis scripts
-│   ├── analysis/         # One-off analysis & plotting scripts
-│   ├── config/           # Subject/group definitions, rank lists, requirements
-│   └── README.md
 ├── models/               # Trained models & feature metadata (ignored except README)
-├── reports/              # Reports, figures, tables for papers
-│   └── figures/
-├── results/              # Generated evaluation metrics/plots (ignored except README)
-│   ├── analysis/
+├── results/              # Generated evaluation metrics, predictions, tables, figures
+│   ├── metrics/
+│   ├── predictions/
 │   ├── distances/
-│   ├── mmd/
-│   ├── wasserstein/
-│   └── ...
-└── src/                  # Core source code
-    ├── analysis/         # Distance metrics, correlation, summaries
-    ├── data/             # Data utilities (checks, subject grouping)
-    ├── data_pipeline/    # Preprocessing & feature extraction
-    ├── evaluation/       # Evaluation framework
-    ├── models/           # Model definitions & training pipelines
-    └── utils/            # Shared helpers (domain gen, I/O, visualization)
+│   ├── ranks/
+│   ├── figures/
+│   └── tables/
+├── scripts/
+│   ├── python/           # Entry-point scripts (preprocess, train, evaluate, analyze)
+│   └── hpc/              # HPC job scripts (PBS) organized by purpose
+├── src/                  # Core source code
+│   ├── analysis/         # Distance metrics, correlation, summaries
+│   ├── data/             # Data utilities (checks, subject grouping)
+│   ├── data_pipeline/    # Preprocessing & feature extraction
+│   ├── evaluation/       # Evaluation framework
+│   ├── models/           # Model definitions & training pipelines
+│   └── utils/            # Shared helpers (domain gen, I/O, visualization)
+
 ```
 
 ---
