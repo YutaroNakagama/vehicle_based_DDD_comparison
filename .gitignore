@@ -47,9 +47,7 @@ docs/**/*.html
 catboost_info/
 
 # ===== Misc old files =====
-misc/rank_names_10_was.txt
+# misc/rank_names_10_was.txt  # (kept here for history, file already removed)
 
 # Sphinx build artifacts (redundant safety)
 docs/build/
-
-misc/
