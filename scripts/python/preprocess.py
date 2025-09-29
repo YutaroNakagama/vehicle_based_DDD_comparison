@@ -18,6 +18,10 @@ Run preprocessing for the Random Forest model without augmentation:
 import sys
 import os
 import argparse
+from pathlib import Path
+
+# Add project root (one level up from scripts/)
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 # Ensure the project root is included in the module search path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
