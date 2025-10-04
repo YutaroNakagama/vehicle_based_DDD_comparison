@@ -123,11 +123,11 @@ graph TD
 | ------------------- | ------------------------------------------------- | --------------------------------------------- | ------------------------------- |
 | `train_pipeline`    | dataset path(s), config params                    | trained model(s), metrics files               | Orchestrates training workflow  |
 | `load_data`         | `data/processed/*.csv`                            | `pandas.DataFrame`                            | Reads preprocessed subject data |
-| `split_data`        | DataFrame, split strategy (subject-wise / k-fold) | Train/val/test DataFrames                     | Uses `sklearn.model_selection`  |
+| `split_data`        | DataFrame, split strategy                         | Train/val/test DataFrames                     | Supports multiple strategies: random, subject-wise (GroupKFold), subject_time_split, finetune_target_subjects, etc. |
 | `feature_selection` | Training DataFrame, feature config                | Reduced feature DataFrame                     | e.g. ANOVA, MI, RF importance   |
 | `train_model`       | Reduced training set, model params                | fitted model object                           | RF / SVM-A / SVM-W / LSTM       |
-| `save_model`        | fitted model object, features                     | `models/<model>.pkl`, `selected_features.pkl` | Stored with joblib              |
-| `save_metrics`      | training logs, metrics (loss, F1, AUC)            | `results/trainmetrics_*.{csv,json}`           | Used later in evaluation        |
+| `save_model`        | fitted model, scaler, features, metadata          | `models/{model_type}/*.pkl`, `feature_meta.json` | Stored with pickle/joblib       |
+| `save_metrics`      | training logs, metrics (loss, F1, AUC, threshold) | `results/train/{model}/trainmetrics_*.{csv,json}`, `results/train/{model}/threshold_*.json` | Saved per model & suffix        |
 
 ---
 
