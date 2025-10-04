@@ -22,8 +22,13 @@ Cookiecutter Data Science:
 │   ├── processed/      # Final processed datasets
 │   └── README.md
 │
-├── docs/               # Documentation (Sphinx build + sources)
+├── docs/               # Documentation (Sphinx build + generated files)
 │   ├── source/         # Developer and API guides
+│   ├── bin/            # Auto-generated API docs for scripts
+│   ├── _build/         # Sphinx build artifacts
+│   ├── _modules/       # Sphinx autodoc modules
+│   ├── _sources/       # Sphinx source cache
+│   ├── _static/        # Static assets
 │   ├── conf.py
 │   └── index.rst
 │
@@ -43,7 +48,7 @@ Cookiecutter Data Science:
 │
 ├── scripts/            # Job scripts and utilities
 │   ├── hpc/            # HPC job submission scripts (PBS etc.)
-│   ├── python/         # Python helpers, prototypes
+│   ├── python/         # Entry-point scripts (train, evaluate, preprocess, analyze, plot)
 │   └── README.md
 │
 ├── src/                # Core logic
@@ -59,16 +64,16 @@ Cookiecutter Data Science:
 
 ```mermaid
 graph LR
-  bin[bin: entry scripts] --> src[src: core logic]
-  src --> models[models]
-  src --> results[results]
-  results --> reports[reports]
-  jobs[jobs: HPC scripts] -.-> bin
+  scripts_python[scripts/python: entry scripts] --> src[src: core logic]
+  src --> models[models: saved models]
+  src --> results[results: experiment outputs]
+  results --> reports[reports: figures/tables]
+  scripts_hpc[scripts/hpc: HPC jobs] -.-> scripts_python
 ````
 
 ---
 
-## Entry-point Scripts (`bin/`)
+## Entry-point Scripts (`scripts/python/`)
 
 * **`preprocess.py`**
   Reads raw data and produces processed CSV files.
