@@ -201,8 +201,14 @@ def SvmA_train(
     model_dir = f"{MODEL_PKL_PATH}/{model}"
     os.makedirs(model_dir, exist_ok=True)
     
-    joblib.dump(svm_final, f"{model_dir}/svm_model_final.pkl")
-    joblib.dump(X_train_sel.columns.tolist(), f"{model_dir}/selected_features_train.pkl")
+    # --- Unified saving rules ---
+    joblib.dump(svm_final, f"{model_dir}/{model}.pkl")
+    joblib.dump(X_train_sel.columns.tolist(), f"{model_dir}/selected_features_{model}.pkl")
+
+    # Save scaler (for consistency, even if identity here)
+    from sklearn.preprocessing import StandardScaler
+    dummy_scaler = StandardScaler().fit(X_train_sel)  # mimic preprocessing step
+    joblib.dump(dummy_scaler, f"{model_dir}/scaler_{model}.pkl")
     
     logging.info("Model and features saved successfully.")
 
