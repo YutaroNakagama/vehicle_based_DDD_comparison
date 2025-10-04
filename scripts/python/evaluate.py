@@ -101,19 +101,24 @@ def main():
     parser.add_argument(
         "--mode",
         choices=["only_target", "only_general", "finetune"],
-        required=True,
+        default=None,
         help="Experiment mode: only_target / only_general / finetune"
     )
 
     args = parser.parse_args()
 
-    logging.info(f"Running evaluation for model={args.model}, tag={args.tag}, mode={args.mode}")
+    # Normalize tag handling: treat None or "default" as no suffix
+    eval_tag = args.tag
+    if eval_tag is None or eval_tag.strip().lower() == "default":
+        eval_tag = ""
+
+    logging.info(f"Running evaluation for model={args.model}, tag={eval_tag or '(none)'}, mode={args.mode}")
 
     try:
         mp.eval_pipeline(
             args.model,
             mode=args.mode,
-            tag=args.tag,
+            tag=eval_tag,
             sample_size=args.sample_size,
             seed=args.seed,
             fold=args.fold,
