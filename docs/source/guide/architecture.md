@@ -79,7 +79,10 @@ graph LR
   Reads raw data and produces processed CSV files.
 
 * **`train.py`**
-  Calls `src.models.model_pipeline.train_pipeline`.
+  Parses command-line arguments (model, augmentation, split strategy, etc.)
+  and forwards them to `src.models.model_pipeline.train_pipeline`.
+  Supports optional domain generalization techniques such as Domain Mixup,
+  CORAL, and VAE-based feature augmentation.
 
 * **`evaluate.py`**
   Calls `src.models.evaluator.evaluate_pipeline`.
