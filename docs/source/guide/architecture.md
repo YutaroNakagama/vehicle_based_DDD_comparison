@@ -10,16 +10,52 @@ Cookiecutter Data Science:
 
 ```
 
-bin/        # Entry-point scripts
-src/        # Core logic (models, analysis)
-data/       # Raw, interim, processed datasets
-results/    # Experiment outputs
-models/     # Trained model artifacts
-reports/    # Figures and tables
-jobs/       # HPC job scripts
-docs/       # Documentation
+.
+├── config/             # Subject/group definitions, requirements
+│   ├── general_subjects.txt
+│   ├── subject_list.txt
+│   ├── target_groups.txt
+│   └── requirements.txt
+│
+├── data/               # Dataset storage (not tracked except README)
+│   ├── interim/        # Intermediate cleaned data
+│   ├── processed/      # Final processed datasets
+│   └── README.md
+│
+├── docs/               # Documentation (Sphinx build + sources)
+│   ├── source/         # Developer and API guides
+│   ├── conf.py
+│   └── index.rst
+│
+├── models/             # Saved model artifacts
+│   ├── common/
+│   ├── common_k10/
+│   ├── common_k20/
+│   ├── common_k40/
+│   ├── Lstm/
+│   ├── SvmA/
+│   └── SvmW/
+│
+├── results/            # Experiment outputs
+│   ├── evaluation/     # Evaluation metrics, thresholds
+│   ├── archive/        # Old runs or backups
+│   └── README.md
+│
+├── scripts/            # Job scripts and utilities
+│   ├── hpc/            # HPC job submission scripts (PBS etc.)
+│   ├── python/         # Python helpers, prototypes
+│   └── README.md
+│
+├── src/                # Core logic
+│   ├── analysis/       # Distance metrics (MMD, Wasserstein, DTW)
+│   ├── data/           # Data loaders, transformations
+│   ├── data_pipeline/  # Dataset preparation workflows
+│   ├── evaluation/     # Evaluation routines
+│   ├── models/         # Pipelines and architectures
+│   ├── utils/          # Shared helpers
+│   └── config.py       # Central configuration
 
-````
+```
 
 ```mermaid
 graph LR
