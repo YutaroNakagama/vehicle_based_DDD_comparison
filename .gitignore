@@ -51,3 +51,6 @@ catboost_info/
 
 # Sphinx build artifacts (redundant safety)
 docs/build/
+
+# commit automation script
+*.sh
