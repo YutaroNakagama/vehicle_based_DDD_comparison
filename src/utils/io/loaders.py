@@ -178,21 +178,20 @@ def load_subject_csvs(subject_list: list, model_type: str, add_subject_id: bool 
     Parameters
     ----------
     subject_list : list of str
-        List of subjects (e.g. ``["S0120_2"]``).
+        List of subjects (e.g. ["S0120_2"]).
     model_type : str
-        Model type directory (e.g. ``"Lstm"``, ``"common"``).
+        Model type directory (e.g. "Lstm", "common").
     add_subject_id : bool, default=False
-        If True, add a ``subject_id`` column to each row.
+        If True, add a subject_id column to each row.
 
     Returns
     -------
     tuple
-        - pandas.DataFrame : Concatenated subject data (empty if none loaded).  
+        - pandas.DataFrame : Concatenated subject data (empty if none loaded).
         - list of str : Feature column names (empty if no data loaded).
     """
     dfs = []
     for subject in subject_list:
-        # subject: e.g., 'S0120_2'
         parts = subject.split('_')
         if len(parts) != 2:
             logging.warning(f"Unexpected subject format: {subject}")
@@ -208,13 +207,31 @@ def load_subject_csvs(subject_list: list, model_type: str, add_subject_id: bool 
             logging.info(f"Loaded: {file_path}")
         except FileNotFoundError:
             logging.warning(f"File not found: {file_name}")
-    
+
     df_all = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
+
+    feature_columns = []
     if not df_all.empty:
-        start_col = "Steering_Range"
-        end_col = "LaneOffset_AAA"
-        feature_columns = df_all.loc[:, start_col:end_col].columns.tolist()
-    else:
-        feature_columns = []
+        ranges = {
+            "Lstm": ("steering_std_dev", "lane_offset_gaussian_smooth"),
+            "SvmA": ("Steering_Range", "LongAcc_SampleEntropy"),
+            "RF":   ("Steering_Range", "LongAcc_SampleEntropy"),
+            "SvmW": ("SteeringWheel_DDD", "LaneOffset_AAA"),
+        }
+        exclude_cols = {"Timestamp", "subject_id"}
+
+        if model_type in ranges:
+            start_col, end_col = ranges[model_type]
+            if start_col in df_all.columns and end_col in df_all.columns:
+                feature_columns = df_all.loc[:, start_col:end_col].columns.tolist()
+            else:
+                logging.warning(
+                    f"[{model_type}] Expected columns {start_col}–{end_col} not found. "
+                    "Using all non-excluded columns."
+                )
+                feature_columns = [c for c in df_all.columns if c not in exclude_cols]
+        else:
+            feature_columns = [c for c in df_all.columns if c not in exclude_cols]
+
     return df_all, feature_columns
 

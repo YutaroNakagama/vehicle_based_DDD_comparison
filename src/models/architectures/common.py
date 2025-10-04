@@ -247,7 +247,7 @@ def common_train(
             }
             clf = LogisticRegression(**params)
 
-        elif model == "SVM":
+        elif model in ["SVM", "SvmW"]:
             params = {
                 "C": trial.suggest_float("C", 1e-3, 10.0, log=True),
                 "kernel": "linear",
@@ -380,15 +380,27 @@ def common_train(
  
         return score
 
-    study = optuna.create_study(
-        direction="maximize",
-        pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=1, interval_steps=1)
-    )
-    study.optimize(objective, n_trials=N_TRIALS, n_jobs=1)
+    # Run Optuna only for supported models
+    optuna_supported = [
+        "LightGBM", "XGBoost", "CatBoost",
+        "RF", "BalancedRF",
+        "LogisticRegression", "SVM",
+        "DecisionTree", "AdaBoost", "GradientBoosting",
+        "K-Nearest Neighbors", "MLP"
+    ]
 
-    best_params = study.best_params
+    if model in optuna_supported:
+        study = optuna.create_study(
+            direction="maximize",
+            pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=1, interval_steps=1)
+        )
+        study.optimize(objective, n_trials=N_TRIALS, n_jobs=1)
+        best_params = study.best_params
+        logging.info(f"Best hyperparameters: {best_params}")
+    else:
+        logging.warning(f"Optuna tuning skipped: not implemented for model={model}")
+        best_params = {}
 
-    logging.info(f"Best hyperparameters: {best_params}")
     logging.info(f"Selected features (from input): {selected_features}")
 
     if scaler is None:
@@ -420,7 +432,7 @@ def common_train(
                 best_params.pop("class_weight")
         best_clf = LogisticRegression(**best_params, class_weight="balanced")
 
-    elif model == "SVM":
+    elif model in ["SVM", "SvmW"]:
         best_clf = SVC(**best_params, probability=True, class_weight="balanced", random_state=42)
 
     elif model == "DecisionTree":
