@@ -42,7 +42,9 @@ Cookiecutter Data Science:
 │   └── SvmW/
 │
 ├── results/            # Experiment outputs
-│   ├── evaluation/     # Evaluation metrics, thresholds
+│   ├── evaluation/     # Evaluation metrics and thresholds
+│   ├── domain_generalization/  # Domain distance results (MMD, Wasserstein, DTW)
+│   ├── ranks10/        # Subject/group ranking results
 │   ├── archive/        # Old runs or backups
 │   └── README.md
 │
@@ -60,7 +62,7 @@ Cookiecutter Data Science:
 │   ├── utils/          # Shared helpers
 │   └── config.py       # Central configuration
 
-```
+````
 
 ```mermaid
 graph LR
@@ -83,17 +85,23 @@ graph LR
   Parses command-line arguments (model, augmentation, split strategy, etc.)
   and forwards them to `src.models.model_pipeline.train_pipeline`.
   Supports optional domain generalization techniques such as Domain Mixup,
-  CORAL, and VAE-based augmentation.  
+  CORAL, and VAE-based augmentation.
   Outputs trained models (`models/{model_type}/*.pkl`) and
   training-time metrics (`results/train/{model}/*`).
 
 * **`evaluate.py`**
-  Calls `src.evaluation.eval_pipeline.eval_pipeline`.  
+  Calls `src.evaluation.eval_pipeline.eval_pipeline`.
   Loads trained models and scalers, evaluates them on held-out data,
   and saves metrics (`results/evaluation/{model}/*`).
 
 * **`analyze.py`**
-  Calls `src.analysis.distances.distance_pipeline`.
+  Provides a unified CLI interface for analysis tasks.
+  Calls:
+
+  * `src.analysis.distances.run_comp_dist` → Compute domain distance matrices
+  * `src.analysis.rank_export.run_rank_export` → Export ranked subject lists
+  * `src.analysis.correlation.run_distance_vs_delta` → Correlate distances with Δmetrics
+  * `src.analysis.summary_groups.run_summarize_only10_vs_finetune` → Summarize per-group results
 
 ---
 
@@ -108,13 +116,13 @@ graph LR
   Defines individual models (RF, SVM-A, SVM-W, LSTM).
 
 * **`src/analysis/distances.py`**
-  Implements domain distance computation (`distance_pipeline`).
+  Implements domain distance computation (`run_comp_dist`).
 
 ---
 
 ## Pipelines and Function Dependencies
 
-## Preprocessing Pipeline (`src/data_pipeline/processing_pipeline.py`)
+### Preprocessing Pipeline (`src/data_pipeline/processing_pipeline.py`)
 
 This module orchestrates all preprocessing steps before training or evaluation.
 It defines `main_pipeline`, which dynamically applies feature extraction
@@ -133,28 +141,24 @@ graph TD
   main_pipeline --> kss_process
 ```
 
-| Step / Function             | Input                    | Output                         | Notes                                       |
-| ----------------------------| ------------------------ | ------------------------------ | ------------------------------------------- |
-| `read_subject_list`         | `config/subject_list.txt` | list of subject IDs            | Provides subjects for iteration             |
-| `time_freq_domain_process`  | subject, model           | CSV (`time_freq_domain_*.csv`) | For SvmA and common models                  |
-| `wavelet_process`           | subject, model           | CSV (`wavelet_*.csv`)          | For SvmW and common models                  |
-| `smooth_std_pe_process`     | subject, model           | CSV (`smooth_std_pe_*.csv`)    | For Lstm and common models                  |
-| `eeg_process`               | subject, model           | CSV (`eeg_*.csv`)              | Always executed                             |
-| `pupil_process`             | subject, model           | CSV (`pupil_*.csv`)            | Currently disabled (commented out)          |
-| `perclos_process`           | subject, model           | CSV (`perclos_*.csv`)          | Currently disabled (commented out)          |
-| `merge_process`             | subject, model           | CSV (`merged_*.csv`)           | Joins features on `Timestamp`               |
-| `kss_process`               | subject, model           | CSV (`processed_*.csv`)        | Aligns Karolinska Sleepiness Scale (labels) |
+| Step / Function            | Input                     | Output                         | Notes                                       |
+| -------------------------- | ------------------------- | ------------------------------ | ------------------------------------------- |
+| `read_subject_list`        | `config/subject_list.txt` | list of subject IDs            | Provides subjects for iteration             |
+| `time_freq_domain_process` | subject, model            | CSV (`time_freq_domain_*.csv`) | For SvmA and common models                  |
+| `wavelet_process`          | subject, model            | CSV (`wavelet_*.csv`)          | For SvmW and common models                  |
+| `smooth_std_pe_process`    | subject, model            | CSV (`smooth_std_pe_*.csv`)    | For Lstm and common models                  |
+| `eeg_process`              | subject, model            | CSV (`eeg_*.csv`)              | Always executed                             |
+| `pupil_process`            | subject, model            | CSV (`pupil_*.csv`)            | Currently disabled (commented out)          |
+| `perclos_process`          | subject, model            | CSV (`perclos_*.csv`)          | Currently disabled (commented out)          |
+| `merge_process`            | subject, model            | CSV (`merged_*.csv`)           | Joins features on `Timestamp`               |
+| `kss_process`              | subject, model            | CSV (`processed_*.csv`)        | Aligns Karolinska Sleepiness Scale (labels) |
 
 **Outputs:**
-- Interim CSV files saved under `data/interim/{feature}/{model}/`.
-- Final processed per-subject datasets: `data/processed/{model}/processed_{subject}.csv`.
 
-**Notes:**
-- Supports optional jittering augmentation.
-- Serves as the data preparation stage before `train_pipeline`.
+* Interim CSV files saved under `data/interim/{feature}/{model}/`.
+* Final processed per-subject datasets: `data/processed/{model}/processed_{subject}.csv`.
 
 ---
-
 
 ### `train_pipeline`
 
@@ -168,15 +172,15 @@ graph TD
   train_model --> save_metrics
 ```
 
-| Function            | Input                                             | Output                                        | Notes                           |
-| ------------------- | ------------------------------------------------- | --------------------------------------------- | ------------------------------- |
-| `train_pipeline`    | dataset path(s), config params                    | trained model(s), metrics files               | Orchestrates training workflow  |
-| `load_data`         | `data/processed/*.csv`                            | `pandas.DataFrame`                            | Reads preprocessed subject data |
-| `split_data`        | DataFrame, split strategy                         | Train/val/test DataFrames                     | Supports multiple strategies: random, subject-wise (GroupKFold), subject_time_split, finetune_target_subjects, etc. |
-| `feature_selection` | Training DataFrame, feature config                | Reduced feature DataFrame                     | e.g. ANOVA, MI, RF importance   |
-| `train_model`       | Reduced training set, model params                | fitted model object                           | RF / SVM-A / SVM-W / LSTM       |
-| `save_model`        | fitted model, scaler, features, metadata          | `models/{model_type}/*.pkl`, `feature_meta.json` | Stored with pickle/joblib       |
-| `save_metrics`      | training logs, metrics (loss, F1, AUC, threshold) | `results/train/{model}/trainmetrics_*.{csv,json}`, `results/train/{model}/threshold_*.json` | Saved per model & suffix        |
+| Function            | Input                                             | Output                                                                                      | Notes                                                              |
+| ------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `train_pipeline`    | dataset path(s), config params                    | trained model(s), metrics files                                                             | Orchestrates training workflow                                     |
+| `load_data`         | `data/processed/*.csv`                            | `pandas.DataFrame`                                                                          | Reads preprocessed subject data                                    |
+| `split_data`        | DataFrame, split strategy                         | Train/val/test DataFrames                                                                   | Supports random, subject-wise, time-stratified, or finetune splits |
+| `feature_selection` | Training DataFrame, feature config                | Reduced feature DataFrame                                                                   | e.g. ANOVA, MI, RF importance                                      |
+| `train_model`       | Reduced training set, model params                | fitted model object                                                                         | RF / SVM-A / SVM-W / LSTM                                          |
+| `save_model`        | fitted model, scaler, features, metadata          | `models/{model_type}/*.pkl`, `feature_meta.json`                                            | Stored with joblib                                                 |
+| `save_metrics`      | training logs, metrics (loss, F1, AUC, threshold) | `results/train/{model}/trainmetrics_*.{csv,json}`, `results/train/{model}/threshold_*.json` | Saved per model & suffix                                           |
 
 ---
 
@@ -192,155 +196,86 @@ graph TD
   eval_pipeline --> save_results
 ```
 
-| Function             | Input                               | Output                                                  | Notes                                 |
-| -------------------- | ----------------------------------- | ------------------------------------------------------- | ------------------------------------- |
-| eval_pipeline | trained model path, dataset path(s) | evaluation metrics | Orchestrates evaluation workflow |
-| load_subject_list | config/subject_list.txt | subject IDs | Reads subject list or fold-specific |
-| load_test_data | data/processed/*.csv | DataFrame | Same preprocessing as training |
-| split_data | DataFrame, split strategy | Train/val/test DataFrames | data_split or data_split_by_subject|
-| load_model | models/{model_type}/*.{pkl,keras}, scaler, features | fitted model, scaler, selected features | joblib or keras |
-| evaluate_model | model, test DataFrame | metrics dict (accuracy, F1, AUC, precision, recall, report) | Uses model-specific eval (`lstm_eval`, `SvmA_eval`, `common_eval`) |
-| save_results | metrics dict | results/evaluation/{model}/metrics_*.{csv,json} | Saves JSON (timestamped) + flattened CSV |
-
-Notes:  
-- Evaluation requires the exact `selected_features` and `scaler` saved during training.  
-- LSTM uses `.keras` + scaler, classical ML uses `.pkl` + joblib.
+| Function            | Input                               | Output                                              | Notes                                             |
+| ------------------- | ----------------------------------- | --------------------------------------------------- | ------------------------------------------------- |
+| `eval_pipeline`     | trained model path, dataset path(s) | evaluation metrics                                  | Orchestrates evaluation workflow                  |
+| `load_subject_list` | `config/subject_list.txt`           | subject IDs                                         | Reads subject list or fold-specific               |
+| `load_test_data`    | `data/processed/*.csv`              | DataFrame                                           | Same preprocessing as training                    |
+| `split_data`        | DataFrame, split strategy           | Train/val/test DataFrames                           | Supports `data_split` and `data_split_by_subject` |
+| `load_model`        | model files + scaler + features     | fitted model, scaler, selected features             | joblib or keras                                   |
+| `evaluate_model`    | model, test DataFrame               | metrics dict (accuracy, F1, AUC, precision, recall) | Uses model-specific evaluators                    |
+| `save_results`      | metrics dict                        | results/evaluation/{model}/metrics_*.{csv,json}     | Saves JSON (timestamped) + CSV                    |
 
 ---
 
-### `distance_pipeline`
+### Domain Distance Pipeline (`src/analysis/distances.py`)
+
+Implements `run_comp_dist()`, which orchestrates subject- and group-level
+domain distance computation (MMD, Wasserstein, DTW).
 
 ```mermaid
 graph TD
-  distance_pipeline --> load_features
-  distance_pipeline --> compute_mmd
-  distance_pipeline --> compute_wasserstein
-  distance_pipeline --> compute_dtw
-  compute_mmd --> save_mmd
-  compute_wasserstein --> save_was
-  compute_dtw --> save_dtw
+  run_comp_dist --> load_features
+  run_comp_dist --> compute_mmd
+  run_comp_dist --> compute_wasserstein
+  run_comp_dist --> compute_dtw
+  run_comp_dist --> save_results
 ```
 
-| Function              | Input                                    | Output                                       | Notes                                 |
-| --------------------- | ---------------------------------------- | -------------------------------------------- | ------------------------------------- |
-| `distance_pipeline`   | subject list, data root                  | distance matrices                            | Orchestrates domain distance analysis |
-| `load_features`       | Cached features (`.pkl`, `.npy`)         | Feature arrays                               | Reuses cache if available             |
-| `compute_mmd`         | Feature arrays (source vs target groups) | MMD distance matrix (`.npy`)                 | Kernel-based                          |
-| `compute_wasserstein` | Feature arrays                           | Wasserstein distance matrix (`.npy`)         | Uses POT/OT library                   |
-| `compute_dtw`         | Time-series signals                      | DTW distance matrix (`.npy`)                 | Uses fastdtw/scipy                    |
-| `save_mmd`            | MMD results                              | `results/mmd/mmd_matrix.npy`                 | Numpy array                           |
-| `save_was`            | Wasserstein results                      | `results/wasserstein/wasserstein_matrix.npy` | Numpy array                           |
-| `save_dtw`            | DTW results                              | `results/dtw/dtw_matrix.npy`                 | Numpy array                           |
+| Function                | Input                                    | Output                               | Notes                                 |
+| ----------------------- | ---------------------------------------- | ------------------------------------ | ------------------------------------- |
+| `run_comp_dist()`       | subject list, data root                  | distance matrices                    | Orchestrates domain distance analysis |
+| `compute_mmd()`         | Feature arrays (source vs target groups) | MMD distance matrix (`.npy`)         | Kernel-based                          |
+| `compute_wasserstein()` | Feature arrays                           | Wasserstein distance matrix (`.npy`) | Uses POT/OT library                   |
+| `compute_dtw()`         | Time-series signals                      | DTW distance matrix (`.npy`)         | Uses fastdtw/scipy                    |
+
+**Outputs:**
+
+* `results/domain_generalization/mmd_matrix.npy`
+* `results/domain_generalization/wasserstein_matrix.npy`
+* `results/domain_generalization/dtw_matrix.npy`
 
 ---
 
-## Utility Modules (`src/utils/`)
+## HPC Integration (`scripts/hpc/`)
 
-The `utils` package provides shared helpers for I/O, domain generalization, and visualization.  
-Here we document the I/O layer, which is critical for dataset preparation and experiment reproducibility.
-
-### I/O Utilities (`src/utils/io/`)
-
-#### `loaders.py`
-
-| Function | Input | Output | Notes |
-|----------|-------|--------|-------|
-| `safe_load_mat(file_path)` | `.mat` file path | dict (matlab content) or `None` | Wraps `scipy.io.loadmat` with error handling |
-| `read_subject_list()` | `config/subject_list.txt` | list of subject IDs | Reads all subjects |
-| `read_subject_list_fold(fold)` | `config/subject_list_fold/subject_list_{fold}.txt` | list of IDs | Fold-specific split |
-| `read_train_subject_list()` | `config/subject_list_train.txt` | list of IDs | Training-only subjects |
-| `read_train_subject_list_fold(fold)` | `config/subject_list_fold/subject_list_train_{fold}.txt` | list of IDs | Fold-specific training split |
-| `save_csv(df, subject_id, version, feat, model)` | DataFrame + metadata | writes CSV | Saves either interim (`data/interim/...`) or processed (`data/processed/...`) |
-| `get_model_type(model_name)` | e.g. `RF`, `SvmA` | string | Maps to `"common"`, `"SvmA"`, `"SvmW"`, `"Lstm"` |
-| `load_subject_csvs(subject_list, model_type, add_subject_id)` | subject IDs, model | `(DataFrame, feature_columns)` | Batch load processed subject CSVs |
-
----
-
-#### `merge.py`
-
-| Function | Input | Output | Notes |
-|----------|-------|--------|-------|
-| `load_feature_csv(feature, timestamp_col, model, subject_id, version)` | feature name + ids | DataFrame (with `Timestamp`) | Standardizes timestamp column |
-| `merge_features(features, model, subject_id, version)` | dict of {feature → timestamp_col} | merged DataFrame | Aligns features by nearest timestamp |
-| `merge_process(subject, model)` | `"S0210_1"`, `"common"` | writes `merged_*.csv` | Saves merged features via `save_csv` |
-| `combine_file(subject)` | `"S0210_1"` | list[DataFrame] | Legacy loader for processed CSV |
-
----
-
-#### `split.py`
-
-| Function | Input | Output | Notes |
-|----------|-------|--------|-------|
-| `data_split(df, train/val/test ratios)` | DataFrame | (X_train, X_val, X_test, y_train, y_val, y_test) | Random split with stratification |
-| `data_split_by_subject(df, train_subjects, …)` | DataFrame + subject lists | tuple of DataFrames | Ensures subject-level separation |
-| `data_time_split_by_subject(df, subject_col, time_col, ratios)` | DataFrame | tuple of DataFrames | Preserves temporal order per subject |
-| `time_stratified_three_way_split(df, label_col, …)` | DataFrame | (idx_train, idx_val, idx_test) | Finds optimal time cutpoints to balance label distribution |
-
-**Notes:**
-- All split functions filter KSS labels and convert them to binary classification.
-- `split.py` automatically handles non-finite values (`NaN`, `inf`) with cleanup and logging.
-- Supports both **random/global splits** and **subject-wise splits** (to prevent leakage).
-- Provides **time-stratified splitting** for more realistic evaluation.
-
----
-
-### Role of Utilities
-
-- **`loaders.py`** → interface between raw/processed data and the pipeline.
-- **`merge.py`** → aligns heterogeneous features into a unified dataset per subject.
-- **`split.py`** → defines robust evaluation strategies (random vs subject vs time-aware).
-
-Together, these modules abstract away repetitive tasks (file I/O, alignment, splitting) and provide a **reusable foundation** for preprocessing, training, and evaluation pipelines.
-
-
-## Data Flow and Artifacts
-
-| Stage      | Input                    | Output                                                  |
-| ---------- | ------------------------ | ------------------------------------------------------- |
-| Preprocess | `data/raw/*.mat`         | `data/processed/*.csv`                                  |
-| Training   | processed data           | `models/*.pkl`, `results/trainmetrics_*.csv`            |
-| Evaluation | models, processed data   | `results/evalmetrics_*.csv`, `results/threshold_*.json` |
-| Analysis   | cached features, results | `results/mmd/*.npy`, `reports/figures/*.png`            |
-
----
-
-## HPC Integration (`jobs/`)
-
-The repository integrates with the JAIST Kagayaki HPC cluster using PBS job scripts:
+The repository integrates with JAIST's Kagayaki HPC cluster using PBS job scripts.
 
 * **General design**
-  * Scripts live under `scripts/hpc/` (subfolders: `train/`, `evaluate/`, `domain_gen/`, etc.).
+
+  * Scripts under `scripts/hpc/{train,evaluate,domain_gen}`.
   * Environment setup: conda activation (`python310`), `PYTHONPATH` export, BLAS thread limiting.
-  * Each job requests resources explicitly (`ncpus`, `mem`, `walltime`) depending on task scale.
-  * Logs are written to `scripts/hpc/log/`.
+  * Logs: `scripts/hpc/log/`.
 
 * **Examples**
-  * `scripts/hpc/domain_gen/pbs_compute_distance.sh`
-    - Submits a single job to compute domain distance matrices (MMD, Wasserstein, DTW).
-    - Runs `scripts/python/analyze.py comp-dist` with subject list and group config.
-    - Installs dependencies (`requirements.txt` or fallback `pip install numpy pandas ...`).
-    - Output: `results/{mmd, wasserstein, dtw}/*.npy`.
+
+  * `scripts/hpc/domain_gen/pbs_compute_distances.sh`
+    Submits a single job to compute domain distance matrices (MMD, Wasserstein, DTW).
+    Runs `scripts/python/analyze.py comp-dist`.
+    Output: `results/domain_generalization/*.npy`.
 
   * `scripts/hpc/domain_gen/pbs_rank.sh`
-    - Uses PBS job arrays (`-J 1-9`) to evaluate multiple groups in parallel.
-    - Reads group definitions (e.g. `results/ranks/*.txt`) and assigns them by `PBS_ARRAY_INDEX`.
-    - Supports three run modes: `only_general`, `finetune`, `only_target`.
-    - Pretrain artifacts (`pretrain_setting_*.pkl`) are reused if available, otherwise generated.
-    - Calls `bin/train.py` with `--mode`, `--tag`, and time-stratified split options.
-    - Output: trained models under `models/{model_type}/`, metrics under `results/train/{model}/`.
-
+    Uses PBS job arrays (`-J 1-9`) to evaluate multiple groups in parallel.
+    Supports run modes: `only_general`, `finetune`, `only_target`.
+    Reuses or generates `pretrain_setting_*.pkl`.
+    Calls `scripts/python/train.py` with `--mode`, `--tag`, and time-stratified options.
+    Output: trained models (`models/{model_type}/`) and metrics (`results/train/{model}/`).
 
 ---
 
 ## Extensibility & Risks
 
-* **Extensibility**:
+* **Extensibility**
 
-  * New models → add under `src/models/architectures/`
-  * New distance metrics → extend `src/analysis/distances.py`
+  * Add new models → `src/models/architectures/`
+  * Add new distance metrics → `src/analysis/distances.py`
+  * Add new domain-generalization methods → `src/utils/domain_generalization/`
 
-* **Risks**:
+* **Risks**
 
-  * Hardcoded paths in some scripts
-  * Results and models directories can grow large → need cleanup strategy
+  * Some paths are partially hardcoded in job scripts
+  * `results/` and `models/` can grow large → periodic cleanup recommended
+  * Cache invalidation requires manual bump of cache version in `distances.py`
+
+```
 
