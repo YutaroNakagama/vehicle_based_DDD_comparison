@@ -131,25 +131,27 @@ graph TD
 
 ---
 
-### `evaluate_pipeline`
+### `eval_pipeline`
 
 ```mermaid
 graph TD
-  evaluate_pipeline --> load_model
-  evaluate_pipeline --> load_test_data
-  evaluate_pipeline --> evaluate_model
-  evaluate_pipeline --> optimise_threshold
-  evaluate_pipeline --> save_results
+  eval_pipeline --> load_subject_list
+  eval_pipeline --> load_test_data
+  eval_pipeline --> split_data
+  eval_pipeline --> load_model
+  eval_pipeline --> evaluate_model
+  eval_pipeline --> save_results
 ```
 
 | Function             | Input                               | Output                                                  | Notes                                 |
 | -------------------- | ----------------------------------- | ------------------------------------------------------- | ------------------------------------- |
-| `evaluate_pipeline`  | trained model path, dataset path(s) | evaluation metrics, threshold files                     | Orchestrates evaluation workflow      |
-| `load_model`         | `models/<model>.pkl`                | fitted model object                                     | joblib load                           |
-| `load_test_data`     | `data/processed/*.csv`              | Test DataFrame                                          | Same preprocessing as training        |
-| `evaluate_model`     | model object, test DataFrame        | metrics (accuracy, F1, ROC AUC, AP)                     | Outputs raw scores & confusion matrix |
-| `optimise_threshold` | predicted probabilities, labels     | threshold value                                         | Search for max F1 (Optuna-based)      |
-| `save_results`       | metrics, threshold                  | `results/evalmetrics_*.csv`, `results/threshold_*.json` | Consistent naming per model           |
+| eval_pipeline | trained model path, dataset path(s) | evaluation metrics | Orchestrates evaluation workflow |
+| load_subject_list | config/subject_list.txt | subject IDs | Reads subject list or fold-specific |
+| load_test_data | data/processed/*.csv | DataFrame | Same preprocessing as training |
+| split_data | DataFrame, split strategy | Train/val/test DataFrames | data_split or data_split_by_subject|
+| load_model | models/{model_type}/*.{pkl,keras} | fitted model object, scaler, features | joblib or keras |
+| evaluate_model | model object, test DataFrame | metrics dict (accuracy, F1, AUC, report) | Uses model-specific eval function |
+| save_results | metrics dict | results/evaluation/{model}/metrics_*.{csv,json} | JSON + flattened CSV |
 
 ---
 
