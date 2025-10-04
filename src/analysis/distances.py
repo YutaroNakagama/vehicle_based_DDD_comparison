@@ -13,6 +13,13 @@ from tqdm import tqdm
 
 CACHE_VERSION = "v1"  # bump this when feature layout/filters change
 
+# Limit BLAS threads
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+
 def _cache_key(subjects, data_root: Path) -> str:
     """Generate a unique cache key for feature extraction.
 
@@ -58,12 +65,6 @@ def _extract_features_with_cache(subjects, data_root: Path, cache_dir: Path = Pa
     np.savez_compressed(npz, **feats)
     return feats
 
-# Limit BLAS threads
-os.environ.setdefault("OMP_NUM_THREADS", "1")
-os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
-os.environ.setdefault("MKL_NUM_THREADS", "1")
-os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
-os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
 
 # ===== Helpers =====
 def _median_gamma(X: np.ndarray, Y: np.ndarray, max_samples: int = 1000) -> float:
@@ -517,9 +518,9 @@ def _plot_intra_inter(stats: dict[str, dict[str, float]], dist_name: str, save_p
 def run_comp_dist(
     subject_list_path: str = "../../dataset/mdapbe/subject_list.txt",
     data_root: str = "data/processed/common",
-    out_mmd_dir: str = "results/mmd",
-    out_dist_dir: str = "results/distances",
-    groups_file: str = "../misc/target_groups.txt",
+    out_mmd_dir: str = "results/domain_generalization/mmd",
+    out_dist_dir: str = "results/domain_generalization/distances",
+    groups_file: str = "config/target_groups.txt",
 ) -> int:
     """Run the full computation pipeline for subject/group distances.
 
@@ -632,6 +633,9 @@ def run_comp_dist(
         "dtw":         (out_dist / "dtw_matrix.npy",         out_dist / "subjects.json"),
     }
 
+    # Save all downstream results under results/domain_generalization/{dist_name}/
+    base_dir = Path("results/domain_generalization")
+
     for dist_name, (matrix_path, subject_path) in distance_types.items():
         matrix = np.load(matrix_path)
         subjs = json.loads(Path(subject_path).read_text())
@@ -644,7 +648,8 @@ def run_comp_dist(
         sorted_idx = np.argsort(-means_for_sort)
         subj_sorted = [subjs[i] for i in sorted_idx]
 
-        save_dir = Path(f"results/{dist_name.lower()}"); save_dir.mkdir(parents=True, exist_ok=True)
+        save_dir = base_dir / dist_name.lower()
+        save_dir.mkdir(parents=True, exist_ok=True)
         np.save(save_dir / f"{dist_name.lower()}_mean.npy", means)
         np.save(save_dir / f"{dist_name.lower()}_std.npy", stds)
         np.save(save_dir / f"{dist_name.lower()}_mean_sorted.npy", means[sorted_idx])
@@ -655,7 +660,8 @@ def run_comp_dist(
                   dist_name, save_dir / f"{dist_name.lower()}_mean_std_sorted.png")
 
         group_matrix, group_names = _compute_group_dist_matrix(matrix, subjs, groups)
-        group_dir = Path(f"results/group_distances/{dist_name.lower()}"); group_dir.mkdir(parents=True, exist_ok=True)
+        group_dir = base_dir / "group_distances" / dist_name.lower()
+        group_dir.mkdir(parents=True, exist_ok=True)
         np.save(group_dir / "group_matrix.npy", group_matrix)
         (group_dir / "group_names.json").write_text(json.dumps(group_names))
         _plot_heatmap(group_matrix, group_names, group_names,
