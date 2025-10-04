@@ -76,16 +76,21 @@ graph LR
 ## Entry-point Scripts (`scripts/python/`)
 
 * **`preprocess.py`**
-  Reads raw data and produces processed CSV files.
+  Reads raw data (MAT files) and produces processed CSV files
+  under `data/processed/`.
 
 * **`train.py`**
   Parses command-line arguments (model, augmentation, split strategy, etc.)
   and forwards them to `src.models.model_pipeline.train_pipeline`.
   Supports optional domain generalization techniques such as Domain Mixup,
-  CORAL, and VAE-based feature augmentation.
+  CORAL, and VAE-based augmentation.  
+  Outputs trained models (`models/{model_type}/*.pkl`) and
+  training-time metrics (`results/train/{model}/*`).
 
 * **`evaluate.py`**
-  Calls `src.models.evaluator.evaluate_pipeline`.
+  Calls `src.evaluation.eval_pipeline.eval_pipeline`.  
+  Loads trained models and scalers, evaluates them on held-out data,
+  and saves metrics (`results/evaluation/{model}/*`).
 
 * **`analyze.py`**
   Calls `src.analysis.distances.distance_pipeline`.
@@ -95,7 +100,9 @@ graph LR
 ## Core Modules (`src/`)
 
 * **`src/models/model_pipeline.py`**
-  Orchestrates training and evaluation (`train_pipeline`, `evaluate_pipeline`).
+  Orchestrates training (`train_pipeline`).
+  Handles subject splits, feature selection, model training,
+  and saving artifacts. Evaluation is separated to `src/evaluation/eval_pipeline.py`.
 
 * **`src/models/architectures/*`**
   Defines individual models (RF, SVM-A, SVM-W, LSTM).
@@ -149,9 +156,13 @@ graph TD
 | load_subject_list | config/subject_list.txt | subject IDs | Reads subject list or fold-specific |
 | load_test_data | data/processed/*.csv | DataFrame | Same preprocessing as training |
 | split_data | DataFrame, split strategy | Train/val/test DataFrames | data_split or data_split_by_subject|
-| load_model | models/{model_type}/*.{pkl,keras} | fitted model object, scaler, features | joblib or keras |
-| evaluate_model | model object, test DataFrame | metrics dict (accuracy, F1, AUC, report) | Uses model-specific eval function |
-| save_results | metrics dict | results/evaluation/{model}/metrics_*.{csv,json} | JSON + flattened CSV |
+| load_model | models/{model_type}/*.{pkl,keras}, scaler, features | fitted model, scaler, selected features | joblib or keras |
+| evaluate_model | model, test DataFrame | metrics dict (accuracy, F1, AUC, precision, recall, report) | Uses model-specific eval (`lstm_eval`, `SvmA_eval`, `common_eval`) |
+| save_results | metrics dict | results/evaluation/{model}/metrics_*.{csv,json} | Saves JSON (timestamped) + flattened CSV |
+
+Notes:  
+- Evaluation requires the exact `selected_features` and `scaler` saved during training.  
+- LSTM uses `.keras` + scaler, classical ML uses `.pkl` + joblib.
 
 ---
 
