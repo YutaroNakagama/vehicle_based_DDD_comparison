@@ -623,7 +623,40 @@ def train_pipeline(
         
         elif feature_selection_method == "rf":
             # Random Forest importance based feature selection
-            selected_features = select_top_features_by_importance(X_train_for_fs, y_train, top_k=TOP_K_FEATURES)
+            # Ensure no inf / NaN before feature selection
+            from src.utils.io.split import _check_nonfinite
+
+            # Apply _check_nonfinite to all splits to avoid inf/NaN propagation
+            X_train_for_fs = _check_nonfinite(X_train_for_fs, "X_train_for_fs")
+            X_val_for_fs   = _check_nonfinite(X_val_for_fs, "X_val_for_fs")
+            X_test_for_fs  = _check_nonfinite(
+                X_test.drop(columns=["subject_id"], errors='ignore').reset_index(drop=True),
+                "X_test_for_fs"
+            )
+
+            # === Emergency fix ===
+            # Force replace absurd values (NaN, inf, or too large for float32) with 0
+            def _sanitize(df, name):
+                df = df.copy()
+                df = df.applymap(
+                    lambda v: 0 if (isinstance(v, (int, float)) and (not np.isfinite(v) or abs(v) > 1e6)) else v
+                )
+                import logging
+                logging.warning(f"[EmergencySanitize] Applied sanitization to {name}")
+                return df
+
+            X_train_for_fs = _sanitize(X_train_for_fs, "X_train_for_fs")
+            X_val_for_fs   = _sanitize(X_val_for_fs, "X_val_for_fs")
+            X_test_for_fs  = _sanitize(X_test_for_fs, "X_test_for_fs")
+
+            selected_features = select_top_features_by_importance(
+                X_train_for_fs, y_train, top_k=TOP_K_FEATURES
+            )
+            # Double-check after selecting features
+            X_train_for_fs = _check_nonfinite(X_train_for_fs[selected_features], "X_train_for_fs-postRF")
+            X_val_for_fs   = _check_nonfinite(X_val_for_fs[selected_features], "X_val_for_fs-postRF")
+            X_test_for_fs  = _check_nonfinite(X_test_for_fs[selected_features], "X_test_for_fs-postRF")
+        
             logging.info(f"Selected features (RF importance): {selected_features}")
         
         else:

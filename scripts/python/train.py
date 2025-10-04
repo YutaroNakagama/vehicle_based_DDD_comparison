@@ -19,6 +19,12 @@ import sys
 import os
 import argparse
 import logging
+from pathlib import Path
+
+# Add project root to sys.path
+THIS = Path(__file__).resolve()
+PRJ = THIS.parents[1]   # vehicle_based_DDD_comparison/
+sys.path.append(str(PRJ))
 
 # Add project root to the module search path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))

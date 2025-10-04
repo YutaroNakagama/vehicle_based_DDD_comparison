@@ -12,7 +12,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import KFold
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense, Flatten, Bidirectional, LSTM, Layer, Input
+from tensorflow.keras.layers import Dense, Flatten, Bidirectional, LSTM, Layer, Input, Reshape
 from tensorflow.keras.callbacks import EarlyStopping
 import tensorflow as tf
 
@@ -72,8 +72,9 @@ def build_lstm_model(input_shape: tuple) -> Model:
     """
     inputs = Input(shape=input_shape)
     x = Bidirectional(LSTM(50, return_sequences=True))(inputs)
-    x = AttentionLayer()(x)
-    x = Dense(20, activation='relu')(tf.expand_dims(x, axis=-1))
+    x = AttentionLayer()(x)  # (batch, features)
+    x = Dense(20, activation='relu')(x)
+    # Flatten is technically not needed here, but keep for consistency
     x = Flatten()(x)
     outputs = Dense(1, activation='sigmoid')(x)
 
