@@ -373,7 +373,7 @@ def train_pipeline(
         # --- Step 1: Save pretrain artifacts (features/scaler) on general_subjects ---
         if save_pretrain:
             if not os.path.dirname(save_pretrain):
-                save_pretrain = os.path.join("model/common", save_pretrain)
+                save_pretrain = os.path.join("models", model_type, save_pretrain)
 
             # 2. random separation
             X_gtrain, _, _, y_gtrain, _, _ = data_split(general_data, random_state=seed)
@@ -407,7 +407,7 @@ def train_pipeline(
         # --- Step 2-B: (Default) Fine-tuning path using finetune_setting ---
         if finetune_setting:
             if not os.path.dirname(finetune_setting):
-                finetune_setting = os.path.join("model/common", finetune_setting)
+                finetune_setting = os.path.join("models", model_type, finetune_setting)
             with open(finetune_setting, "rb") as f:
                 pretrain_dict = pickle.load(f)
             selected_features = pretrain_dict["selected_features"]
@@ -712,7 +712,7 @@ def train_pipeline(
 
         # ===== Save artifacts =====
         out_model_dir = f"models/{model_type}"
-        out_result_dir = f"results/{model_type}/{model_key}"
+        out_result_dir = f"results/train/{model_key}"
         os.makedirs(out_model_dir, exist_ok=True)
         os.makedirs(out_result_dir, exist_ok=True)
 
