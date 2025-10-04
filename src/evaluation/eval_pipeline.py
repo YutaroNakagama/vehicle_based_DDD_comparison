@@ -130,13 +130,23 @@ def eval_pipeline(
     if tag:
         suffix += f"_{tag}"
 
-    if model == "SvmA":
-        model_file = "svm_model_final.pkl"
-    elif model == "Lstm":
-        model_file = "lstm_model_fold1.keras"
+    # --- Unified filename rules ---
+    if model == "Lstm":
+        model_file   = f"lstm_model_fold{fold}.keras" if fold > 0 else "lstm_model_fold1.keras"
+        scaler_file  = f"scaler_fold{fold}.pkl" if fold > 0 else "scaler_fold1.pkl"
+        feature_file = "selected_features_Lstm.pkl"
     else:
-        model_file = f"{model}{suffix}.pkl"
-    model_path = os.path.join(MODEL_PKL_PATH, model_type, model_file)
+        model_file   = f"{model}.pkl"
+        scaler_file  = f"scaler_{model}.pkl"
+        feature_file = f"selected_features_{model}.pkl"
+
+    model_path   = os.path.join(MODEL_PKL_PATH, model_type, model_file)
+    scaler_path  = os.path.join(MODEL_PKL_PATH, model_type, scaler_file)
+    feature_path = os.path.join(MODEL_PKL_PATH, model_type, feature_file)
+
+    logging.info(f"Expecting model file: {model_path}")
+    logging.info(f"Expecting scaler file: {scaler_path}")
+    logging.info(f"Expecting feature file: {feature_path}")
 
     if not os.path.exists(model_path):
         logging.error(f"Model file not found: {model_path}")
@@ -144,16 +154,9 @@ def eval_pipeline(
 
     # Load model based on type
     if model == "Lstm":
+        # --- Deep learning model (special handling) ---
         clf = load_model(model_path, custom_objects={"AttentionLayer": AttentionLayer})
-    elif model == "SvmA":
-        clf = joblib.load(model_path)
-    else:
-        with open(model_path, "rb") as f:
-            clf = pickle.load(f)
 
-    # Call evaluation functions based on model type
-    if model == 'Lstm':
-        scaler_path = os.path.join(MODEL_PKL_PATH, model_type, f"scaler_{model}{suffix}.pkl")
         if not os.path.exists(scaler_path):
             logging.error(f"Scaler file not found: {scaler_path}")
             return
@@ -161,29 +164,18 @@ def eval_pipeline(
 
         result = lstm_eval(X_test, y_test, model_type, clf, scaler)
 
-    elif model == 'SvmA':
-        feature_file = f"selected_features_{model}{suffix}.pkl"
-        feature_path = os.path.join(MODEL_PKL_PATH, model_type, feature_file)
-        if not os.path.exists(feature_path):
-            logging.error(f"Feature file not found: {feature_path}")
-            return
-        with open(feature_path, "rb") as ff:
-            selected_features = pickle.load(ff)
-        result = SvmA_eval(X_test, y_test, model, clf, selected_features)
-
     else:
-        feature_file = f"selected_features_{model}{suffix}.pkl"
-        feature_path = os.path.join(MODEL_PKL_PATH, model_type, feature_file)
+        # --- Classical ML models (RF, SvmW, SvmA, etc.) ---
+        clf = joblib.load(model_path)
+
         if not os.path.exists(feature_path):
             logging.error(f"Feature file not found: {feature_path}")
             return
-
         with open(feature_path, "rb") as ff:
             selected_features = pickle.load(ff)
         if not isinstance(selected_features, list):
             selected_features = list(selected_features)
 
-        scaler_path = os.path.join(MODEL_PKL_PATH, model_type, f"scaler_{model}{suffix}.pkl")
         if not os.path.exists(scaler_path):
             logging.error(f"Scaler file not found: {scaler_path}")
             return
@@ -214,7 +206,7 @@ def eval_pipeline(
         X_train = X_train.loc[:, selected_features]
         X_test = X_test.loc[:, selected_features]
         X_test = scaler.transform(X_test)
-        
+
         logging.info(f"X_train shape after feature alignment: {X_train.shape}")
         logging.info(f"X_test shape after feature alignment: {X_test.shape}")
 
@@ -232,7 +224,7 @@ def eval_pipeline(
         result["selected_features"] = selected_features
 
     # After each evaluation call (e.g., result = common_eval(...))
-    results_dir = os.path.join("results", "evaluation", model_type)
+    results_dir = os.path.join("results", "evaluation", model)
     os.makedirs(results_dir, exist_ok=True)
 
     # generate timestamp
