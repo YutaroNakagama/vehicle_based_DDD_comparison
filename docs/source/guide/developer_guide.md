@@ -7,7 +7,6 @@ of the `vehicle_based_DDD_comparison` repository.
 
 The repository implements a **multi-stage Driver Drowsiness Detection (DDD)** workflow,
 spanning preprocessing, model training, evaluation, and domain generalisation analysis.
-It is structured according to the [Cookiecutter Data Science](https://drivendata.github.io/cookiecutter-data-science/) convention, with HPC (PBS) support for large-scale experiments.
 
 ---
 
