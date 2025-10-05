@@ -254,13 +254,7 @@ def run_rank_export(
     *,
     outdir: Path,
     k: int = 10,
-    # MMD
-    mmd_matrix: Optional[Path] = None,
-    mmd_subjects: Optional[Path] = None,
-    # Wasserstein / DTW
-    wasserstein_matrix: Optional[Path] = None,
-    dtw_matrix: Optional[Path] = None,
-    dist_subjects: Optional[Path] = None,
+    metrics_root: Path = Path("results/domain_generalization"),
 ) -> int:
     """Export subject rankings for all distance metrics.
 
@@ -270,10 +264,10 @@ def run_rank_export(
         Directory to save the ranking files.
     k : int, default=10
         Number of subjects to export for each category.
-    mmd_matrix, mmd_subjects : Path, optional
-        Paths to the MMD distance matrix and subjects JSON.
-    wasserstein_matrix, dtw_matrix, dist_subjects : Path, optional
-        Paths to Wasserstein/DTW distance matrices and shared subjects JSON.
+    metrics_root : Path, default="results/domain_generalization"
+        Root directory that contains subfolders for each metric
+        (e.g., mmd/, wasserstein/, dtw/), each including
+        "<metric>_matrix.npy" and "<metric>_subjects.json".
 
     Returns
     -------
@@ -282,12 +276,20 @@ def run_rank_export(
     """
     outdir.mkdir(parents=True, exist_ok=True)
 
-    # MMD (uses its own subjects json)
-    _export_one("mmd", mmd_matrix, mmd_subjects, outdir, k)
+    metrics = ["mmd", "wasserstein", "dtw"]
 
-    # Wasserstein / DTW (share subjects)
-    _export_one("wasserstein", wasserstein_matrix, dist_subjects, outdir, k)
-    _export_one("dtw", dtw_matrix, dist_subjects, outdir, k)
+    for metric in metrics:
+        metric_dir = metrics_root / metric
+        mat_path = metric_dir / f"{metric}_matrix.npy"
+        subj_path = metric_dir / f"{metric}_subjects.json"
 
+        if not mat_path.exists() or not subj_path.exists():
+            print(f"[WARN] Skipping {metric.upper()} (files not found)")
+            continue
+
+        print(f"[INFO] Processing {metric.upper()}")
+        _export_one(metric, mat_path, subj_path, outdir, k)
+        print(f"[DONE] {metric.upper()} exported.")
+
+    print(f"[SUCCESS] All available metrics exported to {outdir}")
     return 0
-

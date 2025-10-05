@@ -346,3 +346,90 @@ def run_distance_vs_delta(
 
     return 0
 
+
+# ============================================================
+# Unified runner for all metrics (MMD / Wasserstein / DTW)
+# ============================================================
+
+def run_corr_all(
+    summary_csv: Path,
+    groups_dir: Path,
+    group_names_file: Path,
+    metrics_root: Path = Path("results/domain_generalization"),
+    out_root: Path = Path("results/domain_generalization/corr_all"),
+) -> None:
+    """
+    Run correlation analysis for all available metrics (MMD, Wasserstein, DTW)
+    and aggregate results into a unified summary.
+
+    Parameters
+    ----------
+    summary_csv : Path
+        Path to wide-format summary file (only10 vs finetune results).
+    groups_dir : Path
+        Directory containing group definition text files.
+    group_names_file : Path
+        File listing group names (used for iteration).
+    metrics_root : Path, default="results/domain_generalization"
+        Root directory containing mmd/, wasserstein/, and dtw/ folders.
+    out_root : Path, default="results/domain_generalization/corr_all"
+        Output directory where correlation summaries and heatmaps will be stored.
+
+    Returns
+    -------
+    None
+    """
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    out_root.mkdir(parents=True, exist_ok=True)
+    metrics = ["mmd", "wasserstein", "dtw"]
+    all_corrs = []
+
+    for metric in metrics:
+        mat_path = metrics_root / metric / f"{metric}_matrix.npy"
+        subj_path = metrics_root / metric / f"{metric}_subjects.json"
+        outdir = out_root / f"dist_corr_{metric}"
+
+        if not mat_path.exists() or not subj_path.exists():
+            print(f"[WARN] Skipping {metric.upper()} (missing files)")
+            continue
+
+        print(f"[INFO] Running correlation for {metric.upper()}")
+        run_distance_vs_delta(
+            summary_csv=summary_csv,
+            distance_path=mat_path,
+            groups_dir=groups_dir,
+            group_names_file=group_names_file,
+            outdir=outdir,
+            subjects_json=subj_path,
+        )
+
+        corr_file = outdir / "correlations_dUG_vs_deltas.csv"
+        if corr_file.exists():
+            df = pd.read_csv(corr_file)
+            df["metric_type"] = metric
+            all_corrs.append(df)
+
+    # Merge all correlations into one table
+    if not all_corrs:
+        print("[WARN] No correlation files found.")
+        return
+
+    merged = pd.concat(all_corrs, ignore_index=True)
+    merged_csv = out_root / "correlation_summary_all.csv"
+    merged.to_csv(merged_csv, index=False)
+
+    # Draw heatmap (Pearson r)
+    pivot = merged.pivot(index="metric", columns="metric_type", values="pearson_r")
+    plt.figure(figsize=(8, 5))
+    sns.heatmap(pivot, annot=True, cmap="coolwarm", center=0, fmt=".2f")
+    plt.title("Pearson correlation (d(U,G) vs Δmetrics)")
+    plt.tight_layout()
+    out_png = out_root / "correlation_heatmap_all.png"
+    plt.savefig(out_png, dpi=300)
+    plt.close()
+
+    print(f"[DONE] Merged correlations written to {merged_csv}")
+    print(f"[DONE] Heatmap saved to {out_png}")
