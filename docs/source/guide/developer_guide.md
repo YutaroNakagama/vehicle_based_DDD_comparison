@@ -70,7 +70,7 @@ graph LR
   models --> results
   results --> reports[reports/figures]
   scripts_hpc[scripts/hpc jobs] -.-> scripts_python
-````
+```
 
 ---
 
@@ -101,6 +101,11 @@ graph TD
 | `merge_process`            | subject, model            | CSV (`merged_*.csv`)           | Merges features by timestamp      |
 | `kss_process`              | subject, model            | CSV (`processed_*.csv`)        | Aligns KSS labels                 |
 
+**Notes:**  
+- Supported models: `"common"`, `"SvmA"`, `"SvmW"`, and `"Lstm"`.  
+- Each step supports optional augmentation via `use_jittering=True`.  
+- All steps are logged via Python’s `logging` module for progress tracking.
+
 **Outputs:**
 
 * Interim features: `data/interim/{feature}/{model}/`
@@ -127,11 +132,15 @@ graph TD
 | Function            | Input                | Output                                          | Notes                                    |
 | ------------------- | -------------------- | ----------------------------------------------- | ---------------------------------------- |
 | `load_data`         | processed CSVs       | DataFrame                                       | Loads per-subject data                   |
-| `split_data`        | DataFrame + strategy | Train/Val/Test splits                           | Supports random, subject-wise, time-wise |
+| `split_data`        | DataFrame + strategy | Train/Val/Test splits                           | Supports random, subject-wise, time-wise, and fine-tune strategies (`single_subject_data_split`, `isolate_target_subjects`, `finetune_target_subjects`) |
 | `feature_selection` | Train data           | Reduced features                                | RF importance, ANOVA, MI                 |
-| `train_model`       | Selected data        | trained estimator                               | RF, SvmA, SvmW, or LSTM                  |
-| `save_model`        | model, scaler        | `models/{model}/`                               | Saved via joblib or keras                |
+| `train_model`       | Selected data        | trained estimator                               | RF, SvmA, or LSTM (`common_train`, `SvmA_train`, `lstm_train`) |
+| `save_model`        | model, scaler        | `models/{model}/`                               | Unified naming scheme (`{model}.pkl`, `scaler_{model}.pkl`) |
 | `save_metrics`      | logs, metrics        | `results/train/{model}/trainmetrics_*.csv/json` | Includes thresholds for F1 optimisation  |
+
+**Additional:**  
+- Supports optional `sample_size` limitation and label balancing (`balance_labels`, `balance_method`).  
+- Time-based stratified splitting options available (`time_stratify_*`).
 
 ---
 
@@ -149,11 +158,11 @@ graph TD
 
 | Step                | Input            | Output                                            | Notes                        |
 | ------------------- | ---------------- | ------------------------------------------------- | ---------------------------- |
-| `load_subject_list` | subject list     | IDs                                               | Same as training             |
-| `load_test_data`    | processed CSVs   | DataFrame                                         | Data for evaluation          |
-| `load_model`        | `models/{model}` | model, scaler, features                           | joblib or keras              |
-| `evaluate_model`    | model, test data | metrics dict                                      | Accuracy, F1, AUC            |
-| `save_results`      | metrics dict     | `results/evaluation/{model}/metrics_*.{csv,json}` | Includes per-subject details |
+| `load_subject_list` | subject list     | IDs                                               | Supports `fold`-based CV splits (`read_subject_list_fold`) |
+| `load_test_data`    | processed CSVs   | DataFrame                                         | Data for evaluation; supports subject-wise or random split |
+| `load_model`        | `models/{model}` | model, scaler, selected_features                  | Uses unified filenames (`{model}.pkl`, `scaler_{model}.pkl`, etc.) |
+| `evaluate_model`    | model, test data | metrics dict                                      | Accuracy, F1, AUC (via `common_eval`, `lstm_eval`, `SvmA_eval`) |
+| `save_results`      | metrics dict     | `results/evaluation/{model}/metrics_*.json`       | Includes metadata (subject list, sample size, selected features); filenames timestamped |
 
 ---
 
@@ -165,7 +174,7 @@ It follows a two-stage HPC workflow:
 
 ### Stage 1: Compute Distances
 
-**Job script:** `scripts/hpc/domain_gen/pbs_compute_distances.sh`
+**Job script:** `scripts/hpc/domain_analysis/pbs_compute_distance.sh`
 
 ```bash
 python scripts/python/analyze.py comp-dist \
@@ -176,9 +185,13 @@ python scripts/python/analyze.py comp-dist \
 
 | Metric      | Module                      | Output                                     |
 | ----------- | --------------------------- | ------------------------------------------ |
-| MMD         | `src/analysis/distances.py` | `results/mmd/mmd_matrix.npy`               |
-| Wasserstein | `src/analysis/distances.py` | `results/distances/wasserstein_matrix.npy` |
-| DTW         | `src/analysis/distances.py` | `results/distances/dtw_matrix.npy`         |
+| MMD         | `src/analysis/distances.py` | `results/domain_analysis/distance/mmd/mmd_matrix.npy`               |
+| Wasserstein | `src/analysis/distances.py` | `results/domain_analysis/distance/wasserstein/wasserstein_matrix.npy` |
+| DTW         | `src/analysis/distances.py` | `results/domain_analysis/distance/dtw/dtw_matrix.npy`               |
+
+
+All three metrics are computed via a unified, cached pipeline that handles feature extraction and group-wise comparisons.  
+Intermediate data are cached under `results/.cache/` for performance optimization.
 
 **Generated JSONs:**
 
@@ -189,12 +202,12 @@ python scripts/python/analyze.py comp-dist \
 
 ### Stage 2: Fine-tuning and Ranking Experiments
 
-**Job scripts:**
+**Job script:**  
 
-* `scripts/hpc/domain_gen/pbs_rank_10_was.sh`
-* `scripts/hpc/domain_gen/pbs_rank_10_was_general_vs_target.sh`
+* `scripts/hpc/domain_analysis/pbs_rank.sh`
 
-These use **PBS job arrays** to process each rank-based group in parallel:
+This unified job script replaces the older `pbs_rank_10_was*.sh` variants.
+It uses **PBS job arrays** to process each rank-based group in parallel:
 
 | Mode           | Description                                  |
 | -------------- | -------------------------------------------- |
@@ -222,13 +235,18 @@ Resulting artifacts:
 
 Provides multiple subcommands:
 
-| Subcommand     | Purpose                              | Core Function                        |
-| -------------- | ------------------------------------ | ------------------------------------ |
-| `comp-dist`    | Compute domain distances             | `run_comp_dist()`                    |
-| `corr`         | Correlate distances with Δ metrics   | `run_distance_vs_delta()`            |
-| `summarize`    | Summarise results across groups      | `run_summarize_only10_vs_finetune()` |
-| `rank-export`  | Export top/bottom-k subjects         | `run_rank_export()`                  |
-| `corr-collect` | Aggregate correlations into heatmaps | internal plotting                    |
+All analysis stages are now implemented as CLI **subcommands** in `scripts/python/analyze.py`, managed via `argparse`:
+
+| Subcommand         | Description                                   | Core Function                                      |
+| ------------------ | --------------------------------------------- | -------------------------------------------------- |
+| `comp-dist`        | Compute distance matrices (MMD, Wasserstein, DTW) | `src.analysis.distances.run_comp_dist()`           |
+| `corr`             | Correlate distance metrics with performance deltas | `src.analysis.correlation`                         |
+| `summarize-metrics`| Summarize only10 vs finetune results          | `src.analysis.metrics_tables.summarize_metrics()`  |
+| `rank-export`      | Export top/bottom-k subjects                  | `src.analysis.rank_export`                         |
+| `make-table`       | Generate wide-format comparison tables        | `src.analysis.metrics_tables.make_comparison_table()` |
+
+Each command logs `[RUN] <subcommand>` and stores results under `results/`.  
+This replaces the earlier standalone `run_*` helper calls.
 
 **Outputs:**
 
@@ -275,9 +293,9 @@ Implements reproducible data splits:
 
 ```mermaid
 graph TD
-  pbs_compute["pbs_compute_distances.sh"] --> analyze_comp["analyze.py comp-dist"]
+  pbs_compute["pbs_compute_distance.sh"] --> analyze_comp["analyze.py comp-dist"]
   analyze_comp --> results_mmd["results/mmd/*.npy"]
-  pbs_rank["pbs_rank_10_was.sh"] --> train_eval["train.py / evaluate.py"]
+  pbs_rank["pbs_rank.sh"] --> train_eval["train.py / evaluate.py"]
   train_eval --> results_eval["results/evaluation/*.csv"]
   results_mmd --> analyze_corr["analyze.py corr"]
   analyze_corr --> heatmap["correlation_heatmap_all.png"]
