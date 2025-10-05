@@ -15,13 +15,20 @@ from typing import List, Tuple
 from sklearn.model_selection import train_test_split
 
 
-def _check_nonfinite(X: pd.DataFrame, name: str = "X"):
-    """Check for non-finite values and log them."""
-    bad_cols = X.columns[~np.isfinite(X.to_numpy()).all(axis=0)]
+def _check_nonfinite(X: pd.DataFrame, name: str) -> pd.DataFrame:
+    """Check for NaN or infinite values in numeric columns and raise warnings."""
+    # Convert only numeric columns to numpy
+    X_num = X.select_dtypes(include=[np.number])
+    non_numeric_cols = X.columns.difference(X_num.columns)
+
+    if len(non_numeric_cols) > 0:
+        print(f"[WARN] {name} contains non-numeric columns: {list(non_numeric_cols)}")
+
+    # Check only numeric columns
+    bad_cols = X_num.columns[~np.isfinite(X_num.to_numpy()).all(axis=0)]
     if len(bad_cols) > 0:
-        logging.warning(f"[{name}] Non-finite values detected in columns: {bad_cols.tolist()}")
-        # Optionally clean up
-        X = X.replace([np.inf, -np.inf], np.nan).fillna(0)
+        print(f"[WARN] {name} has non-finite values in: {list(bad_cols)}")
+
     return X
 
 
