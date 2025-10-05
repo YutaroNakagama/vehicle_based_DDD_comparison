@@ -281,14 +281,10 @@ def run_report_pretrain_groups(
     group_dir: Path = Path("misc/pretrain_groups"),
     out_summary_json: Path = Path("misc/pretrain_groups/summary_report_ext.json"),
     out_summary_csv: Path  = Path("misc/pretrain_groups/summary_report_ext.csv"),
-    # default artifact locations
-    mmd_matrix: Path = Path("results/mmd/mmd_matrix.npy"),
-    mmd_subjects: Path = Path("results/mmd/mmd_subjects.json"),
-    wass_matrix: Path = Path("results/distances/wasserstein_matrix.npy"),
-    dtw_matrix: Path  = Path("results/distances/dtw_matrix.npy"),
-    dist_subjects: Path = Path("results/distances/subjects.json"),
+    # unified root directory
+    metrics_root: Path = Path("results/domain_generalization"),
 ) -> Dict[str, Dict[str, Dict[str, float]]]:
-    """Run reports for MMD, Wasserstein, and DTW distances.
+    """Run reports for all available metrics (MMD, Wasserstein, DTW).
 
     Parameters
     ----------
@@ -298,42 +294,45 @@ def run_report_pretrain_groups(
         Path to save combined summary JSON.
     out_summary_csv : Path, default="misc/pretrain_groups/summary_report_ext.csv"
         Path to save combined summary CSV.
-    mmd_matrix : Path, default="results/mmd/mmd_matrix.npy"
-        Path to MMD distance matrix.
-    mmd_subjects : Path, default="results/mmd/mmd_subjects.json"
-        Path to subject list for MMD.
-    wass_matrix : Path, default="results/distances/wasserstein_matrix.npy"
-        Path to Wasserstein distance matrix.
-    dtw_matrix : Path, default="results/distances/dtw_matrix.npy"
-        Path to DTW distance matrix.
-    dist_subjects : Path, default="results/distances/subjects.json"
-        Path to subject list for Wasserstein/DTW.
+    metrics_root : Path, default="results/domain_generalization"
+        Root directory that contains subfolders for each metric
+        (e.g., mmd/, wasserstein/, dtw/), each including
+        "<metric>_matrix.npy" and "<metric>_subjects.json".
 
     Returns
     -------
     dict of {str: dict of {str: dict of float}}
         Nested dictionary: metric → group → {intra, inter, nn, ids}.
     """
-    metrics = [
-        ("mmd",         mmd_matrix,  mmd_subjects),
-        ("wasserstein", wass_matrix, dist_subjects),
-        ("dtw",         dtw_matrix,  dist_subjects),
-    ]
-
+    metrics = ["mmd", "wasserstein", "dtw"]
     all_stats: Dict[str, Dict[str, Dict[str, float]]] = {}
-    for name, mpath, spath in metrics:
-        gf = group_dir / f"{name}_friendly.txt"
-        gh = group_dir / f"{name}_hard.txt"
+
+    for metric in metrics:
+        metric_dir = metrics_root / metric
+        matrix_path = metric_dir / f"{metric}_matrix.npy"
+        subjects_path = metric_dir / f"{metric}_subjects.json"
+
+        if not matrix_path.exists() or not subjects_path.exists():
+            print(f"[WARN] Skipping {metric.upper()} (files not found)")
+            continue
+
+        gf = group_dir / f"{metric}_friendly.txt"
+        gh = group_dir / f"{metric}_hard.txt"
+
         if not (gf.exists() and gh.exists()):
-            raise FileNotFoundError(f"Missing group files for {name}: {gf} / {gh}")
-        all_stats[name] = report_for_metric(
-            metric_name=name,
-            matrix_path=mpath,
-            subjects_path=spath,
+            print(f"[WARN] Missing group files for {metric}: {gf} / {gh}")
+            continue
+
+        print(f"[INFO] Processing {metric.upper()}")
+        all_stats[metric] = report_for_metric(
+            metric_name=metric,
+            matrix_path=matrix_path,
+            subjects_path=subjects_path,
             group_friendly_file=gf,
             group_hard_file=gh,
             out_dir=group_dir,
         )
+        print(f"[DONE] {metric.upper()} report generated.")
 
     # combined JSON
     save_json(all_stats, out_summary_json)
