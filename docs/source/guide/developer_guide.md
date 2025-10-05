@@ -1,5 +1,26 @@
 # Developer Guide: Repository Architecture and Data Flow
 
+## Table of Contents
+
+## Table of Contents
+
+* [Overview](#overview)
+* [Repository Structure](#repository-structure)
+* [1. Preprocessing Pipeline (`src/data_pipeline/processing_pipeline.py`)](#preprocessing-pipeline)
+* [2. Training Pipeline (`src/models/model_pipeline.py`)](#training-pipeline)
+* [3. Evaluation Pipeline (`src/evaluation/eval_pipeline.py`)](#evaluation-pipeline)
+* [4. Domain Generalisation & Distance Analysis](#domain-analysis)
+  * [Stage 1: Compute Distances](#stage-1)
+  * [Stage 2: Fine-tuning and Ranking Experiments](#stage-2)
+  * [Stage 3: Correlation and Reporting](#stage-3)
+* [5. Utility Modules (`src/utils/`)](#utils)
+* [6. Data Flow Summary](#data-flow)
+* [7. HPC Integration](#hpc)
+* [8. Extensibility & Maintenance](#extensibility)
+* [References](#references)
+
+---
+
 ## Overview
 
 This document describes the overall architecture, module dependencies, and end-to-end data flow
@@ -59,47 +80,46 @@ spanning preprocessing, model training, evaluation, and domain generalisation an
 ````
 
 ```mermaid
-graph LR
-  scripts_python["scripts_python (CLI)"] --> src_core["src (core logic)"]
-  src_core --> data_pipeline["data_pipeline"]
-  src_core --> models["models"]
-  src_core --> analysis["analysis"]
-  src_core --> evaluation["evaluation"]
-  analysis --> results["results/"]
-  models --> results
-  results --> reports["reports/figures"]
-  scripts_hpc["scripts_hpc (jobs)"] -.-> scripts_python
+graph TB
+  scripts_hpc["scripts/hpc (job scripts)"] -.-> scripts_python["scripts/python (CLI)"]
+  scripts_python --> src_core["src/ (core logic)"]
+  src_core --> data_pipeline["src/data_pipeline"]
+  data_pipeline --> data["data/ (interim/processed)"]
+  src_core --> models["src/models (training)"]
+  models --> results["results/"]
+  src_core --> evaluation["src/evaluation"]
+  evaluation --> results
+  src_core --> analysis["src/analysis (domain analysis)"]
+  analysis --> results
 
 ````
 
 ---
 
-## 1. Preprocessing Pipeline (`src/data_pipeline/processing_pipeline.py`)
+## 1. Preprocessing Pipeline (`src/data_pipeline/processing_pipeline.py`) {#preprocessing-pipeline}
 
 The preprocessing pipeline prepares per-subject datasets from raw physiological and EEG signals.
 
-### Function: `main_pipeline(model: str, use_jittering: bool = False)`
-
 ```mermaid
-graph TD
-  main_pipeline --> read_subject_list
-  main_pipeline --> time_freq_domain_process
-  main_pipeline --> wavelet_process
-  main_pipeline --> smooth_std_pe_process
-  main_pipeline --> eeg_process
-  main_pipeline --> merge_process
-  main_pipeline --> kss_process
+graph LR
+  main_pipeline --> read_subject_list["(1) read_subject_list"]
+  main_pipeline --> time_freq_domain_process["(2) time_freq_domain_process"]
+  main_pipeline --> wavelet_process["(3) wavelet_process"]
+  main_pipeline --> smooth_std_pe_process["(4) smooth_std_pe_process"]
+  main_pipeline --> eeg_process["(5) eeg_process"]
+  main_pipeline --> merge_process["(6) merge_process"]
+  main_pipeline --> kss_process["(7) kss_process"]
 ```
 
-| Step / Function            | Input                     | Output                         | Notes                             |
-| -------------------------- | ------------------------- | ------------------------------ | --------------------------------- |
-| `read_subject_list`        | `config/subject_list.txt` | list of subject IDs            | Target subjects for preprocessing |
-| `time_freq_domain_process` | subject, model            | CSV (`time_freq_domain_*.csv`) | For SvmA and common models        |
-| `wavelet_process`          | subject, model            | CSV (`wavelet_*.csv`)          | For SvmW and common models        |
-| `smooth_std_pe_process`    | subject, model            | CSV (`smooth_std_pe_*.csv`)    | For Lstm and common models        |
-| `eeg_process`              | subject, model            | CSV (`eeg_*.csv`)              | EEG band power, ratios            |
-| `merge_process`            | subject, model            | CSV (`merged_*.csv`)           | Merges features by timestamp      |
-| `kss_process`              | subject, model            | CSV (`processed_*.csv`)        | Aligns KSS labels                 |
+| Step / Function                | Input                                      | Output                         | Notes                             |
+| --------------------------     | -------------------------                  | ------------------------------ | --------------------------------- |
+| `(1) read_subject_list`        | `../dataset/mdapbe/subject_list.txt`       | list of subject IDs            | Target subjects for preprocessing |
+| `(2) time_freq_domain_process` | `../dataset/mdapbe/physio/{subject}/*.mat` | CSV (`data/intermim/time_freq_domain/{model}/time_freq_domain_*.csv`) | For SvmA and common models        |
+| `(3) wavelet_process`          | `../dataset/mdapbe/physio/{subject}/*.mat` | CSV (`data/intermim/wavelet/{model}/wavelet_*.csv`)          | For SvmW and common models        |
+| `(4) smooth_std_pe_process`    | `../dataset/mdapbe/physio/{subject}/*.mat` | CSV (`data/intermim/smooth_std_pe/{model}/smooth_std_pe_*.csv`)    | For Lstm and common models        |
+| `(5) eeg_process`              | `../dataset/mdapbe/physio/{subject}/*.mat` | CSV (`data/intermim/eeg/{model}/eeg_*.csv`)              | EEG band power, ratios            |
+| `(6) merge_process`            | `../dataset/mdapbe/physio/{subject}/*.mat` | CSV (`data/intermim/merged/{model}/merged_*.csv`)           | Merges features by timestamp      |
+| `(7) kss_process`              | `data/intermim/merged/{model}/*.csv`       | CSV (`data/processed/{model}processed_*.csv`)        | Aligns KSS labels                 |
 
 **Notes:**  
 - Supported models: `"common"`, `"SvmA"`, `"SvmW"`, and `"Lstm"`.  
@@ -113,7 +133,7 @@ graph TD
 
 ---
 
-## 2. Training Pipeline (`src/models/model_pipeline.py`)
+## 2. Training Pipeline (`src/models/model_pipeline.py`) {#training-pipeline}
 
 Handles data loading, splitting, feature selection, model fitting, and artifact saving.
 
@@ -144,7 +164,7 @@ graph TD
 
 ---
 
-## 3. Evaluation Pipeline (`src/evaluation/eval_pipeline.py`)
+## 3. Evaluation Pipeline (`src/evaluation/eval_pipeline.py`) {#evaluation-pipeline}
 
 ```mermaid
 graph TD
@@ -166,13 +186,13 @@ graph TD
 
 ---
 
-## 4. Domain Generalisation & Distance Analysis
+## 4. Domain Generalisation & Distance Analysis {#domain-analysis}
 
 The **domain generalisation analysis** quantifies the difference between subjects or groups (domains) using multiple distance metrics.
 
 It follows a two-stage HPC workflow:
 
-### Stage 1: Compute Distances
+### Stage 1: Compute Distances {#stage-1}
 
 **Job script:** `scripts/hpc/domain_analysis/pbs_compute_distance.sh`
 
@@ -200,7 +220,7 @@ Intermediate data are cached under `results/.cache/` for performance optimizatio
 
 ---
 
-### Stage 2: Fine-tuning and Ranking Experiments
+### Stage 2: Fine-tuning and Ranking Experiments {#stage-2}
 
 **Job script:**  
 
@@ -229,7 +249,7 @@ Resulting artifacts:
 
 ---
 
-### Stage 3: Correlation and Reporting
+### Stage 3: Correlation and Reporting {#stage-3}
 
 **Job script:** `scripts/python/analyze.py`
 
@@ -256,7 +276,7 @@ This replaces the earlier standalone `run_*` helper calls.
 
 ---
 
-## 5. Utility Modules (`src/utils/`)
+## 5. Utility Modules (`src/utils/`) {#utils}
 
 ### `io/loaders.py`
 
@@ -278,7 +298,7 @@ Implements reproducible data splits:
 
 ---
 
-## 6. Data Flow Summary
+## 6. Data Flow Summary {#data-flow}
 
 | Stage           | Input              | Output                      | Responsible Module                     |
 | --------------- | ------------------ | --------------------------- | -------------------------------------- |
@@ -289,7 +309,7 @@ Implements reproducible data splits:
 
 ---
 
-## 7. HPC Integration
+## 7. HPC Integration {#hpc}
 
 ```mermaid
 graph TD
@@ -309,7 +329,7 @@ graph TD
 
 ---
 
-## 8. Extensibility & Maintenance
+## 8. Extensibility & Maintenance {#extensibility}
 
 | Area                    | How to Extend                                                          |
 | ----------------------- | ---------------------------------------------------------------------- |
