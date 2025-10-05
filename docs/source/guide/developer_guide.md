@@ -61,16 +61,17 @@ It is structured according to the [Cookiecutter Data Science](https://drivendata
 
 ```mermaid
 graph LR
-  scripts_python[scripts/python CLI] --> src[src (core logic)]
-  src --> data[data_pipeline]
-  src --> models[models]
-  src --> analysis[analysis]
-  src --> evaluation[evaluation]
-  analysis --> results[results/]
+  scripts_python["scripts_python (CLI)"] --> src_core["src (core logic)"]
+  src_core --> data_pipeline["data_pipeline"]
+  src_core --> models["models"]
+  src_core --> analysis["analysis"]
+  src_core --> evaluation["evaluation"]
+  analysis --> results["results/"]
   models --> results
-  results --> reports[reports/figures]
-  scripts_hpc[scripts/hpc jobs] -.-> scripts_python
-```
+  results --> reports["reports/figures"]
+  scripts_hpc["scripts_hpc (jobs)"] -.-> scripts_python
+
+````
 
 ---
 
