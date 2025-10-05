@@ -94,6 +94,7 @@ from src.analysis.summary_groups import run_summarize_only10_vs_finetune
 from src.analysis.metrics_tables import summarize_metrics, make_comparison_table
 from src.analysis.pretrain_groups_report import run_report_pretrain_groups
 from src.analysis.rank_export import run_rank_export
+from src.analysis.correlation import run_corr_all
 
 # ---------------------- subcommand handlers ----------------------
 def cmd_comp_dist(args) -> int:
@@ -113,15 +114,18 @@ def cmd_comp_dist(args) -> int:
         "[RUN] comp-dist | subject_list=%s | data_root=%s | groups_file=%s",
         args.subject_list, args.data_root, args.groups_file
     )
-    rc = run_comp_dist(
-        subject_list_path=args.subject_list,
-        data_root=args.data_root,
-        out_mmd_dir=args.out_mmd_dir,
-        out_dist_dir=args.out_dist_dir,
-        groups_file=args.groups_file,
-    )
-    logging.info("[DONE] comp-dist rc=%s", rc)
-    return rc
+    metrics_to_run = [args.metric] if args.metric != "all" else ["mmd", "wasserstein", "dtw"]
+    for metric in metrics_to_run:
+        print(f"[INFO] Computing {metric.upper()} distance...")
+        rc = run_comp_dist(
+            subject_list_path=args.subject_list,
+            data_root=args.data_root,
+            groups_file=args.groups_file,
+            metric=metric,
+        )
+        if rc != 0:
+            print(f"[WARN] run_comp_dist returned non-zero exit code for {metric.upper()}")
+    return 0
 
 
 def cmd_corr(args) -> int:
@@ -270,11 +274,7 @@ def cmd_report_pretrain_groups(args) -> int:
         group_dir=Path(args.group_dir),
         out_summary_json=Path(args.out_summary_json),
         out_summary_csv=Path(args.out_summary_csv),
-        mmd_matrix=Path(args.mmd_matrix),
-        mmd_subjects=Path(args.mmd_subjects),
-        wass_matrix=Path(args.wasserstein_matrix),
-        dtw_matrix=Path(args.dtw_matrix),
-        dist_subjects=Path(args.dist_subjects),
+        metrics_root=Path(args.metrics_root),
     )
     logging.info("[DONE] wrote %s and %s", args.out_summary_json, args.out_summary_csv)
     return 0
@@ -343,13 +343,7 @@ def cmd_rank_export(args) -> int:
     rc = run_rank_export(
         outdir=Path(args.outdir),
         k=int(args.k),
-        # MMD
-        mmd_matrix=Path(args.mmd_matrix) if args.mmd_matrix else None,
-        mmd_subjects=Path(args.mmd_subjects) if args.mmd_subjects else None,
-        # Wasserstein / DTW
-        wasserstein_matrix=Path(args.wasserstein_matrix) if args.wasserstein_matrix else None,
-        dtw_matrix=Path(args.dtw_matrix) if args.dtw_matrix else None,
-        dist_subjects=Path(args.dist_subjects) if args.dist_subjects else None,
+        metrics_root=Path("results/domain_generalization"),
     )
     logging.info("[DONE] rank-export rc=%s", rc)
     return rc
@@ -364,9 +358,13 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("comp-dist", help="Compute distance matrices and summaries.")
     s.add_argument("--subject_list", default=str(PRJ / "dataset" / "mdapbe" / "subject_list.txt"))
     s.add_argument("--data_root", default="data/processed/common")
-    s.add_argument("--out_mmd_dir", default="results/mmd")
-    s.add_argument("--out_dist_dir", default="results/distances")
     s.add_argument("--groups_file", default=str(PRJ / "misc" / "target_groups.txt"))
+    s.add_argument(
+        "--metric",
+        choices=["mmd", "wasserstein", "dtw", "all"],
+        default="all",
+        help="Which metric(s) to compute. Default: all"
+    )
     s.set_defaults(func=cmd_comp_dist)
 
     # corr
@@ -379,6 +377,26 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--outdir", default="model/common/dist_corr")
     s.add_argument("--subject_list", default=None)
     s.set_defaults(func=cmd_corr)
+
+    # corr-all
+    s = sub.add_parser("corr-all", help="Run correlation analysis for all metrics (MMD/Wasserstein/DTW).")
+    s.add_argument("--summary_csv", required=True,
+                   help="Path to wide-format summary CSV (e.g., model/common/summary_6groups_only10_vs_finetune_wide.csv).")
+    s.add_argument("--groups_dir", required=True,
+                   help="Directory containing group definition text files.")
+    s.add_argument("--group_names_file", required=True,
+                   help="Path to file listing group names (e.g., misc/pretrain_groups/group_names.txt).")
+    s.add_argument("--metrics_root", default="results/domain_generalization",
+                   help="Root directory containing mmd/, wasserstein/, dtw/ subfolders.")
+    s.add_argument("--out_root", default="results/domain_generalization/corr_all",
+                   help="Output directory for combined correlation results.")
+    s.set_defaults(func=lambda args: run_corr_all(
+        summary_csv=Path(args.summary_csv),
+        groups_dir=Path(args.groups_dir),
+        group_names_file=Path(args.group_names_file),
+        metrics_root=Path(args.metrics_root),
+        out_root=Path(args.out_root),
+    ))
 
     # summarize
     s = sub.add_parser("summarize", help="Summarize only10 vs finetune (optionally with radar).")
@@ -414,11 +432,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--group_dir", default=str(PRJ / "misc" / "pretrain_groups"))
     s.add_argument("--out_summary_json", default=str(PRJ / "misc" / "pretrain_groups" / "summary_report_ext.json"))
     s.add_argument("--out_summary_csv",  default=str(PRJ / "misc" / "pretrain_groups" / "summary_report_ext.csv"))
-    s.add_argument("--mmd_matrix", default=str(PRJ / "results" / "mmd" / "mmd_matrix.npy"))
-    s.add_argument("--mmd_subjects", default=str(PRJ / "results" / "mmd" / "mmd_subjects.json"))
-    s.add_argument("--wasserstein_matrix", default=str(PRJ / "results" / "distances" / "wasserstein_matrix.npy"))
-    s.add_argument("--dtw_matrix", default=str(PRJ / "results" / "distances" / "dtw_matrix.npy"))
-    s.add_argument("--dist_subjects", default=str(PRJ / "results" / "distances" / "subjects.json"))
+    s.add_argument("--metrics_root", default=str(PRJ / "results/domain_generalization"),
+                   help="Root directory containing metric results (mmd/wasserstein/dtw).")
     s.set_defaults(func=cmd_report_pretrain_groups)
 
     # corr-collect (optional)
@@ -434,13 +449,8 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("rank-export", help="Export top/bottom-k subject lists from mean/std rankings (MMD/Wasserstein/DTW).")
     s.add_argument("--outdir", default="results/ranks")
     s.add_argument("--k", type=int, default=10)
-    # MMD
-    s.add_argument("--mmd_matrix", default=str(PRJ / "results" / "mmd" / "mmd_matrix.npy"))
-    s.add_argument("--mmd_subjects", default=str(PRJ / "results" / "mmd" / "mmd_subjects.json"))
-    # Wasserstein / DTW (share subjects.json)
-    s.add_argument("--wasserstein_matrix", default=str(PRJ / "results" / "distances" / "wasserstein_matrix.npy"))
-    s.add_argument("--dtw_matrix", default=str(PRJ / "results" / "distances" / "dtw_matrix.npy"))
-    s.add_argument("--dist_subjects", default=str(PRJ / "results" / "distances" / "subjects.json"))
+    s.add_argument("--metrics_root", default="results/domain_generalization",
+                   help="Root directory containing metric results (mmd/wasserstein/dtw).")
     s.set_defaults(func=cmd_rank_export)
 
     return p
