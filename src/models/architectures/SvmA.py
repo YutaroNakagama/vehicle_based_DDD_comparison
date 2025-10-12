@@ -46,11 +46,58 @@ def calculate_importance_degree(params: list[float], indices_df: pd.DataFrame) -
         - 0.5 : Medium importance
         - 0   : Low importance
     """
+    # --- Defensive conversion (must come first) ---
+    if not isinstance(indices_df, pd.DataFrame):
+        try:
+            # Handle list/array/dict gracefully
+            if isinstance(indices_df, (list, np.ndarray)):
+                df = pd.DataFrame(indices_df)
+                ncols = df.shape[1] if df.ndim > 1 else 1
+                # Assign column names safely
+                if ncols == 4:
+                    df.columns = ["Fisher_Index", "Correlation_Index", "T-test_Index", "Mutual_Information_Index"]
+                else:
+                    # If only 1 column → copy it 4 times
+                    if ncols == 1:
+                        df = pd.concat([df] * 4, axis=1)
+                    elif ncols > 4:
+                        df = df.iloc[:, :4]
+                    else:
+                        df = pd.concat([df] * (4 // ncols), axis=1)
+                    df.columns = ["Fisher_Index", "Correlation_Index", "T-test_Index", "Mutual_Information_Index"]
+                indices_df = df
+                logging.warning(f"indices_df auto-converted from {type(indices_df)} with shape {indices_df.shape}")
+            elif isinstance(indices_df, dict):
+                indices_df = pd.DataFrame(indices_df)
+                missing = set(["Fisher_Index", "Correlation_Index", "T-test_Index", "Mutual_Information_Index"]) - set(indices_df.columns)
+                for m in missing:
+                    indices_df[m] = 0.0
+                indices_df = indices_df[["Fisher_Index", "Correlation_Index", "T-test_Index", "Mutual_Information_Index"]]
+                logging.warning("indices_df auto-built from dict keys.")
+            else:
+                raise TypeError(f"indices_df must be DataFrame, list, array, or dict — got {type(indices_df)}")
+
+        except Exception as e:
+            raise TypeError(
+                f"indices_df could not be converted properly. Original type: {type(indices_df)}"
+            ) from e
+
+    # Ensure expected columns exist
+    expected = ["Fisher_Index", "Correlation_Index", "T-test_Index", "Mutual_Information_Index"]
+    for col in expected:
+        if col not in indices_df.columns:
+            indices_df[col] = 0.0
+
+    # --- Ensure numeric dtype for all index columns ---
+    for col in expected:
+        if col in indices_df.columns:
+            indices_df[col] = pd.to_numeric(indices_df[col], errors="coerce").fillna(0.0)
+    # --- Compute weighted scores ---
     weighted_scores = (
-        indices_df['Fisher_Index'] * params[0] +
-        indices_df['Correlation_Index'] * params[1] +
-        indices_df['T-test_Index'] * params[2] +
-        indices_df['Mutual_Information_Index'] * params[3]
+        indices_df["Fisher_Index"] * params[0] +
+        indices_df["Correlation_Index"] * params[1] +
+        indices_df["T-test_Index"] * params[2] +
+        indices_df["Mutual_Information_Index"] * params[3]
     )
     return np.where(weighted_scores > 0.75, 1, np.where(weighted_scores > 0.4, 0.5, 0))
 
@@ -194,6 +241,12 @@ def SvmA_train(
     importance_degree = calculate_importance_degree(best_anfis_params, indices_df)
     X_train_sel = select_features(X_train, importance_degree)
     X_val_sel = select_features(X_val, importance_degree)
+
+    # --- Safeguard: fallback if no features selected ---
+    if X_train_sel.shape[1] == 0:
+        logging.warning("[WARN] No features selected by ANFIS importance → using all input features instead.")
+        X_train_sel = X_train.copy()
+        X_val_sel = X_val.copy()
 
     svm_final = SVC(kernel='rbf', C=best_C, gamma=best_gamma)
     svm_final.fit(X_train_sel, y_train)
