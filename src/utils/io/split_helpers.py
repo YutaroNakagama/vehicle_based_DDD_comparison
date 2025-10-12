@@ -1,0 +1,151 @@
+"""High-level helper utilities for dataset splitting in model training.
+
+This module extends low-level split functions in ``src/utils/io/split.py`` with:
+  - Subject/time-based split strategies
+  - Logging of class ratios
+  - Dynamic data directory selection
+
+It keeps experiment-specific branching separate from the core algorithms.
+"""
+
+import os
+import logging
+from pathlib import Path
+from typing import List, Optional, Tuple
+
+import pandas as pd
+
+from src.utils.io.loaders import load_subject_csvs
+from src.utils.io.split import (
+    data_split,
+    data_split_by_subject,
+    data_time_split_by_subject,
+    time_stratified_three_way_split,
+)
+
+
+def log_split_ratios(y_tr: pd.Series, y_va: pd.Series, y_te: pd.Series, tag: str = "") -> None:
+    """Log class distribution across splits."""
+    def _summ(y):
+        n = int(y.shape[0])
+        # assuming binary label {0,1}
+        p = int(y.sum()) if n else 0
+        r = p / n if n else float("nan")
+        return n, p, r
+
+    n_tr, p_tr, r_tr = _summ(y_tr)
+    n_va, p_va, r_va = _summ(y_va)
+    n_te, p_te, r_te = _summ(y_te)
+    n_all = n_tr + n_va + n_te
+    p_all = p_tr + p_va + p_te
+    r_all = p_all / n_all if n_all else float("nan")
+
+    logging.info("[split:%s] train n=%d pos=%d (%.3f)", tag, n_tr, p_tr, r_tr)
+    logging.info("[split:%s] valid n=%d pos=%d (%.3f)", tag, n_va, p_va, r_va)
+    logging.info("[split:%s] test  n=%d pos=%d (%.3f)", tag, n_te, p_te, r_te)
+    logging.info("[split:%s] total n=%d pos=%d (%.3f)", tag, n_all, p_all, r_all)
+
+
+def split_data(
+    subject_split_strategy: str,
+    subject_list: List[str],
+    target_subjects: Optional[List[str]],
+    model_type: str,
+    seed: int,
+    time_stratify_labels: bool,
+    time_stratify_tolerance: float,
+    time_stratify_window: float,
+    time_stratify_min_chunk: int,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
+    """Create train/val/test splits according to the selected strategy."""
+
+    base_dir = Path("data/processed")
+    if (base_dir / model_type).exists() and os.listdir(base_dir / model_type):
+        data_dir = base_dir / model_type
+        logging.info(f"[INFO] Using model-specific data directory: {data_dir}")
+    elif (base_dir / "common").exists() and os.listdir(base_dir / "common"):
+        data_dir = base_dir / "common"
+        logging.info(f"[INFO] Using shared common data directory: {data_dir}")
+    else:
+        raise FileNotFoundError(
+            f"No valid processed data directory found for model '{model_type}'."
+        )
+
+    def _load_subjects(subjects):
+        return load_subject_csvs(
+            subjects,
+            model_type=None,
+            add_subject_id=True,
+            base_path=str(data_dir)
+        )
+
+    # --- Strategy: time split ---
+    if subject_split_strategy == "subject_time_split":
+        use_subjects = target_subjects if target_subjects else subject_list
+        data, _ = _load_subjects(use_subjects)
+
+        if time_stratify_labels:
+            from src.models.model_pipeline import _prepare_df_with_label_and_features
+            df_lab, feature_columns = _prepare_df_with_label_and_features(data)
+            sort_keys = ("subject_id", "Timestamp")
+            idx_tr, idx_va, idx_te = time_stratified_three_way_split(
+                df_lab,
+                label_col="label",
+                sort_keys=sort_keys,
+                train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
+                tolerance=time_stratify_tolerance,
+                window_prop=time_stratify_window,
+                min_chunk=time_stratify_min_chunk,
+            )
+            X_train = df_lab.loc[idx_tr, feature_columns].drop(columns=["subject_id"], errors="ignore")
+            X_val   = df_lab.loc[idx_va, feature_columns].drop(columns=["subject_id"], errors="ignore")
+            X_test  = df_lab.loc[idx_te, feature_columns].drop(columns=["subject_id"], errors="ignore")
+            y_train = df_lab.loc[idx_tr, "label"]
+            y_val   = df_lab.loc[idx_va, "label"]
+            y_test  = df_lab.loc[idx_te, "label"]
+        else:
+            X_train, X_val, X_test, y_train, y_val, y_test = data_time_split_by_subject(
+                data, subject_col="subject_id", time_col="Timestamp"
+            )
+        return X_train, X_val, X_test, y_train, y_val, y_test
+
+    # --- Strategy: finetune_target_subjects ---
+    if subject_split_strategy == "finetune_target_subjects":
+        if not target_subjects:
+            raise ValueError("`finetune_target_subjects` requires non-empty target_subjects.")
+        general_subjects = [s for s in subject_list if s not in target_subjects]
+        use_subjects = list(set(general_subjects + target_subjects))
+        data, _ = load_subject_csvs(use_subjects, model_type, add_subject_id=True)
+
+        from sklearn.model_selection import train_test_split
+
+        train_subjects = general_subjects
+        if len(target_subjects) == 1:
+            from src.utils.io.split import data_split
+            single_df, _ = load_subject_csvs(target_subjects, model_type, add_subject_id=True)
+            X_single_tr, X_single_va, X_single_te, y_single_tr, y_single_va, y_single_te = data_split(
+                single_df, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, random_state=seed
+            )
+            X_general_tr, _, _, y_general_tr, _, _ = data_split_by_subject(
+                data, train_subjects, seed, val_subjects=[], test_subjects=[]
+            )
+            X_train = pd.concat([X_general_tr, X_single_tr], ignore_index=True)
+            y_train = pd.concat([y_general_tr, y_single_tr], ignore_index=True)
+            X_val, y_val = X_single_va, y_single_va
+            X_test, y_test = X_single_te, y_single_te
+        else:
+            val_subjects, test_subjects = train_test_split(target_subjects, test_size=0.5, random_state=seed)
+            X_train, X_val, X_test, y_train, y_val, y_test = data_split_by_subject(
+                data, train_subjects, seed, val_subjects=val_subjects, test_subjects=test_subjects
+            )
+        return X_train, X_val, X_test, y_train, y_val, y_test
+
+    # --- Default random split ---
+    data, _ = load_subject_csvs(subject_list, model_type, add_subject_id=True)
+
+    # Explicitly reference the module to avoid scope-shadowing issues (UnboundLocalError)
+    from src.utils.io import split as split_module
+    return split_module.data_split(
+        data,
+        random_state=seed,
+    )
