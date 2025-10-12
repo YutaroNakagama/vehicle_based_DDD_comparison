@@ -16,7 +16,8 @@ from sklearn.model_selection import train_test_split
 
 
 def _check_nonfinite(X: pd.DataFrame, name: str) -> pd.DataFrame:
-    """Check for NaN or infinite values in numeric columns and raise warnings."""
+    """Check for NaN or infinite values in numeric columns and replace safely."""
+    CLIP_THRESHOLD = 1e6  # Avoid float overflow during sklearn fit
     # Convert only numeric columns to numpy
     X_num = X.select_dtypes(include=[np.number])
     non_numeric_cols = X.columns.difference(X_num.columns)
@@ -24,10 +25,29 @@ def _check_nonfinite(X: pd.DataFrame, name: str) -> pd.DataFrame:
     if len(non_numeric_cols) > 0:
         print(f"[WARN] {name} contains non-numeric columns: {list(non_numeric_cols)}")
 
-    # Check only numeric columns
-    bad_cols = X_num.columns[~np.isfinite(X_num.to_numpy()).all(axis=0)]
-    if len(bad_cols) > 0:
-        print(f"[WARN] {name} has non-finite values in: {list(bad_cols)}")
+    # Detect NaN / Inf
+    mask_nan = X_num.isna()
+    mask_inf = np.isinf(X_num.to_numpy())
+
+    if mask_nan.values.any() or mask_inf.any():
+        print(f"[WARN] {name} detected NaN/Inf values → replacing with column means.")
+        # Replace Inf with NaN first, then fill by mean
+        X_num = X_num.replace([np.inf, -np.inf], np.nan)
+        X_num = X_num.fillna(X_num.mean())
+        X[X_num.columns] = X_num
+
+        # Log which columns were affected
+        bad_cols = X_num.columns[(mask_nan.any(axis=0) | mask_inf.any(axis=0))]
+        print(f"[INFO] {name} fixed columns: {list(bad_cols)}")
+    else:
+        print(f"[OK] {name} has no NaN/Inf values.")
+
+    # Clip extremely large or small values
+    max_abs = X_num.abs().max()
+    large_cols = max_abs[max_abs > CLIP_THRESHOLD].index.tolist()
+    if len(large_cols) > 0:
+        print(f"[WARN] {name} has extremely large values in: {large_cols} → clipping to ±{CLIP_THRESHOLD}")
+        X[large_cols] = X[large_cols].clip(-CLIP_THRESHOLD, CLIP_THRESHOLD)
 
     return X
 
@@ -64,6 +84,17 @@ def data_split(
 
     if not np.isclose(train_ratio + val_ratio + test_ratio, 1.0):
         raise ValueError("Train, validation, and test ratios must sum to 1.0")
+
+    # --- Normalize column names to prevent KeyError ---
+    def _normalize_col(c):
+        if c is None:
+            return ""
+        s = str(c)
+        for bad, rep in [('\ufeff', ''), ('\r', ''), ('\n', ''), (' ', '_')]:
+            s = s.replace(bad, rep)
+        return s.strip()
+
+    df.columns = [_normalize_col(c) for c in df.columns]
 
     # --- Step 1: Filter valid KSS labels ---
     df = df[df["KSS_Theta_Alpha_Beta"].isin(KSS_BIN_LABELS)].copy()
@@ -152,6 +183,17 @@ def data_split_by_subject(
     logging.info(f"  Train subjects ({len(train_subjects)}): {train_subjects}")
     logging.info(f"  Validation subjects ({len(val_subjects) if val_subjects else 0}): {val_subjects}")
     logging.info(f"  Test subjects ({len(test_subjects) if test_subjects else 0}): {test_subjects}")
+
+    # --- Normalize column names safely (no .str accessor) ---
+    def _normalize_col(c):
+        if c is None:
+            return ""
+        s = str(c)
+        for bad, rep in [('\ufeff', ''), ('\r', ''), ('\n', ''), (' ', '_')]:
+            s = s.replace(bad, rep)
+        return s.strip()
+
+    df.columns = [_normalize_col(c) for c in df.columns]
 
     # Step 1: Filter rows by KSS labels and create 'label' column
     df_filtered = df[df["KSS_Theta_Alpha_Beta"].isin(KSS_BIN_LABELS)].copy()
