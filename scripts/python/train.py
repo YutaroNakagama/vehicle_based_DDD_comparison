@@ -21,6 +21,7 @@ import os
 import argparse
 import logging
 from pathlib import Path
+from src.utils.cli.train_cli_helpers import load_subjects_from_file, log_train_args, map_mode_to_strategy
 
 # --- Path setup ---
 THIS = Path(__file__).resolve()
@@ -38,59 +39,6 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 # --- Imports ---
 import src.config
 import src.models.model_pipeline as mp
-
-
-def load_subjects_from_file(path: str):
-    """Load subject IDs from a text file.
-
-    Parameters
-    ----------
-    path : str
-        Path to a text file containing subject IDs (space, comma, or newline-separated).
-
-    Returns
-    -------
-    list of str
-        List of subject identifiers read from the file.
-
-    Raises
-    ------
-    FileNotFoundError
-        If the specified file does not exist.
-    ValueError
-        If no valid subject IDs are found in the file.
-    """
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"[ERROR] Target subject file not found: {path}")
-
-    with open(path, "r", encoding="utf-8") as f:
-        text = f.read().strip()
-        subjects = [
-            s for s in text.replace(",", " ").replace("\t", " ").split()
-            if s.strip()
-        ]
-
-    if not subjects:
-        raise ValueError(f"[ERROR] No valid subject IDs found in file: {path}")
-
-    logging.info(
-        f"[INFO] Loaded {len(subjects)} subjects from {path}: "
-        f"{subjects[:5]}{'...' if len(subjects) > 5 else ''}"
-    )
-    return subjects
-
-
-def log_train_args(args, target_subjects):
-    """Log all parsed training arguments."""
-    logging.info(
-        "[RUN] model=%s | mode=%s | seed=%s | tag=%s | target_file=%s | subjects=%s",
-        args.model,
-        args.mode,
-        args.seed,
-        args.tag,
-        args.target_file if args.target_file else "None",
-        " ".join(target_subjects) if target_subjects else "None",
-    )
 
 
 def main():
@@ -164,40 +112,24 @@ def main():
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-    # --- Load target subjects if required ---
-    target_subjects = []
-    if args.mode != "pooled":
-        if not args.target_file:
-            raise SystemExit(f"[ERROR] --target_file is required for mode={args.mode}")
-        target_subjects = load_subjects_from_file(args.target_file)
-
-    # --- Mode logic mapping ---
-    if args.mode == "pooled":
-        args.subject_split_strategy = "random"
-    elif args.mode == "target_only":
-        args.subject_split_strategy = "subject_time_split"
-    elif args.mode == "source_only":
-        args.subject_split_strategy = "subject_wise_split"
-    elif args.mode == "joint_train":
-        args.subject_split_strategy = "finetune_target_subjects"
-
-    # --- Execute training pipeline ---
-    pipeline_args = {
-        "model_name": args.model,
-        "mode": args.mode,
-        "target_subjects": target_subjects,
-        "subject_wise_split": args.subject_wise_split,
-        "seed": args.seed,
-        "tag": args.tag,
-        "subject_split_strategy": args.subject_split_strategy,
-        "time_stratify_labels": args.time_stratify_labels,
-        "time_stratify_tolerance": args.time_stratify_tolerance,
-        "time_stratify_window": args.time_stratify_window,
-        "time_stratify_min_chunk": args.time_stratify_min_chunk,
-    }
+    # --- Load subjects and map mode ---
+    target_subjects = load_subjects_from_file(args.target_file) if args.mode != "pooled" else []
+    split_strategy = map_mode_to_strategy(args.mode)
 
     log_train_args(args, target_subjects)
-    mp.train_pipeline(**pipeline_args)
+    mp.train_pipeline(
+        model_name=args.model,
+        mode=args.mode,
+        target_subjects=target_subjects,
+        subject_wise_split=args.subject_wise_split,
+        seed=args.seed,
+        tag=args.tag,
+        subject_split_strategy=split_strategy,
+        time_stratify_labels=args.time_stratify_labels,
+        time_stratify_tolerance=args.time_stratify_tolerance,
+        time_stratify_window=args.time_stratify_window,
+        time_stratify_min_chunk=args.time_stratify_min_chunk,
+    )
 
 
 if __name__ == "__main__":
