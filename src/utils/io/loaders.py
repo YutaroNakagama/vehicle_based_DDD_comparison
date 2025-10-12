@@ -171,7 +171,12 @@ def get_model_type(model_name: str) -> str:
     """
     return model_name if model_name in {"SvmW", "SvmA", "Lstm"} else "common"
 
-def load_subject_csvs(subject_list: list, model_type: str, add_subject_id: bool = False) -> Tuple[pd.DataFrame, list]:
+def load_subject_csvs(
+    subject_list: list,
+    model_type: str,
+    add_subject_id: bool = False,
+    base_path: str = None
+) -> Tuple[pd.DataFrame, list]:
     """
     Load processed CSV files for a list of subjects.
 
@@ -198,7 +203,16 @@ def load_subject_csvs(subject_list: list, model_type: str, add_subject_id: bool 
             continue
         subject_id, version = parts
         file_name = f'processed_{subject_id}_{version}.csv'
-        file_path = os.path.join(PROCESS_CSV_PATH, model_type, file_name)
+        # --- Determine file path with override ---
+        if base_path is not None:
+            # Explicitly use base_path (e.g., data/processed/common)
+            file_path = os.path.join(base_path, file_name)
+        elif model_type is not None:
+            # Model-specific path (e.g., data/processed/Lstm)
+            file_path = os.path.join(PROCESS_CSV_PATH, model_type, file_name)
+        else:
+            # Fallback to shared "common"
+            file_path = os.path.join(PROCESS_CSV_PATH, "common", file_name)
         try:
             df = pd.read_csv(file_path)
             if add_subject_id:
