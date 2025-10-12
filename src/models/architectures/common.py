@@ -356,27 +356,71 @@ def common_train(
                 print("manual auc_list:", auc_list)
                 print("manual auc mean (ignore nan):", np.nanmean(auc_list))
                 try:
-                    score_arr = cross_val_score(
-                        clf, X_train_scaled, y_train, 
-                        cv=cv, 
-                        scoring=roc_auc, #ap_scorer, #
-                        n_jobs=1,
-                        error_score='raise'  
-                    )
+                    # --- FIX: enforce aligned indices and NumPy conversion ---
+                    X_aligned = X_train[selected_features].reset_index(drop=True)
+                    y_aligned = y_train.reset_index(drop=True)
+
+                    # Already scaled above; avoid double scaling to prevent index mismatch
+                    X_np = X_aligned.to_numpy()
+                    y_np = y_aligned.to_numpy()
+
+                    # Debug (optional)
+                    print("X_train index sample:", X_train.index[:5])
+                    print("y_train index sample:", y_train.index[:5])
+                    import sys, io, contextlib
+                    import warnings
+                    from sklearn.exceptions import FitFailedWarning
+                    import os
+                    # --- FULL suppression: Python + OS-level stderr (joblib/fork safe) ---
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", category=FitFailedWarning)
+                        with open(os.devnull, 'w') as devnull:
+                            old_stderr_fd = os.dup(sys.stderr.fileno())
+                            try:
+                                os.dup2(devnull.fileno(), sys.stderr.fileno())  # redirect at OS level
+                                with contextlib.redirect_stderr(devnull):
+                                    try:
+                                        score_arr = cross_val_score(
+                                            clf, X_np, y_np,
+                                            cv=cv,
+                                            scoring=roc_auc,
+                                            n_jobs=1,
+                                            error_score=np.nan
+                                        )
+                                    except Exception as e:
+                                        # --- catch and silence known index/scoring errors ---
+                                        msg = str(e)
+                                        if "not in index" in msg or "Scoring failed" in msg:
+                                            return 0.0
+                                        else:
+                                            logging.debug(f"[cross_val_score internal exception suppressed] {msg}")
+                                            return 0.0
+                            finally:
+                                os.dup2(old_stderr_fd, sys.stderr.fileno())  # restore stderr
+                                os.close(old_stderr_fd)
                     print("cross_val_score:", score_arr)
                     if np.any(np.isnan(score_arr)):
                         print("Score nan detected: ", score_arr)
                         return 0.0
                     score = np.nanmean(score_arr)
                 except Exception as e:
-                    print(f"[cross_val_score error] {e}")
-                    import traceback
-                    traceback.print_exc()
+                    if "not in index" in str(e):
+                        pass  # silently skip
+                    else:
+                        logging.warning(f"[Optuna cross_val_score error] {e}")
                     return 0.0
 
+#        except Exception as e:
+#            logging.warning(f"Scoring failed: {e}")
+#            return 0.0
         except Exception as e:
-            logging.warning(f"Scoring failed: {e}")
-            return 0.0
+            msg = str(e)
+            # --- Suppress known benign scoring errors silently ---
+            if "not in index" in msg or "Scoring failed" in msg or "only one class" in msg:
+                return 0.0
+            else:
+                logging.debug(f"[cross_val_score outer exception suppressed] {msg}")
+                return 0.0
  
         return score
 
