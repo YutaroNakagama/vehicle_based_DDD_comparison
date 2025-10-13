@@ -100,9 +100,16 @@ def main():
     )
     parser.add_argument(
         "--mode",
-        choices=["only_target", "only_general", "finetune"],
+        choices=["pooled", "only_target", "only_general", "finetune"],
+        default="pooled",
+        help="Experiment mode: pooled / only_target / only_general / finetune"
+    )
+    parser.add_argument(
+        "--jobid",
+        type=str,
         default=None,
-        help="Experiment mode: only_target / only_general / finetune"
+        help="Specify training job ID (e.g., 14004123). "
+             "If not provided, the latest training job will be used automatically."
     )
 
     args = parser.parse_args()
@@ -122,7 +129,8 @@ def main():
             sample_size=args.sample_size,
             seed=args.seed,
             fold=args.fold,
-            subject_wise_split=args.subject_wise_split
+            subject_wise_split=args.subject_wise_split,
+            jobid=args.jobid,
         )
     except Exception as e:
         logging.error(f"Evaluation failed: {e}")
