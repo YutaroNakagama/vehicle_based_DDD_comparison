@@ -34,6 +34,8 @@ from imblearn.ensemble import BalancedRandomForestClassifier
 from src.models.feature_selection.anfis import calculate_id
 from src.config import MODEL_PKL_PATH, N_TRIALS
 
+from src.utils.io.savers import save_artifacts
+
 def common_train(
     X_train, X_val, X_test, y_train, y_val, y_test,
     selected_features,  
@@ -573,57 +575,33 @@ def common_train(
     }
 
     # ---------- Save artifacts (RF only: organized directories) ----------
-    if model == "RF":
-        dirs = {
-            "models":     os.path.join(base_dir, "models"),
-            "scalers":    os.path.join(base_dir, "scalers"),
-            "features":   os.path.join(base_dir, "features"),
-            "thresholds": os.path.join(base_dir, "thresholds"),
-            "pr_curves":  os.path.join(base_dir, "pr_curves"),
-        }
-        for d in dirs.values():
-            os.makedirs(d, exist_ok=True)
 
-        # model / scaler / features
-        with open(f"{dirs['models']}/{model}_{mode}{suffix}.pkl", "wb") as f:
-            pickle.dump(best_clf, f)
-        with open(f"{dirs['scalers']}/scaler_{model}_{mode}{suffix}.pkl", "wb") as f:
-            pickle.dump(scaler, f)
-        with open(f"{dirs['features']}/selected_features_{model}_{mode}{suffix}.pkl", "wb") as f:
-            pickle.dump(selected_features, f)
-        with open(f"{dirs['features']}/feature_meta_{model}_{mode}{suffix}.json", "w") as f:
-            json.dump(feature_meta, f, indent=2)
+    # --- robust model_name inference and unified save ---
+    try:
+        _model_name = model if isinstance(model, str) else getattr(model, "__name__", "unknown")
+    except Exception:
+        _model_name = "unknown"
 
-        # PR curves (train/val/test)
-        def _save_pr(y_true, scores, split):
-            if scores is None:
-                return
-            prec, rec, thr = precision_recall_curve(y_true, scores)
-            thr_aligned = np.concatenate([thr, [np.nan]])
-            pd.DataFrame({"precision": prec, "recall": rec, "threshold": thr_aligned}).to_csv(
-                f"{dirs['pr_curves']}/pr_{split}_{model}_{mode}{suffix}.csv", index=False
-            )
-            import matplotlib.pyplot as plt
-            plt.figure(figsize=(4.0,3.6))
-            plt.plot(rec, prec)
-            plt.xlabel("Recall"); plt.ylabel("Precision"); plt.title(f"PR ({split})")
-            plt.tight_layout()
-            plt.savefig(f"{dirs['pr_curves']}/pr_{split}_{model}_{mode}{suffix}.png", dpi=160)
-            plt.close()
+    # Handle accidental object in mode
+    if not isinstance(mode, str):
+        logging.warning(f"[common_train] mode is not str (type={type(mode)}), resetting to 'unspecified'")
+        _mode = "unspecified"
+    else:
+        _mode = mode
 
-        _save_pr(m_train["_y_true"], m_train.get("_proba"), "train")
-        _save_pr(m_val["_y_true"],   m_val.get("_proba"),   "val")
-        _save_pr(m_test["_y_true"],  m_test.get("_proba"),  "test")
+    if isinstance(_model_name, dict):
+        logging.warning(f"[common_train] model_name was dict: {_model_name}")
+        _model_name = _model_name.get("name", "unknown")
 
-        # Threshold
-        if m_val.get("_proba") is not None:
-            threshold_meta = {
-                "model": model,
-                "threshold": float(best_threshold) if 'best_threshold' in locals() else None,
-                "metric": "F1-optimal",
-            }
-            with open(f"{dirs['thresholds']}/threshold_{model}_{mode}{suffix}.json", "w") as f:
-                json.dump(threshold_meta, f, indent=2)
+    # --- Save unified artifacts (once only, after model training) ---
+    save_artifacts(
+        model_obj=best_clf,
+        scaler_obj=scaler,
+        selected_features=selected_features,
+        feature_meta=feature_meta,
+        model_name=str(_model_name),
+        mode=_mode
+    )
 
     # ---------- Threshold optimization on validation (maximize F1) ----------
     if m_val["_proba"] is not None:
@@ -657,8 +635,13 @@ def common_train(
             "threshold": best_threshold,
             "metric": "F1-optimal",
         }
-        with open(f"{MODEL_PKL_PATH}/{model_type}/threshold_{model}_{mode}{suffix}.json", "w") as f:
+        # Save threshold under model-specific directory instead of "common"
+        out_dir = os.path.join(MODEL_PKL_PATH, model)
+        os.makedirs(out_dir, exist_ok=True)
+        thr_path = os.path.join(out_dir, f"threshold_{model}_{mode}{suffix}.json")
+        with open(thr_path, "w") as f:
             json.dump(threshold_meta, f, indent=2)
+        logging.info(f"[SAVE] Threshold saved -> {thr_path}")
 
     else:
         logging.warning("Threshold optimization skipped: model does not support probability estimation.")

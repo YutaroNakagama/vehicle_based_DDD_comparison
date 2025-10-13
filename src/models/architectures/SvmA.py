@@ -22,6 +22,7 @@ from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, r
 from pyswarm import pso
 
 from src.config import MODEL_PKL_PATH
+from src.utils.io.savers import save_artifacts
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -255,15 +256,18 @@ def SvmA_train(
     os.makedirs(model_dir, exist_ok=True)
     
     # --- Unified saving rules ---
-    joblib.dump(svm_final, f"{model_dir}/{model}.pkl")
-    joblib.dump(X_train_sel.columns.tolist(), f"{model_dir}/selected_features_{model}.pkl")
-
-    # Save scaler (for consistency, even if identity here)
     from sklearn.preprocessing import StandardScaler
-    dummy_scaler = StandardScaler().fit(X_train_sel)  # mimic preprocessing step
-    joblib.dump(dummy_scaler, f"{model_dir}/scaler_{model}.pkl")
-    
-    logging.info("Model and features saved successfully.")
+    dummy_scaler = StandardScaler().fit(X_train_sel)
+
+    save_artifacts(
+        model_obj=svm_final,
+        scaler_obj=dummy_scaler,
+        selected_features=X_train_sel.columns.tolist(),
+        feature_meta=None,
+        model_name=model,
+        mode="train"
+    )
+    logging.info("Model and features saved successfully (via unified saver).")
 
     evaluate_model(svm_final, X_train_sel, y_train, "Training")
     evaluate_model(svm_final, X_val_sel, y_val, "Validation")
