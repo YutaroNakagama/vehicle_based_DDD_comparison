@@ -72,3 +72,5 @@ def normalize_and_align_features(X_test: pd.DataFrame, selected_features: List[s
 
     return X_test[selected_features], selected_features
 
+# alias for backward compatibility
+align_and_normalize_features = normalize_and_align_features
