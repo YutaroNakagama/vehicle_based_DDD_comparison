@@ -38,15 +38,16 @@ from src.config import TOP_K_FEATURES
 from src.utils.io.loaders import read_subject_list, load_subject_csvs
 from src.utils.io.split import _check_nonfinite
 from src.utils.io.split_helpers import split_data, log_split_ratios
+from src.utils.io.feature_utils import normalize_feature_names
 from src.models.architectures.helpers import get_classifier
 from src.models.architectures.SvmA import SvmA_train
 from src.models.architectures.lstm import lstm_train
 from src.models.architectures.common import common_train
-from src.models.architectures.train_helpers import train_model, save_artifacts
+from src.models.architectures.train_helpers import train_model
+from src.utils.io.savers import save_artifacts
 from src.models.feature_selection.feature_helpers import select_features_and_scale
-from src.models.feature_selection.rf_importance import (
-    select_top_features_by_importance
-)
+from src.models.feature_selection.rf_importance import select_top_features_by_importance
+
 
 logging.basicConfig(
     level=logging.INFO, 
@@ -158,6 +159,33 @@ def train_pipeline(
         return
 
     # 3) Feature selection & scaling
+    # Normalize feature names for consistency between training and evaluation
+    X_train.columns = normalize_feature_names(X_train.columns)
+    X_val.columns = normalize_feature_names(X_val.columns)
+    if X_test is not None:
+        X_test.columns = normalize_feature_names(X_test.columns)
+
+    # Remove duplicated or non-numeric columns before feature selection
+    X_train = X_train.loc[:, ~X_train.columns.duplicated()]
+    X_val = X_val.loc[:, ~X_val.columns.duplicated()]
+    if X_test is not None:
+        X_test = X_test.loc[:, ~X_test.columns.duplicated()]
+
+    # Drop unnecessary columns (e.g., subject_id) and keep only numeric columns
+    X_train = X_train.drop(columns=["subject_id"], errors="ignore").select_dtypes(include=[np.number])
+    X_val = X_val.drop(columns=["subject_id"], errors="ignore").select_dtypes(include=[np.number])
+    if X_test is not None:
+        X_test = X_test.drop(columns=["subject_id"], errors="ignore").select_dtypes(include=[np.number])
+
+    # Align columns (train/val/test) to common subset to avoid misalignment
+    common_cols = X_train.columns.intersection(X_val.columns)
+    if X_test is not None:
+        common_cols = common_cols.intersection(X_test.columns)
+    X_train = X_train[common_cols]
+    X_val = X_val[common_cols]
+    if X_test is not None:
+        X_test = X_test[common_cols]
+
     selected_features, scaler, X_train_fs, X_val_fs, X_test_fs = select_features_and_scale(
         X_train=X_train,
         X_val=X_val,
@@ -167,6 +195,10 @@ def train_pipeline(
         top_k=TOP_K_FEATURES,
         data_leak=data_leak,
     )
+
+    # --- Normalize selected feature names before saving ---
+    selected_features = normalize_feature_names(selected_features)
+    logging.info(f"[TRAIN] Normalized {len(selected_features)} feature names for consistency.")
 
     # 4) Train the model
     best_clf, scaler, best_threshold, feature_meta, results = train_model(
