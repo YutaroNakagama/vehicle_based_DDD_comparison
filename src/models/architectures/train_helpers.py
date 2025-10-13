@@ -17,6 +17,8 @@ from src.models.architectures.SvmA import SvmA_train
 from src.models.architectures.lstm import lstm_train
 from src.models.architectures.common import common_train
 
+from src.utils.io.savers import save_artifacts
+
 
 __all__ = ["train_model", "save_artifacts"]
 
@@ -60,46 +62,3 @@ def train_model(
     return best_clf, scaler, best_threshold, feature_meta, results
 
 
-def save_artifacts(
-    model_name: str,
-    model_type: str,
-    suffix: str,
-    best_clf: Optional[object],
-    scaler: Optional[StandardScaler],
-    selected_features: Optional[List[str]],
-    feature_meta: Optional[Dict],
-    results: Optional[Dict],
-    best_threshold: Optional[float],
-) -> None:
-    """Persist models, scalers, features, and training-time metrics to disk."""
-
-    os.makedirs(f"models/{model_type}", exist_ok=True)
-    os.makedirs(f"results/train/{model_name}", exist_ok=True)
-
-    if best_clf is not None:
-        with open(f"models/{model_type}/{model_name}{suffix}.pkl", "wb") as f:
-            pickle.dump(best_clf, f)
-    if scaler is not None:
-        with open(f"models/{model_type}/scaler_{model_name}{suffix}.pkl", "wb") as f:
-            pickle.dump(scaler, f)
-    if selected_features is not None:
-        with open(f"models/{model_type}/selected_features_{model_name}{suffix}.pkl", "wb") as f:
-            pickle.dump(selected_features, f)
-
-    if feature_meta:
-        with open(f"models/{model_type}/feature_meta_{model_name}{suffix}.json", "w") as f:
-            json.dump(feature_meta, f, indent=2)
-
-    if best_threshold is not None:
-        thr_meta = {"model": model_name, "threshold": float(best_threshold), "metric": "F1-optimal"}
-        with open(f"results/train/{model_name}/threshold_{model_name}{suffix}.json", "w") as f:
-            json.dump(thr_meta, f, indent=2)
-
-    if results:
-        rows = [{"phase": "training", "split": split, **metrics} for split, metrics in results.items()]
-        df_results = pd.DataFrame(rows)
-        df_results.to_csv(f"results/train/{model_name}/trainmetrics_{model_name}{suffix}.csv", index=False)
-        with open(f"results/train/{model_name}/trainmetrics_{model_name}{suffix}.json", "w") as f:
-            json.dump(rows, f, indent=2)
-
-    logging.info("Artifacts saved under models/%s and results/train/%s", model_type, model_name)

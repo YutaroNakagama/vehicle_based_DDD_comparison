@@ -17,6 +17,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 import tensorflow as tf
 
 from src.config import MODEL_PKL_PATH
+from src.utils.io.savers import save_artifacts
 
 
 class AttentionLayer(Layer):
@@ -168,16 +169,15 @@ def lstm_train(
         accuracies.append(scores[1])
 
         # Save model
-        model_path = f'{MODEL_PKL_PATH}/{model_name}/lstm_model_fold{fold_no}.keras'
-        os.makedirs(os.path.dirname(model_path), exist_ok=True)
-        model.save(model_path)
-
-        # Save scaler
-        scaler_path = f"{MODEL_PKL_PATH}/{model_name}/scaler_fold{fold_no}.pkl"
-        joblib.dump(scaler, scaler_path)
-
-        print(f'Model for fold {fold_no} saved at {model_path}')
-        print(f'Scaler for fold {fold_no} saved at {scaler_path}')
+        save_artifacts(
+            model_obj=model,
+            scaler_obj=scaler,
+            selected_features=X_numeric.columns.tolist(),
+            feature_meta=None,
+            model_name=model_name,
+            mode=f"fold{fold_no}"
+        )
+        print(f"Artifacts for fold {fold_no} saved successfully (via unified saver).")
         print(f'Fold {fold_no} - Loss: {scores[0]}, Accuracy: {scores[1]}')
 
     print(f'\nScores per fold: {accuracies}')
