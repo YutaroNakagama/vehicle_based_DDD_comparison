@@ -149,3 +149,49 @@ def split_data(
         data,
         random_state=seed,
     )
+
+# ==========================================================
+#  Evaluation-specific data split helper
+# ==========================================================
+
+def prepare_data_split(
+    data: pd.DataFrame,
+    subjects: list,
+    seed: int = 42,
+    subject_wise_split: bool = False
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
+    """Prepare train/val/test splits for evaluation.
+
+    A lightweight wrapper for evaluation mode, which typically uses
+    simple random or subject-wise splitting without complex time stratification.
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        Combined dataset containing all subjects and features.
+    subjects : list of str
+        Subject identifiers used for reference.
+    seed : int, default=42
+        Random seed for reproducibility.
+    subject_wise_split : bool, default=False
+        If True, performs subject-based splitting (avoiding subject leakage).
+
+    Returns
+    -------
+    tuple
+        (X_train, X_val, X_test, y_train, y_val, y_test)
+    """
+    from src.utils.io.split import data_split, data_split_by_subject
+
+    if subject_wise_split:
+        logging.info("[EVAL] Using subject-wise split.")
+        X_train, X_val, X_test, y_train, y_val, y_test = data_split_by_subject(
+            data, subjects, seed
+        )
+    else:
+        logging.info("[EVAL] Using random split.")
+        X_train, X_val, X_test, y_train, y_val, y_test = data_split(
+            data, random_state=seed
+        )
+
+    return X_train, X_val, X_test, y_train, y_val, y_test

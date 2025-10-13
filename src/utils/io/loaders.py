@@ -249,3 +249,143 @@ def load_subject_csvs(
 
     return df_all, feature_columns
 
+
+# ==========================================================
+#  Evaluation-specific utility functions
+# ==========================================================
+
+import joblib
+import pickle
+from tensorflow.keras.models import load_model
+from src.evaluation.models.lstm import AttentionLayer
+
+
+def load_subjects_and_data(
+    model: str,
+    fold: int = 0,
+    sample_size: int = None,
+    seed: int = 42,
+    subject_wise_split: bool = False
+):
+    """Load subject list and combined dataset for evaluation.
+
+    Parameters
+    ----------
+    model : str
+        Model name (e.g. "Lstm", "SvmA").
+    fold : int
+        Fold number for cross-validation.
+    sample_size : int
+        Number of subjects to evaluate (subset if provided).
+    seed : int
+        Random seed for reproducibility.
+    subject_wise_split : bool
+        Whether to include subject_id column for subject-wise split.
+
+    Notes
+    -----
+    This function is called by ``eval_pipeline``. All parameters have defaults.
+
+    Returns
+    -------
+    tuple
+        (subjects, model_type, combined_data)
+    """
+    from src.utils.io.loaders import read_subject_list, read_subject_list_fold, get_model_type, load_subject_csvs
+    import numpy as np
+
+    if fold == 0:
+        subjects = read_subject_list()
+    else:
+        subjects = read_subject_list_fold(fold)
+
+    if sample_size:
+        rng = np.random.default_rng(seed)
+        subjects = rng.choice(subjects, size=min(sample_size, len(subjects)), replace=False).tolist()
+        logging.info(f"Evaluating {len(subjects)} subjects: {subjects}")
+
+    model_type = get_model_type(model)
+    combined_data, feature_columns = load_subject_csvs(subjects, model_type, add_subject_id=subject_wise_split)
+    return subjects, model_type, combined_data
+
+
+def load_model_and_scaler(model: str, model_type: str, mode: str, tag: str, fold: int, jobid: str = None):
+    """Load trained model, scaler, and feature selection files.
+
+    Parameters
+    ----------
+    model : str
+        Model name ("Lstm", "SvmA", etc.).
+    model_type : str
+        Corresponding model directory type.
+    mode : str
+        Experiment mode ("pooled", "only_target", etc.).
+    tag : str
+        Optional tag for variant models.
+    fold : int
+        Fold index for CV evaluation.
+    jobid : str, optional
+        Job ID directory name for artifact lookup.
+
+    Returns
+    -------
+    tuple
+        (model_instance, scaler, selected_features)
+    """
+    from src.config import MODEL_PKL_PATH
+
+    suffix = f"_{mode}" if mode else ""
+    if tag:
+        suffix += f"_{tag}"
+
+    model_base = os.path.join(MODEL_PKL_PATH, model_type)
+    if jobid:
+        model_base = os.path.join(model_base, jobid)
+        logging.info(f"[EVAL] Using model artifacts from job {jobid}: {model_base}")
+
+    if model == "Lstm":
+        model_file = f"lstm_model_fold{fold or 1}.keras"
+        scaler_file = f"scaler_fold{fold or 1}.pkl"
+        feature_file = "selected_features_Lstm.pkl"
+    else:
+        model_file = f"{model}.pkl"
+        scaler_file = f"scaler_{model}.pkl"
+        feature_file = f"selected_features_{model}.pkl"
+
+    model_path = os.path.join(model_base, model_file)
+    scaler_path = os.path.join(model_base, scaler_file)
+    feature_path = os.path.join(model_base, feature_file)
+
+    # --- Load model ---
+    if not os.path.exists(model_path):
+        logging.error(f"[EVAL] Model file not found: {model_path}")
+        return None, None, None
+
+    try:
+        if model == "Lstm":
+            clf = load_model(model_path, custom_objects={"AttentionLayer": AttentionLayer})
+        else:
+            clf = joblib.load(model_path)
+    except Exception as e:
+        logging.error(f"[EVAL] Failed to load model: {e}")
+        return None, None, None
+
+    # --- Load scaler (optional) ---
+    scaler = None
+    if os.path.exists(scaler_path):
+        try:
+            scaler = joblib.load(scaler_path)
+        except Exception as e:
+            logging.warning(f"[EVAL] Failed to load scaler: {e}")
+
+    # --- Load selected features (optional) ---
+    features = []
+    if os.path.exists(feature_path):
+        try:
+            with open(feature_path, "rb") as f:
+                features = pickle.load(f)
+        except Exception as e:
+            logging.warning(f"[EVAL] Failed to load feature list: {e}")
+
+    logging.info(f"[EVAL] Loaded model from {model_path}")
+    return clf, scaler, features
