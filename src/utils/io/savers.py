@@ -70,6 +70,11 @@ def save_artifacts(
 
     # --- output directory ---
     job_id = os.environ.get("PBS_JOBID", "local")
+
+    # --- normalize PBS jobid: remove hostname part like ".spcc-adm1"
+    if "." in job_id:
+        job_id = job_id.split(".")[0]
+
     model_dir = os.path.join("models", model_name, str(job_id))
     os.makedirs(model_dir, exist_ok=True)
 

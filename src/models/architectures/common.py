@@ -93,7 +93,8 @@ def common_train(
 
     import pickle, json
 
-    base_dir = f"{MODEL_PKL_PATH}/{model_type}"
+    # Always use unified model-specific directory under "models"
+    base_dir = os.path.join("models", model)
     os.makedirs(base_dir, exist_ok=True)
 
     if eval_only:
@@ -635,8 +636,27 @@ def common_train(
             "threshold": best_threshold,
             "metric": "F1-optimal",
         }
-        # Save threshold under model-specific directory instead of "common"
-        out_dir = os.path.join(MODEL_PKL_PATH, model)
+        # ==========================================================
+        # Save threshold under: models/<model>/<jobid>/threshold_*.json
+        # ==========================================================
+        # Extract jobid from suffix (robust: handles "14019173.spcc-adm1" etc.)
+        import re
+        jobid = None
+        m = re.search(r"\b(\d{5,})\b", suffix)  # match 5+ consecutive digits
+        if m:
+            jobid = m.group(1)
+        else:
+            # fallback: try removing hostname (e.g., "14019173.spcc-adm1")
+            m2 = re.search(r"(\d{5,})", suffix)
+            if m2:
+                jobid = m2.group(1)
+
+        # Construct path
+        if jobid:
+            out_dir = os.path.join(MODEL_PKL_PATH, model, jobid)
+        else:
+            out_dir = os.path.join(MODEL_PKL_PATH, model)
+
         os.makedirs(out_dir, exist_ok=True)
         thr_path = os.path.join(out_dir, f"threshold_{model}_{mode}{suffix}.json")
         with open(thr_path, "w") as f:
