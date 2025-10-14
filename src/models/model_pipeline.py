@@ -123,6 +123,18 @@ def train_pipeline(
     if tag:
         suffix += f"_{tag}"
 
+
+    # --- Append PBS job ID to suffix (for organized model output) ---
+    jobid = os.environ.get("PBS_JOBID", "")
+    if "." in jobid:
+        jobid = jobid.split(".")[0]  # Remove hostname part like ".spcc-adm1"
+
+    if jobid:
+        # Prevent duplicate jobid in suffix if already included
+        if jobid not in suffix:
+            suffix = f"{suffix}_{jobid}"
+        logging.info(f"[TRAIN] Appended jobid to suffix -> {suffix}")
+
     logging.info(
         "[Start] model=%s | mode=%s | strategy=%s", 
         model_name, mode, subject_split_strategy
