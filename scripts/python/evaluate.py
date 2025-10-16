@@ -100,9 +100,9 @@ def main():
     )
     parser.add_argument(
         "--mode",
-        choices=["pooled", "only_target", "only_general", "finetune"],
+        choices=["pooled", "target_only", "source_only", "joint_train"],
         default="pooled",
-        help="Experiment mode: pooled / only_target / only_general / finetune"
+        help="Experiment mode: pooled / target_only / source_only / joint_train"
     )
     parser.add_argument(
         "--jobid",
