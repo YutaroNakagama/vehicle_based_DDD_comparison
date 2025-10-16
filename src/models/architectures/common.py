@@ -584,11 +584,11 @@ def common_train(
         _model_name = "unknown"
 
     # Handle accidental object in mode
-    if not isinstance(mode, str):
-        logging.warning(f"[common_train] mode is not str (type={type(mode)}), resetting to 'unspecified'")
-        _mode = "unspecified"
+    if isinstance(mode, str) and mode.strip():
+        _mode = mode.strip()
     else:
-        _mode = mode
+        _mode = ""
+        logging.info(f"[common_train] mode not specified, proceeding without suffix.")
 
     if isinstance(_model_name, dict):
         logging.warning(f"[common_train] model_name was dict: {_model_name}")
