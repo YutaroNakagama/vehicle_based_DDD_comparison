@@ -332,29 +332,53 @@ def load_model_and_scaler(model: str, model_type: str, mode: str, tag: str, fold
     tuple
         (model_instance, scaler, selected_features)
     """
-    from src.config import MODEL_PKL_PATH
+    import joblib
+    import pickle
+    import os
+    import logging
+    from tensorflow.keras.models import load_model
+    from src.evaluation.models.lstm import AttentionLayer
 
-    suffix = f"_{mode}" if mode else ""
-    if tag:
-        suffix += f"_{tag}"
+    # --- Normalize PBS jobid ---
+    if jobid is None:
+        jobid = os.environ.get("PBS_JOBID", "local")
+    if "." in jobid:
+        jobid = jobid.split(".")[0]
 
-    model_base = os.path.join(MODEL_PKL_PATH, model_type)
-    if jobid:
-        model_base = os.path.join(model_base, jobid)
-        logging.info(f"[EVAL] Using model artifacts from job {jobid}: {model_base}")
+    # --- Define model directory ---
+    model_dir = os.path.join("models", model, jobid)
 
+    # Fallback: use latest_job.txt if no explicit jobid folder exists
+    if not os.path.exists(model_dir):
+        latest_marker = os.path.join("models", model, "latest_job.txt")
+        if os.path.exists(latest_marker):
+            with open(latest_marker) as f:
+                jobid = f.read().strip()
+            model_dir = os.path.join("models", model, jobid)
+
+    # --- Define file paths (new unified structure) ---
     if model == "Lstm":
-        model_file = f"lstm_model_fold{fold or 1}.keras"
-        scaler_file = f"scaler_fold{fold or 1}.pkl"
-        feature_file = "selected_features_Lstm.pkl"
+        model_file = f"Lstm.pkl"
+        scaler_file = f"scaler_Lstm.pkl"
+        feature_file = f"selected_features_Lstm.pkl"
     else:
         model_file = f"{model}.pkl"
         scaler_file = f"scaler_{model}.pkl"
         feature_file = f"selected_features_{model}.pkl"
 
-    model_path = os.path.join(model_base, model_file)
-    scaler_path = os.path.join(model_base, scaler_file)
-    feature_path = os.path.join(model_base, feature_file)
+    model_path = os.path.join(model_dir, model_file)
+    scaler_path = os.path.join(model_dir, scaler_file)
+    feature_path = os.path.join(model_dir, feature_file)
+
+    # --- Legacy fallback (old models/common/) ---
+    if not os.path.exists(model_path):
+        legacy_dir = os.path.join("models", "common")
+        legacy_model_path = os.path.join(legacy_dir, f"{model}.pkl")
+        if os.path.exists(legacy_model_path):
+            model_path = legacy_model_path
+            scaler_path = os.path.join(legacy_dir, f"scaler_{model}.pkl")
+            feature_path = os.path.join(legacy_dir, f"selected_features_{model}.pkl")
+            logging.warning(f"[EVAL] Fallback to legacy model path: {legacy_dir}")
 
     # --- Load model ---
     if not os.path.exists(model_path):
@@ -362,10 +386,29 @@ def load_model_and_scaler(model: str, model_type: str, mode: str, tag: str, fold
         return None, None, None
 
     try:
+        # --- Keras 3.x Compatibility: auto-detect .keras / .h5 ---
         if model == "Lstm":
-            clf = load_model(model_path, custom_objects={"AttentionLayer": AttentionLayer})
+            keras_path = os.path.join(model_dir, f"{model}.keras")
+            h5_path    = os.path.join(model_dir, f"{model}.h5")
+
+            if os.path.exists(keras_path):
+                clf = load_model(keras_path, custom_objects={"AttentionLayer": AttentionLayer})
+                logging.info(f"[EVAL] Loaded Keras model (.keras): {keras_path}")
+            elif os.path.exists(h5_path):
+                clf = load_model(h5_path, custom_objects={"AttentionLayer": AttentionLayer})
+                logging.info(f"[EVAL] Loaded Keras model (.h5): {h5_path}")
+            elif os.path.exists(model_path):
+                # Fallback (legacy): allow .pkl if older version
+                clf = joblib.load(model_path)
+                logging.warning(f"[EVAL] Fallback to legacy .pkl model: {model_path}")
+            else:
+                logging.error(f"[EVAL] No valid model file found in {model_dir}")
+                return None, None, None
+
         else:
+            # Standard sklearn models
             clf = joblib.load(model_path)
+
     except Exception as e:
         logging.error(f"[EVAL] Failed to load model: {e}")
         return None, None, None
@@ -387,5 +430,5 @@ def load_model_and_scaler(model: str, model_type: str, mode: str, tag: str, fold
         except Exception as e:
             logging.warning(f"[EVAL] Failed to load feature list: {e}")
 
-    logging.info(f"[EVAL] Loaded model from {model_path}")
+    logging.info(f"[EVAL] Loaded model/scaler/features from: {model_dir}")
     return clf, scaler, features
