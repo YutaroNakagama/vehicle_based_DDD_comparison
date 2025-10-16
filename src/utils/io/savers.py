@@ -78,22 +78,107 @@ def save_artifacts(
     model_dir = os.path.join("models", model_name, str(job_id))
     os.makedirs(model_dir, exist_ok=True)
 
-    # --- save artifacts ---
-    suffix = f"_{mode}" if mode else ""
-    joblib.dump(model_obj, os.path.join(model_dir, f"{model_name}{suffix}.pkl"))
+    # ============================================================
+    # === Safe and unified artifact saving with sanity checks ===
+    # ============================================================
+    # --- unified suffix rule (avoid trailing underscores) ---
+    suffix = f"_{mode.strip()}" if isinstance(mode, str) and mode.strip() else ""
 
+    # --- ensure model object validity ---
+    if model_obj is None:
+        logging.error(f"[SAVE] Model object is None — skipping save for {model_name}{suffix}.pkl")
+    else:
+        try:
+            # --- special handling for Keras models (Keras 3.x compatibility) ---
+            if "keras" in str(type(model_obj)).lower():
+                keras_path = os.path.join(model_dir, f"{model_name}{suffix}.keras")
+                model_obj.save(keras_path)
+                logging.info(f"[SAVE] Keras model saved: {keras_path}")
+            else:
+                joblib.dump(model_obj, os.path.join(model_dir, f"{model_name}{suffix}.pkl"))
+                logging.info(f"[SAVE] Model saved (joblib): {model_name}{suffix}.pkl")
+        except Exception as e:
+            logging.error(f"[SAVE] Failed to save model {model_name}{suffix}: {e}")
+
+    # --- save scaler ---
     if scaler_obj is not None:
-        joblib.dump(scaler_obj, os.path.join(model_dir, f"scaler_{model_name}{suffix}.pkl"))
+        try:
+            joblib.dump(scaler_obj, os.path.join(model_dir, f"scaler_{model_name}{suffix}.pkl"))
+        except Exception as e:
+            logging.warning(f"[SAVE] Failed to save scaler for {model_name}: {e}")
 
+    # --- save selected features ---
     if selected_features is not None:
-        joblib.dump(selected_features, os.path.join(model_dir, f"selected_features_{model_name}{suffix}.pkl"))
+        try:
+            joblib.dump(selected_features, os.path.join(model_dir, f"selected_features_{model_name}{suffix}.pkl"))
+        except Exception as e:
+            logging.warning(f"[SAVE] Failed to save selected_features for {model_name}: {e}")
 
+    # --- save feature metadata (JSON) ---
     if feature_meta is not None:
-        with open(os.path.join(model_dir, f"feature_meta_{model_name}{suffix}.json"), "w") as f:
-            json.dump(feature_meta, f, indent=2)
+        try:
+            with open(os.path.join(model_dir, f"feature_meta_{model_name}{suffix}.json"), "w") as f:
+                json.dump(feature_meta, f, indent=2)
+        except Exception as e:
+            logging.warning(f"[SAVE] Failed to write feature_meta for {model_name}: {e}")
 
-    # Save job marker
-    with open(os.path.join("models", model_name, "latest_job.txt"), "w") as f:
-        f.write(str(job_id))
+    # --- save job marker (latest successful jobid) ---
+    try:
+        with open(os.path.join("models", model_name, "latest_job.txt"), "w") as f:
+            f.write(str(job_id))
+    except Exception as e:
+        logging.warning(f"[SAVE] Could not update latest_job.txt: {e}")
 
-    print(f"[SAVE] Artifacts saved under: {model_dir}")
+    logging.info(f"[SAVE] Artifacts saved under: {model_dir}")
+
+# ============================================
+# Evaluation result saving utility
+# ============================================
+
+def save_eval_results(
+    results: dict,
+    model_name: str,
+    mode: str,
+    job_id: str = None,
+    out_dir: str = "models",
+) -> str:
+    """
+    Save evaluation results (accuracy, F1, AUC, etc.) to JSON.
+
+    Parameters
+    ----------
+    results : dict
+        Dictionary of evaluation metrics, e.g. {"accuracy": 0.91, "f1": 0.88}.
+    model_name : str
+        Model name (e.g. "RF", "SvmA").
+    mode : str
+        Mode (e.g. "pooled", "target_only").
+    job_id : str, optional
+        PBS job ID (if available). Defaults to the value of PBS_JOBID env var.
+    out_dir : str, default="models"
+        Root directory for saving evaluation files.
+
+    Returns
+    -------
+    str
+        Path to the saved JSON file.
+    """
+    import json
+    import os
+
+    # --- resolve jobid (with hostname stripped) ---
+    if job_id is None:
+        job_id = os.environ.get("PBS_JOBID", "local")
+    if "." in job_id:
+        job_id = job_id.split(".")[0]
+
+    save_dir = os.path.join(out_dir, model_name, str(job_id))
+    os.makedirs(save_dir, exist_ok=True)
+
+    out_path = os.path.join(save_dir, f"eval_results_{model_name}_{mode}.json")
+    with open(out_path, "w") as f:
+        json.dump(results, f, indent=2)
+
+    logging.info(f"[SAVE] Evaluation results -> {out_path}")
+    return out_path
+
