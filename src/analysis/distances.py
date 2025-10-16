@@ -632,6 +632,7 @@ def _pairwise_symmetric_matrix(subjects, compute_func, desc: str, n_jobs: int = 
     )
 
     M = np.zeros((n, n), dtype=np.float64)
+
     for i, j, val in results:
         M[i, j] = M[j, i] = val
 
@@ -639,10 +640,18 @@ def _pairwise_symmetric_matrix(subjects, compute_func, desc: str, n_jobs: int = 
     return M
 
 
-def _compute_distance_matrix(features: dict[str, np.ndarray], metric: str) -> tuple[np.ndarray, list[str]]:
-    """Compute pairwise distance matrix for MMD, Wasserstein, or DTW."""
-    # To extend: Add new metrics (e.g., cosine, energy, correlation)
-    # by adding another elif metric == "<new_metric>": block.
+def _compute_distance_matrix(features: dict[str, np.ndarray], metric: str, n_jobs: int = 4) -> tuple[np.ndarray, list[str]]:
+    """Compute pairwise distance matrix for MMD, Wasserstein, or DTW.
+
+    Parameters
+    ----------
+    features : dict
+        Mapping of subject → feature array.
+    metric : str
+        Metric type ("mmd", "wasserstein", "dtw").
+    n_jobs : int, default=4
+        Number of parallel workers to use (limit to avoid CPU overuse on HPC).
+    """
     subjects = list(features.keys())
     metric = metric.lower()
 
@@ -675,7 +684,7 @@ def _compute_distance_matrix(features: dict[str, np.ndarray], metric: str) -> tu
     else:
         raise ValueError(f"Unsupported metric: {metric}")
 
-    M = _pairwise_symmetric_matrix(subjects, func, desc=metric.upper())
+    M = _pairwise_symmetric_matrix(subjects, func, desc=metric.upper(), n_jobs=n_jobs)
     return M, subjects
 
 
@@ -774,6 +783,7 @@ def run_comp_dist(
     data_root: str = "data/processed/common",
     groups_file: str = "config/target_groups.txt",
     metric: str = "all",
+    n_jobs: int = 4,
 ) -> int:
     """Run the full computation pipeline for subject/group distances.
 
@@ -841,7 +851,7 @@ def run_comp_dist(
         (base_dir / "distances").mkdir(parents=True, exist_ok=True)
 
         # --- compute and save subject-level distance matrix ---
-        matrix, subjects_valid = _compute_distance_matrix(features, metric)
+        matrix, subjects_valid = _compute_distance_matrix(features, metric, n_jobs=n_jobs)
         np.save(metric_dir / f"{metric}_matrix.npy", matrix)
         (metric_dir / f"{metric}_subjects.json").write_text(json.dumps(subjects_valid))
         _plot_heatmap_auto(matrix, subjects_valid, metric, "subject", metric_dir)
