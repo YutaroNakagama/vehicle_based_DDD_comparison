@@ -122,6 +122,7 @@ def cmd_comp_dist(args) -> int:
             data_root=args.data_root,
             groups_file=args.groups_file,
             metric=metric,
+            n_jobs=args.n_jobs,
         )
         if rc != 0:
             print(f"[WARN] run_comp_dist returned non-zero exit code for {metric.upper()}")
@@ -364,6 +365,12 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["mmd", "wasserstein", "dtw", "all"],
         default="all",
         help="Which metric(s) to compute. Default: all"
+    )
+    s.add_argument(
+        "--n_jobs",
+        type=int,
+        default=4,
+        help="Number of parallel workers (default: 4, recommended ≤8 on HPC)"
     )
     s.set_defaults(func=cmd_comp_dist)
 
