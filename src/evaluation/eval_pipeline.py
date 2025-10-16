@@ -109,8 +109,8 @@ def eval_pipeline(
         logging.error("[EVAL] Model or scaler could not be loaded. Evaluation aborted.")
         return
 
-    # Step 4: Normalize and align features
-    X_test, features = normalize_and_align_features(X_test, features)
+    # Step 4: Align and normalize features
+    X_test, features = align_and_normalize_features(X_test, features)
     X_test = scaler.transform(X_test)
 
     # Step 5: Model-specific evaluation
