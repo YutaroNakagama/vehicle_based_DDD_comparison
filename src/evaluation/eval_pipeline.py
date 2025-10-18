@@ -32,6 +32,8 @@ def eval_pipeline(
     fold: int = 0,
     subject_wise_split: bool = False,
     jobid: Optional[str] = None,
+    target_file: str = None,
+    **kwargs,
 ) -> None:
     """Run the unified evaluation pipeline for a trained DDD model.
 
@@ -131,7 +133,14 @@ def eval_pipeline(
         }
     )
 
-    save_results(model, mode, tag, result, subjects)
+    save_eval_results(
+        results=result,
+        model_name=model,
+        mode=mode,
+        job_id=jobid or os.environ.get("PBS_JOBID", "local"),
+        out_dir="results/evaluation"
+    )
+
     logging.info(
         f"[EVAL DONE] {model} | n={len(subjects)} | AUC={result.get('auc')} | F1={result.get('f1')}"
     )
