@@ -111,6 +111,12 @@ def main():
         help="Specify training job ID (e.g., 14004123). "
              "If not provided, the latest training job will be used automatically."
     )
+    parser.add_argument(
+        "--target_file",
+        type=str,
+        default=None,
+        help="Path to target subject list file (used in ranking experiments)."
+    )
 
     args = parser.parse_args()
 
@@ -131,6 +137,7 @@ def main():
             fold=args.fold,
             subject_wise_split=args.subject_wise_split,
             jobid=args.jobid,
+            target_file=args.target_file,
         )
     except Exception as e:
         logging.error(f"Evaluation failed: {e}")
