@@ -36,6 +36,25 @@ from src.config import MODEL_PKL_PATH, N_TRIALS
 
 from src.utils.io.savers import save_artifacts
 
+# --- Limit CPU threads globally (important for PBS environments) ---
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMBA_NUM_THREADS"] = "1"
+os.environ["LIGHTGBM_NUM_THREADS"] = "1"
+os.environ["XGBOOST_NUM_THREADS"] = "1"
+os.environ["SKLEARN_NO_OPENMP"] = "1"
+
+# --- Disable joblib and Optuna internal parallelization ---
+import joblib
+joblib.parallel_backend("sequential")  # Prevent joblib from spawning extra workers
+
+# --- Ensure Optuna runs trials strictly serially ---
+optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+import gc
+
 def common_train(
     X_train, X_val, X_test, y_train, y_val, y_test,
     selected_features,  
@@ -174,7 +193,7 @@ def common_train(
                 "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
                 "class_weight": "balanced",
                 "random_state": 42,
-                "n_jobs": -1,  
+                "n_jobs": 1,  
             }
             clf = LGBMClassifier(**params)
 
@@ -191,14 +210,13 @@ def common_train(
                 "use_label_encoder": False,
                 "eval_metric": "logloss",
                 "random_state": 42,
-                "n_jobs": -1, 
+                "n_jobs": 1, 
                 "tree_method": "hist",  
             }
             clf = XGBClassifier(**params)
 
         elif model == "RF":
             params = {
-                "n_estimators": trial.suggest_int("n_estimators", 100, 300),
                 "max_depth": trial.suggest_int("max_depth", 5, 30),
                 "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
                 "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 5),
@@ -206,6 +224,9 @@ def common_train(
                 "class_weight": "balanced_subsample",
 #                "class_weight": "balanced",
                 "n_jobs": 1,  
+                "n_estimators": trial.suggest_int("n_estimators", 100, 300),
+                "max_samples": None,  # avoid internal parallel chunking
+                "warm_start": False,
             }
             clf = RandomForestClassifier(**params)
 
@@ -310,12 +331,6 @@ def common_train(
         roc_auc = "roc_auc" #make_scorer(roc_auc_score, needs_proba=True)
         ap_scorer = make_scorer(average_precision_score, needs_proba=True)
 
-#        try:
-#            if data_leak:
-#                X_all = np.vstack([X_train[selected_features], X_test[selected_features]])
-#                y_all = np.concatenate([y_train, y_test])
-#                scaler_local = StandardScaler()
-#                X_all_scaled = scaler_local.fit_transform(X_all)
         try:
             if data_leak:
                 X_all = np.vstack([X_train[selected_features], X_test[selected_features]])
@@ -370,10 +385,6 @@ def common_train(
                     # Debug (optional)
                     print("X_train index sample:", X_train.index[:5])
                     print("y_train index sample:", y_train.index[:5])
-                    import sys, io, contextlib
-                    import warnings
-                    from sklearn.exceptions import FitFailedWarning
-                    import os
                     # --- FULL suppression: Python + OS-level stderr (joblib/fork safe) ---
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore", category=FitFailedWarning)
@@ -413,9 +424,6 @@ def common_train(
                         logging.warning(f"[Optuna cross_val_score error] {e}")
                     return 0.0
 
-#        except Exception as e:
-#            logging.warning(f"Scoring failed: {e}")
-#            return 0.0
         except Exception as e:
             msg = str(e)
             # --- Suppress known benign scoring errors silently ---
@@ -441,7 +449,13 @@ def common_train(
             direction="maximize",
             pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=1, interval_steps=1)
         )
-        study.optimize(objective, n_trials=N_TRIALS, n_jobs=1)
+        # === Safe Optuna execution (no parallel trials, forced GC after each) ===
+        study.optimize(
+            objective,
+            n_trials=N_TRIALS,
+            n_jobs=1,
+            gc_after_trial=True,
+        )
         best_params = study.best_params
         logging.info(f"Best hyperparameters: {best_params}")
     else:
@@ -469,7 +483,8 @@ def common_train(
     elif model == "RF":
         if "class_weight" in best_params:
             best_params.pop("class_weight")
-        best_clf = RandomForestClassifier(**best_params, class_weight="balanced_subsample", n_jobs=-1)
+        # Restrict parallel threads to 1 to avoid PBS CPU quota violations
+        best_clf = RandomForestClassifier(**best_params, class_weight="balanced_subsample", n_jobs=1)
 
     elif model == "BalancedRF":
         best_clf = BalancedRandomForestClassifier(**best_params)
