@@ -112,10 +112,6 @@ def common_train(
 
     import pickle, json
 
-    # Always use unified model-specific directory under "models"
-    base_dir = os.path.join("models", model)
-    os.makedirs(base_dir, exist_ok=True)
-
     if eval_only:
         # ====== eval_only mode ======
         logging.info("[EVAL_ONLY] Loading pre-trained model and scaler...")
@@ -610,13 +606,23 @@ def common_train(
         _model_name = _model_name.get("name", "unknown")
 
     # --- Save unified artifacts (once only, after model training) ---
+    # Ensure suffix is clean (remove jobid, fold, and nested underscores)
+    import re
+    clean_suffix = re.sub(r"(_?\d{5,}(\[.*?\])?)", "", suffix)  # remove jobid/fold info
+    clean_suffix = re.sub(r"__+", "_", clean_suffix).strip("_")  # remove extra underscores
+
+    # --- Append PBS jobid and fold index for hierarchical save ---
+    jobid = os.environ.get("PBS_JOBID", "local").split(".")[0]
+    fold_idx = os.environ.get("PBS_ARRAY_INDEX", "1")
+    mode_full = f"{clean_suffix}_{jobid}[{fold_idx}]"
+
     save_artifacts(
         model_obj=best_clf,
         scaler_obj=scaler,
         selected_features=selected_features,
         feature_meta=feature_meta,
         model_name=str(_model_name),
-        mode=_mode
+        mode=mode_full
     )
 
     # ---------- Threshold optimization on validation (maximize F1) ----------
@@ -652,7 +658,8 @@ def common_train(
             "metric": "F1-optimal",
         }
         # ==========================================================
-        # Save threshold under: models/<model>/<jobid>/threshold_*.json
+        # Save threshold under:
+        # models/<model>/<jobid>/<jobid>[fold]/threshold_*.json
         # ==========================================================
         # Extract jobid from suffix (robust: handles "14019173.spcc-adm1" etc.)
         import re
@@ -666,16 +673,25 @@ def common_train(
             if m2:
                 jobid = m2.group(1)
 
-        # Construct path
+        # Detect fold index from suffix (e.g., "...[3]" or "..._3")
+        fold_match = re.search(r"\[(\d+)\]", suffix)
+        fold_id = fold_match.group(1) if fold_match else None
+
+        # Construct per-fold directory
         if jobid:
-            out_dir = os.path.join(MODEL_PKL_PATH, model, jobid)
+            if fold_id:
+                out_dir = os.path.join(MODEL_PKL_PATH, model, jobid, f"{jobid}[{fold_id}]")
+            else:
+                out_dir = os.path.join(MODEL_PKL_PATH, model, jobid)
         else:
             out_dir = os.path.join(MODEL_PKL_PATH, model)
 
         os.makedirs(out_dir, exist_ok=True)
+
         thr_path = os.path.join(out_dir, f"threshold_{model}_{mode}{suffix}.json")
         with open(thr_path, "w") as f:
             json.dump(threshold_meta, f, indent=2)
+
         logging.info(f"[SAVE] Threshold saved -> {thr_path}")
 
     else:
