@@ -75,14 +75,72 @@ def save_artifacts(
     if "." in job_id:
         job_id = job_id.split(".")[0]
 
-    model_dir = os.path.join("models", model_name, str(job_id))
+    # --- detect jobid & fold index robustly ---
+    import re
+    env_jobid = os.environ.get("PBS_JOBID", "local")
+    if "." in env_jobid:
+        env_jobid = env_jobid.split(".")[0]
+
+    # ================================================================
+    # Improved jobid/fold detection (avoid double embedding like [1][1])
+    # ================================================================
+    # If mode already includes jobid[fold], extract both jobid and fold directly
+    m = re.search(r"(?P<jobid>\d{5,})\[(?P<fold>\d+)\]", str(mode))
+    if m:
+        jobid = m.group("jobid")
+        fold_id = m.group("fold")
+        model_dir = os.path.join("models", model_name, jobid, f"{jobid}[{fold_id}]")
+    else:
+        # extract jobid/fold normally (no explicit [n] in mode)
+        jobid_match = re.search(r"(\d{5,})", str(mode))
+        fold_match = re.search(r"\[(\d+)\]", str(mode))
+        jobid = jobid_match.group(1) if jobid_match else env_jobid
+        fold_id = fold_match.group(1) if fold_match else None
+
+        # --- unified hierarchical directory ---
+        if fold_id:
+            model_dir = os.path.join("models", model_name, jobid, f"{jobid}[{fold_id}]")
+        else:
+            model_dir = os.path.join("models", model_name, jobid)
+
+    # --- avoid duplicate patterns like 14060261[1][1] ---
+    model_dir = re.sub(r"(\[\d+\])\1", r"\1", model_dir)
+
+    # --- safety enforcement: always nested under jobid ---
+    if not model_dir.startswith(os.path.join("models", model_name, jobid)):
+        model_dir = os.path.join("models", model_name, jobid, f"{jobid}[{fold_id or '1'}]")
+
+    # ============================================================
+    # === Guard: skip duplicate call before directory creation ===
+    # ============================================================
+    # If mode doesn't include [n] (fold index), skip the entire save process
+    # BEFORE creating directories. This prevents empty dirs like models/RF/14060981[1]/.
+    if not re.search(r"\[\d+\]", str(mode)):
+        logging.warning(
+            f"[save_artifacts] Skipping non-fold call (mode={mode}, jobid={jobid}) — no directory created"
+        )
+        return
+
+    # --- create directory only if fold-level call ---
     os.makedirs(model_dir, exist_ok=True)
+    logging.debug(f"[save_artifacts] Unified save path = {model_dir}")
 
     # ============================================================
     # === Safe and unified artifact saving with sanity checks ===
     # ============================================================
     # --- unified suffix rule (avoid trailing underscores) ---
     suffix = f"_{mode.strip()}" if isinstance(mode, str) and mode.strip() else ""
+
+    # --- remove redundant double jobid[fold] patterns in suffix ---
+    suffix = re.sub(r"(\d{5,}\[\d+\])\1", r"\1", suffix)
+
+    # === NEW FIX ===
+    # Remove square brackets from suffix to prevent misplacement and globbing issues
+    # Example: "joint_train_rank_mmd_mean_high_14060610[4]" → "joint_train_rank_mmd_mean_high_14060610_4"
+    suffix = re.sub(r"\[(\d+)\]", r"_\1", suffix)
+
+    # Also sanitize any double underscores created accidentally
+    suffix = re.sub(r"__+", "_", suffix)
 
     # --- ensure model object validity ---
     if model_obj is None:
