@@ -2,6 +2,7 @@
 """Result saving utilities for training and evaluation outputs."""
 
 import os
+import re
 import json
 import logging
 import datetime
@@ -43,9 +44,6 @@ def save_artifacts(
         Training mode (e.g., 'pooled', 'source_only')
     """
 
-    import os
-    import joblib
-    import json
 
     # backward-compatibility: if positional arguments were passed (old-style call)
     if model_obj is None and len(args) >= 6:
@@ -76,7 +74,6 @@ def save_artifacts(
         job_id = job_id.split(".")[0]
 
     # --- detect jobid & fold index robustly ---
-    import re
     env_jobid = os.environ.get("PBS_JOBID", "local")
     if "." in env_jobid:
         env_jobid = env_jobid.split(".")[0]
@@ -221,8 +218,6 @@ def save_eval_results(
     str
         Path to the saved JSON file.
     """
-    import json
-    import os
 
     # --- resolve jobid (with hostname stripped) ---
     if job_id is None:
@@ -230,13 +225,54 @@ def save_eval_results(
     if "." in job_id:
         job_id = job_id.split(".")[0]
 
-    save_dir = os.path.join(out_dir, model_name, str(job_id))
+    # --- normalize job_id: drop trailing [n] if present ---
+    # e.g. "14061921[3]" -> "14061921"
+    pure_job_id = re.sub(r"\[\d+\]$", "", str(job_id))
+
+    # --- get PBS array index (fold number) robustly ---
+    # 1) prefer PBS_ARRAY_INDEX
+    # 2) else, try to extract from job_id like "...[n]"
+    # 3) else, default to "1"
+    array_idx = os.environ.get("PBS_ARRAY_INDEX")
+    if not array_idx:
+        m = re.search(r"\[(\d+)\]$", str(job_id))
+        array_idx = m.group(1) if m else "1"
+
+    # --- hierarchical directory structure ---
+    # results/evaluation/<model>/<pure_job_id>/<pure_job_id>[array_idx]/
+    job_root = os.path.join(out_dir, model_name, pure_job_id)
+    save_dir = os.path.join(job_root, f"{pure_job_id}[{array_idx}]")
     os.makedirs(save_dir, exist_ok=True)
 
-    out_path = os.path.join(save_dir, f"eval_results_{model_name}_{mode}.json")
-    with open(out_path, "w") as f:
+    # --- optional: record the latest job ID for reference ---
+    try:
+        latest_marker = os.path.join(out_dir, model_name, "latest_job.txt")
+        with open(latest_marker, "w") as f:
+            f.write(str(pure_job_id) + "\n")
+    except Exception as e:
+        logging.warning(f"[SAVE] Could not update latest_job.txt: {e}")
+
+    # --- save evaluation JSON ---
+    # --- extract distance & level info if available ---
+    dist = results.get("distance") or results.get("metric") or "unknown"
+    level = results.get("level") or "unknown"
+
+    # --- construct file name including distance and level ---
+    base_name = f"eval_results_{model_name}_{mode}_rank_{dist}_mean_{level}"
+
+    out_path_json = os.path.join(save_dir, f"{base_name}.json")
+    out_path_csv  = os.path.join(save_dir, f"{base_name}.csv")
+
+    # --- save JSON ---
+    with open(out_path_json, "w") as f:
         json.dump(results, f, indent=2)
 
-    logging.info(f"[SAVE] Evaluation results -> {out_path}")
-    return out_path
+    # --- optionally save flat CSV (for easier parsing) ---
+    try:
+        df = pd.json_normalize(results)
+        df.to_csv(out_path_csv, index=False)
+    except Exception as e:
+        logging.warning(f"[SAVE] Failed to export CSV for {base_name}: {e}")
 
+    logging.info(f"[SAVE] Evaluation results -> {out_path_json}")
+    return out_path_json
