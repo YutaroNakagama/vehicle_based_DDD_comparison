@@ -11,7 +11,17 @@ os.makedirs(OUT_DIR, exist_ok=True)
 # --- collect all eval_results_*.json recursively ---
 # (extended: handle nested metrics and backward compatibility)
 records = []
-for path in glob.glob(os.path.join(EVAL_DIR, "*", "*", "eval_results_*.json")):
+latest_job_file = os.path.join(EVAL_DIR, "latest_job.txt")
+if os.path.exists(latest_job_file):
+    with open(latest_job_file, "r") as f:
+        latest_jobid = f.read().strip()
+    search_pattern = os.path.join(EVAL_DIR, latest_jobid, "*", "eval_results_*.json")
+    print(f"[INFO] Using latest_jobid={latest_jobid} (pattern={search_pattern})")
+else:
+    search_pattern = os.path.join(EVAL_DIR, "*", "*", "eval_results_*.json")
+    print(f"[WARN] latest_job.txt not found — scanning all jobs.")
+
+for path in glob.glob(search_pattern):
     try:
         with open(path, "r") as f:
             data = json.load(f)
