@@ -105,15 +105,99 @@ def eval_pipeline(
         data, subjects, seed, subject_wise_split
     )
 
+    # ------------------------------------------------------------------
+    # Step 2.5: Filter test data according to mode
+    # ------------------------------------------------------------------
+    if mode in ["source_only", "target_only"]:
+        # Load target subject list (from --target_file or default path)
+        import pandas as pd
+        target_file = kwargs.get("target_file", None)
+        if target_file and os.path.exists(target_file):
+            target_subjects = [s.strip() for s in open(target_file).read().splitlines() if s.strip()]
+        else:
+            # fallback: look for default group file in results/domain_analysis
+            default_rank_file = "results/domain_analysis/distance/rank_names.txt"
+            if os.path.exists(default_rank_file):
+                with open(default_rank_file) as f:
+                    target_subjects = [s.strip() for s in f.read().splitlines() if s.strip()]
+            else:
+                target_subjects = []
+                logging.warning("[EVAL] No target subject list found; evaluating all subjects.")
+
+        # Extract subject_id column if available
+        if "subject_id" in data.columns:
+            subj_col = data["subject_id"]
+        else:
+            subj_col = None
+
+        if subj_col is not None and len(target_subjects) > 0:
+            if mode == "target_only":
+                mask = subj_col.isin(target_subjects)
+                logging.info(f"[EVAL] Restricting evaluation to {mask.sum()} target samples.")
+            else:  # source_only
+                mask = ~subj_col.isin(target_subjects)
+                logging.info(f"[EVAL] Restricting evaluation to {mask.sum()} source samples.")
+
+            X_test = X_test.loc[mask].reset_index(drop=True)
+            y_test = y_test.loc[mask].reset_index(drop=True)
+        else:
+            logging.warning("[EVAL] subject_id or target list not found — evaluating all samples.")
+
     # Step 3: Load model, scaler, and features
+    # --- Resolve jobid if not provided ---
+    if jobid is None:
+        # Try environment variable FIXED_JOBID (from launch script)
+        jobid = os.getenv("FIXED_JOBID")
+
+        # If not set, try reading from latest_job.txt
+        if not jobid:
+            latest_path = f"models/{model}/latest_job.txt"
+            if os.path.exists(latest_path):
+                with open(latest_path, "r") as f:
+                    jobid = f.readline().strip()
+                logging.info(f"[EVAL] Loaded latest jobid from {latest_path}: {jobid}")
+            else:
+                # Fallback to PBS_JOBID or 'local'
+                jobid = os.getenv("PBS_JOBID", "local")
+                logging.warning(f"[EVAL] No latest_job.txt found; fallback to current jobid={jobid}")
+
+    # --- Load model/scaler/features from resolved jobid ---
     clf, scaler, features = load_model_and_scaler(model, model_type, mode, tag, fold, jobid)
     if clf is None:
-        logging.error("[EVAL] Model or scaler could not be loaded. Evaluation aborted.")
+        logging.error(f"[EVAL] Model or scaler could not be loaded for jobid={jobid}. Evaluation aborted.")
         return
+    else:
+        logging.info(f"[EVAL] Successfully loaded model and scaler for jobid={jobid}")
 
-    # Step 4: Align and normalize features
+    # ------------------------------------------------------------------
+    # Step 4: Remove EEG features (not used during training)
+    # ------------------------------------------------------------------
+    eeg_cols = [c for c in X_test.columns if c.startswith("Channel_")]
+    if eeg_cols:
+        logging.info(f"[EVAL] Dropping {len(eeg_cols)} EEG-related columns (unused in training).")
+        X_test = X_test.drop(columns=eeg_cols, errors="ignore")
+
+    # Drop other known non-feature columns if they appear
+    X_test = X_test.drop(columns=["subject_id"], errors="ignore")
+
+    # Remove duplicated columns and keep numeric only
+    X_test = X_test.loc[:, ~X_test.columns.duplicated()]
+    import numpy as np
+    X_test = X_test.select_dtypes(include=[np.number]).replace([np.inf, -np.inf], np.nan).fillna(0.0)
+
+    logging.info(f"[EVAL] X_test ready for scaling (n_features={X_test.shape[1]})")
+
+    # Step 4: Align and normalize features BEFORE scaling
     X_test, features = align_and_normalize_features(X_test, features)
+
+    # --- Ensure column order matches the training phase ---
+    if hasattr(scaler, "feature_names_in_"):
+        X_test = X_test[scaler.feature_names_in_]
+
+    # --- Transform after alignment ---
     X_test = scaler.transform(X_test)
+
+    logging.info(f"[EVAL] Successfully transformed X_test (shape={X_test.shape})")
 
     # Step 5: Model-specific evaluation
     if model == "Lstm":
@@ -140,7 +224,7 @@ def eval_pipeline(
         results=result,
         model_name=model,
         mode=mode,
-        job_id=jobid or os.environ.get("PBS_JOBID", "local"),
+        job_id=jobid,
         out_dir="results/evaluation"
     )
 
