@@ -130,6 +130,9 @@ def eval_pipeline(
             "mode": mode,
             "tag": tag,
             "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            # Extract distance/level from tag (e.g., "rank_dtw_mean_high")
+            "distance": (tag.split("_")[1] if tag and tag.startswith("rank_") else "unknown"),
+            "level": (tag.split("_")[-1] if tag and tag.startswith("rank_") else "unknown"),
         }
     )
 
