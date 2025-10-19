@@ -3,6 +3,7 @@
 
 import logging
 import pandas as pd
+import numpy as np
 from typing import List, Tuple
 
 
@@ -66,11 +67,47 @@ def normalize_and_align_features(X_test: pd.DataFrame, selected_features: List[s
     X_test = X_test.loc[:, ~X_test.columns.duplicated()]
     X_test = X_test.drop(columns=["subject_id"], errors="ignore")
 
+
+    # --- Detect missing or extra features ---
     missing = [f for f in selected_features if f not in X_test.columns]
+    extra   = [f for f in X_test.columns if f not in selected_features]
+
+    # --- Add missing columns (filled with 0.0) ---
     if missing:
-        logging.warning(f"[EVAL] Missing normalized features: {missing}")
+        logging.warning(f"[EVAL] Missing features ({len(missing)}): {missing[:10]} ... (total {len(missing)})")
+        for f in missing:
+            X_test[f] = 0.0
 
-    return X_test[selected_features], selected_features
+    # --- Drop extra columns ---
+    if extra:
+        logging.info(f"[EVAL] Dropping extra features ({len(extra)}): {extra[:10]} ... (total {len(extra)})")
+        X_test = X_test.drop(columns=extra)
 
-# alias for backward compatibility
-align_and_normalize_features = normalize_and_align_features
+    # --- Align columns safely (skip missing EEG columns etc.) ---
+    existing_features = [f for f in selected_features if f in X_test.columns]
+    missing_features = [f for f in selected_features if f not in X_test.columns]
+
+    if missing_features:
+        logging.warning(f"[EVAL] Dropping {len(missing_features)} missing features from selected_features (e.g., EEG cols).")
+
+    # --- Align columns safely (skip missing EEG columns etc.) ---
+    existing_features = [f for f in selected_features if f in X_test.columns]
+    missing_features = [f for f in selected_features if f not in X_test.columns]
+
+    if missing_features:
+        logging.warning(
+            f"[EVAL] Dropping {len(missing_features)} missing features from selected_features (e.g., EEG cols)."
+        )
+
+    # --- Reorder only existing features ---
+    X_test = X_test[existing_features]
+
+    # --- Replace any NaN or Inf values with 0 ---
+    X_test = X_test.replace([np.inf, -np.inf], np.nan).fillna(0)
+
+    return X_test, existing_features
+
+def align_and_normalize_features(X_test: pd.DataFrame, selected_features: List[str]):
+    """Alias wrapper for normalize_and_align_features (directly call updated logic)."""
+    return normalize_and_align_features(X_test, selected_features)
+
