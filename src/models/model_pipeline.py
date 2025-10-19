@@ -189,6 +189,20 @@ def train_pipeline(
     if X_test is not None:
         X_test = X_test.drop(columns=["subject_id"], errors="ignore").select_dtypes(include=[np.number])
 
+    # --- Explicitly drop EEG-related columns (we use vehicle signals only) ---
+    eeg_keywords = ["Channel_", "EEG", "Theta", "Alpha", "Beta", "Gamma", "Delta"]
+    def drop_eeg(df):
+        drop_cols = [c for c in df.columns if any(k in c for k in eeg_keywords)]
+        if drop_cols:
+            logging.info(f"[TRAIN] Dropping {len(drop_cols)} EEG-related columns (e.g., {drop_cols[:5]})")
+            df = df.drop(columns=drop_cols)
+        return df
+
+    X_train = drop_eeg(X_train)
+    X_val = drop_eeg(X_val)
+    if X_test is not None:
+        X_test = drop_eeg(X_test)
+
     # Align columns (train/val/test) to common subset to avoid misalignment
     common_cols = X_train.columns.intersection(X_val.columns)
     if X_test is not None:
