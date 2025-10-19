@@ -346,7 +346,10 @@ def load_model_and_scaler(model: str, model_type: str, mode: str, tag: str, fold
         jobid = jobid.split(".")[0]
 
     # --- Define model directory ---
-    model_dir = os.path.join("models", model, jobid)
+    # Strip possible "[n]" suffix (some PBS_JOBID may propagate fold info)
+    import re
+    pure_jobid = re.sub(r"\[\d+\]$", "", jobid)
+    model_dir = os.path.join("models", model, pure_jobid)
 
     # Fallback: use latest_job.txt if no explicit jobid folder exists
     if not os.path.exists(model_dir):
@@ -366,11 +369,39 @@ def load_model_and_scaler(model: str, model_type: str, mode: str, tag: str, fold
         scaler_file = f"scaler_{model}.pkl"
         feature_file = f"selected_features_{model}.pkl"
 
-    model_path = os.path.join(model_dir, model_file)
-    scaler_path = os.path.join(model_dir, scaler_file)
-    feature_path = os.path.join(model_dir, feature_file)
+    # ============================================================
+    # Improved hierarchical model loading (handles jobid[fold] dirs)
+    # ============================================================
+    import glob
+    import re
 
-    # --- Legacy fallback (old models/common/) ---
+    # base_dir = models/<model>/<jobid>
+    base_dir = os.path.join("models", model, pure_jobid)
+
+    # fold_dir = models/<model>/<jobid>/<jobid>[fold]
+    fold_dir = os.path.join(base_dir, f"{jobid}[{fold}]") if fold else base_dir
+
+    # --- Search patterns (recursive) ---
+    # This ensures detection under both models/RF/14061334[1]/ and models/RF/14061334/14061334[1]/ paths
+    model_pattern = os.path.join(base_dir, "**", f"{model}_*.pkl")
+    scaler_pattern = os.path.join(base_dir, "**", f"scaler_{model}_*.pkl")
+    feature_pattern = os.path.join(base_dir, "**", f"selected_features_{model}_*.pkl")
+
+    model_matches = glob.glob(model_pattern, recursive=True)
+    scaler_matches = glob.glob(scaler_pattern, recursive=True)
+    feature_matches = glob.glob(feature_pattern, recursive=True)
+
+    if model_matches:
+        model_path = model_matches[0]
+        logging.info(f"[EVAL] Found model file: {model_path}")
+    else:
+        logging.error(f"[EVAL] Model file not found: {model_pattern}")
+        return None, None, None
+
+    scaler_path = scaler_matches[0] if scaler_matches else None
+    feature_path = feature_matches[0] if feature_matches else None
+
+    # --- Legacy fallback (for pre-refactor models/common/) ---
     if not os.path.exists(model_path):
         legacy_dir = os.path.join("models", "common")
         legacy_model_path = os.path.join(legacy_dir, f"{model}.pkl")
@@ -379,11 +410,6 @@ def load_model_and_scaler(model: str, model_type: str, mode: str, tag: str, fold
             scaler_path = os.path.join(legacy_dir, f"scaler_{model}.pkl")
             feature_path = os.path.join(legacy_dir, f"selected_features_{model}.pkl")
             logging.warning(f"[EVAL] Fallback to legacy model path: {legacy_dir}")
-
-    # --- Load model ---
-    if not os.path.exists(model_path):
-        logging.error(f"[EVAL] Model file not found: {model_path}")
-        return None, None, None
 
     try:
         # --- Keras 3.x Compatibility: auto-detect .keras / .h5 ---
@@ -415,7 +441,7 @@ def load_model_and_scaler(model: str, model_type: str, mode: str, tag: str, fold
 
     # --- Load scaler (optional) ---
     scaler = None
-    if os.path.exists(scaler_path):
+    if scaler_path and os.path.exists(scaler_path):
         try:
             scaler = joblib.load(scaler_path)
         except Exception as e:
@@ -423,7 +449,7 @@ def load_model_and_scaler(model: str, model_type: str, mode: str, tag: str, fold
 
     # --- Load selected features (optional) ---
     features = []
-    if os.path.exists(feature_path):
+    if feature_path and os.path.exists(feature_path):
         try:
             with open(feature_path, "rb") as f:
                 features = pickle.load(f)
