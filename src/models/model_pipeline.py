@@ -140,6 +140,60 @@ def train_pipeline(
         model_name, mode, subject_split_strategy
     )
 
+    # ------------------------------------------------------------------
+    # Step 0: Load all subject CSVs from data/processed/common
+    # ------------------------------------------------------------------
+    from src.utils.io.loaders import load_subject_csvs
+    data, _ = load_subject_csvs("data/processed/common", model_type)
+    logging.info(f"[LOAD] Loaded {len(data)} rows from all subject CSVs.")
+
+    # ------------------------------------------------------------------
+    # Ensure subject_id exists (for filtering and matching training split)
+    # ------------------------------------------------------------------
+    import re
+    if "subject_id" not in data.columns:
+        # If 'filename' column is missing, try to infer from index or fallback pattern
+        if "filename" in data.columns:
+            fn_series = data["filename"]
+        elif "FileName" in data.columns:
+            fn_series = data["FileName"]
+        else:
+            # fallback: use index name pattern or create dummy "unknown"
+            fn_series = pd.Series(["unknown"] * len(data))
+            logging.warning("[WARN] 'filename' column not found; subject_id set to 'unknown'")
+
+        data["subject_id"] = fn_series.apply(
+            lambda f: re.search(r"S\d{4}_\d", f).group(0)
+            if isinstance(f, str) and re.search(r"S\d{4}_\d", f)
+            else "unknown"
+        )
+        unique_ids = data["subject_id"].nunique()
+        logging.info(f"[EVAL] Injected subject_id column (n={unique_ids} unique IDs).")
+
+    # ------------------------------------------------------------------
+    # Step 1.5: Pre-filtering by target/source subjects (same logic as train_pipeline)
+    # ------------------------------------------------------------------
+    if mode in ["source_only", "target_only"]:
+        default_rank_file = "results/domain_analysis/distance/rank_names.txt"
+        target_subjects = []
+        if tag and os.path.exists(default_rank_file):
+            with open(default_rank_file) as f:
+                lines = [x.strip() for x in f.readlines() if x.strip()]
+            tag_key = tag.replace("rank_", "")
+            match = [x for x in lines if tag_key in os.path.basename(x)]
+            if match:
+                group_file = os.path.normpath(match[0])
+                if os.path.exists(group_file):
+                    with open(group_file) as g:
+                        target_subjects = [s.strip() for s in g.readlines() if s.strip()]
+                    if "subject_id" in data.columns:
+                        if mode == "target_only":
+                            data = data[data["subject_id"].isin(target_subjects)].reset_index(drop=True)
+                        else:
+                            data = data[~data["subject_id"].isin(target_subjects)].reset_index(drop=True)
+                    logging.info(f"[EVAL] Data restricted to {len(data)} samples after {mode} filtering.")
+
+
     # 2) Split data according to the selected strategy
     X_train, X_val, X_test, y_train, y_val, y_test = split_data(
         subject_split_strategy=subject_split_strategy,
