@@ -11,9 +11,14 @@ Outputs are saved under:
     results/domain_analysis/group_distances/ranks10/{metric}_mean_{level}.txt
 """
 
+import argparse
 import json
+import sys
 import numpy as np
 from pathlib import Path
+
+import logging
+logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
 # ============================================================
 # Configuration
@@ -45,29 +50,41 @@ def save_group(metric: str, name: str, subjects: list[str]) -> None:
 # ============================================================
 # Main
 # ============================================================
-def main() -> None:
-    """Generate top/middle/low 10-subject groups for each distance metric."""
-    for metric in METRICS:
+def main() -> int:
+    """Generate top/middle/low 10-subject groups for selected metric(s)."""
+
+    parser = argparse.ArgumentParser(description="Generate ranked groups from distance matrices.")
+    parser.add_argument(
+        "--metric",
+        choices=["mmd", "wasserstein", "dtw", "all"],
+        default="all",
+        help="Which metric(s) to process (default: all)."
+    )
+    args = parser.parse_args()
+
+    metrics = [args.metric] if args.metric != "all" else METRICS
+
+    for metric in metrics:
         matrix_path = ROOT / metric / f"{metric}_matrix.npy"
         subjects_path = ROOT / metric / f"{metric}_subjects.json"
 
         # --- Check files ---
         if not matrix_path.exists() or not subjects_path.exists():
-            print(f"[WARN] Skipping {metric}: missing matrix or subject file.")
-            continue
+            logging.warning(f"Skipping {metric}: missing matrix or subject file.")
+            return 1
 
         # --- Load matrix and subjects ---
         M = np.load(matrix_path)
         subjects = json.loads(subjects_path.read_text())
 
         if M.shape[0] != M.shape[1] or len(subjects) != M.shape[0]:
-            print(f"[ERROR] Shape mismatch in {metric}: {M.shape} vs {len(subjects)}")
-            continue
+            logging.error(f"Shape mismatch in {metric}: {M.shape} vs {len(subjects)}")
+            return 1
 
         # --- Compute mean distance for each subject ---
         np.fill_diagonal(M, np.nan)
         mean_dist = np.nanmean(M, axis=1)
-        ranked_idx = np.argsort(mean_dist)
+        ranked_idx = np.argsort(-mean_dist)
 
         # --- Split into High / Middle / Low (10 each) ---
         n = len(ranked_idx)
@@ -80,12 +97,12 @@ def main() -> None:
         save_group(metric, "middle", middle)
         save_group(metric, "low", low)
 
-    print("\nAll ranked groups generated successfully.")
+    logging.info("All ranked groups generated successfully.")
+    return 0
 
 
 # ============================================================
 # Entry point
 # ============================================================
 if __name__ == "__main__":
-    main()
-
+    sys.exit(main())
