@@ -382,21 +382,31 @@ def load_model_and_scaler(model: str, model_type: str, mode: str, tag: str, fold
     fold_dir = os.path.join(base_dir, f"{jobid}[{fold}]") if fold else base_dir
 
     # --- Search patterns (recursive) ---
-    # This ensures detection under both models/RF/14061334[1]/ and models/RF/14061334/14061334[1]/ paths
-    model_pattern = os.path.join(base_dir, "**", f"{model}_*.pkl")
+    # --- Search patterns (mode-aware) ---
+    # Prefer exact mode match (e.g., RF_target_only_rank_dtw_mean_high_*.pkl)
+    tag_key = tag.replace("rank_", "") if tag else ""
+
+    exact_pattern = os.path.join(base_dir, "**", f"{model}_{mode}_rank_*{tag_key}*.pkl")
+    model_matches = glob.glob(exact_pattern, recursive=True)
+
+    # If no exact match found, fallback to any file that includes the same mode
+    if not model_matches:
+        fallback_pattern = os.path.join(base_dir, "**", f"{model}_{mode}_*.pkl")
+        model_matches = glob.glob(fallback_pattern, recursive=True)
+
+    if not model_matches:
+        logging.error(f"[EVAL] No model file found for mode={mode}, tag={tag} in {base_dir}")
+        return None, None, None
+
+    model_matches.sort(key=os.path.getmtime, reverse=True)
+    model_path = model_matches[0]
+    logging.info(f"[EVAL] Found model file (exact mode match): {model_path}")
+
+    # --- Locate corresponding scaler/feature files (if exist) ---
     scaler_pattern = os.path.join(base_dir, "**", f"scaler_{model}_*.pkl")
     feature_pattern = os.path.join(base_dir, "**", f"selected_features_{model}_*.pkl")
-
-    model_matches = glob.glob(model_pattern, recursive=True)
     scaler_matches = glob.glob(scaler_pattern, recursive=True)
     feature_matches = glob.glob(feature_pattern, recursive=True)
-
-    if model_matches:
-        model_path = model_matches[0]
-        logging.info(f"[EVAL] Found model file: {model_path}")
-    else:
-        logging.error(f"[EVAL] Model file not found: {model_pattern}")
-        return None, None, None
 
     scaler_path = scaler_matches[0] if scaler_matches else None
     feature_path = feature_matches[0] if feature_matches else None
