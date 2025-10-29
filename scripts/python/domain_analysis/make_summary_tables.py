@@ -31,6 +31,29 @@ for path in glob.glob(search_pattern):
             m = re.search(r"rank_([A-Za-z]+)_mean_([A-Za-z]+)", fname)
             dist, level = (m.groups() if m else ("unknown", "unknown"))
 
+            # --- estimate positive rate (baseline) if available ---
+            pos_rate = None
+            if "classification_report" in data:
+                cr = data["classification_report"]
+                # detect binary keys ('0', '1') or float keys ('0.0', '1.0')
+                keys = list(cr.keys())
+                # detect likely negative/positive label keys
+                key_pairs = [
+                    ("0", "1"),
+                    ("0.0", "1.0"),
+                    ("False", "True"),
+                    ("neg", "pos"),
+                    ("negative", "positive"),
+                ]
+                for k0, k1 in key_pairs:
+                    if k0 in cr and k1 in cr and "support" in cr[k0] and "support" in cr[k1]:
+                        n0 = cr[k0]["support"]
+                        n1 = cr[k1]["support"]
+                        pos_rate = n1 / (n0 + n1)
+                        break
+            else:
+                pos_rate = data.get("pos_rate") or data.get("positive_rate")
+
             # backward-compatible columns (robust metric extraction)
             row = {
                 "file": fname,
@@ -38,15 +61,22 @@ for path in glob.glob(search_pattern):
                 "mode": data.get("mode", "source_only"),
                 "distance": dist,
                 "level": level,
+                "pos_rate": pos_rate,
                 # --- safely extract metrics whether top-level or inside classification_report ---
                 "auc": (
                     data.get("auc")
                     or data.get("roc_auc")
                     or data.get("metrics", {}).get("auc")
                 ),
+                # --- Add AUPRC (Average Precision) ---
+                "auc_pr": (
+                    data.get("auc_pr")
+                    or data.get("metrics", {}).get("auc_pr")
+                    or data.get("pr_curve", {}).get("auc_pr")
+                ),
                 "f1": (
                     data.get("f1")
-                    or data.get("classification_report", {}).get("weighted avg", {}).get("f1-score")
+                    or data.get("classification_report", {}).get("macro avg", {}).get("f1-score")
                 ),
                 "mse": data.get("mse") or data.get("metrics", {}).get("mse"),
                 "accuracy": (
@@ -55,11 +85,12 @@ for path in glob.glob(search_pattern):
                 ),
                 "precision": (
                     data.get("precision")
-                    or data.get("classification_report", {}).get("weighted avg", {}).get("precision")
+                    or data.get("classification_report", {}).get("macro avg", {}).get("precision")
                 ),
                 "recall": (
                     data.get("recall")
                     or data.get("classification_report", {}).get("weighted avg", {}).get("recall")
+                    or data.get("classification_report", {}).get("macro avg", {}).get("recall")
                 ),
                 "split": "test",  # for compatibility with old structure
             }
@@ -106,6 +137,7 @@ def pivot_metric(df, metric):
 
 # --- simplified summary ---
 pivot_auc  = pivot_metric(test_df, "auc")
+pivot_aucpr = pivot_metric(test_df, "auc_pr")
 pivot_prec = pivot_metric(test_df, "precision")
 pivot_rec  = pivot_metric(test_df, "recall")
 pivot_acc  = pivot_metric(test_df, "accuracy")
@@ -113,6 +145,7 @@ pivot_f1   = pivot_metric(test_df, "f1")
 
 cmp = (
     pivot_auc
+    .merge(pivot_aucpr, on=["model", "distance", "level"], how="outer")
     .merge(pivot_prec, on=["model", "distance", "level"], how="outer")
     .merge(pivot_rec,  on=["model", "distance", "level"], how="outer")
     .merge(pivot_acc,  on=["model", "distance", "level"], how="outer")
@@ -131,6 +164,8 @@ def add_delta(df, metric):
 for met in ["auc","precision","recall","accuracy","f1"]:
     add_delta(cmp, met)
 
+# --- Add delta computation for AUPRC as well ---
+add_delta(cmp, "auc_pr")
 
 cmp_path = os.path.join(OUT_DIR, "summary_40cases_test_mode_compare_with_levels.csv")
 cmp.to_csv(cmp_path, index=False)
