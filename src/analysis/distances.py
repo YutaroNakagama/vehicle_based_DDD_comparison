@@ -269,9 +269,20 @@ def _plot_heatmap_auto(matrix, labels, metric: str, kind: str, outdir: Path):
     outdir : Path
         Output directory to save the figure.
     """
-    fig, ax = plt.subplots(figsize=(8, 6))
-    sns.heatmap(matrix, cmap="viridis", xticklabels=labels, yticklabels=labels, annot=False, ax=ax)
+    fig, ax = plt.subplots(figsize=(8, 8))
+    sns.heatmap(
+        matrix, 
+        cmap="viridis", 
+        xticklabels=labels, 
+        yticklabels=labels, 
+        annot=False, 
+        ax=ax
+    )
+    # Maintain 1:1 aspect ratio
+    ax.set_aspect('equal', adjustable='box')
     ax.set_title(f"{metric.upper()} {kind.capitalize()} Heatmap")
+    ax.tick_params(axis='x', labelsize=5)
+    ax.tick_params(axis='y', labelsize=5)
     fig.tight_layout()
     _plot_save_wrapper(fig, outdir / f"{metric}_{kind}_heatmap.png")
 
@@ -294,12 +305,35 @@ def _plot_bar_auto(names, means, stds, metric: str, kind: str, outdir: Path):
     outdir : Path
         Save directory.
     """
+    # === Determine color per subject ===
+    ranks_dir = Path("results/domain_analysis/distance/ranks10")
+    rank_files = {
+        "High": ranks_dir / f"{metric}_mean_high.txt",
+        "Middle": ranks_dir / f"{metric}_mean_middle.txt",
+        "Low": ranks_dir / f"{metric}_mean_low.txt",
+    }
+    rank_members = {k: set(f.read_text().splitlines())
+                    for k, f in rank_files.items() if f.exists()}
+    color_map = {"High": "red", "Middle": "green", "Low": "blue", "Other": "gray"}
+
+    bar_colors = []
+    for sid in names:
+        group = next((g for g in rank_members if sid in rank_members[g]), "Other")
+        bar_colors.append(color_map[group])
+
     fig, ax = plt.subplots(figsize=(10, 4))
-    ax.bar(range(len(names)), means, yerr=stds, capsize=3, color="steelblue")
+    ax.bar(range(len(names)), means, yerr=stds, capsize=3, color=bar_colors)
     ax.set_title(f"{metric.upper()} {kind.capitalize()} Mean ± Std")
     ax.set_xticks(range(len(names)))
     ax.set_xticklabels(names, rotation=90)
     ax.set_ylabel("Distance")
+    ax.tick_params(axis='x', labelsize=6)
+    ax.tick_params(axis='y', labelsize=6)
+    # === Add legend ===
+    handles = [plt.Line2D([0], [0], color=color_map[g], lw=6, label=g)
+               for g in ["High", "Middle", "Low", "Other"]]
+    ax.legend(handles=handles, title="Group", loc="best", fontsize=7, title_fontsize=8)
+
     fig.tight_layout()
     _plot_save_wrapper(fig, outdir / f"{metric}_{kind}_bar.png")
 
@@ -321,38 +355,132 @@ def _plot_intra_inter_auto(stats: dict[str, dict[str, float]], metric: str, outd
 
 # === Unified Group Projection ===
 
-def _plot_projection_auto(matrix: np.ndarray, subjects: list[str], groups: dict[str, list[str]],
-                          metric: str, outdir: Path) -> None:
-    """Unified projection plot generator using MDS (2D).
+def _plot_projection_auto(matrix: np.ndarray, subjects: list[str], metric: str, outdir: Path) -> None:
+    """Projection plot with multiple methods (MDS, t-SNE, UMAP) and optional clustering."""
+    from matplotlib import pyplot as plt
+    from sklearn.manifold import MDS, TSNE
+    from sklearn.cluster import KMeans
+    import numpy as np
+    from pathlib import Path
+    try:
+        import umap
+    except ImportError:
+        umap = None
 
-    Parameters
-    ----------
-    matrix : np.ndarray
-        Pairwise distance matrix.
-    subjects : list[str]
-        Subject identifiers corresponding to the matrix.
-    groups : dict[str, list[str]]
-        Mapping from group names to subject IDs.
-    metric : str
-        Metric name (e.g., 'mmd', 'wasserstein', 'dtw').
-    outdir : Path
-        Output directory for the saved figure.
-    """
-    coords = MDS(n_components=2, dissimilarity="precomputed", random_state=42)\
-        .fit_transform(np.nan_to_num(matrix))
-    s2xy = {s: coords[i] for i, s in enumerate(subjects)}
+    # === Projection methods ===
+    matrix_filled = np.nan_to_num(matrix)
+    methods = {
+        "MDS": MDS(n_components=2, dissimilarity="precomputed", random_state=42),
+        # t-SNE must use init='random' when metric='precomputed'
+        "tSNE": TSNE(
+            n_components=2,
+            metric="precomputed",
+            init="random",
+            random_state=42,
+            perplexity=5
+        ),
+    }
+    if umap is not None:
+        methods["UMAP"] = umap.UMAP(n_components=2, metric="precomputed", random_state=42)
 
-    fig, ax = plt.subplots(figsize=(10, 8))
-    for gname, members in groups.items():
-        pts = [(s2xy[s], s) for s in members if s in s2xy]
-        if not pts: continue
-        arr = np.array([p[0] for p in pts])
-        ax.scatter(arr[:, 0], arr[:, 1], label=gname)
-        for (xy, sid) in pts:
-            ax.text(xy[0], xy[1], sid, fontsize=6)
-    ax.set_title(f"{metric.upper()} Group Projection (MDS)")
-    ax.legend()
-    _plot_save_wrapper(fig, outdir / f"{metric}_group_projection.png")
+    # === Load ranked groups (if available) ===
+    ranks_dir = Path("results/domain_analysis/distance/ranks10")
+    group_files = {
+        "High": ranks_dir / f"{metric}_mean_high.txt",
+        "Middle": ranks_dir / f"{metric}_mean_middle.txt",
+        "Low": ranks_dir / f"{metric}_mean_low.txt",
+    }
+    group_members = {k: set(f.read_text().splitlines())
+                     for k, f in group_files.items() if f.exists()}
+
+    # === Define colors ===
+    base_colors = {"High": "red", "Middle": "green", "Low": "blue", "Other": "black"}
+
+    for name, projector in methods.items():
+        print(f"[INFO] Computing projection using {name}...")
+        coords = projector.fit_transform(matrix_filled)
+
+        # === Plot ===
+        fig, ax = plt.subplots(figsize=(8, 8))
+        ax.set_aspect('equal', adjustable='box')  
+        ax.set_xlim(coords[:, 0].min() - 0.1, coords[:, 0].max() + 0.1)
+        ax.set_ylim(coords[:, 1].min() - 0.1, coords[:, 1].max() + 0.1)
+
+        for i, sid in enumerate(subjects):
+            # Determine group membership (if exists)
+            if any(sid in group_members[g] for g in group_members):
+                group = next(g for g in group_members if sid in group_members[g])
+                color = base_colors[group]
+            else:
+                # Non-ranked subjects: use black
+                group = "Other"
+                color = base_colors[group]
+            ax.scatter(coords[i, 0], coords[i, 1], color=color, s=30)
+            ax.text(coords[i, 0], coords[i, 1], sid, fontsize=6, color=color)
+
+        # === Add legend (High/Middle/Low/Other) ===
+        handles = [plt.Line2D([0], [0], marker='o', color='w',
+                              markerfacecolor=base_colors[g], markersize=6, label=g)
+                   for g in base_colors.keys()]
+        ax.legend(handles=handles, title="Group", loc="best", fontsize=7, title_fontsize=8)
+
+        ax.set_title(f"{metric.upper()} Projection by {name} (High/Mid/Low/Other)")
+
+        # === Preserve perfect square figure ===
+        fig.set_size_inches(6, 6)  # enforce 1:1 figure size
+        ax.set_aspect('equal', adjustable='datalim')
+        plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
+
+        out_path = outdir / f"{metric}_projection_{name.lower()}.png"
+        fig.savefig(out_path, dpi=300, bbox_inches="tight", pad_inches=0.05)
+        plt.close(fig)
+        print(f"[PLOT] Saved: {out_path}")
+
+    # === Prepare 2D coordinate mapping for ranked projection ===
+    s2xy = {sid: coords[i] for i, sid in enumerate(subjects)}
+
+    # === Load ranked groups (if available) ===
+    ranks_dir = Path("results/domain_analysis/distance/ranks10")
+    group_files = {
+        "High": ranks_dir / f"{metric}_mean_high.txt",
+        "Middle": ranks_dir / f"{metric}_mean_middle.txt",
+        "Low": ranks_dir / f"{metric}_mean_low.txt",
+    }
+    group_members = {k: set(f.read_text().splitlines())
+                     for k, f in group_files.items() if f.exists()}
+
+    # === Define colors ===
+    colors = {"High": "red", "Middle": "green", "Low": "blue", "Other": "black"}
+
+    # === Plot ===
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.set_aspect('equal', adjustable='box')
+    for sid, (x, y) in s2xy.items():
+        # Determine group membership
+        if any(sid in group_members[g] for g in group_members):
+            group = next(g for g in group_members if sid in group_members[g])
+        else:
+            group = "Other"
+        ax.scatter(x, y, color=colors[group], s=30, label=group if group != "Other" else None)
+
+        # Label every point
+        ax.text(x, y, sid, fontsize=6, color=colors[group])
+
+    # === Clean up legend (avoid duplicates) ===
+    handles, labels = ax.get_legend_handles_labels()
+    unique = dict(zip(labels, handles))
+    ax.legend(unique.values(), unique.keys(), title="Group")
+
+    ax.set_title(f"{metric.upper()} Projection by Ranked Groups")
+    ax.set_aspect('equal', adjustable='box')
+    fig.tight_layout()
+
+    # === Save ===
+    out_path = outdir / f"{metric}_group_projection_ranked.png"
+    fig.savefig(out_path, dpi=300)
+    plt.close(fig)
+    print(f"[PLOT] Saved ranked group projection: {out_path}")
+
 
 def _plot_bar(labels: list[str], means: np.ndarray, stds: np.ndarray,
               title: str, ylabel: str, save_path: Path) -> None:
@@ -854,7 +982,15 @@ def run_comp_dist(
         matrix, subjects_valid = _compute_distance_matrix(features, metric, n_jobs=n_jobs)
         np.save(metric_dir / f"{metric}_matrix.npy", matrix)
         (metric_dir / f"{metric}_subjects.json").write_text(json.dumps(subjects_valid))
-        _plot_heatmap_auto(matrix, subjects_valid, metric, "subject", metric_dir)
+        # --- sort subjects by descending mean distance for ranked heatmap ---
+        n = matrix.shape[0]
+        mask = ~np.eye(n, dtype=bool)
+        masked = np.where(mask, matrix, np.nan)
+        mean_dist = np.nanmean(masked, axis=1)
+        ranked_idx = np.argsort(-mean_dist)  # descending order
+        matrix_sorted = matrix[ranked_idx][:, ranked_idx]
+        subjects_sorted = [subjects_valid[i] for i in ranked_idx]
+        _plot_heatmap_auto(matrix_sorted, subjects_sorted, metric, "subject", metric_dir)
 
         # ensure saved npy path exists before writing
         Path(metric_dir).mkdir(parents=True, exist_ok=True)
@@ -883,8 +1019,7 @@ def run_comp_dist(
         _save_group_analysis_results(base_dir, metric, group_analysis)
 
         # === Unified projection visualization ===
-        _plot_projection_auto(matrix, subjects_valid, groups,
-                              metric, metric_dir)
+        _plot_projection_auto(matrix, subjects_valid, metric, metric_dir)
  
 
     print("[DONE] All distance computations and analyses complete.")
