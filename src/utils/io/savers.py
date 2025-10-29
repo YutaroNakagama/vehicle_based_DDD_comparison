@@ -274,5 +274,11 @@ def save_eval_results(
     except Exception as e:
         logging.warning(f"[SAVE] Failed to export CSV for {base_name}: {e}")
 
-    logging.info(f"[SAVE] Evaluation results -> {out_path_json}")
+    # --- Detailed logging of saved result paths ---
+    abs_json = os.path.abspath(out_path_json)
+    abs_csv  = os.path.abspath(out_path_csv)
+    logging.info(f"[EVAL] Results saved successfully:")
+    logging.info(f"        JSON: {abs_json}")
+    logging.info(f"        CSV : {abs_csv}")
+
     return out_path_json
