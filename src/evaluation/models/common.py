@@ -12,6 +12,9 @@ from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import StandardScaler
 from src.config import MODEL_PKL_PATH
 
+# --- Added imports for PRC (Precision-Recall Curve) evaluation ---
+from sklearn.metrics import precision_recall_curve, average_precision_score
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
@@ -70,6 +73,16 @@ def common_eval(
         fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
         roc_auc = auc(fpr, tpr)
 
+        # === Compute Precision-Recall Curve (PRC) and Average Precision (AUPRC) ===
+        precision, recall, _ = precision_recall_curve(y_test, y_pred_proba)
+        auc_pr = average_precision_score(y_test, y_pred_proba)
+
+        result_pr = {
+            "precision": precision.tolist(),
+            "recall": recall.tolist(),
+            "auc_pr": float(auc_pr)
+        }
+
     mse = mean_squared_error(y_test, y_pred)
     report = classification_report(y_test, y_pred, output_dict=True)
     conf_matrix = confusion_matrix(y_test, y_pred)
@@ -94,5 +107,12 @@ def common_eval(
             "tpr": tpr.tolist(),
             "auc": roc_auc
         }
+
+    # Include PRC (Precision–Recall Curve) data if available
+    if hasattr(clf, "predict_proba"):
+        result["pr_curve"] = result_pr
+        result["auc_pr"] = result_pr["auc_pr"]
+
+        logging.info(f"AUPRC (Average Precision): {auc_pr:.4f}")
 
     return result
