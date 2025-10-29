@@ -17,7 +17,6 @@ import os
 from typing import Optional
 
 from src.utils.io.loaders import load_subjects_and_data, load_model_and_scaler
-from src.utils.io.split_helpers import prepare_data_split
 from src.utils.io.feature_utils import align_and_normalize_features
 from src.utils.io.savers import save_eval_results
 from src.evaluation.models import lstm_eval, SvmA_eval, common_eval
@@ -95,19 +94,66 @@ def eval_pipeline(
     """
     logging.info(f"[EVAL] Start {model} ({mode}) | subject_split={subject_wise_split}")
 
+    target_subjects = []
+
     # Step 1: Load subjects and dataset
     subjects, model_type, data = load_subjects_and_data(
         model, fold, sample_size, seed, subject_wise_split
     )
 
+
+    # --------------------------------------------------------------
+    # Step 1.5: Always restrict to target group subjects
+    # ------------------------------------------------------------------
+    default_rank_file = "results/domain_analysis/distance/rank_names.txt"
+    target_subjects = []
+    if tag and os.path.exists(default_rank_file):
+        with open(default_rank_file) as f:
+            lines = [x.strip() for x in f.readlines() if x.strip()]
+        tag_key = tag.replace("rank_", "")
+        match = [x for x in lines if tag_key in os.path.basename(x)]
+        if match:
+            group_file = os.path.normpath(match[0])
+            if os.path.exists(group_file):
+                with open(group_file) as g:
+                    target_subjects = [s.strip() for s in g.readlines() if s.strip()]
+                subjects = target_subjects
+                if "subject_id" in data.columns:
+                    data = data[data["subject_id"].isin(target_subjects)].reset_index(drop=True)
+                logging.info(f"[EVAL] Using only target group subjects ({len(target_subjects)}) for evaluation.")
+            else:
+                logging.warning(f"[EVAL] Target group file not found: {group_file}")
+        else:
+            logging.warning(f"[EVAL] No matching rank group found for tag={tag}")
+    else:
+        logging.warning("[EVAL] rank_names.txt not found; evaluating all subjects.")
+
+
     # Step 2: Prepare split for evaluation
-    X_train, X_val, X_test, y_train, y_val, y_test = prepare_data_split(
-        data, subjects, seed, subject_wise_split
+    # --- Use same split logic as training (split_data) ---
+    from src.utils.io.split_helpers import split_data, log_split_ratios
+    X_train, X_val, X_test, y_train, y_val, y_test = split_data(
+        subject_split_strategy="random",
+        subject_list=subjects,
+        target_subjects=target_subjects if mode in ["source_only", "target_only"] else [],
+        model_type=model_type,
+        seed=seed,
+        # Time stratification parameters (same defaults as training)
+        time_stratify_labels=None,
+        time_stratify_tolerance=0.1,
+        time_stratify_window=5,
+        time_stratify_min_chunk=30,
+    )
+    log_split_ratios(
+        y_train, y_val, y_test,
+        tag=f"eval|mode={mode}|tag={tag}"
     )
 
     # ------------------------------------------------------------------
     # Step 2.5: Filter test data according to mode
     # ------------------------------------------------------------------
+    if "subject_id" not in X_test.columns and "subject_id" in data.columns:
+        X_test["subject_id"] = data["subject_id"].iloc[:len(X_test)].values
     if mode in ["source_only", "target_only"]:
         # Load target subject list (from --target_file or default path)
         import pandas as pd
@@ -115,17 +161,66 @@ def eval_pipeline(
         if target_file and os.path.exists(target_file):
             target_subjects = [s.strip() for s in open(target_file).read().splitlines() if s.strip()]
         else:
-            # fallback: look for default group file in results/domain_analysis
+            # --- Improved fallback: auto-detect correct rank group file ---
             default_rank_file = "results/domain_analysis/distance/rank_names.txt"
+            target_subjects = []
             if os.path.exists(default_rank_file):
                 with open(default_rank_file) as f:
-                    target_subjects = [s.strip() for s in f.read().splitlines() if s.strip()]
-            else:
-                target_subjects = []
-                logging.warning("[EVAL] No target subject list found; evaluating all subjects.")
+                    lines = [x.strip() for x in f.readlines() if x.strip()]
+                # --- improved tag-to-file matching (for pure path list) ---
+                match = []
+                if tag:
+                    # remove 'rank_' prefix if present (e.g. rank_dtw_mean_high → dtw_mean_high)
+                    tag_key = tag.replace("rank_", "")
+                    # match by basename portion of each path
+                    match = [x for x in lines if tag_key in os.path.basename(x)]
 
-        # Extract subject_id column if available
-        if "subject_id" in data.columns:
+                if match:
+                    group_file = match[0]
+                    # --- handle absolute or relative paths robustly ---
+                    # (this must happen BEFORE existence check)
+                    if not os.path.isabs(group_file):
+                        group_file = os.path.join(
+                            os.path.dirname(default_rank_file),
+                            group_file
+                        )
+
+                    # normalize redundant parts like '../'
+                    group_file = os.path.normpath(group_file)
+
+                    # now check existence and load target list
+                    if os.path.exists(group_file):
+                        with open(group_file) as g:
+                            target_subjects = [s.strip() for s in g.readlines() if s.strip()]
+                        logging.info(
+                            f"[EVAL] Loaded target subjects ({len(target_subjects)}) from {group_file}"
+                        )
+                    else:
+                        logging.warning(f"[EVAL] Matched group file not found: {group_file}")
+                else:
+                    logging.warning(f"[EVAL] No matching group file found for tag={tag}")
+            else:
+                logging.warning("[EVAL] rank_names.txt not found; evaluating all subjects.")
+
+        # --- Recover subject_id column if missing ---
+        if "subject_id" not in X_test.columns and "subject_id" in data.columns:
+            try:
+                # Use index alignment-safe merge to recover subject_id
+                X_test = X_test.merge(
+                    data[["subject_id"]],
+                    left_index=True,
+                    right_index=True,
+                    how="left"
+                )
+                logging.info(f"[EVAL] Restored subject_id column for filtering (n={X_test.shape[0]}).")
+
+            except Exception as e:
+                logging.warning(f"[EVAL] Could not restore subject_id: {e}")
+
+        # Extract subject_id from test set (not from full data)
+        if "subject_id" in X_test.columns:
+            subj_col = X_test["subject_id"]
+        elif "subject_id" in data.columns:
             subj_col = data["subject_id"]
         else:
             subj_col = None
@@ -161,6 +256,38 @@ def eval_pipeline(
                 jobid = os.getenv("PBS_JOBID", "local")
                 logging.warning(f"[EVAL] No latest_job.txt found; fallback to current jobid={jobid}")
 
+    # --- NEW: prefer jobid corresponding to the same mode/tag ---
+    # Example: use models/RF/<jobid>/<jobid>*/RF_target_only_rank_dtw_mean_high*.pkl
+    model_root = f"models/{model}"
+    if os.path.exists(model_root):
+        import glob
+        # Remove redundant 'rank_' prefix from tag to prevent double match
+        tag_key = tag.replace("rank_", "") if tag else ""
+        pattern = f"{model_root}/**/{model}_{mode}_rank_*{tag_key}*.pkl"
+        matches = [m for m in glob.glob(pattern, recursive=True) if f"{model}_{mode}_" in os.path.basename(m)]
+        if matches:
+            matches.sort(key=os.path.getmtime, reverse=True)
+            model_path = matches[0]
+            jobid = model_path.split("/")[3]
+            logging.info(f"[EVAL] Auto-detected model file for mode={mode}: {model_path}")
+            # ✅ Skip fallback if found
+            latest_model_found = True
+        else:
+            latest_model_found = False
+            logging.warning(f"[EVAL] No specific model found for mode={mode}; will fallback to latest_job.txt.")
+
+    # --- fallback only if nothing found ---
+    if not locals().get("latest_model_found", False):
+        model_path = None
+        jobid_path = f"{model_root}/latest_job.txt"
+        if os.path.exists(jobid_path):
+            with open(jobid_path) as f:
+                jobid = f.read().strip()
+            logging.info(f"[EVAL] Loaded latest jobid from {jobid_path}: {jobid}")
+        else:
+            jobid = os.getenv("PBS_JOBID", "local")
+            logging.warning(f"[EVAL] No model file or latest_job.txt found, using default jobid={jobid}")
+
     # --- Load model/scaler/features from resolved jobid ---
     clf, scaler, features = load_model_and_scaler(model, model_type, mode, tag, fold, jobid)
     if clf is None:
@@ -172,31 +299,74 @@ def eval_pipeline(
     # ------------------------------------------------------------------
     # Step 4: Remove EEG features (not used during training)
     # ------------------------------------------------------------------
-    eeg_cols = [c for c in X_test.columns if c.startswith("Channel_")]
-    if eeg_cols:
-        logging.info(f"[EVAL] Dropping {len(eeg_cols)} EEG-related columns (unused in training).")
-        X_test = X_test.drop(columns=eeg_cols, errors="ignore")
+    eeg_keywords = ["Channel_", "EEG", "Theta", "Alpha", "Beta", "Gamma", "Delta"]
+    drop_cols = [c for c in X_test.columns if any(k in c for k in eeg_keywords)]
+    if drop_cols:
+        logging.info(f"[EVAL] Dropping {len(drop_cols)} EEG-related columns (e.g., {drop_cols[:5]})")
+        X_test = X_test.drop(columns=drop_cols)
 
-    # Drop other known non-feature columns if they appear
-    X_test = X_test.drop(columns=["subject_id"], errors="ignore")
-
-    # Remove duplicated columns and keep numeric only
+    # Drop unnecessary or duplicated columns
     X_test = X_test.loc[:, ~X_test.columns.duplicated()]
+    X_test = X_test.drop(columns=["subject_id"], errors="ignore")
     import numpy as np
     X_test = X_test.select_dtypes(include=[np.number]).replace([np.inf, -np.inf], np.nan).fillna(0.0)
-
     logging.info(f"[EVAL] X_test ready for scaling (n_features={X_test.shape[1]})")
 
-    # Step 4: Align and normalize features BEFORE scaling
-    X_test, features = align_and_normalize_features(X_test, features)
+    # ------------------------------------------------------------------
+    # Step 4.5: Safe feature alignment to prevent KeyError
+    # ------------------------------------------------------------------
+    import pandas as pd
 
-    # --- Ensure column order matches the training phase ---
+    def safe_align_columns(df: pd.DataFrame, expected_cols):
+        """Align df to expected_cols (fill missing, drop extras)."""
+        extra_cols = [c for c in df.columns if c not in expected_cols]
+        missing_cols = [c for c in expected_cols if c not in df.columns]
+
+        if extra_cols:
+            logging.info(f"[EVAL] Dropping {len(extra_cols)} extra columns (e.g., {extra_cols[:5]})")
+            df = df.drop(columns=extra_cols, errors="ignore")
+
+        if missing_cols:
+            logging.warning(f"[EVAL] {len(missing_cols)} missing columns filled with 0.0 "
+                            f"(e.g., {missing_cols[:5]})")
+            for c in missing_cols:
+                df[c] = 0.0
+
+        # Reorder to expected order
+        df = df.reindex(columns=expected_cols)
+        return df
+
+    # Align with features saved during training
+    if features is not None and len(features) > 0:
+        X_test = safe_align_columns(X_test, features)
+    elif hasattr(scaler, "feature_names_in_"):
+        X_test = safe_align_columns(X_test, list(scaler.feature_names_in_))
+
+    # Step 4.6: Clip extreme values before scaling
+    clip_val = 1_000_000.0
+    X_test = X_test.clip(lower=-clip_val, upper=clip_val, axis=1)
+
+    # Step 4.7: Transform after alignment
+    # --- Final sanity alignment for scikit-learn scalers ---
     if hasattr(scaler, "feature_names_in_"):
-        X_test = X_test[scaler.feature_names_in_]
+        expected_scaler_cols = list(scaler.feature_names_in_)
+        missing_for_scaler = [c for c in expected_scaler_cols if c not in X_test.columns]
+        extra_for_scaler = [c for c in X_test.columns if c not in expected_scaler_cols]
 
-    # --- Transform after alignment ---
+        if extra_for_scaler:
+            logging.warning(f"[EVAL] Dropping {len(extra_for_scaler)} columns unseen at fit time "
+                            f"(e.g., {extra_for_scaler[:5]})")
+            X_test = X_test.drop(columns=extra_for_scaler, errors="ignore")
+
+        if missing_for_scaler:
+            logging.warning(f"[EVAL] {len(missing_for_scaler)} columns seen at fit time but now missing "
+                            f"(e.g., {missing_for_scaler[:5]}). Filling with 0.0.")
+            for c in missing_for_scaler:
+                X_test[c] = 0.0
+
+        X_test = X_test.reindex(columns=expected_scaler_cols)
+
     X_test = scaler.transform(X_test)
-
     logging.info(f"[EVAL] Successfully transformed X_test (shape={X_test.shape})")
 
     # Step 5: Model-specific evaluation
@@ -224,7 +394,7 @@ def eval_pipeline(
         results=result,
         model_name=model,
         mode=mode,
-        job_id=jobid,
+        job_id=os.getenv("PBS_JOBID", jobid),  # Prefer evaluation jobid if available
         out_dir="results/evaluation"
     )
 
