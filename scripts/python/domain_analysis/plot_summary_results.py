@@ -3,6 +3,10 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format="[%(levelname)s] %(message)s")
+logger = logging.getLogger(__name__)
 
 IN   = "results/domain_analysis/summary/csv/summary_40cases_test_mode_compare_with_levels.csv"
 OUT1 = "results/domain_analysis/summary/png/summary_metrics_bar.png"
@@ -12,7 +16,7 @@ OUT2 = "results/domain_analysis/summary/png/summary_diff_heatmap.png"
 if not os.path.exists(IN):
     alt_path = IN.replace("_with_levels", "")
     if os.path.exists(alt_path):
-        print(f"[WARN] Fallback to: {alt_path}")
+        logger.warning(f"Fallback to: {alt_path}")
         IN = alt_path
 
 df = pd.read_csv(IN)
@@ -20,7 +24,7 @@ df = pd.read_csv(IN)
 # --- Determine baseline positive rate dynamically ---
 if "pos_rate" in df.columns and df["pos_rate"].notna().any():
     BASELINE_POS_RATE = df["pos_rate"].mean()
-    print(f"[INFO] Using mean positive rate from JSONs (in summary): {BASELINE_POS_RATE:.4f}")
+    logger.info(f"Using mean positive rate from JSONs (in summary): {BASELINE_POS_RATE:.4f}")
 else:
     # try fallback: read from summary_40cases_test.csv
     base_csv = IN.replace("_mode_compare_with_levels.csv", ".csv")
@@ -28,43 +32,43 @@ else:
         df_base = pd.read_csv(base_csv)
         if "pos_rate" in df_base.columns and df_base["pos_rate"].notna().any():
             BASELINE_POS_RATE = df_base["pos_rate"].mean()
-            print(f"[INFO] Retrieved baseline pos_rate from {os.path.basename(base_csv)}: {BASELINE_POS_RATE:.4f}")
+            logger.info(f"Retrieved baseline pos_rate from {os.path.basename(base_csv)}: {BASELINE_POS_RATE:.4f}")
         else:
             BASELINE_POS_RATE = 0.033
-            print(f"[WARN] pos_rate missing even in {base_csv}, using default baseline={BASELINE_POS_RATE:.4f}")
+            logger.warning(f"pos_rate missing even in {base_csv}, using default baseline={BASELINE_POS_RATE:.4f}")
     else:
         BASELINE_POS_RATE = 0.033
-        print(f"[WARN] pos_rate not found, using default baseline={BASELINE_POS_RATE:.4f}")
+        logger.warning(f"pos_rate not found, using default baseline={BASELINE_POS_RATE:.4f}")
 
 # --- Normalize AUPRC by baseline ---
 for mode in ["source_only", "target_only"]:
     col = f"auc_pr_{mode}"
     if col in df.columns:
         df[f"auc_pr_norm_{mode}"] = (df[col] - BASELINE_POS_RATE) / (1 - BASELINE_POS_RATE)
-        print(f"[INFO] Normalized AUPRC for {mode} (0–1 scale).")
+        logger.info(f"Normalized AUPRC for {mode} (0–1 scale).")
 
-print("=== DEBUG: Loaded CSV columns ===")
-print(df.columns.tolist())
-print("=== First rows ===")
-print(df.head())
+logger.debug("=== DEBUG: Loaded CSV columns ===")
+logger.debug(df.columns.tolist())
+logger.debug("=== First rows ===")
+logger.debug(df.head())
 
 # --- backward compatibility ---
 if "stat" in df.columns:
     df = df[df["stat"] == "mean"].copy()
 else:
-    print("[WARN] 'stat' column not found — skipping filter (JSON-based summary detected).")
+    logger.info("JSON-based summary detected (no 'stat' column).")
 
 # --- detect available modes dynamically ---
 modes = []
 for mode in ["source_only", "target_only", "joint_train"]:
     if any(col.endswith(mode) for col in df.columns):
         modes.append(mode)
-print(f"[INFO] Detected modes: {modes}")
+logger.info(f"Detected modes: {modes}")
 
 # --- detect available distance/level combinations ---
 distances = sorted(df["distance"].unique()) if "distance" in df.columns else ["unknown"]
 levels    = sorted(df["level"].unique()) if "level" in df.columns else ["unknown"]
-print(f"[INFO] Detected 9 combinations: {[(d,l) for d in distances for l in levels]}")
+logger.info(f"Detected combinations: {[(d,l) for d in distances for l in levels]}")
 
 metrics = []
 for c in df.columns:
@@ -75,7 +79,7 @@ for c in df.columns:
 metrics = sorted(set(metrics))
 
 if "auc_pr_norm_source_only" in df.columns:
-    print("[INFO] Using normalized AUPRC columns for visualization.")
+    logger.info("Using normalized AUPRC columns for visualization.")
 
 # --- unify normalized and raw AUPRC for visualization ---
 metrics_unified = []
@@ -149,17 +153,17 @@ for i, dist in enumerate(distances):
 plt.tight_layout()
 os.makedirs(os.path.dirname(OUT1), exist_ok=True)
 plt.savefig(OUT1, dpi=200)
-print(f"[SAVED] {OUT1}")
+plt.close(fig)
+logger.info(f"Saved bar plot → {OUT1}")
 
 # === HEATMAP (Metric difference between modes) ===
 comparisons = [
-    ("finetune", "only_target", "Finetune - Target"),
-    ("finetune", "only_general", "Finetune - General"),
-    ("only_general", "only_target", "General - Target"),
+    ("source_only", "target_only", "Source - Target"),
 ]
 
 fig2, axes2 = plt.subplots(len(metrics), len(comparisons),
-                           figsize=(4*len(comparisons), 4*len(metrics)))
+                           figsize=(4*len(comparisons), 4*len(metrics)),
+                           squeeze=False)
 
 for i, metric in enumerate(metrics):
     for j, (a, b, title) in enumerate(comparisons):
@@ -179,4 +183,11 @@ for i, metric in enumerate(metrics):
 
 plt.tight_layout()
 plt.savefig(OUT2, dpi=200)
-print(f"[SAVED] {OUT2}")
+plt.close(fig2)
+logger.info(f"Saved heatmap → {OUT2}")
+
+if not os.path.exists(OUT1) or not os.path.exists(OUT2):
+    logger.warning("Some output plots were not generated as expected.")
+else:
+    logger.info("All output plots successfully generated.")
+
