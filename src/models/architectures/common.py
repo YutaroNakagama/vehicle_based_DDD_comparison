@@ -480,7 +480,18 @@ def common_train(
         if "class_weight" in best_params:
             best_params.pop("class_weight")
         # Restrict parallel threads to 1 to avoid PBS CPU quota violations
-        best_clf = RandomForestClassifier(**best_params, class_weight="balanced_subsample", n_jobs=1)
+        # Updated: enforce stronger balancing for imbalanced KSS data
+        best_clf = RandomForestClassifier(**best_params, class_weight="balanced", n_jobs=1)
+
+        # --- Add calibration step (Isotonic Regression) ---
+        try:
+            from sklearn.calibration import CalibratedClassifierCV
+            logging.info("[CALIBRATION] Applying isotonic calibration...")
+            calibrated = CalibratedClassifierCV(best_clf, cv='prefit', method='isotonic')
+            calibrated.fit(X_val_scaled, y_val)
+            best_clf = calibrated
+        except Exception as e:
+            logging.warning(f"[CALIBRATION] Skipped: {e}")
 
     elif model == "BalancedRF":
         best_clf = BalancedRandomForestClassifier(**best_params)
