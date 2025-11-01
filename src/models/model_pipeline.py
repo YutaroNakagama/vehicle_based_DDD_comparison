@@ -189,8 +189,45 @@ def train_pipeline(
                     if "subject_id" in data.columns:
                         if mode == "target_only":
                             data = data[data["subject_id"].isin(target_subjects)].reset_index(drop=True)
+                        elif mode == "source_only":
+                            # ==========================================================
+                            # Exclude high/middle/low domains belonging to the same metric type
+                            # e.g., if target is mmd_mean_high → exclude mmd_mean_high/middle/low
+                            # ==========================================================
+                            from pathlib import Path
+                            ranks_dir = Path("results/domain_analysis/distance/ranks10")
+
+                            # infer metric type from tag_key (e.g., dtw_mean_high → dtw)
+                            metric_prefix = None
+                            for prefix in ["dtw", "mmd", "wasserstein"]:
+                                if prefix in tag_key:
+                                    metric_prefix = prefix
+                                    break
+
+                            excluded_subjects = set()
+                            if metric_prefix:
+                                for domain in ["high", "middle", "low"]:
+                                    file_path = ranks_dir / f"{metric_prefix}_mean_{domain}.txt"
+                                    if file_path.exists():
+                                        with open(file_path) as f:
+                                            for line in f:
+                                                s = line.strip()
+                                                if s:
+                                                    excluded_subjects.add(s)
+
+                            # Filter data to exclude all those domain subjects
+                            data = data[~data["subject_id"].isin(excluded_subjects)].reset_index(drop=True)
+
+                            logging.info(
+                                f"[EVAL] source_only: excluded {len(excluded_subjects)} subjects "
+                                f"from {metric_prefix} (high/middle/low). Remaining samples: {len(data)}"
+                            )
+
                         else:
+                            # fallback (should not normally reach here)
                             data = data[~data["subject_id"].isin(target_subjects)].reset_index(drop=True)
+
+                    # summary log for consistency
                     logging.info(f"[EVAL] Data restricted to {len(data)} samples after {mode} filtering.")
 
 
