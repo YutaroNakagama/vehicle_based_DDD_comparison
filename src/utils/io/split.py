@@ -54,8 +54,8 @@ def _check_nonfinite(X: pd.DataFrame, name: str) -> pd.DataFrame:
 
 def data_split(
     df: pd.DataFrame,
-    train_ratio: float = 0.8,
-    val_ratio: float = 0.1,
+    train_ratio: float = 0.7,
+    val_ratio: float = 0.2,
     test_ratio: float = 0.1,
     random_state: int = 42,
 ):
@@ -67,9 +67,9 @@ def data_split(
     ----------
     df : pandas.DataFrame
         Input dataset containing features and label columns.
-    train_ratio : float, default=0.8
+    train_ratio : float, default=0.7
         Proportion of the dataset to allocate for training.
-    val_ratio : float, default=0.1
+    val_ratio : float, default=0.2
         Proportion of the dataset to allocate for validation.
     test_ratio : float, default=0.1
         Proportion of the dataset to allocate for testing.
@@ -238,8 +238,8 @@ def data_time_split_by_subject(
     df,
     subject_col="subject_id",
     time_col="timestamp",
-    train_ratio=0.8,
-    val_ratio=0.1,
+    train_ratio=0.7,
+    val_ratio=0.2,
     test_ratio=0.1,
 ):
     """
@@ -253,9 +253,9 @@ def data_time_split_by_subject(
         Column name for subject identifiers.
     time_col : str, default="timestamp"
         Column name for timestamps used to order samples.
-    train_ratio : float, default=0.8
+    train_ratio : float, default=0.7
         Proportion of samples per subject used for training.
-    val_ratio : float, default=0.1
+    val_ratio : float, default=0.2
         Proportion of samples per subject used for validation.
     test_ratio : float, default=0.1
         Proportion of samples per subject used for testing.
@@ -321,7 +321,7 @@ def time_stratified_three_way_split(
     df: pd.DataFrame,
     label_col: str,
     sort_keys=("Timestamp",),          # or ("subject_id","Timestamp") if already concatenated per subject
-    train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
+    train_ratio=0.7, val_ratio=0.2, test_ratio=0.1,
     tolerance=0.02,
     window_prop=0.10,
     min_chunk=100,
@@ -340,9 +340,9 @@ def time_stratified_three_way_split(
         Column name for labels.
     sort_keys : tuple of str, default=("Timestamp",)
         Columns to sort by before splitting (e.g., ``("subject_id","Timestamp")``).
-    train_ratio : float, default=0.8
+    train_ratio : float, default=0.7
         Proportion of data for training.
-    val_ratio : float, default=0.1
+    val_ratio : float, default=0.2
         Proportion of data for validation.
     test_ratio : float, default=0.1
         Proportion of data for testing.
