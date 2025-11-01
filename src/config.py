@@ -110,6 +110,6 @@ TOP_K_FEATURES = 10
 # ---------------------------------------------------------------------
 # Optuna
 # ---------------------------------------------------------------------
-N_TRIALS = 50
+N_TRIALS = 150
 """int : Number of trials for hyperparameter optimization using Optuna."""
 
