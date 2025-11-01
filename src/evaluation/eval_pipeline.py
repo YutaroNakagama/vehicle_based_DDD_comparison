@@ -101,10 +101,9 @@ def eval_pipeline(
         model, fold, sample_size, seed, subject_wise_split
     )
 
-
     # --------------------------------------------------------------
-    # Step 1.5: Always restrict to target group subjects
-    # ------------------------------------------------------------------
+    # Step 1.5: Restrict evaluation to target group for tagged runs
+    # --------------------------------------------------------------
     default_rank_file = "results/domain_analysis/distance/rank_names.txt"
     target_subjects = []
     if tag and os.path.exists(default_rank_file):
@@ -117,17 +116,14 @@ def eval_pipeline(
             if os.path.exists(group_file):
                 with open(group_file) as g:
                     target_subjects = [s.strip() for s in g.readlines() if s.strip()]
-                subjects = target_subjects
-                if "subject_id" in data.columns:
-                    data = data[data["subject_id"].isin(target_subjects)].reset_index(drop=True)
-                logging.info(f"[EVAL] Using only target group subjects ({len(target_subjects)}) for evaluation.")
+                logging.info(f"[EVAL] Loaded target group list ({len(target_subjects)}) from {group_file}")
+                logging.info(f"[EVAL] Mode={mode} | target_subjects={len(target_subjects)}")
             else:
                 logging.warning(f"[EVAL] Target group file not found: {group_file}")
         else:
-            logging.warning(f"[EVAL] No matching rank group found for tag={tag}")
+            logging.warning(f"[EVAL] No matching group found for tag={tag}")
     else:
-        logging.warning("[EVAL] rank_names.txt not found; evaluating all subjects.")
-
+        logging.info("[EVAL] No tag or rank_names.txt not found; evaluating all subjects.")
 
     # Step 2: Prepare split for evaluation
     # --- Use same split logic as training (split_data) ---
@@ -150,93 +146,26 @@ def eval_pipeline(
     )
 
     # ------------------------------------------------------------------
-    # Step 2.5: Filter test data according to mode
+    # Step 2.5: For source_only/target_only, filter test data to target group
     # ------------------------------------------------------------------
-    if "subject_id" not in X_test.columns and "subject_id" in data.columns:
-        X_test["subject_id"] = data["subject_id"].iloc[:len(X_test)].values
-    if mode in ["source_only", "target_only"]:
-        # Load target subject list (from --target_file or default path)
-        import pandas as pd
-        target_file = kwargs.get("target_file", None)
-        if target_file and os.path.exists(target_file):
-            target_subjects = [s.strip() for s in open(target_file).read().splitlines() if s.strip()]
-        else:
-            # --- Improved fallback: auto-detect correct rank group file ---
-            default_rank_file = "results/domain_analysis/distance/rank_names.txt"
-            target_subjects = []
-            if os.path.exists(default_rank_file):
-                with open(default_rank_file) as f:
-                    lines = [x.strip() for x in f.readlines() if x.strip()]
-                # --- improved tag-to-file matching (for pure path list) ---
-                match = []
-                if tag:
-                    # remove 'rank_' prefix if present (e.g. rank_dtw_mean_high → dtw_mean_high)
-                    tag_key = tag.replace("rank_", "")
-                    # match by basename portion of each path
-                    match = [x for x in lines if tag_key in os.path.basename(x)]
-
-                if match:
-                    group_file = match[0]
-                    # --- handle absolute or relative paths robustly ---
-                    # (this must happen BEFORE existence check)
-                    if not os.path.isabs(group_file):
-                        group_file = os.path.join(
-                            os.path.dirname(default_rank_file),
-                            group_file
-                        )
-
-                    # normalize redundant parts like '../'
-                    group_file = os.path.normpath(group_file)
-
-                    # now check existence and load target list
-                    if os.path.exists(group_file):
-                        with open(group_file) as g:
-                            target_subjects = [s.strip() for s in g.readlines() if s.strip()]
-                        logging.info(
-                            f"[EVAL] Loaded target subjects ({len(target_subjects)}) from {group_file}"
-                        )
-                    else:
-                        logging.warning(f"[EVAL] Matched group file not found: {group_file}")
-                else:
-                    logging.warning(f"[EVAL] No matching group file found for tag={tag}")
-            else:
-                logging.warning("[EVAL] rank_names.txt not found; evaluating all subjects.")
-
-        # --- Recover subject_id column if missing ---
-        if "subject_id" not in X_test.columns and "subject_id" in data.columns:
-            try:
-                # Use index alignment-safe merge to recover subject_id
-                X_test = X_test.merge(
-                    data[["subject_id"]],
-                    left_index=True,
-                    right_index=True,
-                    how="left"
-                )
-                logging.info(f"[EVAL] Restored subject_id column for filtering (n={X_test.shape[0]}).")
-
-            except Exception as e:
-                logging.warning(f"[EVAL] Could not restore subject_id: {e}")
-
-        # Extract subject_id from test set (not from full data)
+    if mode in ["source_only", "target_only"] and len(target_subjects) > 0:
         if "subject_id" in X_test.columns:
             subj_col = X_test["subject_id"]
         elif "subject_id" in data.columns:
-            subj_col = data["subject_id"]
+            subj_col = data.loc[X_test.index, "subject_id"]
         else:
             subj_col = None
 
-        if subj_col is not None and len(target_subjects) > 0:
-            if mode == "target_only":
-                mask = subj_col.isin(target_subjects)
-                logging.info(f"[EVAL] Restricting evaluation to {mask.sum()} target samples.")
-            else:  # source_only
-                mask = ~subj_col.isin(target_subjects)
-                logging.info(f"[EVAL] Restricting evaluation to {mask.sum()} source samples.")
-
+        if subj_col is not None:
+            mask = subj_col.isin(target_subjects)
+            logging.info(
+                f"[EVAL] (Unified) Restricting evaluation to {mask.sum()} target samples "
+                f"(mode={mode}, tag={tag})"
+            )
             X_test = X_test.loc[mask].reset_index(drop=True)
             y_test = y_test.loc[mask].reset_index(drop=True)
         else:
-            logging.warning("[EVAL] subject_id or target list not found — evaluating all samples.")
+            logging.warning("[EVAL] subject_id not found; evaluating all samples.")
 
     # Step 3: Load model, scaler, and features
     # --- Resolve jobid if not provided ---
@@ -270,7 +199,7 @@ def eval_pipeline(
             model_path = matches[0]
             jobid = model_path.split("/")[3]
             logging.info(f"[EVAL] Auto-detected model file for mode={mode}: {model_path}")
-            # ✅ Skip fallback if found
+            # Skip fallback if found
             latest_model_found = True
         else:
             latest_model_found = False
@@ -376,6 +305,62 @@ def eval_pipeline(
         result = SvmA_eval(X_test, y_test, model, model_type, clf)
     else:
         result = common_eval(X_test, y_test, model, model_type, clf)
+
+    # --- (New) Save probability histogram if available ---
+    try:
+        probs = result.get("y_pred_proba", None)
+        if probs is not None and len(probs) > 0:
+            import matplotlib.pyplot as plt
+            out_job_dir = os.path.join("results", "evaluation", model, os.getenv("PBS_JOBID", jobid))
+            os.makedirs(out_job_dir, exist_ok=True)
+            fname_tag = (tag or "all").replace("/", "_")
+            hist_path = os.path.join(out_job_dir, f"proba_hist_{model}_{mode}_{fname_tag}.png")
+
+            plt.figure(figsize=(6,4))
+            plt.hist(probs, bins=50)
+            plt.xlabel("Predicted probability (positive class)")
+            plt.ylabel("Count")
+            plt.title(f"RF Probabilities on Test | mode={mode} tag={tag}")
+            plt.tight_layout()
+            plt.savefig(hist_path, dpi=150)
+            plt.close()
+
+            # Also search best F1 threshold for quick reference
+            from sklearn.metrics import precision_recall_curve
+            import numpy as np
+            prec, rec, thr = precision_recall_curve(y_test, np.array(probs))
+            f1 = 2 * prec * rec / (prec + rec + 1e-8)
+            if thr.size > 0:
+                best_idx = int(np.nanargmax(f1))
+                # precision_recall_curve returns thresholds size = len(prec)-1
+                best_thr = float(thr[min(best_idx, len(thr)-1)])
+                best_f1 = float(np.nanmax(f1))
+                result["best_threshold_f1"] = best_thr
+                result["best_f1"] = best_f1
+
+            # --- NEW: Apply best threshold for predicted labels ---
+            y_pred_thr = (np.array(probs) >= best_thr).astype(int)
+            from sklearn.metrics import classification_report, confusion_matrix
+
+            report_thr = classification_report(y_test, y_pred_thr, output_dict=True)
+            conf_thr = confusion_matrix(y_test, y_pred_thr)
+
+            # store threshold-specific evaluation
+            result["classification_report_best_thr"] = report_thr
+            result["confusion_matrix_best_thr"] = conf_thr.tolist()
+
+            pos_rate_pred_thr = float(y_pred_thr.mean())
+            result["pred_pos_rate_best_thr"] = pos_rate_pred_thr
+
+            logging.info(
+                f"[EVAL] Applied dynamic threshold={best_thr:.3f} | "
+                f"PosRate={pos_rate_pred_thr:.3%} | "
+                f"F1@best={best_f1:.3f}"
+            )
+
+            result["proba_hist_path"] = hist_path
+    except Exception as e:
+        logging.warning(f"[EVAL] Failed to write probability histogram: {e}")
 
     # Step 6: Save results with metadata
     result.update(
