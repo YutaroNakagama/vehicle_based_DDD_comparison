@@ -130,7 +130,20 @@ for i, dist in enumerate(distances):
 
         ax.set_xticks(x)
         ax.set_xticklabels([lvl.capitalize() for lvl in levels_present])
-        ax.set_ylim(0, 1.0)
+
+        # --- Dynamic y-axis scaling and baseline line only for AUPRC ---
+        if "auc_pr" in metric:
+            ymin = min(vals_source + vals_target)
+            ymax = max(vals_source + vals_target)
+            margin = (ymax - ymin) * 0.3 if ymax > ymin else 0.02
+            ax.set_ylim(max(0, ymin - margin), min(1.0, ymax + margin))
+
+            # Baseline line (pos_rate)
+            ax.axhline(BASELINE_POS_RATE, color='gray', linestyle='--', linewidth=1)
+            ax.text(len(levels_present)-0.5, BASELINE_POS_RATE + 0.01,
+                    "Baseline", fontsize=8, color='gray')
+        else:
+            ax.set_ylim(0, 1.0)
 
         if i == 0:
             title = metric.upper()
