@@ -69,7 +69,32 @@ def common_eval(
     fpr, tpr = None, None  # Add to capture ROC curve if possible
 
     if hasattr(clf, "predict_proba"):
-        y_pred_proba = clf.predict_proba(X_test)[:, 1]
+        classes = getattr(clf, "classes_", np.array([0, 1]))
+        if 1 in classes:
+            pos_idx = int(np.where(classes == 1)[0][0])
+        else:
+            # fallback: assume the second column corresponds to positive
+            pos_idx = 1 if len(classes) > 1 else 0
+
+        y_pred_proba = clf.predict_proba(X_test)[:, pos_idx]
+
+        logging.info(
+            f"[EVAL] Using predict_proba column index {pos_idx} for positive class "
+            f"(classes={classes.tolist()})"
+        )
+
+        # --- Check for inverted probability direction (AUC < 0.5) ---
+        from sklearn.metrics import roc_auc_score
+        try:
+            auc_check = roc_auc_score(y_test, y_pred_proba)
+            if auc_check < 0.5:
+                logging.warning(f"[EVAL] AUC={auc_check:.3f} < 0.5 → Inverting predicted probabilities")
+                y_pred_proba = 1.0 - y_pred_proba
+                auc_check = 1.0 - auc_check
+        except Exception as e:
+            logging.warning(f"[EVAL] AUC check failed: {e}")
+
+
         fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
         roc_auc = auc(fpr, tpr)
 
@@ -82,6 +107,9 @@ def common_eval(
             "recall": recall.tolist(),
             "auc_pr": float(auc_pr)
         }
+        # Also keep raw probabilities for downstream diagnostics (histogram, threshold search)
+        # NOTE: This can be ~O(n_test) in size; acceptable for 1回の評価。
+        result_proba = y_pred_proba.tolist()
 
     mse = mean_squared_error(y_test, y_pred)
     report = classification_report(y_test, y_pred, output_dict=True)
@@ -112,6 +140,12 @@ def common_eval(
     if hasattr(clf, "predict_proba"):
         result["pr_curve"] = result_pr
         result["auc_pr"] = result_pr["auc_pr"]
+        result["y_pred_proba"] = result_proba
+        # Default threshold diagnostics (@0.5)
+        y_hat_05 = (y_pred_proba >= 0.5).astype(int)
+        pos_rate_pred_05 = float(y_hat_05.mean())
+        result["decision_threshold_default"] = 0.5
+        result["pred_pos_rate_at_0p5"] = pos_rate_pred_05
 
         logging.info(f"AUPRC (Average Precision): {auc_pr:.4f}")
 
