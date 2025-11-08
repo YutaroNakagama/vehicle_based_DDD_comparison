@@ -51,6 +51,25 @@ def select_features_and_scale(
         Preprocessed feature matrices (not yet scaled).
     """
 
+    # --- (NEW) Drop EEG-related columns as the very first step to avoid huge-value warnings ---
+    eeg_keywords = ["Channel_", "EEG", "Theta", "Alpha", "Beta", "Gamma", "Delta"]
+
+    def _drop_eeg(df: pd.DataFrame) -> pd.DataFrame:
+        if df is None:
+            return None
+        drop_cols = [c for c in df.columns if any(k in c for k in eeg_keywords)]
+        if drop_cols:
+            logging.info(f"[FS] Dropping {len(drop_cols)} EEG-related columns "
+                         f"(e.g., {drop_cols[:5]}) in feature selection stage")
+            df = df.drop(columns=drop_cols, errors="ignore")
+        return df
+
+    X_train = _drop_eeg(X_train)
+    X_val   = _drop_eeg(X_val)
+    X_test  = _drop_eeg(X_test)
+
+    # ---------------------------------------------------------------------
+
     # Drop subject_id if exists and sanitize values
     X_train = _check_nonfinite(X_train.drop(columns=["subject_id"], errors="ignore"), "X_train")
     X_val   = _check_nonfinite(X_val.drop(columns=["subject_id"], errors="ignore"), "X_val")
