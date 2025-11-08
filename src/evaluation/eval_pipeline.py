@@ -14,12 +14,15 @@ import datetime
 import json
 import logging
 import os
+import glob
+import numpy as np
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, fbeta_score
 from typing import Optional
 
 from src.utils.io.loaders import load_subjects_and_data, load_model_and_scaler
-from src.utils.io.feature_utils import align_and_normalize_features
 from src.utils.io.savers import save_eval_results
 from src.evaluation.models import lstm_eval, SvmA_eval, common_eval
+
 
 
 def eval_pipeline(
@@ -306,61 +309,54 @@ def eval_pipeline(
     else:
         result = common_eval(X_test, y_test, model, model_type, clf)
 
-    # --- (New) Save probability histogram if available ---
+    # ---------- Load saved threshold (if exists) and compute thresholded metrics ----------
     try:
-        probs = result.get("y_pred_proba", None)
-        if probs is not None and len(probs) > 0:
-            import matplotlib.pyplot as plt
-            out_job_dir = os.path.join("results", "evaluation", model, os.getenv("PBS_JOBID", jobid))
-            os.makedirs(out_job_dir, exist_ok=True)
-            fname_tag = (tag or "all").replace("/", "_")
-            hist_path = os.path.join(out_job_dir, f"proba_hist_{model}_{mode}_{fname_tag}.png")
+        threshold_path = None
+        # Prefer threshold under models/<model>/<jobid>/<jobid>[fold]/threshold_*.json
+        cand = glob.glob(f"models/{model}/{jobid}/**/threshold_*.json", recursive=True)
+        if not cand:
+            # Fallback: any threshold under this model root
+            cand = glob.glob(f"models/{model}/**/threshold_*.json", recursive=True)
+        if cand:
+            cand.sort(key=os.path.getmtime, reverse=True)
+            threshold_path = cand[0]
+            with open(threshold_path, "r") as f:
+                meta = json.load(f)
+            thr = float(meta.get("threshold", 0.5))
 
-            plt.figure(figsize=(6,4))
-            plt.hist(probs, bins=50)
-            plt.xlabel("Predicted probability (positive class)")
-            plt.ylabel("Count")
-            plt.title(f"RF Probabilities on Test | mode={mode} tag={tag}")
-            plt.tight_layout()
-            plt.savefig(hist_path, dpi=150)
-            plt.close()
+            # Ensure we have probabilities to apply the threshold.
+            if hasattr(clf, "predict_proba"):
+                proba = clf.predict_proba(X_test)[:, 1]
+            elif hasattr(clf, "decision_function"):
+                proba = clf.decision_function(X_test)
+            else:
+                proba = None
 
-            # Also search best F1 threshold for quick reference
-            from sklearn.metrics import precision_recall_curve
-            import numpy as np
-            prec, rec, thr = precision_recall_curve(y_test, np.array(probs))
-            f1 = 2 * prec * rec / (prec + rec + 1e-8)
-            if thr.size > 0:
-                best_idx = int(np.nanargmax(f1))
-                # precision_recall_curve returns thresholds size = len(prec)-1
-                best_thr = float(thr[min(best_idx, len(thr)-1)])
-                best_f1 = float(np.nanmax(f1))
-                result["best_threshold_f1"] = best_thr
-                result["best_f1"] = best_f1
-
-            # --- NEW: Apply best threshold for predicted labels ---
-            y_pred_thr = (np.array(probs) >= best_thr).astype(int)
-            from sklearn.metrics import classification_report, confusion_matrix
-
-            report_thr = classification_report(y_test, y_pred_thr, output_dict=True)
-            conf_thr = confusion_matrix(y_test, y_pred_thr)
-
-            # store threshold-specific evaluation
-            result["classification_report_best_thr"] = report_thr
-            result["confusion_matrix_best_thr"] = conf_thr.tolist()
-
-            pos_rate_pred_thr = float(y_pred_thr.mean())
-            result["pred_pos_rate_best_thr"] = pos_rate_pred_thr
-
-            logging.info(
-                f"[EVAL] Applied dynamic threshold={best_thr:.3f} | "
-                f"PosRate={pos_rate_pred_thr:.3%} | "
-                f"F1@best={best_f1:.3f}"
-            )
-
-            result["proba_hist_path"] = hist_path
+            if proba is not None:
+                yhat_thr = (proba >= thr).astype(int)
+                # specificity = TN / (TN + FP)
+                from sklearn.metrics import confusion_matrix
+                tn, fp, fn, tp = confusion_matrix(y_test, yhat_thr).ravel()
+                spec_thr = float(tn / (tn + fp)) if (tn + fp) > 0 else None
+                result.update({
+                    "thr": thr,
+                    "acc_thr": float(accuracy_score(y_test, yhat_thr)),
+                    "prec_thr": float(precision_score(y_test, yhat_thr, zero_division=0)),
+                    "recall_thr": float(recall_score(y_test, yhat_thr, zero_division=0)),
+                    "f1_thr": float(f1_score(y_test, yhat_thr, zero_division=0)),
+                    "f2_thr": float(fbeta_score(y_test, yhat_thr, beta=2, zero_division=0)),
+                    "specificity_thr": spec_thr,
+                    "_proba_len": int(len(proba)),
+                    "_threshold_file": threshold_path,
+                })
+                logging.info(f"[EVAL] Applied saved threshold={thr:.3f} from {threshold_path}")
+            else:
+                logging.info("[EVAL] Classifier has no probabilities; threshold application skipped.")
+        else:
+            logging.info("[EVAL] No threshold file found; using default metrics only.")
     except Exception as e:
-        logging.warning(f"[EVAL] Failed to write probability histogram: {e}")
+        logging.warning(f"[EVAL] Threshold application failed: {e}")
+
 
     # Step 6: Save results with metadata
     result.update(
