@@ -83,10 +83,10 @@ SAMPLE_RATE_EEG = 500
 # ---------------------------------------------------------------------
 # KSS labels
 # ---------------------------------------------------------------------
-KSS_BIN_LABELS = [1, 2, 3, 4, 5, 6, 8, 9]
+KSS_BIN_LABELS = [1, 2, 3, 4, 5, 8, 9]
 """list of int : Original Karolinska Sleepiness Scale (KSS) labels in dataset."""
 
-KSS_LABEL_MAP = {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 8:1, 9:1}
+KSS_LABEL_MAP = {1:0, 2:0, 3:0, 4:0, 5:0, 8:1, 9:1}
 """dict : Mapping of KSS labels to binary states (0=Alert, 1=Drowsy)."""
 
 # ---------------------------------------------------------------------
@@ -110,6 +110,6 @@ TOP_K_FEATURES = 10
 # ---------------------------------------------------------------------
 # Optuna
 # ---------------------------------------------------------------------
-N_TRIALS = 150
+N_TRIALS = 50
 """int : Number of trials for hyperparameter optimization using Optuna."""
 
