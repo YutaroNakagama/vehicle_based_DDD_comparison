@@ -34,9 +34,8 @@ from sklearn.feature_selection import (
     SelectKBest, mutual_info_classif, f_classif
 )
 
-from src.config import TOP_K_FEATURES
+from src.config import TOP_K_FEATURES, KSS_BIN_LABELS, KSS_LABEL_MAP
 from src.utils.io.loaders import read_subject_list, load_subject_csvs
-from src.utils.io.split import _check_nonfinite
 from src.utils.io.split_helpers import split_data, log_split_ratios
 from src.utils.io.feature_utils import normalize_feature_names
 from src.models.architectures.helpers import get_classifier
@@ -54,6 +53,25 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+# ------------------------------------------------------
+# Helper used by time_stratified split
+# ------------------------------------------------------
+def _prepare_df_with_label_and_features(df: pd.DataFrame):
+    """
+    Build 'label' (0/1) and feature column list for time-stratified split.
+    - Filters rows to KSS_BIN_LABELS
+    - Maps to binary 'label' via KSS_LABEL_MAP
+    - Returns (prepared_df, feature_columns)
+    """
+    d = df[df["KSS_Theta_Alpha_Beta"].isin(KSS_BIN_LABELS)].copy()
+    d["label"] = d["KSS_Theta_Alpha_Beta"].replace(KSS_LABEL_MAP).astype(int)
+    # vehicle-based features range
+    start_col = "Steering_Range"
+    end_col = "LaneOffset_AAA"
+    features = d.loc[:, start_col:end_col].columns.tolist()
+    if "subject_id" in d.columns:
+        features.append("subject_id")
+    return d, features
 
 # =========================
 # Public API
@@ -143,93 +161,158 @@ def train_pipeline(
     # ------------------------------------------------------------------
     # Step 0: Load all subject CSVs from data/processed/common
     # ------------------------------------------------------------------
-    from src.utils.io.loaders import load_subject_csvs
-    data, _ = load_subject_csvs("data/processed/common", model_type)
-    logging.info(f"[LOAD] Loaded {len(data)} rows from all subject CSVs.")
 
-    # ------------------------------------------------------------------
-    # Ensure subject_id exists (for filtering and matching training split)
-    # ------------------------------------------------------------------
+    # Initialize empty DataFrame for safety; actual data is loaded later
     import re
-    if "subject_id" not in data.columns:
-        # If 'filename' column is missing, try to infer from index or fallback pattern
-        if "filename" in data.columns:
-            fn_series = data["filename"]
-        elif "FileName" in data.columns:
-            fn_series = data["FileName"]
-        else:
-            # fallback: use index name pattern or create dummy "unknown"
-            fn_series = pd.Series(["unknown"] * len(data))
-            logging.warning("[WARN] 'filename' column not found; subject_id set to 'unknown'")
-
-        data["subject_id"] = fn_series.apply(
-            lambda f: re.search(r"S\d{4}_\d", f).group(0)
-            if isinstance(f, str) and re.search(r"S\d{4}_\d", f)
-            else "unknown"
-        )
-        unique_ids = data["subject_id"].nunique()
-        logging.info(f"[EVAL] Injected subject_id column (n={unique_ids} unique IDs).")
+    data = pd.DataFrame()
 
     # ------------------------------------------------------------------
     # Step 1.5: Pre-filtering by target/source subjects (same logic as train_pipeline)
     # ------------------------------------------------------------------
     if mode in ["source_only", "target_only"]:
+        # NOTE: We'll also filter `subject_list` so split_data() respects exclusions.
         default_rank_file = "results/domain_analysis/distance/rank_names.txt"
-        target_subjects = []
-        if tag and os.path.exists(default_rank_file):
+        # keep CLI arg if given; otherwise build from rank files
+        target_subjects = target_subjects or []
+        excluded_subjects: set[str] = set()
+
+        # --- Load all subject CSVs before filtering (fix for empty data issue) ---
+        data, _ = load_subject_csvs(
+            subject_list=subject_list,     
+            model_type=model_type,
+            base_path="data/processed/common",  
+            add_subject_id=True,   # ← ensure subject_id is available for row-level filtering
+        )
+        logging.info(f"[LOAD] Loaded {len(data)} rows from all subject CSVs before {mode} filtering.")
+
+        # Extract base key from tag regardless of rank_names.txt existence
+        tag_key = (tag or "").replace("rank_", "")
+
+        # rank_names.txt is only needed for target_only; source_only does not use it.
+        if mode == "target_only" and tag and os.path.exists(default_rank_file):
             with open(default_rank_file) as f:
                 lines = [x.strip() for x in f.readlines() if x.strip()]
-            tag_key = tag.replace("rank_", "")
-            match = [x for x in lines if tag_key in os.path.basename(x)]
-            if match:
-                group_file = os.path.normpath(match[0])
-                if os.path.exists(group_file):
-                    with open(group_file) as g:
-                        target_subjects = [s.strip() for s in g.readlines() if s.strip()]
-                    if "subject_id" in data.columns:
-                        if mode == "target_only":
-                            data = data[data["subject_id"].isin(target_subjects)].reset_index(drop=True)
-                        elif mode == "source_only":
-                            # ==========================================================
-                            # Exclude high/middle/low domains belonging to the same metric type
-                            # e.g., if target is mmd_mean_high → exclude mmd_mean_high/middle/low
-                            # ==========================================================
-                            from pathlib import Path
-                            ranks_dir = Path("results/domain_analysis/distance/ranks10")
 
-                            # infer metric type from tag_key (e.g., dtw_mean_high → dtw)
-                            metric_prefix = None
-                            for prefix in ["dtw", "mmd", "wasserstein"]:
-                                if prefix in tag_key:
-                                    metric_prefix = prefix
-                                    break
+        # --- Ensure subject_id exists after loading actual data ---
+        if "subject_id" not in data.columns:
+            if "filename" in data.columns:
+                fn_series = data["filename"]
+            elif "FileName" in data.columns:
+                fn_series = data["FileName"]
+            else:
+                fn_series = pd.Series(["unknown"] * len(data))
+                logging.warning("[WARN] 'filename' column not found; subject_id set to 'unknown'")
 
-                            excluded_subjects = set()
-                            if metric_prefix:
-                                for domain in ["high", "middle", "low"]:
-                                    file_path = ranks_dir / f"{metric_prefix}_mean_{domain}.txt"
-                                    if file_path.exists():
-                                        with open(file_path) as f:
-                                            for line in f:
-                                                s = line.strip()
-                                                if s:
-                                                    excluded_subjects.add(s)
+            data["subject_id"] = fn_series.apply(
+                lambda f: re.search(r"S\d{4}_\d", f).group(0)
+                if isinstance(f, str) and re.search(r"S\d{4}_\d", f)
+                else "unknown"
+            )
+            unique_ids = data["subject_id"].nunique()
+            logging.info(f"[EVAL] Injected subject_id column (n={unique_ids} unique IDs).")
 
-                            # Filter data to exclude all those domain subjects
-                            data = data[~data["subject_id"].isin(excluded_subjects)].reset_index(drop=True)
+        # --- Branch cleanly by mode ---
+        if mode == "target_only":
+            # Use rank_names.txt mapping to find the target group file
+            if 'lines' in locals():
+                # match only exact metric-domain files (avoid substring overlaps)
+                match = [x for x in lines if os.path.basename(x).startswith(tag_key)]
+                if match:
+                    group_file = os.path.normpath(match[0])
+                    if os.path.exists(group_file):
+                        with open(group_file) as g:
+                            file_targets = [s.strip() for s in g.readlines() if s.strip()]
+                            # If CLI also gave targets, take intersection to be safe; fallback to file if CLI empty
+                            if target_subjects:
+                                target_subjects = [s for s in target_subjects if s in file_targets]
+                            else:
+                                target_subjects = file_targets
+            # Guard: if we couldn't resolve targets, do not drop everything
+            if target_subjects:
+                data = data[data["subject_id"].isin(target_subjects)].reset_index(drop=True)
+            else:
+                logging.warning("[target_only] target_subjects is empty (tag=%s). Skipping filtering.", tag_key)
+            # === NEW: also restrict subject_list so split_data() truly uses only targets ===
+            if target_subjects:
+                before = len(subject_list)
+                subject_list = list(dict.fromkeys(target_subjects))  # keep order, dedup
+                logging.info("[target_only] Subject list overridden for split_data(): before=%d -> after=%d",
+                             before, len(subject_list))
+            else:
+                logging.warning("[target_only] subject_list was NOT overridden because target_subjects is empty.")
 
-                            logging.info(
-                                f"[EVAL] source_only: excluded {len(excluded_subjects)} subjects "
-                                f"from {metric_prefix} (high/middle/low). Remaining samples: {len(data)}"
-                            )
+        elif mode == "source_only":
+            # ==========================================================
+            # Exclude low/middle/high of the same metric (mmd/dtw/wasserstein)
+            # ==========================================================
+            from pathlib import Path
+            ranks_dir = Path("results/domain_analysis/distance/ranks10")
 
-                        else:
-                            # fallback (should not normally reach here)
-                            data = data[~data["subject_id"].isin(target_subjects)].reset_index(drop=True)
+            # Detect metric prefix (e.g., "dtw", "mmd", "wasserstein") from tag_key
+            metric_prefix = None
+            for prefix in ["dtw", "mmd", "wasserstein"]:
+                if prefix in (tag_key or ""):
+                    metric_prefix = prefix
+                    break
 
-                    # summary log for consistency
-                    logging.info(f"[EVAL] Data restricted to {len(data)} samples after {mode} filtering.")
+            if metric_prefix:
+                for domain in ["low", "middle", "high"]:
+                    file_path = ranks_dir / f"{metric_prefix}_mean_{domain}.txt"
+                    if file_path.exists():
+                        with open(file_path) as f:
+                            excluded_subjects.update(s.strip() for s in f if s.strip())
+                logging.info(f"[source_only] Excluding {len(excluded_subjects)} subjects from {metric_prefix} domains")
+            else:
+                logging.warning("[source_only] Could not detect metric prefix from tag=%s. No subjects excluded.", tag_key)
 
+            # Normalize & filter
+            excl_norm = {s.strip().upper() for s in excluded_subjects}
+            subj_norm = data["subject_id"].astype(str).str.strip().str.upper()
+            mask_keep = ~subj_norm.isin(excl_norm)
+
+            kept_subjects = data.loc[mask_keep, "subject_id"].unique().tolist()
+            removed_subjects = sorted(excluded_subjects)
+
+            logging.info(f"[source_only] Removed subjects: {removed_subjects}")
+            logging.info(f"[source_only] Kept subjects ({len(kept_subjects)}): {sorted(kept_subjects)}")
+
+            data = data[mask_keep].reset_index(drop=True)
+            logging.info(f"[EVAL] source_only complete -> remaining samples: {len(data)}")
+
+        else:
+            # Fallback (should not normally reach here)
+            data = data[~data["subject_id"].isin(target_subjects)].reset_index(drop=True)
+
+        # === Also filter subject_list so split_data() reflects exclusions ===
+        def _norm_sid(s: str) -> str:
+            return str(s).strip().upper()
+        if mode == "source_only" and excluded_subjects:
+            excl_norm_set = {_norm_sid(s) for s in excluded_subjects}
+            orig_cnt = len(subject_list)
+            subject_list = [s for s in subject_list if _norm_sid(s) not in excl_norm_set]
+            kept_cnt = len(subject_list)
+            logging.info("[source_only] Subject list filtered for split_data(): original=%d, removed=%d, kept=%d",
+                         orig_cnt, orig_cnt - kept_cnt, kept_cnt)
+            try:
+                removed_list = sorted(excluded_subjects)
+                logging.info("[source_only] Removed subjects (sample): %s",
+                             ", ".join(removed_list[:15]) + (" ..." if len(removed_list) > 15 else ""))
+            except Exception:
+                pass
+        elif mode == "source_only" and not excluded_subjects:
+            logging.warning("[source_only] excluded_subjects is empty (tag=%s). Check ranks10 files exist.", tag_key)
+
+        # summary log for consistency
+        logging.info(f"[EVAL] Data restricted to {len(data)} samples after {mode} filtering.")
+
+    # For pooled or other modes (no filtering needed), load if not already done
+    if mode not in ["source_only", "target_only"]:
+        data, _ = load_subject_csvs(
+            subject_list=subject_list,
+            model_type=model_type,
+            base_path="data/processed/common",
+            add_subject_id=True,   # ← ensure subject_id is available for row-level filtering
+        )
 
     # 2) Split data according to the selected strategy
     X_train, X_val, X_test, y_train, y_val, y_test = split_data(
@@ -247,6 +330,13 @@ def train_pipeline(
         y_train, y_val, y_test, 
         tag=f"{subject_split_strategy}|time_stratify={time_stratify_labels}"
     )
+    # Sanity: no excluded subject should appear in any split (source_only)
+    if mode == "source_only" and excluded_subjects:
+        def _get_sids(df):
+            return set(df["subject_id"].astype(str).str.upper()) if "subject_id" in df.columns else set()
+        leak = (_get_sids(X_train) | _get_sids(X_val) | _get_sids(X_test)) & {s.upper() for s in excluded_subjects}
+        if leak:
+            logging.error("[source_only] Found excluded subjects in splits: %s", sorted(list(leak))[:10])
 
     # Sanity checks
     if y_train.nunique() < 2:
