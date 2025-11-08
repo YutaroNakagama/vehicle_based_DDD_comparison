@@ -74,8 +74,10 @@ for path in glob.glob(search_pattern):
                     or data.get("metrics", {}).get("auc_pr")
                     or data.get("pr_curve", {}).get("auc_pr")
                 ),
+                # --- Prefer positive-class F1, fallback to macro avg
                 "f1": (
-                    data.get("f1")
+                    data.get("f1_pos")
+                    or data.get("classification_report", {}).get("1", {}).get("f1-score")
                     or data.get("classification_report", {}).get("macro avg", {}).get("f1-score")
                 ),
                 "mse": data.get("mse") or data.get("metrics", {}).get("mse"),
@@ -83,15 +85,24 @@ for path in glob.glob(search_pattern):
                     data.get("accuracy")
                     or data.get("classification_report", {}).get("accuracy")
                 ),
+                # --- Positive-class precision/recall; fallbacks remain for後方互換
                 "precision": (
-                    data.get("precision")
+                    data.get("precision_pos")
+                    or data.get("classification_report", {}).get("1", {}).get("precision")
                     or data.get("classification_report", {}).get("macro avg", {}).get("precision")
                 ),
                 "recall": (
-                    data.get("recall")
+                    data.get("recall_pos")
+                    or data.get("classification_report", {}).get("1", {}).get("recall")
                     or data.get("classification_report", {}).get("weighted avg", {}).get("recall")
                     or data.get("classification_report", {}).get("macro avg", {}).get("recall")
                 ),
+                "specificity": data.get("specificity"),
+                "precision_thr": data.get("prec_thr"),
+                "recall_thr": data.get("recall_thr"),
+                "f1_thr": data.get("f1_thr"),
+                "f2_thr": data.get("f2_thr"),
+                "specificity_thr": data.get("specificity_thr"),
                 "split": "test",  # for compatibility with old structure
             }
             records.append(row)
@@ -142,30 +153,42 @@ pivot_prec = pivot_metric(test_df, "precision")
 pivot_rec  = pivot_metric(test_df, "recall")
 pivot_acc  = pivot_metric(test_df, "accuracy")
 pivot_f1   = pivot_metric(test_df, "f1")
+pivot_spec = pivot_metric(test_df, "specificity")           
+pivot_prec_thr = pivot_metric(test_df, "precision_thr")     
+pivot_rec_thr  = pivot_metric(test_df, "recall_thr")        
+pivot_f1_thr   = pivot_metric(test_df, "f1_thr")            
+pivot_f2_thr   = pivot_metric(test_df, "f2_thr")            
+pivot_spec_thr = pivot_metric(test_df, "specificity_thr")   
 
 cmp = (
     pivot_auc
     .merge(pivot_aucpr, on=["model", "distance", "level"], how="outer")
     .merge(pivot_prec, on=["model", "distance", "level"], how="outer")
     .merge(pivot_rec,  on=["model", "distance", "level"], how="outer")
-    .merge(pivot_acc,  on=["model", "distance", "level"], how="outer")
     .merge(pivot_f1,   on=["model", "distance", "level"], how="outer")
+    .merge(pivot_spec, on=["model", "distance", "level"], how="outer")
+    .merge(pivot_prec_thr, on=["model", "distance", "level"], how="outer")
+    .merge(pivot_rec_thr,  on=["model", "distance", "level"], how="outer")
+    .merge(pivot_f1_thr,   on=["model", "distance", "level"], how="outer")
+    .merge(pivot_f2_thr,   on=["model", "distance", "level"], how="outer")
+    .merge(pivot_spec_thr, on=["model", "distance", "level"], how="outer")
 )
 
 def add_delta(df, metric):
-    a = f"{metric}_only_general"
+    a = f"{metric}_source_only"
     b = f"{metric}_finetune"
-    c = f"{metric}_only_target"
+    c = f"{metric}_target_only"
     if a in df.columns and b in df.columns:
         df[f"delta_{metric}_finetune_vs_only_general"] = df[b] - df[a]
     if c in df.columns and b in df.columns:
         df[f"delta_{metric}_finetune_vs_only_target"] = df[b] - df[c]
 
-for met in ["auc","precision","recall","accuracy","f1"]:
+for met in [
+    "auc", "auc_pr",
+    "precision", "recall", "accuracy", "f1",
+    "specificity", "precision_thr", "recall_thr", "f1_thr", "f2_thr", "specificity_thr"
+]:
     add_delta(cmp, met)
-
-# --- Add delta computation for AUPRC as well ---
-add_delta(cmp, "auc_pr")
 
 cmp_path = os.path.join(OUT_DIR, "summary_40cases_test_mode_compare_with_levels.csv")
 cmp.to_csv(cmp_path, index=False)
