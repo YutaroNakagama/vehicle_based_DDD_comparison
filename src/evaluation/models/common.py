@@ -114,6 +114,19 @@ def common_eval(
     mse = mean_squared_error(y_test, y_pred)
     report = classification_report(y_test, y_pred, output_dict=True)
     conf_matrix = confusion_matrix(y_test, y_pred)
+    mse = mean_squared_error(y_test, y_pred)
+    report = classification_report(y_test, y_pred, output_dict=True)
+    conf_matrix = confusion_matrix(y_test, y_pred)
+
+    # ---- Extract positive-class metrics (label=1) and specificity ----
+    pos = report.get("1", {})
+    neg = report.get("0", {})
+    # specificity = TN / (TN + FP)
+    try:
+        tn, fp, fn, tp = conf_matrix.ravel()
+        specificity = float(tn / (tn + fp)) if (tn + fp) > 0 else None
+    except Exception:
+        specificity = None
 
     logging.info(f"Model: {model_name}")
     logging.info(f"MSE: {mse:.4f}")
@@ -125,7 +138,16 @@ def common_eval(
         "mse": float(mse),
         "roc_auc": float(roc_auc) if roc_auc is not None else None,
         "classification_report": report,
-        "confusion_matrix": conf_matrix.tolist()
+        "confusion_matrix": conf_matrix.tolist(),
+        # Positive-class metrics (more relevant for detection)
+        "precision_pos": float(pos.get("precision")) if "precision" in pos else None,
+        "recall_pos": float(pos.get("recall")) if "recall" in pos else None,
+        "f1_pos": float(pos.get("f1-score")) if "f1-score" in pos else None,
+        "support_pos": int(pos.get("support")) if "support" in pos else None,
+        # Negative-class quick reference (optional)
+        "precision_neg": float(neg.get("precision")) if "precision" in neg else None,
+        "recall_neg": float(neg.get("recall")) if "recall" in neg else None,
+        "specificity": specificity
     }
 
     # Include ROC curve data if available
