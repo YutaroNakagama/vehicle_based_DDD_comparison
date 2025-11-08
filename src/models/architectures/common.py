@@ -11,13 +11,16 @@ import logging
 import json
 import numpy as np
 import pandas as pd
-from collections import OrderedDict
+import warnings
+import contextlib
+import sys
+from sklearn.exceptions import FitFailedWarning
 from lightgbm import LGBMClassifier
 from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
 from sklearn.metrics import (
     classification_report, roc_curve, auc, make_scorer, roc_auc_score,
-    accuracy_score, precision_score, recall_score, f1_score,
+    accuracy_score, precision_score, recall_score, f1_score, fbeta_score,
     confusion_matrix, precision_recall_curve, average_precision_score
 )
 from sklearn.ensemble import RandomForestClassifier
@@ -31,7 +34,6 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from imblearn.ensemble import BalancedRandomForestClassifier
 
-from src.models.feature_selection.anfis import calculate_id
 from src.config import MODEL_PKL_PATH, N_TRIALS
 
 from src.utils.io.savers import save_artifacts
@@ -110,11 +112,12 @@ def common_train(
         are saved to disk as pickle, JSON, and CSV artifacts.
     """
 
-    import pickle, json
-
     if eval_only:
         # ====== eval_only mode ======
         logging.info("[EVAL_ONLY] Loading pre-trained model and scaler...")
+        # define out_dir (was referenced before assignment)
+        out_dir = f"{MODEL_PKL_PATH}/{model_type}"
+
         with open(f"{out_dir}/{model}_{mode}{suffix}.pkl", "rb") as f:
             best_clf = pickle.load(f)
         with open(f"{out_dir}/scaler_{model}_{mode}{suffix}.pkl", "rb") as f:
@@ -216,9 +219,11 @@ def common_train(
                 "max_depth": trial.suggest_int("max_depth", 5, 30),
                 "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
                 "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 5),
+                # try smaller feature subsampling for minority recall/variance reduction
+                "max_features": trial.suggest_categorical("max_features", ["sqrt", "log2", None]),
                 "random_state": 42,
-                "class_weight": "balanced_subsample",
-#                "class_weight": "balanced",
+#                "class_weight": "balanced_subsample",
+                "class_weight": "balanced",
                 "n_jobs": 1,  
                 "n_estimators": trial.suggest_int("n_estimators", 100, 300),
                 "max_samples": None,  # avoid internal parallel chunking
@@ -324,9 +329,6 @@ def common_train(
         else:
             raise ValueError(f"Optuna tuning not implemented for model: {model}")
 
-        roc_auc = "roc_auc" #make_scorer(roc_auc_score, needs_proba=True)
-        ap_scorer = make_scorer(average_precision_score, needs_proba=True)
-
         try:
             if data_leak:
                 X_all = np.vstack([X_train[selected_features], X_test[selected_features]])
@@ -339,86 +341,53 @@ def common_train(
                     if len(bincounts) < 2 or np.any(bincounts == 0):
                         print(f"[CV-Leak] Fold {i} has only one class! Skipping trial.")
                         return 0.0
-                score_arr = cross_val_score(
-                    clf, X_all_scaled, y_all, 
-                    cv=cv, 
-                    scoring=roc_auc, #ap_scorer, 
-                    n_jobs=1
-                )
+                # Manual CV with AP scoring and (if possible) sample_weight
+                scores = []
+                for tr_idx, va_idx in cv.split(X_all_scaled, y_all):
+                    try:
+                        clf.fit(X_all_scaled[tr_idx], y_all[tr_idx])
+                    except TypeError:
+                        clf.fit(X_all_scaled[tr_idx], y_all[tr_idx])
+                    if hasattr(clf, "predict_proba"):
+                        p = clf.predict_proba(X_all_scaled[va_idx])[:, 1]
+                    else:
+                        p = clf.decision_function(X_all_scaled[va_idx])
+                    scores.append(average_precision_score(y_all[va_idx], p))
+                score = float(np.nanmean(scores)) if len(scores) else 0.0
             else:
                 # Use pre-trained scaler even inside the objective function
                 X_train_scaled = scaler.transform(X_train[selected_features])
                 cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)  
 
-                auc_list = []
-                
+                # ---- Manual CV with sample_weight & AP scoring ----
+                # Build class-balanced sample weights for each fold
+                def _make_sw(y):
+                    y = np.asarray(y)
+                    n_pos = int((y == 1).sum()); n_neg = int((y == 0).sum())
+                    n_all = len(y)
+                    if n_pos == 0 or n_neg == 0 or n_all == 0:
+                        return np.ones_like(y, dtype=float)
+                    return np.where(y == 1, n_all/(2.0*n_pos), n_all/(2.0*n_neg)).astype(float)
+
+                scores = []
                 for i, (tr_idx, va_idx) in enumerate(cv.split(X_train_scaled, y_train)):
-                    clf.fit(X_train_scaled[tr_idx], y_train[tr_idx])
-                    y_val = y_train[va_idx]
-                    y_pred = clf.predict(X_train_scaled[va_idx])
-                    bincount_pred = np.bincount(y_pred.astype(int))
-                    print(f"[CV] Fold {i}: y_val bincount: {np.bincount(y_val.astype(int))}, y_pred bincount: {bincount_pred}")
+                    y_tr = y_train.to_numpy()[tr_idx]
+                    sw_tr = _make_sw(y_tr)
                     try:
-                        y_proba = clf.predict_proba(X_train_scaled[va_idx])[:,1]
-                        auc = roc_auc_score(y_val, y_proba)
-                        print(f"[CV] Fold {i}: AUC = {auc}")
-                    except ValueError as e:
-                        print(f"[CV] Fold {i}: AUC nan! {e}")
-                        auc = np.nan
-                    auc_list.append(auc)
-                
-                print("manual auc_list:", auc_list)
-                print("manual auc mean (ignore nan):", np.nanmean(auc_list))
-                try:
-                    # --- FIX: enforce aligned indices and NumPy conversion ---
-                    X_aligned = X_train[selected_features].reset_index(drop=True)
-                    y_aligned = y_train.reset_index(drop=True)
-
-                    # Already scaled above; avoid double scaling to prevent index mismatch
-                    X_np = X_aligned.to_numpy()
-                    y_np = y_aligned.to_numpy()
-
-                    # Debug (optional)
-                    print("X_train index sample:", X_train.index[:5])
-                    print("y_train index sample:", y_train.index[:5])
-                    # --- FULL suppression: Python + OS-level stderr (joblib/fork safe) ---
-                    with warnings.catch_warnings():
-                        warnings.simplefilter("ignore", category=FitFailedWarning)
-                        with open(os.devnull, 'w') as devnull:
-                            old_stderr_fd = os.dup(sys.stderr.fileno())
-                            try:
-                                os.dup2(devnull.fileno(), sys.stderr.fileno())  # redirect at OS level
-                                with contextlib.redirect_stderr(devnull):
-                                    try:
-                                        score_arr = cross_val_score(
-                                            clf, X_np, y_np,
-                                            cv=cv,
-                                            scoring=roc_auc,
-                                            n_jobs=1,
-                                            error_score=np.nan
-                                        )
-                                    except Exception as e:
-                                        # --- catch and silence known index/scoring errors ---
-                                        msg = str(e)
-                                        if "not in index" in msg or "Scoring failed" in msg:
-                                            return 0.0
-                                        else:
-                                            logging.debug(f"[cross_val_score internal exception suppressed] {msg}")
-                                            return 0.0
-                            finally:
-                                os.dup2(old_stderr_fd, sys.stderr.fileno())  # restore stderr
-                                os.close(old_stderr_fd)
-                    print("cross_val_score:", score_arr)
-                    if np.any(np.isnan(score_arr)):
-                        print("Score nan detected: ", score_arr)
-                        return 0.0
-                    score = np.nanmean(score_arr)
-                except Exception as e:
-                    if "not in index" in str(e):
-                        pass  # silently skip
+                        clf.fit(X_train_scaled[tr_idx], y_tr, sample_weight=sw_tr)
+                    except TypeError:
+                        clf.fit(X_train_scaled[tr_idx], y_tr)
+                    y_va = y_train.to_numpy()[va_idx]
+                    if hasattr(clf, "predict_proba"):
+                        p = clf.predict_proba(X_train_scaled[va_idx])[:, 1]
                     else:
-                        logging.warning(f"[Optuna cross_val_score error] {e}")
+                        p = clf.decision_function(X_train_scaled[va_idx])
+                    ap = average_precision_score(y_va, p)
+                    print(f"[CV] Fold {i}: AP = {ap}")
+                    scores.append(ap)
+                if not scores or np.any(np.isnan(scores)):
                     return 0.0
+                score = float(np.nanmean(scores))
 
         except Exception as e:
             msg = str(e)
@@ -467,6 +436,28 @@ def common_train(
     X_val_scaled   = scaler.transform(X_val[selected_features])
     X_test_scaled  = scaler.transform(X_test[selected_features])
 
+    # ========== class-balanced sample_weight helpers ==========
+    def _make_sample_weight(y: np.ndarray) -> np.ndarray:
+        """Return class-balanced sample_weight (no-ops if any class count is 0)."""
+        y = np.asarray(y)
+        n_pos = int((y == 1).sum())
+        n_neg = int((y == 0).sum())
+        n_all = len(y)
+        if n_pos == 0 or n_neg == 0 or n_all == 0:
+            return np.ones_like(y, dtype=float)
+        w_pos = n_all / (2.0 * n_pos)
+        w_neg = n_all / (2.0 * n_neg)
+        sw = np.where(y == 1, w_pos, w_neg).astype(float)
+        return sw
+
+    sw_train = _make_sample_weight(y_train)
+    sw_val   = _make_sample_weight(y_val)
+    sw_test  = _make_sample_weight(y_test)
+    # ================================================================
+
+    # Track whether the classifier has already been fully fitted (e.g., after calibration)
+    already_fitted = False
+
     if model == "LightGBM":
         best_clf = LGBMClassifier(**best_params)
 
@@ -479,19 +470,30 @@ def common_train(
     elif model == "RF":
         if "class_weight" in best_params:
             best_params.pop("class_weight")
-        # Restrict parallel threads to 1 to avoid PBS CPU quota violations
-        # Updated: enforce stronger balancing for imbalanced KSS data
-        best_clf = RandomForestClassifier(**best_params, class_weight="balanced", n_jobs=1)
+        # Strengthen minority class weight and improve calibration robustness
+        best_clf = RandomForestClassifier(**best_params, class_weight={0:1.0, 1:10.0}, n_jobs=1)
 
-        # --- Add calibration step (Isotonic Regression) ---
-        try:
-            from sklearn.calibration import CalibratedClassifierCV
-            logging.info("[CALIBRATION] Applying isotonic calibration...")
-            calibrated = CalibratedClassifierCV(best_clf, cv='prefit', method='isotonic')
-            calibrated.fit(X_val_scaled, y_val)
-            best_clf = calibrated
-        except Exception as e:
-            logging.warning(f"[CALIBRATION] Skipped: {e}")
+        # --- Simplified calibration using train+val together (more stable) ---
+        from sklearn.calibration import CalibratedClassifierCV
+
+        logging.info("[CALIBRATION] Performing single-step calibration (Sigmoid, 5-fold CV) using train+val combined...")
+
+        # Concatenate train and validation sets for calibration stability
+        X_combined = np.vstack([X_train_scaled, X_val_scaled])
+        y_combined = np.concatenate([y_train, y_val])
+        sw_combined = np.concatenate([sw_train, sw_val]).astype(float)
+
+        # Train the base RF
+        best_clf.fit(X_combined, y_combined, sample_weight=sw_combined)
+
+        # Apply sigmoid calibration over 5-fold CV
+        calib = CalibratedClassifierCV(best_clf, cv=5, method='sigmoid')
+        calib.fit(X_combined, y_combined, sample_weight=sw_combined)
+
+        best_clf = calib
+        already_fitted = True
+
+        logging.info("[CALIBRATION] Completed single-step sigmoid calibration successfully.")
 
     elif model == "BalancedRF":
         best_clf = BalancedRandomForestClassifier(**best_params)
@@ -524,13 +526,24 @@ def common_train(
     else:
         raise ValueError(f"Unknown model: {model}")
 
-    if data_leak:
-        best_clf.fit(
-            np.vstack([X_train_scaled, X_val_scaled, X_test_scaled]),
-            np.concatenate([y_train, y_val, y_test])
-        )
-    else:
-        best_clf.fit(X_train_scaled, y_train)
+    # ---- Final fit with sample_weight (skip if already fitted, e.g., calibrated RF) ----
+    if not already_fitted:
+        try:
+            if data_leak:
+                X_all = np.vstack([X_train_scaled, X_val_scaled, X_test_scaled])
+                y_all = np.concatenate([y_train, y_val, y_test])
+                sw_all = np.concatenate([sw_train, sw_val, sw_test]).astype(float)
+                best_clf.fit(X_all, y_all, sample_weight=sw_all)
+            else:
+                best_clf.fit(X_train_scaled, y_train, sample_weight=sw_train)
+        except TypeError:
+            # Some estimators (e.g., KNeighborsClassifier) do not accept sample_weight in fit()
+            if data_leak:
+                X_all = np.vstack([X_train_scaled, X_val_scaled, X_test_scaled])
+                y_all = np.concatenate([y_train, y_val, y_test])
+                best_clf.fit(X_all, y_all)
+            else:
+                best_clf.fit(X_train_scaled, y_train)
 
     # ---------- Prepare feature metadata ----------
     feature_meta = {
@@ -550,7 +563,7 @@ def common_train(
             "precision": float(precision_score(ys, yhat, zero_division=0)),
             "recall": float(recall_score(ys, yhat, zero_division=0)),
             "f1": float(f1_score(ys, yhat, zero_division=0)),
-            "auc": float("nan"),
+            "auc": None,
             "ap":  float("nan"),
             "_y_true": ys,
             "_y_pred": yhat,
@@ -558,9 +571,10 @@ def common_train(
         if hasattr(best_clf, "predict_proba"):
             proba = best_clf.predict_proba(Xs)[:,1]
             try:
-                out["auc"] = float(roc_auc_score(ys, proba))
-            except Exception:
-                pass
+                auc_val = roc_auc_score(ys, proba)
+                out["auc"] = float(auc_val)
+            except Exception as e_auc:
+                logging.warning(f"[EVAL] AUC calculation failed: {e_auc}")
             try:
                 out["ap"] = float(average_precision_score(ys, proba))
             except Exception:
@@ -636,15 +650,23 @@ def common_train(
         mode=mode_full
     )
 
-    # ---------- Threshold optimization on validation (maximize F1) ----------
+    # ---------- Threshold optimization on validation (maximize F2) ----------
+    # Initialize threshold in case model lacks proba/decision_function.
+    best_threshold = None
     if m_val["_proba"] is not None:
 
+        # --- (CHANGED) Optimize F2 instead of F1 to emphasize recall on rare positives ---
         precision, recall, thresholds = precision_recall_curve(y_val, m_val["_proba"])
-        f1_scores = 2 * precision * recall / (precision + recall + 1e-8)
-        best_idx = np.argmax(f1_scores)
-        best_threshold = thresholds[best_idx] if best_idx < len(thresholds) else 0.5
+        beta = 2.0
+        # precision_recall_curve returns len(thresholds) = len(precision) - 1
+        prec_t = precision[:-1]
+        rec_t  = recall[:-1]
+        denom  = (beta**2) * prec_t + rec_t + 1e-8
+        f2_scores = (1 + beta**2) * (prec_t * rec_t) / denom
+        best_idx = int(np.argmax(f2_scores)) if f2_scores.size else 0
+        best_threshold = thresholds[best_idx] if thresholds.size else 0.5
 
-        logging.info(f"Optimal threshold for F1: {best_threshold:.3f}")
+        logging.info(f"Optimal threshold for F2 (β=2): {best_threshold:.3f}")
         
         def _apply_thr(proba, y_true):
             yhat = (proba >= best_threshold).astype(int)
@@ -653,20 +675,21 @@ def common_train(
                 "precision": float(precision_score(y_true, yhat, zero_division=0)),
                 "recall": float(recall_score(y_true, yhat, zero_division=0)),
                 "f1": float(f1_score(y_true, yhat, zero_division=0)),
+                "f2": float(fbeta_score(y_true, yhat, beta=2, zero_division=0)),
             }
 
         thr_val  = _apply_thr(m_val["_proba"],  y_val)
         thr_test = _apply_thr(m_test["_proba"], y_test) if m_test["_proba"] is not None else None
 
-        logging.info("Validation (F1-opt threshold) metrics: " + json.dumps(thr_val))
+        logging.info("Validation (F2-opt threshold) metrics: " + json.dumps(thr_val))
         if thr_test:
-            logging.info("Test (F1-opt threshold from Val) metrics: " + json.dumps(thr_test))
+            logging.info("Test (F2-opt threshold from Val) metrics: " + json.dumps(thr_test))
 
         # Save threshold
         threshold_meta = {
             "model": model,
             "threshold": best_threshold,
-            "metric": "F1-optimal",
+            "metric": "F2-optimal (beta=2)",
         }
         # ==========================================================
         # Save threshold under:
@@ -699,7 +722,17 @@ def common_train(
 
         os.makedirs(out_dir, exist_ok=True)
 
-        thr_path = os.path.join(out_dir, f"threshold_{model}_{mode}{suffix}.json")
+        # --- sanitize names to avoid repr() leakage in filenames ---
+        safe_model = str(model) if isinstance(model, str) else "model"
+        import re as _re
+        def _sanitize(s: str) -> str:
+            return _re.sub(r"[^A-Za-z0-9._-]+", "_", s).strip("_")
+        safe_mode = _sanitize(str(mode or "default"))
+        safe_suffix = _sanitize(str(suffix or ""))
+        fname = f"threshold_{safe_model}_{safe_mode}"
+        if safe_suffix:
+            fname += f"_{safe_suffix}"
+        thr_path = os.path.join(out_dir, f"{fname}.json")
         with open(thr_path, "w") as f:
             json.dump(threshold_meta, f, indent=2)
 
