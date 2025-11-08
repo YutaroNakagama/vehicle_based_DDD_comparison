@@ -23,6 +23,18 @@ from src.utils.io.split import (
     time_stratified_three_way_split,
 )
 
+# --- Local helper to avoid circular import with model_pipeline ---
+def _prepare_df_with_label_and_features(df: pd.DataFrame):
+    from src.config import KSS_BIN_LABELS, KSS_LABEL_MAP
+    d = df[df["KSS_Theta_Alpha_Beta"].isin(KSS_BIN_LABELS)].copy()
+    d["label"] = d["KSS_Theta_Alpha_Beta"].replace(KSS_LABEL_MAP).astype(int)
+    # vehicle-based feature range (adjust if your columns differ)
+    start_col = "Steering_Range"
+    end_col   = "LaneOffset_AAA"
+    features = d.loc[:, start_col:end_col].columns.tolist()
+    if "subject_id" in d.columns:
+        features.append("subject_id")
+    return d, features
 
 def log_split_ratios(y_tr: pd.Series, y_va: pd.Series, y_te: pd.Series, tag: str = "") -> None:
     """Log class distribution across splits."""
@@ -85,7 +97,6 @@ def split_data(
         data, _ = _load_subjects(use_subjects)
 
         if time_stratify_labels:
-            from src.models.model_pipeline import _prepare_df_with_label_and_features
             df_lab, feature_columns = _prepare_df_with_label_and_features(data)
             sort_keys = ("subject_id", "Timestamp")
             idx_tr, idx_va, idx_te = time_stratified_three_way_split(
@@ -107,6 +118,13 @@ def split_data(
             X_train, X_val, X_test, y_train, y_val, y_test = data_time_split_by_subject(
                 data, subject_col="subject_id", time_col="Timestamp"
             )
+        # --- Fallback if any split collapses to a single class ---
+        def _has_both(y: pd.Series) -> bool:
+            return y.nunique() == 2 and (y.value_counts().min() > 0)
+        if not (_has_both(y_train) and _has_both(y_val) and _has_both(y_test)):
+            logging.warning("[subject_time_split] Class collapsed in a split -> fallback to random split")
+            from src.utils.io import split as split_module
+            return split_module.data_split(data, random_state=seed)
         return X_train, X_val, X_test, y_train, y_val, y_test
 
     # --- Strategy: finetune_target_subjects ---
@@ -141,7 +159,13 @@ def split_data(
         return X_train, X_val, X_test, y_train, y_val, y_test
 
     # --- Default random split ---
-    data, _ = load_subject_csvs(subject_list, model_type, add_subject_id=True)
+    # If caller provided target_subjects (e.g., target_only mode) but strategy is "random",
+    # prefer them to ensure we really restrict to targets.
+    subjects_for_random = target_subjects if (target_subjects and len(target_subjects) > 0) else subject_list
+    if target_subjects and len(target_subjects) > 0:
+        logging.info("[split:random] Using target_subjects (%d) in place of subject_list (%d).",
+                     len(target_subjects), len(subject_list))
+    data, _ = load_subject_csvs(subjects_for_random, model_type, add_subject_id=True)
 
     # Explicitly reference the module to avoid scope-shadowing issues (UnboundLocalError)
     from src.utils.io import split as split_module
