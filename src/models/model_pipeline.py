@@ -24,26 +24,23 @@ import os
 import json
 import pickle
 import logging
+import re
 from typing import Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-from sklearn.feature_selection import (
-    SelectKBest, mutual_info_classif, f_classif
-)
 
 from src.config import TOP_K_FEATURES, KSS_BIN_LABELS, KSS_LABEL_MAP
 from src.utils.io.loaders import read_subject_list, load_subject_csvs
+from src.utils.io.loaders import get_model_type
 from src.utils.io.split_helpers import split_data, log_split_ratios
 from src.utils.io.feature_utils import normalize_feature_names
+from src.utils.io.savers import save_artifacts
 from src.models.architectures.helpers import get_classifier
 from src.models.architectures.SvmA import SvmA_train
 from src.models.architectures.lstm import lstm_train
 from src.models.architectures.common import common_train
 from src.models.architectures.train_helpers import train_model
-from src.utils.io.savers import save_artifacts
 from src.models.feature_selection.feature_helpers import select_features_and_scale
 from src.models.feature_selection.rf_importance import select_top_features_by_importance
 
@@ -134,7 +131,6 @@ def train_pipeline(
     # 1) Subject list and basic metadata
     subject_list = read_subject_list()
     # --- Resolve directory type using helper ---
-    from src.utils.io.loaders import get_model_type
     model_type = get_model_type(model_name)
 
     suffix = f"_{mode}" if mode else ""
@@ -163,8 +159,10 @@ def train_pipeline(
     # ------------------------------------------------------------------
 
     # Initialize empty DataFrame for safety; actual data is loaded later
-    import re
     data = pd.DataFrame()
+    # ensure name exists for later guarded checks
+    excluded_subjects: set[str] = set()
+    target_subjects_resolved: List[str] = []
 
     # ------------------------------------------------------------------
     # Step 1.5: Pre-filtering by target/source subjects (same logic as train_pipeline)
@@ -173,8 +171,6 @@ def train_pipeline(
         # NOTE: We'll also filter `subject_list` so split_data() respects exclusions.
         default_rank_file = "results/domain_analysis/distance/rank_names.txt"
         # keep CLI arg if given; otherwise build from rank files
-        target_subjects = target_subjects or []
-        excluded_subjects: set[str] = set()
 
         # --- Load all subject CSVs before filtering (fix for empty data issue) ---
         data, _ = load_subject_csvs(
@@ -227,6 +223,7 @@ def train_pipeline(
                                 target_subjects = [s for s in target_subjects if s in file_targets]
                             else:
                                 target_subjects = file_targets
+                target_subjects_resolved = list(dict.fromkeys(target_subjects or []))
             # Guard: if we couldn't resolve targets, do not drop everything
             if target_subjects:
                 data = data[data["subject_id"].isin(target_subjects)].reset_index(drop=True)
@@ -240,7 +237,6 @@ def train_pipeline(
                              before, len(subject_list))
             else:
                 logging.warning("[target_only] subject_list was NOT overridden because target_subjects is empty.")
-
         elif mode == "source_only":
             # ==========================================================
             # Exclude low/middle/high of the same metric (mmd/dtw/wasserstein)
@@ -279,9 +275,30 @@ def train_pipeline(
             data = data[mask_keep].reset_index(drop=True)
             logging.info(f"[EVAL] source_only complete -> remaining samples: {len(data)}")
 
-        else:
-            # Fallback (should not normally reach here)
-            data = data[~data["subject_id"].isin(target_subjects)].reset_index(drop=True)
+            # --- Resolve target 10 subjects from rank_names.txt (same tag_key detection as target_only) ---
+            default_rank_file = "results/domain_analysis/distance/rank_names.txt"
+            if tag and os.path.exists(default_rank_file):
+                with open(default_rank_file) as f:
+                    lines = [x.strip() for x in f.readlines() if x.strip()]
+                match = [x for x in lines if os.path.basename(x).startswith(tag_key)]
+                if match:
+                    group_file = os.path.normpath(match[0])
+                    if os.path.exists(group_file):
+                        with open(group_file) as g:
+                            target_subjects_resolved = [s.strip() for s in g.readlines() if s.strip()]
+                        logging.info(f"[source_only] Resolved target 10 from {group_file} (n={len(target_subjects_resolved)})")
+                    else:
+                        logging.warning(f"[source_only] Target group file not found: {group_file}")
+                else:
+                    logging.warning(f"[source_only] No matching group found for tag={tag_key}")
+            else:
+                logging.warning("[source_only] tag is empty or rank_names.txt missing; target 10 unresolved.")
+
+            if not target_subjects_resolved:
+                logging.error("[source_only] Target subjects could not be resolved. "
+                              "Please provide a valid tag (e.g., rank_dtw_mean_high).")
+                # We still proceed with training-only (no val/test), but downstream checks may stop run.
+
 
         # === Also filter subject_list so split_data() reflects exclusions ===
         def _norm_sid(s: str) -> str:
@@ -304,6 +321,12 @@ def train_pipeline(
 
         # summary log for consistency
         logging.info(f"[EVAL] Data restricted to {len(data)} samples after {mode} filtering.")
+    elif mode == "joint_train":
+        # Use both source and target subjects for training (no row-level filtering; just widen subject_list)
+        target_subjects = target_subjects or []
+        logging.info("[joint_train] Combining both source and target subjects for training.")
+        subject_list = list(dict.fromkeys(list(subject_list) + list(target_subjects)))
+        logging.info(f"[joint_train] Combined subject list size: {len(subject_list)}")
 
     # For pooled or other modes (no filtering needed), load if not already done
     if mode not in ["source_only", "target_only"]:
@@ -314,18 +337,52 @@ def train_pipeline(
             add_subject_id=True,   # ← ensure subject_id is available for row-level filtering
         )
 
-    # 2) Split data according to the selected strategy
-    X_train, X_val, X_test, y_train, y_val, y_test = split_data(
-        subject_split_strategy=subject_split_strategy,
-        subject_list=subject_list,
-        target_subjects=target_subjects or [],
-        model_type=model_type,
-        seed=seed,
-        time_stratify_labels=time_stratify_labels,
-        time_stratify_tolerance=time_stratify_tolerance,
-        time_stratify_window=time_stratify_window,
-        time_stratify_min_chunk=time_stratify_min_chunk,
-    )
+    if mode == "target_only":
+        X_train, X_val, X_test, y_train, y_val, y_test = split_data(
+            subject_split_strategy="subject_time_split",
+            subject_list=subject_list,                         # will be ignored if target_subjects provided
+            target_subjects=target_subjects_resolved or target_subjects or [],
+            model_type=model_type,
+            seed=seed,
+            time_stratify_labels=time_stratify_labels,
+            time_stratify_tolerance=time_stratify_tolerance,
+            time_stratify_window=time_stratify_window,
+            time_stratify_min_chunk=time_stratify_min_chunk,
+        )
+    elif mode == "source_only":
+        df_src, feat_cols = _prepare_df_with_label_and_features(data)
+        X_train = df_src[feat_cols].drop(columns=["subject_id"], errors="ignore").select_dtypes(include=[np.number])
+        y_train = df_src["label"].astype(int)
+
+        if target_subjects_resolved:
+            X_t_tr, X_val, X_test, y_t_tr, y_val, y_test = split_data(
+                subject_split_strategy="subject_time_split",
+                subject_list=subject_list,                     # not used
+                target_subjects=target_subjects_resolved,
+                model_type=model_type,
+                seed=seed,
+                time_stratify_labels=time_stratify_labels,
+                time_stratify_tolerance=time_stratify_tolerance,
+                time_stratify_window=time_stratify_window,
+                time_stratify_min_chunk=time_stratify_min_chunk,
+            )
+            logging.info("[source_only] Target(10) time-wise split done -> use val/test only for eval.")
+        else:
+            X_val = pd.DataFrame(); y_val = pd.Series(dtype=int)
+            X_test = pd.DataFrame(); y_test = pd.Series(dtype=int)
+    else:
+        X_train, X_val, X_test, y_train, y_val, y_test = split_data(
+            subject_split_strategy=subject_split_strategy,
+            subject_list=subject_list,
+            target_subjects=target_subjects or [],
+            model_type=model_type,
+            seed=seed,
+            time_stratify_labels=time_stratify_labels,
+            time_stratify_tolerance=time_stratify_tolerance,
+            time_stratify_window=time_stratify_window,
+            time_stratify_min_chunk=time_stratify_min_chunk,
+        )
+
     log_split_ratios(
         y_train, y_val, y_test, 
         tag=f"{subject_split_strategy}|time_stratify={time_stratify_labels}"
@@ -407,33 +464,83 @@ def train_pipeline(
     selected_features = normalize_feature_names(selected_features)
     logging.info(f"[TRAIN] Normalized {len(selected_features)} feature names for consistency.")
 
+    # --- Prepare feature metadata BEFORE early checkpoint ---
+    feature_meta = {
+        "selected_features": selected_features,
+        "feature_source": model_type,
+    }
+
+    # ------------------------------------------------------
+    # (A) Early checkpoint: save scaler & selected features
+    #     right after feature selection so that the fold
+    #     directory is created even if training is interrupted.
+    # ------------------------------------------------------
+    try:
+        # NOTE:
+        # - We intentionally pass 'suffix' (contains "...<jobid>[<n>]") so
+        #   savers.save_artifacts can infer the directory correctly.
+        # - model_obj=None is acceptable; saver will still persist scaler and features.
+        from src.utils.io.savers import save_artifacts
+        save_artifacts(
+            model_name=model_name,
+            suffix=suffix,                 # maps to 'mode' inside saver
+            best_clf=None,                 # model not trained yet
+            scaler=scaler,
+            selected_features=selected_features,
+            feature_meta=feature_meta,
+            # best_threshold is unknown here; skip
+        )
+        logging.info("[CHECKPOINT] Early checkpoint saved (scaler & selected_features).")
+    except Exception as e:
+        logging.warning(f"[CHECKPOINT] Early checkpoint failed to save: {e}")
+
     # 4) Train the model
-    best_clf, scaler, best_threshold, feature_meta, results = train_model(
-        model_name=model_name,
-        model_type=model_type,
-        X_train_fs=X_train_fs,
-        X_val_fs=X_val_fs,
-        X_test_fs=X_test_fs,
-        y_train=y_train,
-        y_val=y_val,
-        y_test=y_test,
-        selected_features=selected_features,
-        scaler=scaler,
-        suffix=suffix,
-    )
+    best_clf = None
+    best_threshold = None
+    results = {}
+    try:
+        best_clf, scaler, best_threshold, feature_meta, results = train_model(
+            model_name=model_name,
+            model_type=model_type,
+            X_train_fs=X_train_fs,
+            X_val_fs=X_val_fs,
+            X_test_fs=X_test_fs,
+            y_train=y_train,
+            y_val=y_val,
+            y_test=y_test,
+            selected_features=selected_features,
+            scaler=scaler,
+            suffix=suffix,
+        )
+    except KeyboardInterrupt:
+        logging.error("[TRAIN] Interrupted (KeyboardInterrupt). Will persist current checkpoint.")
+    except Exception as e:
+        logging.error(f"[TRAIN] Exception during training: {e}. Will persist current checkpoint.")
+    finally:
+        # ------------------------------------------------------
+        # (B) Always persist whatever we have so far
+        #     (model may be None if interrupted before fit).
+        # ------------------------------------------------------
+        try:
+            from src.utils.io.savers import save_artifacts
+            save_artifacts(
+                model_name=model_name,
+                suffix=suffix,
+                best_clf=best_clf,
+                scaler=scaler,
+                selected_features=selected_features,
+                feature_meta=feature_meta,
+                best_threshold=best_threshold,
+                # results are logged elsewhere; saver ignores unknown kwargs
+            )
+            logging.info("[CHECKPOINT] Final/partial artifacts saved in finally-block.")
+        except Exception as e:
+            logging.error(f"[CHECKPOINT] Failed to save artifacts in finally-block: {e}")
 
     # 5) Save artifacts
-    save_artifacts(
-        model_name=model_name,
-        model_type=model_type,
-        suffix=suffix,
-        best_clf=best_clf,
-        scaler=scaler,
-        selected_features=selected_features,
-        feature_meta=feature_meta,
-        results=results,
-        best_threshold=best_threshold,
-    )
+    # NOTE: artifacts were already saved in the finally-block above.
+    # Keeping this step NO-OP avoids double saving.
+    logging.info("[DONE] Training stage completed (artifacts already saved).")
 
     logging.info("[DONE] Training complete for %s%s", model_name, suffix)
 
