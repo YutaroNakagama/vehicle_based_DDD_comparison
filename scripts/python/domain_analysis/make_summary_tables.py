@@ -1,8 +1,8 @@
 # misc/aggregate_summary_40cases.py
 import os, re, glob
-import pandas as pd
-
 import json
+import pandas as pd
+from typing import Optional, Dict
 
 EVAL_DIR = "results/evaluation/RF"
 OUT_DIR  = "results/domain_analysis/summary/csv"
@@ -21,15 +21,48 @@ else:
     search_pattern = os.path.join(EVAL_DIR, "*", "*", "eval_results_*.json")
     print(f"[WARN] latest_job.txt not found — scanning all jobs.")
 
+def _get_pos_block(cr: Dict) -> Optional[Dict]:
+    """Return the positive-class block from classification_report.
+    This handles historical key variations such as "1", "1.0", "True", "pos", "positive".
+    """
+    if not isinstance(cr, dict):
+        return None
+    for k in ("1", "1.0", "True", "pos", "positive"):
+        blk = cr.get(k)
+        if isinstance(blk, dict):
+            return blk
+    return None
+
+def _get_metric_from_pos(cr: Dict, field: str) -> Optional[float]:
+    """Get a metric field (e.g., 'precision', 'recall', 'f1-score') from the positive-class block.
+    Returns None if not found.
+    """
+    blk = _get_pos_block(cr)
+    if blk is None:
+        return None
+    val = blk.get(field, None)
+    try:
+        return float(val) if val is not None else None
+    except Exception:
+        return None
+
+
+
 for path in glob.glob(search_pattern):
     try:
         with open(path, "r") as f:
             data = json.load(f)
-            # --- extract distance & level from filename ---
+            # --- robust distance/level extraction ---
             fname = os.path.basename(path)
-            # accept both lowercase and uppercase for robustness
-            m = re.search(r"rank_([A-Za-z]+)_mean_([A-Za-z]+)", fname)
-            dist, level = (m.groups() if m else ("unknown", "unknown"))
+            dist = data.get("distance")
+            level = data.get("level")
+            if not dist or not level:
+                m = re.search(r"rank_([^_]+(?:_[^_]+)*)_([A-Za-z]+)", fname)
+                if m:
+                    dist = dist or m.group(1)
+                    level = level or m.group(2)
+            dist = dist or "unknown"
+            level = level or "unknown"
 
             # --- estimate positive rate (baseline) if available ---
             pos_rate = None
@@ -54,6 +87,7 @@ for path in glob.glob(search_pattern):
             else:
                 pos_rate = data.get("pos_rate") or data.get("positive_rate")
 
+            cr = data.get("classification_report", {}) or {}
             # backward-compatible columns (robust metric extraction)
             row = {
                 "file": fname,
@@ -74,37 +108,63 @@ for path in glob.glob(search_pattern):
                     or data.get("metrics", {}).get("auc_pr")
                     or data.get("pr_curve", {}).get("auc_pr")
                 ),
-                # --- Prefer positive-class F1, fallback to macro avg
+                # --- Positive-class F1 (binary, pos_label=1). Fall back only if truly missing.
                 "f1": (
                     data.get("f1_pos")
-                    or data.get("classification_report", {}).get("1", {}).get("f1-score")
-                    or data.get("classification_report", {}).get("macro avg", {}).get("f1-score")
+                    or _get_metric_from_pos(cr, "f1-score")
+                    or cr.get("macro avg", {}).get("f1-score")
                 ),
                 "mse": data.get("mse") or data.get("metrics", {}).get("mse"),
                 "accuracy": (
                     data.get("accuracy")
-                    or data.get("classification_report", {}).get("accuracy")
+                    or cr.get("accuracy")
                 ),
-                # --- Positive-class precision/recall; fallbacks remain for後方互換
+                # --- Positive-class precision/recall; keep explicit and avoid accidental accuracy/weighted swaps.
                 "precision": (
                     data.get("precision_pos")
-                    or data.get("classification_report", {}).get("1", {}).get("precision")
-                    or data.get("classification_report", {}).get("macro avg", {}).get("precision")
+                    or _get_metric_from_pos(cr, "precision")
+                    or cr.get("macro avg", {}).get("precision")
                 ),
                 "recall": (
                     data.get("recall_pos")
-                    or data.get("classification_report", {}).get("1", {}).get("recall")
-                    or data.get("classification_report", {}).get("weighted avg", {}).get("recall")
-                    or data.get("classification_report", {}).get("macro avg", {}).get("recall")
+                    or _get_metric_from_pos(cr, "recall")
+                    or cr.get("macro avg", {}).get("recall")
                 ),
                 "specificity": data.get("specificity"),
-                "precision_thr": data.get("prec_thr"),
-                "recall_thr": data.get("recall_thr"),
-                "f1_thr": data.get("f1_thr"),
-                "f2_thr": data.get("f2_thr"),
+                # --- Thresholded (positive-class) metrics. Prefer explicit *_thr_pos; keep legacy keys as fallback.
+                "precision_thr": (
+                    data.get("precision_thr_pos")
+                    or data.get("prec_thr")
+                ),
+                "recall_thr": (
+                    data.get("recall_thr_pos")
+                    or data.get("recall_thr")
+                ),
+                "f1_thr": (
+                    data.get("f1_thr_pos")
+                    or data.get("f1_thr")
+                ),
+                "f2_thr": (
+                    data.get("f2_thr_pos")
+                    or data.get("f2_thr")
+                ),
                 "specificity_thr": data.get("specificity_thr"),
                 "split": "test",  # for compatibility with old structure
             }
+
+            # --- New: derive non-threshold F2 from precision/recall when available ---
+            # F2 = 5 * P * R / (4*P + R)
+            try:
+                P = row.get("precision", None)
+                R = row.get("recall", None)
+                if P is not None and R is not None and (4*P + R) not in (0, None):
+                    row["f2"] = 5 * P * R / (4 * P + R)
+                else:
+                    # fallback if JSON already provided a non-threshold F2
+                    row["f2"] = data.get("f2")
+            except Exception:
+                row["f2"] = data.get("f2")
+
             records.append(row)
     except Exception as e:
         print(f"[WARN] skip {path}: {e}")
@@ -119,6 +179,10 @@ all_path = os.path.join(OUT_DIR, "summary_40cases_all_splits.csv")
 all_metrics.to_csv(all_path, index=False)
 
 test_df = all_metrics[all_metrics["split"]=="test"].copy()
+if "level" in test_df.columns:
+    cat = pd.CategoricalDtype(categories=["high", "middle", "low"], ordered=True)
+    test_df["level"] = test_df["level"].astype(cat)
+
 test_path = os.path.join(OUT_DIR, "summary_40cases_test.csv")
 test_df.to_csv(test_path, index=False)
 
@@ -153,12 +217,7 @@ pivot_prec = pivot_metric(test_df, "precision")
 pivot_rec  = pivot_metric(test_df, "recall")
 pivot_acc  = pivot_metric(test_df, "accuracy")
 pivot_f1   = pivot_metric(test_df, "f1")
-pivot_spec = pivot_metric(test_df, "specificity")           
-pivot_prec_thr = pivot_metric(test_df, "precision_thr")     
-pivot_rec_thr  = pivot_metric(test_df, "recall_thr")        
-pivot_f1_thr   = pivot_metric(test_df, "f1_thr")            
-pivot_f2_thr   = pivot_metric(test_df, "f2_thr")            
-pivot_spec_thr = pivot_metric(test_df, "specificity_thr")   
+pivot_f2   = pivot_metric(test_df, "f2")
 
 cmp = (
     pivot_auc
@@ -166,28 +225,17 @@ cmp = (
     .merge(pivot_prec, on=["model", "distance", "level"], how="outer")
     .merge(pivot_rec,  on=["model", "distance", "level"], how="outer")
     .merge(pivot_f1,   on=["model", "distance", "level"], how="outer")
-    .merge(pivot_spec, on=["model", "distance", "level"], how="outer")
-    .merge(pivot_prec_thr, on=["model", "distance", "level"], how="outer")
-    .merge(pivot_rec_thr,  on=["model", "distance", "level"], how="outer")
-    .merge(pivot_f1_thr,   on=["model", "distance", "level"], how="outer")
-    .merge(pivot_f2_thr,   on=["model", "distance", "level"], how="outer")
-    .merge(pivot_spec_thr, on=["model", "distance", "level"], how="outer")
+    .merge(pivot_f2,   on=["model", "distance", "level"], how="outer")
+    .merge(pivot_acc,  on=["model", "distance", "level"], how="outer")
 )
 
 def add_delta(df, metric):
     a = f"{metric}_source_only"
-    b = f"{metric}_finetune"
     c = f"{metric}_target_only"
-    if a in df.columns and b in df.columns:
-        df[f"delta_{metric}_finetune_vs_only_general"] = df[b] - df[a]
-    if c in df.columns and b in df.columns:
-        df[f"delta_{metric}_finetune_vs_only_target"] = df[b] - df[c]
-
-for met in [
-    "auc", "auc_pr",
-    "precision", "recall", "accuracy", "f1",
-    "specificity", "precision_thr", "recall_thr", "f1_thr", "f2_thr", "specificity_thr"
-]:
+    if a in df.columns and c in df.columns:
+        df[f"delta_{metric}_source_minus_target"] = df[a] - df[c]
+ 
+for met in ["auc", "auc_pr", "precision", "recall", "accuracy", "f1", "f2"]:
     add_delta(cmp, met)
 
 cmp_path = os.path.join(OUT_DIR, "summary_40cases_test_mode_compare_with_levels.csv")
