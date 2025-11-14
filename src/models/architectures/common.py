@@ -54,6 +54,7 @@ joblib.parallel_backend("sequential")  # Prevent joblib from spawning extra work
 
 # --- Ensure Optuna runs trials strictly serially ---
 optuna.logging.set_verbosity(optuna.logging.WARNING)
+OPTUNA_TIMEOUT_SEC = int(os.getenv("OPTUNA_TIMEOUT_SEC", "0"))  # 0 = no timeout
 
 import gc
 
@@ -171,15 +172,15 @@ def common_train(
     X_test  = X_test.loc[:,  ~X_test.columns.duplicated()]
 
     def objective(trial):
-        print('X_train.shape:', X_train.shape)
-        print('X_train nan:', np.isnan(X_train.values).sum(), 'inf:', np.isinf(X_train.values).sum())
-        print('X_train col nan count:', np.isnan(X_train.values).sum(axis=0))
-        print('X_train all const col:', [c for c in X_train.columns if X_train[c].nunique() == 1])
-        print('selected_features:', selected_features)
-        print('y_train shape:', y_train.shape)
-        print('y_train nan:', np.isnan(y_train).sum(), 'unique:', np.unique(y_train))
-        print('X_train[selected_features] shape:', X_train[selected_features].shape)
-        print('X_train[selected_features] col nan:', np.isnan(X_train[selected_features].values).sum(axis=0))
+        logging.debug(f'X_train.shape: {X_train.shape}')
+        logging.debug(f'X_train nan: {np.isnan(X_train.values).sum()} inf: {np.isinf(X_train.values).sum()}')
+        logging.debug(f'X_train col nan count: {np.isnan(X_train.values).sum(axis=0)}')
+        logging.debug(f'X_train all const col: {[c for c in X_train.columns if X_train[c].nunique() == 1]}')
+        logging.debug(f'selected_features: {selected_features}')
+        logging.debug(f'y_train shape: {y_train.shape}')
+        logging.debug(f'y_train nan: {np.isnan(y_train).sum()} unique: {np.unique(y_train)}')
+        logging.debug(f'X_train[selected_features] shape: {X_train[selected_features].shape}')
+        logging.debug(f'X_train[selected_features] col nan: {np.isnan(X_train[selected_features].values).sum(axis=0)}')
  
         if model == "LightGBM":
             params = {
@@ -216,7 +217,7 @@ def common_train(
 
         elif model == "RF":
             params = {
-                "max_depth": trial.suggest_int("max_depth", 5, 30),
+                "max_depth": trial.suggest_int("max_depth", 6, 20),
                 "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
                 "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 5),
                 # try smaller feature subsampling for minority recall/variance reduction
@@ -225,7 +226,7 @@ def common_train(
 #                "class_weight": "balanced_subsample",
                 "class_weight": "balanced",
                 "n_jobs": 1,  
-                "n_estimators": trial.suggest_int("n_estimators", 100, 300),
+                "n_estimators": trial.suggest_int("n_estimators", 120, 220),
                 "max_samples": None,  # avoid internal parallel chunking
                 "warm_start": False,
             }
@@ -357,7 +358,8 @@ def common_train(
             else:
                 # Use pre-trained scaler even inside the objective function
                 X_train_scaled = scaler.transform(X_train[selected_features])
-                cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)  
+                # Lighter CV: 3-fold is usually enough for model ranking here
+                cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
 
                 # ---- Manual CV with sample_weight & AP scoring ----
                 # Build class-balanced sample weights for each fold
@@ -383,7 +385,8 @@ def common_train(
                     else:
                         p = clf.decision_function(X_train_scaled[va_idx])
                     ap = average_precision_score(y_va, p)
-                    print(f"[CV] Fold {i}: AP = {ap}")
+                    # Avoid flooding stdout; keep detailed per-fold in debug only
+                    logging.debug(f"[CV] Fold {i}: AP = {ap:.6f}")
                     scores.append(ap)
                 if not scores or np.any(np.isnan(scores)):
                     return 0.0
@@ -415,12 +418,14 @@ def common_train(
             pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=1, interval_steps=1)
         )
         # === Safe Optuna execution (no parallel trials, forced GC after each) ===
-        study.optimize(
-            objective,
+        optimize_kwargs = dict(
             n_trials=N_TRIALS,
             n_jobs=1,
             gc_after_trial=True,
         )
+        if OPTUNA_TIMEOUT_SEC > 0:
+            optimize_kwargs["timeout"] = OPTUNA_TIMEOUT_SEC
+        study.optimize(objective, **optimize_kwargs)
         best_params = study.best_params
         logging.info(f"Best hyperparameters: {best_params}")
     else:
@@ -470,7 +475,7 @@ def common_train(
     elif model == "RF":
         if "class_weight" in best_params:
             best_params.pop("class_weight")
-        # Strengthen minority class weight and improve calibration robustness
+        # Narrower & lighter defaults for speed; still keep strong minority weight
         best_clf = RandomForestClassifier(**best_params, class_weight={0:1.0, 1:10.0}, n_jobs=1)
 
         # --- Simplified calibration using train+val together (more stable) ---
@@ -488,12 +493,32 @@ def common_train(
 
         # Apply sigmoid calibration over 5-fold CV
         calib = CalibratedClassifierCV(best_clf, cv=5, method='sigmoid')
-        calib.fit(X_combined, y_combined, sample_weight=sw_combined)
+        try:
+            calib.fit(X_combined, y_combined, sample_weight=sw_combined)
+        except TypeError:
+            logging.warning("[CALIBRATION] sample_weight not supported by this sklearn version. Fitting without weights.")
+            calib.fit(X_combined, y_combined)
 
         best_clf = calib
         already_fitted = True
 
         logging.info("[CALIBRATION] Completed single-step sigmoid calibration successfully.")
+
+        # Check the number of trees after fitting (defensive across sklearn versions)
+        try:
+            n_trees = None
+            # sklearn >= 1.0: calibrated_classifiers_ -> .estimator for each fold
+            if hasattr(best_clf, "calibrated_classifiers_") and best_clf.calibrated_classifiers_:
+                base = best_clf.calibrated_classifiers_[0].estimator
+                if hasattr(base, "estimators_"):
+                    n_trees = len(base.estimators_)
+            # fallback: some versions expose base_estimator_ on CV wrapper
+            elif hasattr(best_clf, "base_estimator_") and hasattr(best_clf.base_estimator_, "estimators_"):
+                n_trees = len(best_clf.base_estimator_.estimators_)
+            if n_trees is not None:
+                logging.info(f"Number of trees in the forest: {n_trees}")
+        except Exception as _e:
+            logging.debug(f"[CALIBRATION] Could not read n_trees: {_e}")
 
     elif model == "BalancedRF":
         best_clf = BalancedRandomForestClassifier(**best_params)
@@ -619,35 +644,26 @@ def common_train(
     except Exception:
         _model_name = "unknown"
 
-    # Handle accidental object in mode
-    if isinstance(mode, str) and mode.strip():
-        _mode = mode.strip()
+    # Handle accidental object in `mode` (guard against estimators passed by mistake)
+    if not isinstance(mode, str):
+        logging.warning("[common_train] `mode` is not a string. Forcing to 'default'.")
+        mode = "default"
     else:
-        _mode = ""
-        logging.info(f"[common_train] mode not specified, proceeding without suffix.")
+        mode = mode.strip()
+        if not mode:
+            logging.info("[common_train] empty `mode` string detected, proceeding without suffix.")
 
     if isinstance(_model_name, dict):
         logging.warning(f"[common_train] model_name was dict: {_model_name}")
         _model_name = _model_name.get("name", "unknown")
 
-    # --- Save unified artifacts (once only, after model training) ---
-    # Ensure suffix is clean (remove jobid, fold, and nested underscores)
-    import re
-    clean_suffix = re.sub(r"(_?\d{5,}(\[.*?\])?)", "", suffix)  # remove jobid/fold info
-    clean_suffix = re.sub(r"__+", "_", clean_suffix).strip("_")  # remove extra underscores
-
-    # --- Append PBS jobid and fold index for hierarchical save ---
-    jobid = os.environ.get("PBS_JOBID", "local").split(".")[0]
-    fold_idx = os.environ.get("PBS_ARRAY_INDEX", "1")
-    mode_full = f"{clean_suffix}_{jobid}[{fold_idx}]"
-
     save_artifacts(
-        model_obj=best_clf,
-        scaler_obj=scaler,
+        model_name=str(_model_name),
+        suffix=suffix,
+        best_clf=best_clf,
+        scaler=scaler,
         selected_features=selected_features,
         feature_meta=feature_meta,
-        model_name=str(_model_name),
-        mode=mode_full
     )
 
     # ---------- Threshold optimization on validation (maximize F2) ----------
@@ -685,58 +701,8 @@ def common_train(
         if thr_test:
             logging.info("Test (F2-opt threshold from Val) metrics: " + json.dumps(thr_test))
 
-        # Save threshold
-        threshold_meta = {
-            "model": model,
-            "threshold": best_threshold,
-            "metric": "F2-optimal (beta=2)",
-        }
-        # ==========================================================
-        # Save threshold under:
-        # models/<model>/<jobid>/<jobid>[fold]/threshold_*.json
-        # ==========================================================
-        # Extract jobid from suffix (robust: handles "14019173.spcc-adm1" etc.)
-        import re
-        jobid = None
-        m = re.search(r"\b(\d{5,})\b", suffix)  # match 5+ consecutive digits
-        if m:
-            jobid = m.group(1)
-        else:
-            # fallback: try removing hostname (e.g., "14019173.spcc-adm1")
-            m2 = re.search(r"(\d{5,})", suffix)
-            if m2:
-                jobid = m2.group(1)
-
-        # Detect fold index from suffix (e.g., "...[3]" or "..._3")
-        fold_match = re.search(r"\[(\d+)\]", suffix)
-        fold_id = fold_match.group(1) if fold_match else None
-
-        # Construct per-fold directory
-        if jobid:
-            if fold_id:
-                out_dir = os.path.join(MODEL_PKL_PATH, model, jobid, f"{jobid}[{fold_id}]")
-            else:
-                out_dir = os.path.join(MODEL_PKL_PATH, model, jobid)
-        else:
-            out_dir = os.path.join(MODEL_PKL_PATH, model)
-
-        os.makedirs(out_dir, exist_ok=True)
-
-        # --- sanitize names to avoid repr() leakage in filenames ---
-        safe_model = str(model) if isinstance(model, str) else "model"
-        import re as _re
-        def _sanitize(s: str) -> str:
-            return _re.sub(r"[^A-Za-z0-9._-]+", "_", s).strip("_")
-        safe_mode = _sanitize(str(mode or "default"))
-        safe_suffix = _sanitize(str(suffix or ""))
-        fname = f"threshold_{safe_model}_{safe_mode}"
-        if safe_suffix:
-            fname += f"_{safe_suffix}"
-        thr_path = os.path.join(out_dir, f"{fname}.json")
-        with open(thr_path, "w") as f:
-            json.dump(threshold_meta, f, indent=2)
-
-        logging.info(f"[SAVE] Threshold saved -> {thr_path}")
+        # NOTE: Actual threshold saving is unified in savers.save_artifacts()
+        # via train_pipeline finally-block. We just return the value here.
 
     else:
         logging.warning("Threshold optimization skipped: model does not support probability estimation.")
