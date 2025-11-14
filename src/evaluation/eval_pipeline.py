@@ -16,13 +16,21 @@ import logging
 import os
 import glob
 import numpy as np
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, fbeta_score
+import pandas as pd
 from typing import Optional
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    fbeta_score,
+    confusion_matrix,
+)
 
 from src.utils.io.loaders import load_subjects_and_data, load_model_and_scaler
 from src.utils.io.savers import save_eval_results
 from src.evaluation.models import lstm_eval, SvmA_eval, common_eval
-
+from src.utils.io.split_helpers import split_data, log_split_ratios
 
 
 def eval_pipeline(
@@ -113,7 +121,7 @@ def eval_pipeline(
         with open(default_rank_file) as f:
             lines = [x.strip() for x in f.readlines() if x.strip()]
         tag_key = tag.replace("rank_", "")
-        match = [x for x in lines if tag_key in os.path.basename(x)]
+        match = [x for x in lines if os.path.basename(x).startswith(tag_key)]
         if match:
             group_file = os.path.normpath(match[0])
             if os.path.exists(group_file):
@@ -128,47 +136,32 @@ def eval_pipeline(
     else:
         logging.info("[EVAL] No tag or rank_names.txt not found; evaluating all subjects.")
 
-    # Step 2: Prepare split for evaluation
-    # --- Use same split logic as training (split_data) ---
-    from src.utils.io.split_helpers import split_data, log_split_ratios
-    X_train, X_val, X_test, y_train, y_val, y_test = split_data(
-        subject_split_strategy="random",
-        subject_list=subjects,
-        target_subjects=target_subjects if mode in ["source_only", "target_only"] else [],
-        model_type=model_type,
-        seed=seed,
-        # Time stratification parameters (same defaults as training)
-        time_stratify_labels=None,
-        time_stratify_tolerance=0.1,
-        time_stratify_window=5,
-        time_stratify_min_chunk=30,
-    )
-    log_split_ratios(
-        y_train, y_val, y_test,
-        tag=f"eval|mode={mode}|tag={tag}"
-    )
-
-    # ------------------------------------------------------------------
-    # Step 2.5: For source_only/target_only, filter test data to target group
-    # ------------------------------------------------------------------
     if mode in ["source_only", "target_only"] and len(target_subjects) > 0:
-        if "subject_id" in X_test.columns:
-            subj_col = X_test["subject_id"]
-        elif "subject_id" in data.columns:
-            subj_col = data.loc[X_test.index, "subject_id"]
-        else:
-            subj_col = None
-
-        if subj_col is not None:
-            mask = subj_col.isin(target_subjects)
-            logging.info(
-                f"[EVAL] (Unified) Restricting evaluation to {mask.sum()} target samples "
-                f"(mode={mode}, tag={tag})"
-            )
-            X_test = X_test.loc[mask].reset_index(drop=True)
-            y_test = y_test.loc[mask].reset_index(drop=True)
-        else:
-            logging.warning("[EVAL] subject_id not found; evaluating all samples.")
+        X_t_tr, X_val, X_test, y_t_tr, y_val, y_test = split_data(
+            subject_split_strategy="subject_time_split",
+            subject_list=subjects,                      # ignored when target_subjects provided
+            target_subjects=target_subjects,
+            model_type=model_type,
+            seed=seed,
+            time_stratify_labels=False,
+            time_stratify_tolerance=0.02,
+            time_stratify_window=0.10,
+            time_stratify_min_chunk=100,
+        )
+        log_split_ratios(y_t_tr, y_val, y_test, tag=f"eval|target_timewise|mode={mode}|tag={tag}")
+    else:
+        X_train, X_val, X_test, y_train, y_val, y_test = split_data(
+            subject_split_strategy="random",
+            subject_list=subjects,
+            target_subjects=[],
+            model_type=model_type,
+            seed=seed,
+            time_stratify_labels=None,
+            time_stratify_tolerance=0.1,
+            time_stratify_window=5,
+            time_stratify_min_chunk=30,
+        )
+        log_split_ratios(y_train, y_val, y_test, tag=f"eval|random|mode={mode}|tag={tag}")
 
     # Step 3: Load model, scaler, and features
     # --- Resolve jobid if not provided ---
@@ -228,78 +221,57 @@ def eval_pipeline(
     else:
         logging.info(f"[EVAL] Successfully loaded model and scaler for jobid={jobid}")
 
-    # ------------------------------------------------------------------
-    # Step 4: Remove EEG features (not used during training)
-    # ------------------------------------------------------------------
+    # keywords for EEG columns (removed during evaluation)
     eeg_keywords = ["Channel_", "EEG", "Theta", "Alpha", "Beta", "Gamma", "Delta"]
-    drop_cols = [c for c in X_test.columns if any(k in c for k in eeg_keywords)]
-    if drop_cols:
-        logging.info(f"[EVAL] Dropping {len(drop_cols)} EEG-related columns (e.g., {drop_cols[:5]})")
-        X_test = X_test.drop(columns=drop_cols)
 
-    # Drop unnecessary or duplicated columns
-    X_test = X_test.loc[:, ~X_test.columns.duplicated()]
-    X_test = X_test.drop(columns=["subject_id"], errors="ignore")
-    import numpy as np
-    X_test = X_test.select_dtypes(include=[np.number]).replace([np.inf, -np.inf], np.nan).fillna(0.0)
-    logging.info(f"[EVAL] X_test ready for scaling (n_features={X_test.shape[1]})")
+    def _prep(df: pd.DataFrame) -> pd.DataFrame:
+        drop_cols = [c for c in df.columns if any(k in c for k in eeg_keywords)]
+        if drop_cols:
+            logging.info(f"[EVAL] Dropping {len(drop_cols)} EEG columns (e.g., {drop_cols[:5]})")
+            df = df.drop(columns=drop_cols)
+        df = df.loc[:, ~df.columns.duplicated()]
+        df = df.drop(columns=["subject_id"], errors="ignore")
+        df = df.select_dtypes(include=[np.number]).replace([np.inf, -np.inf], np.nan).fillna(0.0)
 
-    # ------------------------------------------------------------------
-    # Step 4.5: Safe feature alignment to prevent KeyError
-    # ------------------------------------------------------------------
-    import pandas as pd
+        def safe_align_columns(df_in: pd.DataFrame, expected_cols):
+            extra_cols = [c for c in df_in.columns if c not in expected_cols]
+            missing_cols = [c for c in expected_cols if c not in df_in.columns]
+            if extra_cols:
+                logging.info(f"[EVAL] Dropping {len(extra_cols)} extra columns (e.g., {extra_cols[:5]})")
+                df_in = df_in.drop(columns=extra_cols, errors="ignore")
+            if missing_cols:
+                logging.warning(f"[EVAL] {len(missing_cols)} missing columns filled with 0.0 (e.g., {missing_cols[:5]})")
+                for c in missing_cols:
+                    df_in[c] = 0.0
+            return df_in.reindex(columns=expected_cols)
 
-    def safe_align_columns(df: pd.DataFrame, expected_cols):
-        """Align df to expected_cols (fill missing, drop extras)."""
-        extra_cols = [c for c in df.columns if c not in expected_cols]
-        missing_cols = [c for c in expected_cols if c not in df.columns]
+        if features is not None and len(features) > 0:
+            df = safe_align_columns(df, features)
+        elif hasattr(scaler, "feature_names_in_"):
+            df = safe_align_columns(df, list(scaler.feature_names_in_))
 
-        if extra_cols:
-            logging.info(f"[EVAL] Dropping {len(extra_cols)} extra columns (e.g., {extra_cols[:5]})")
-            df = df.drop(columns=extra_cols, errors="ignore")
+        df = df.clip(lower=-1_000_000.0, upper=1_000_000.0, axis=1)
 
-        if missing_cols:
-            logging.warning(f"[EVAL] {len(missing_cols)} missing columns filled with 0.0 "
-                            f"(e.g., {missing_cols[:5]})")
-            for c in missing_cols:
-                df[c] = 0.0
+        if hasattr(scaler, "feature_names_in_"):
+            expected_scaler_cols = list(scaler.feature_names_in_)
+            missing_for_scaler = [c for c in expected_scaler_cols if c not in df.columns]
+            extra_for_scaler = [c for c in df.columns if c not in expected_scaler_cols]
+            if extra_for_scaler:
+                logging.warning(f"[EVAL] Dropping {len(extra_for_scaler)} columns unseen at fit time (e.g., {extra_for_scaler[:5]})")
+                df = df.drop(columns=extra_for_scaler, errors="ignore")
+            if missing_for_scaler:
+                logging.warning(f"[EVAL] {len(missing_for_scaler)} columns seen at fit time but now missing (e.g., {missing_for_scaler[:5]}). Filling with 0.0.")
+                for c in missing_for_scaler:
+                    df[c] = 0.0
+            df = df.reindex(columns=expected_scaler_cols)
+        return pd.DataFrame(scaler.transform(df), index=df.index)
 
-        # Reorder to expected order
-        df = df.reindex(columns=expected_cols)
-        return df
-
-    # Align with features saved during training
-    if features is not None and len(features) > 0:
-        X_test = safe_align_columns(X_test, features)
-    elif hasattr(scaler, "feature_names_in_"):
-        X_test = safe_align_columns(X_test, list(scaler.feature_names_in_))
-
-    # Step 4.6: Clip extreme values before scaling
-    clip_val = 1_000_000.0
-    X_test = X_test.clip(lower=-clip_val, upper=clip_val, axis=1)
-
-    # Step 4.7: Transform after alignment
-    # --- Final sanity alignment for scikit-learn scalers ---
-    if hasattr(scaler, "feature_names_in_"):
-        expected_scaler_cols = list(scaler.feature_names_in_)
-        missing_for_scaler = [c for c in expected_scaler_cols if c not in X_test.columns]
-        extra_for_scaler = [c for c in X_test.columns if c not in expected_scaler_cols]
-
-        if extra_for_scaler:
-            logging.warning(f"[EVAL] Dropping {len(extra_for_scaler)} columns unseen at fit time "
-                            f"(e.g., {extra_for_scaler[:5]})")
-            X_test = X_test.drop(columns=extra_for_scaler, errors="ignore")
-
-        if missing_for_scaler:
-            logging.warning(f"[EVAL] {len(missing_for_scaler)} columns seen at fit time but now missing "
-                            f"(e.g., {missing_for_scaler[:5]}). Filling with 0.0.")
-            for c in missing_for_scaler:
-                X_test[c] = 0.0
-
-        X_test = X_test.reindex(columns=expected_scaler_cols)
-
-    X_test = scaler.transform(X_test)
-    logging.info(f"[EVAL] Successfully transformed X_test (shape={X_test.shape})")
+    X_test = _prep(X_test)
+    logging.info(f"[EVAL] Transformed X_test shape={X_test.shape}")
+    X_val_prepared = None
+    if 'X_val' in locals():
+        X_val_prepared = _prep(X_val)
+        logging.info(f"[EVAL] Transformed X_val shape={X_val_prepared.shape}")
 
     # Step 5: Model-specific evaluation
     if model == "Lstm":
@@ -309,33 +281,109 @@ def eval_pipeline(
     else:
         result = common_eval(X_test, y_test, model, model_type, clf)
 
-    # ---------- Load saved threshold (if exists) and compute thresholded metrics ----------
     try:
+        if tag and tag.startswith("rank_"):
+            parts = tag.split("_")  # ["rank", "dtw", "mean", "high"]
+            distance_key = "_".join(parts[1:-1]) if len(parts) >= 3 else "unknown"  # "dtw_mean"
+            level = parts[-1] if len(parts) >= 2 else "unknown"                      # "high"
+        else:
+            distance_key, level = "unknown", "unknown"
+
+        base_jobid, run_idx = None, None
+        if 'model_path' in locals() and model_path:
+            # .../models/RF/14209090/14209090[1]/RF_...
+            mroot = model_path.split("/")  # ["models","RF","14209090","14209090[1]",...]
+            if len(mroot) >= 4:
+                base_jobid = mroot[2]
+                subdir = mroot[3]  # "14209090[1]"
+                import re
+                mm = re.match(r"^(\d+)\[(\d+)\]$", subdir)
+                if mm:
+                    base_jobid = mm.group(1)
+                    run_idx = mm.group(2)
+        if base_jobid is None:
+            import re
+            mm = re.match(r"^(\d+)(?:\[(\d+)\])?$", str(jobid))
+            if mm:
+                base_jobid = mm.group(1)
+                run_idx = mm.group(2) or "1"
+        if base_jobid is None:
+            base_jobid = str(jobid).replace("[","").replace("]","")
+        if run_idx is None:
+            run_idx = "1"
+
+        fold_idx = int(fold) if isinstance(fold, int) else 0
+        jobid_idx = f"{base_jobid}_{run_idx}"  # e.g., "14209090_1"
+
+        pattern = (
+            f"models/{model}/{base_jobid}/{base_jobid}[{run_idx}]/"
+            f"threshold_{model}_{mode}_rank_{distance_key}_{level}_{jobid_idx}_{fold_idx}.json"
+        )
+        cand = glob.glob(pattern, recursive=True)
+
         threshold_path = None
-        # Prefer threshold under models/<model>/<jobid>/<jobid>[fold]/threshold_*.json
-        cand = glob.glob(f"models/{model}/{jobid}/**/threshold_*.json", recursive=True)
-        if not cand:
-            # Fallback: any threshold under this model root
-            cand = glob.glob(f"models/{model}/**/threshold_*.json", recursive=True)
-        if cand:
+        if cand and os.path.exists(cand[0]):
             cand.sort(key=os.path.getmtime, reverse=True)
             threshold_path = cand[0]
             with open(threshold_path, "r") as f:
                 meta = json.load(f)
             thr = float(meta.get("threshold", 0.5))
+            logging.info(f"[EVAL] Found strict-matched threshold file: {threshold_path} (thr={thr:.3f})")
+        else:
+            logging.info(f"[EVAL] No strict-matched threshold. Searching F2-opt on VAL (jobid_idx={jobid_idx})...")
+            if X_val_prepared is None or 'y_val' not in locals():
+                logging.warning("[EVAL] Validation split not available; cannot optimize threshold. Skipping.")
+                thr = None
+            else:
+                # Prob on VAL
+                if hasattr(clf, "predict_proba"):
+                    p_val = clf.predict_proba(X_val_prepared)[:, 1]
+                elif hasattr(clf, "decision_function"):
+                    p_val = clf.decision_function(X_val_prepared)
+                    p_min, p_max = float(np.min(p_val)), float(np.max(p_val))
+                    p_val = (p_val - p_min) / (p_max - p_min + 1e-12)
+                else:
+                    p_val = None
 
-            # Ensure we have probabilities to apply the threshold.
+                thr = None
+                if p_val is not None:
+                    thrs = np.linspace(0, 1, 1001)
+                    best, best_f2 = 0.5, -1.0
+                    yv = y_val.astype(int)
+                    for t in thrs:
+                        yhat = (p_val >= t).astype(int)
+                        f2 = fbeta_score(yv, yhat, beta=2, zero_division=0)
+                        if f2 > best_f2:
+                            best_f2, best = f2, t
+                    thr = float(best)
+                    logging.info(f"[EVAL] Optimized F2 on VAL: thr={thr:.3f}, F2={best_f2:.4f}")
+
+                    candidate_subdir = os.path.join("models", model, base_jobid, f"{base_jobid}[{run_idx}]")
+                    target_dir = candidate_subdir if os.path.isdir(candidate_subdir) else os.path.join("models", model, base_jobid)
+                    os.makedirs(target_dir, exist_ok=True)
+                    expected_name = (
+                        f"threshold_{model}_{mode}_rank_{distance_key}_{level}_{jobid_idx}_{fold_idx}.json"
+                    )
+                    threshold_path = os.path.join(target_dir, expected_name)
+                    with open(threshold_path, "w") as f:
+                        json.dump({"threshold": thr}, f, indent=2)
+                    logging.info(f"[EVAL] Saved new threshold file → {threshold_path}")
+                else:
+                    logging.warning("[EVAL] Classifier has no probability-like scores; cannot optimize threshold.")
+                    thr = None
+
+        if thr is not None:
             if hasattr(clf, "predict_proba"):
                 proba = clf.predict_proba(X_test)[:, 1]
             elif hasattr(clf, "decision_function"):
                 proba = clf.decision_function(X_test)
+                p_min, p_max = float(np.min(proba)), float(np.max(proba))
+                proba = (proba - p_min) / (p_max - p_min + 1e-12)
             else:
                 proba = None
 
             if proba is not None:
                 yhat_thr = (proba >= thr).astype(int)
-                # specificity = TN / (TN + FP)
-                from sklearn.metrics import confusion_matrix
                 tn, fp, fn, tp = confusion_matrix(y_test, yhat_thr).ravel()
                 spec_thr = float(tn / (tn + fp)) if (tn + fp) > 0 else None
                 result.update({
@@ -349,13 +397,70 @@ def eval_pipeline(
                     "_proba_len": int(len(proba)),
                     "_threshold_file": threshold_path,
                 })
-                logging.info(f"[EVAL] Applied saved threshold={thr:.3f} from {threshold_path}")
+                logging.info(f"[EVAL] Applied threshold={thr:.3f} on TEST (file={threshold_path})")
             else:
                 logging.info("[EVAL] Classifier has no probabilities; threshold application skipped.")
         else:
-            logging.info("[EVAL] No threshold file found; using default metrics only.")
+            logging.info("[EVAL] No threshold available; using default metrics only.")
     except Exception as e:
-        logging.warning(f"[EVAL] Threshold application failed: {e}")
+        logging.warning(f"[EVAL] Threshold logic failed: {e}")
+
+    # ----------------------------------------------------------------------
+    # Add explicit positive-class and macro/weighted metrics to the result.
+    # This prevents ambiguity in downstream summary scripts and plots.
+    # ----------------------------------------------------------------------
+    try:
+        cr = result.get("classification_report", {}) or {}
+
+        # Helper to locate the positive class block regardless of key format.
+        # Possible keys seen in historical runs: "1", "1.0", "True", "pos", "positive"
+        candidate_pos_keys = ["1", "1.0", "True", "pos", "positive"]
+        pos_block = None
+        for k in candidate_pos_keys:
+            if k in cr and isinstance(cr[k], dict):
+                pos_block = cr[k]
+                break
+
+        macro_block = cr.get("macro avg", {})
+        weighted_block = cr.get("weighted avg", {})
+
+        # Positive-class (binary, pos_label=1) metrics
+        if pos_block:
+            result.setdefault("precision_pos", float(pos_block.get("precision", 0.0)))
+            result.setdefault("recall_pos",    float(pos_block.get("recall", 0.0)))
+            result.setdefault("f1_pos",        float(pos_block.get("f1-score", 0.0)))
+        else:
+            # If the report did not include a positive block (should be rare),
+            # keep explicit zeros to avoid accidental fallbacks to macro/weighted.
+            result.setdefault("precision_pos", 0.0)
+            result.setdefault("recall_pos",    0.0)
+            result.setdefault("f1_pos",        0.0)
+
+        # Macro / weighted metrics (kept only as clearly named references)
+        if macro_block:
+            result.setdefault("precision_macro", float(macro_block.get("precision", 0.0)))
+            result.setdefault("recall_macro",    float(macro_block.get("recall", 0.0)))
+            result.setdefault("f1_macro",        float(macro_block.get("f1-score", 0.0)))
+        if weighted_block:
+            result.setdefault("precision_weighted", float(weighted_block.get("precision", 0.0)))
+            result.setdefault("recall_weighted",    float(weighted_block.get("recall", 0.0)))
+            result.setdefault("f1_weighted",        float(weighted_block.get("f1-score", 0.0)))
+
+        # Backward-compatibility aliases for thresholded metrics:
+        # Keep original keys but also expose explicit *_thr_pos.
+        if "prec_thr" in result and "precision_thr_pos" not in result:
+            result["precision_thr_pos"] = float(result.get("prec_thr", 0.0))
+        if "recall_thr" in result and "recall_thr_pos" not in result:
+            result["recall_thr_pos"] = float(result.get("recall_thr", 0.0))
+        if "f1_thr" in result and "f1_thr_pos" not in result:
+            result["f1_thr_pos"] = float(result.get("f1_thr", 0.0))
+        if "f2_thr" in result and "f2_thr_pos" not in result:
+            result["f2_thr_pos"] = float(result.get("f2_thr", 0.0))
+
+        # If top-level generic keys are present and ambiguous, do NOT rewrite them here.
+        # Downstream summarizer will now consume explicit *_pos keys.
+    except Exception as e:
+        logging.warning(f"[EVAL] Post-metric normalization failed: {e}")
 
 
     # Step 6: Save results with metadata
@@ -368,6 +473,7 @@ def eval_pipeline(
             # Extract distance/level from tag (e.g., "rank_dtw_mean_high")
             "distance": (tag.split("_")[1] if tag and tag.startswith("rank_") else "unknown"),
             "level": (tag.split("_")[-1] if tag and tag.startswith("rank_") else "unknown"),
+            "jobid_idx": f"{base_jobid}_{run_idx}_{int(fold) if isinstance(fold,int) else 0}",
         }
     )
 
