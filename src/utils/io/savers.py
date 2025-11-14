@@ -42,8 +42,26 @@ def save_artifacts(
         Name of the model (e.g., 'RF', 'Lstm')
     mode : str
         Training mode (e.g., 'pooled', 'source_only')
+
+    Notes
+    -----
+    - If ``best_threshold`` is provided via kwargs, it will be saved into the
+      **same directory** as model/scaler/features:
+      ``models/<model_name>/<job_base>/<job_base>[<idx>]/threshold_*.json``.
     """
 
+    # --- Accept legacy/alternate keyword names from callers ---
+    # The training pipeline passes: suffix, best_clf, scaler
+    # Map them to the canonical local names used below.
+    if mode is None and "suffix" in kwargs:
+        # Treat provided "suffix" as the full mode token used for directory/suffix building
+        mode = kwargs.pop("suffix")
+    if model_obj is None and "best_clf" in kwargs:
+        model_obj = kwargs.pop("best_clf")
+    if scaler_obj is None and "scaler" in kwargs:
+        scaler_obj = kwargs.pop("scaler")
+    # selected_features / feature_meta already match our parameter names.
+    # Ignore any extra kwargs like "results" safely.
 
     # backward-compatibility: if positional arguments were passed (old-style call)
     if model_obj is None and len(args) >= 6:
@@ -113,6 +131,10 @@ def save_artifacts(
     # If mode doesn't include [n] (fold index), skip the entire save process
     # BEFORE creating directories. This prevents empty dirs like models/RF/14060981[1]/.
     if not re.search(r"\[\d+\]", str(mode)):
+        # If callers provide a suffix that already expanded [n] into "_n",
+        # we cannot infer the fold; in that case we intentionally skip to keep tree clean.
+        # Callers should pass mode with "[n]" (PBS_ARRAY_INDEX) when saving fold artifacts.
+        # This behavior is unchanged.
         logging.warning(
             f"[save_artifacts] Skipping non-fold call (mode={mode}, jobid={jobid}) — no directory created"
         )
@@ -176,6 +198,22 @@ def save_artifacts(
                 json.dump(feature_meta, f, indent=2)
         except Exception as e:
             logging.warning(f"[SAVE] Failed to write feature_meta for {model_name}: {e}")
+
+    # --- save threshold (if provided) IN THE SAME DIRECTORY as other artifacts ---
+    best_threshold = kwargs.get("best_threshold", None)
+    if best_threshold is not None:
+        try:
+            thr_path = os.path.join(model_dir, f"threshold_{model_name}{suffix}.json")
+            with open(thr_path, "w") as f:
+                json.dump(
+                    {"threshold": float(best_threshold),
+                     "saved_at": datetime.datetime.utcnow().isoformat()},
+                    f, indent=2
+                )
+            logging.info(f"[SAVE] Threshold saved: {thr_path}")
+        except Exception as e:
+            logging.warning(f"[SAVE] Failed to save threshold for {model_name}: {e}")
+
 
     # --- save job marker (latest successful jobid) ---
     try:
