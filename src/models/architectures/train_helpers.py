@@ -25,7 +25,6 @@ __all__ = ["train_model", "save_artifacts"]
 
 def train_model(
     model_name: str,
-    model_type: str,
     X_train_fs: pd.DataFrame,
     X_val_fs: pd.DataFrame,
     X_test_fs: pd.DataFrame,
@@ -36,7 +35,11 @@ def train_model(
     scaler: Optional[StandardScaler],
     suffix: str,
 ) -> Tuple[Optional[object], Optional[StandardScaler], Optional[float], Dict, Dict]:
-    """Dispatch to the appropriate training routine and return artifacts."""
+    """Dispatch to the appropriate training routine and return artifacts.
+
+    Unified naming: removed obsolete `model_type` parameter. All downstream
+    logic uses `model_name` for classifier resolution and artifact metadata.
+    """
 
     if model_name == "Lstm":
         lstm_train(X_train_fs, y_train, model_name)
@@ -54,7 +57,7 @@ def train_model(
         X_train_fs, X_val_fs, X_test_fs,
         y_train, y_val, y_test,
         selected_features,
-        model_name, model_type, clf,
+        model_name, model_name, clf,  # pass model_name for both legacy slots
         scaler=scaler,
         suffix=suffix,
         data_leak=False,

@@ -16,6 +16,12 @@ Design goals
 - Keep public signature compatible with train.py (HPC jobs).
 - Keep outputs compatible with existing directories.
 - Keep internal logic easy to unit test by factoring major stages.
+
+Notes
+-----
+Variable naming has been unified: `model_type`/`model` → `model_name`.
+Any previous directory resolution via `get_model_type()` now simply uses
+`model_name` directly. `feature_source` metadata also records `model_name`.
 """
 
 from __future__ import annotations
@@ -32,7 +38,6 @@ from typing import Dict, Iterable, List, Optional, Tuple
 
 from src.config import TOP_K_FEATURES, KSS_BIN_LABELS, KSS_LABEL_MAP
 from src.utils.io.loaders import read_subject_list, load_subject_csvs
-from src.utils.io.loaders import get_model_type
 from src.utils.io.split_helpers import split_data, log_split_ratios
 from src.utils.io.feature_utils import normalize_feature_names
 from src.utils.io.savers import save_artifacts
@@ -130,8 +135,7 @@ def train_pipeline(
     """
     # 1) Subject list and basic metadata
     subject_list = read_subject_list()
-    # --- Resolve directory type using helper ---
-    model_type = get_model_type(model_name)
+    # Unified naming: previously resolved `model_type` via helper; now we rely on `model_name` only.
 
     suffix = f"_{mode}" if mode else ""
     if tag:
@@ -173,9 +177,9 @@ def train_pipeline(
 
         # --- Load all subject CSVs before filtering (fix for empty data issue) ---
         data, _ = load_subject_csvs(
-            subject_list=subject_list,     
-            model_type=model_type,
-            base_path="data/processed/common",  
+            subject_list=subject_list,
+            model_name=model_name,
+            base_path="data/processed/common",
             add_subject_id=True,   # ← ensure subject_id is available for row-level filtering
         )
         logging.info(f"[LOAD] Loaded {len(data)} rows from all subject CSVs before {mode} filtering.")
@@ -251,7 +255,7 @@ def train_pipeline(
     if mode not in ["source_only", "target_only"]:
         data, _ = load_subject_csvs(
             subject_list=subject_list,
-            model_type=model_type,
+            model_name=model_name,
             base_path="data/processed/common",
             add_subject_id=True,   # ← ensure subject_id is available for row-level filtering
         )
@@ -261,7 +265,7 @@ def train_pipeline(
             subject_split_strategy="subject_time_split",
             subject_list=subject_list,                         # will be ignored if target_subjects provided
             target_subjects=target_subjects_resolved or target_subjects or [],
-            model_type=model_type,
+            model_name=model_name,
             seed=seed,
             time_stratify_labels=time_stratify_labels,
             time_stratify_tolerance=time_stratify_tolerance,
@@ -315,7 +319,7 @@ def train_pipeline(
             subject_split_strategy="subject_time_split",
             subject_list=middle_subjects,
             target_subjects=middle_subjects,
-            model_type=model_type,
+            model_name=model_name,
             seed=seed,
             time_stratify_labels=time_stratify_labels,
             time_stratify_tolerance=time_stratify_tolerance,
@@ -386,7 +390,7 @@ def train_pipeline(
             subject_split_strategy="subject_time_split",
             subject_list=eval_subjects,
             target_subjects=eval_subjects,
-            model_type=model_type,
+            model_name=model_name,
             seed=seed,
             time_stratify_labels=time_stratify_labels,
             time_stratify_tolerance=time_stratify_tolerance,
@@ -406,7 +410,7 @@ def train_pipeline(
             subject_split_strategy=subject_split_strategy,
             subject_list=subject_list,
             target_subjects=target_subjects or [],
-            model_type=model_type,
+            model_name=model_name,
             seed=seed,
             time_stratify_labels=time_stratify_labels,
             time_stratify_tolerance=time_stratify_tolerance,
@@ -491,7 +495,7 @@ def train_pipeline(
     # --- Prepare feature metadata BEFORE early checkpoint ---
     feature_meta = {
         "selected_features": selected_features,
-        "feature_source": model_type,
+        "feature_source": model_name,
     }
 
     # ------------------------------------------------------
@@ -525,7 +529,6 @@ def train_pipeline(
     try:
         best_clf, scaler, best_threshold, feature_meta, results = train_model(
             model_name=model_name,
-            model_type=model_type,
             X_train_fs=X_train_fs,
             X_val_fs=X_val_fs,
             X_test_fs=X_test_fs,

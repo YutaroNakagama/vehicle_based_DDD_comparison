@@ -1,9 +1,7 @@
-"""Classifier selector utility for traditional machine learning models.
+"""Classifier selector utility for traditional ML models.
 
-Provides a mapping from string-based model names to instantiated scikit-learn
-or boosting-based classifier objects.
-
-Used in the model training pipeline to abstract classifier creation.
+Maps unified `model_name` strings to instantiated scikit-learn / boosting
+classifier objects. Used by training pipeline after naming unification.
 """
 
 import logging
@@ -41,16 +39,19 @@ def get_classifier(model_name: str):
 
     Parameters
     ----------
+
     model_name : str
         Identifier string for the classifier.
 
     Returns
     -------
+
     sklearn.base.BaseEstimator
         Instantiated classifier object.
 
     Raises
     ------
+
     ValueError
         If the given ``model_name`` is not supported.
     """
