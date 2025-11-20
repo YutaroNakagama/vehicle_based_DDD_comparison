@@ -34,7 +34,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from imblearn.ensemble import BalancedRandomForestClassifier
 
-from src.config import MODEL_PKL_PATH, N_TRIALS
+from src.config import MODEL_PKL_PATH, N_TRIALS, configure_blas_threads
 
 from src.utils.io.savers import save_artifacts
 from src.utils.metrics_helper import (
@@ -45,14 +45,7 @@ from src.utils.metrics_helper import (
 from src.utils.artifact_loader import load_model_artifacts
 
 # --- Limit CPU threads globally (important for PBS environments) ---
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
-os.environ["NUMBA_NUM_THREADS"] = "1"
-os.environ["LIGHTGBM_NUM_THREADS"] = "1"
-os.environ["XGBOOST_NUM_THREADS"] = "1"
-os.environ["SKLEARN_NO_OPENMP"] = "1"
+configure_blas_threads(n_threads=1)
 
 # --- Disable joblib and Optuna internal parallelization ---
 import joblib

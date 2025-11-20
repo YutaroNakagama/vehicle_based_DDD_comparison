@@ -32,7 +32,7 @@ logging.basicConfig(level=logging.INFO)
 # Add project root to the module search path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import src.config
+from src.config import MODEL_CHOICES, DEFAULT_RANDOM_SEED
 import src.evaluation.eval_pipeline as mp
 
 
@@ -77,9 +77,9 @@ def main():
     )
     parser.add_argument(
         "--model",
-        choices=src.config.MODEL_CHOICES,
+        choices=MODEL_CHOICES,
         required=True,
-        help=f"Model to evaluate. Choices: {', '.join(src.config.MODEL_CHOICES)}"
+        help=f"Model to evaluate. Choices: {', '.join(MODEL_CHOICES)}"
     )
     parser.add_argument(
         "--tag",
@@ -96,7 +96,7 @@ def main():
     parser.add_argument(
         "--seed",
         type=int,
-        default=42,
+        default=DEFAULT_RANDOM_SEED,
         help="Random seed for reproducibility in subset evaluation"
     )
     parser.add_argument(

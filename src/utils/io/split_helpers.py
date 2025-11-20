@@ -55,10 +55,10 @@ def log_split_ratios(y_tr: pd.Series, y_va: pd.Series, y_te: pd.Series, tag: str
     p_all = p_tr + p_va + p_te
     r_all = p_all / n_all if n_all else float("nan")
 
-    logging.info("[split:%s] train n=%d pos=%d (%.3f)", tag, n_tr, p_tr, r_tr)
-    logging.info("[split:%s] valid n=%d pos=%d (%.3f)", tag, n_va, p_va, r_va)
-    logging.info("[split:%s] test  n=%d pos=%d (%.3f)", tag, n_te, p_te, r_te)
-    logging.info("[split:%s] total n=%d pos=%d (%.3f)", tag, n_all, p_all, r_all)
+    logging.info(f"[split:{tag}] train n={n_tr} pos={p_tr} ({r_tr:.3f})")
+    logging.info(f"[split:{tag}] valid n={n_va} pos={p_va} ({r_va:.3f})")
+    logging.info(f"[split:{tag}] test  n={n_te} pos={p_te} ({r_te:.3f})")
+    logging.info(f"[split:{tag}] total n={n_all} pos={p_all} ({r_all:.3f})")
 
 
 def split_data(
@@ -193,8 +193,10 @@ def split_data(
     # prefer them to ensure we really restrict to targets.
     subjects_for_random = target_subjects if (target_subjects and len(target_subjects) > 0) else subject_list
     if target_subjects and len(target_subjects) > 0:
-        logging.info("[split:random] Using target_subjects (%d) in place of subject_list (%d).",
-                     len(target_subjects), len(subject_list))
+        logging.info(
+            f"[split:random] Using target_subjects ({len(target_subjects)}) "
+            f"in place of subject_list ({len(subject_list)})."
+        )
     data, _ = load_subject_csvs(subjects_for_random, model_name, add_subject_id=True)
 
     # Explicitly reference the module to avoid scope-shadowing issues (UnboundLocalError)

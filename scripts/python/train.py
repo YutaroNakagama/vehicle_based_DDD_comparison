@@ -25,6 +25,7 @@ import os
 import argparse
 import logging
 from pathlib import Path
+from src.config import MODEL_CHOICES, DEFAULT_RANDOM_SEED
 from src.utils.cli.train_cli_helpers import load_subjects_from_file, log_train_args, map_mode_to_strategy
 
 # --- Path setup ---
@@ -80,7 +81,7 @@ def main():
         action="store_true",
         help="Use subject-wise splitting to avoid data leakage.",
     )
-    parser.add_argument("--seed", type=int, default=42, help="Random seed.")
+    parser.add_argument("--seed", type=int, default=DEFAULT_RANDOM_SEED, help="Random seed.")
     parser.add_argument("--tag", type=str, default=None, help="Optional tag for saved outputs.")
 
     # --- Time-stratified splitting options ---
