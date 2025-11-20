@@ -3,8 +3,7 @@
 This module provides a collection of utility functions designed to handle data input
 and output operations within the Driver Drowsiness Detection (DDD) project. It includes
 functionalities for safely loading MATLAB (.mat) files, reading subject lists from text files,
-saving processed data to CSV files, determining model-specific directory names, and
-batch loading of processed CSV data for multiple subjects.
+saving processed data to CSV files, and batch loading of processed CSV data for multiple subjects.
 
 Functions:
 - `safe_load_mat()`: Safely loads MATLAB .mat files.
@@ -14,15 +13,8 @@ Functions:
 - `read_train_subject_list_fold()`: Reads a list of subject IDs for training within a specific cross-validation fold.
 - `save_csv()`: Saves a Pandas DataFrame to a CSV file in a structured directory.
 - `load_subject_csvs()`: Loads processed CSV data for multiple subjects.
-
-# Updated for naming consistency:
-# - All model/model_type references are now model_name
-# - All subject-related variables use subject_id (single) or subject_list (list)
-# - Docstrings and comments updated for clarity
-# - get_model_type removed (use model_name directly)
-# - All function signatures and internal logic unified
-#
-# NOTE: The above import errors are due to missing dependencies in the environment and are unrelated to the variable naming unification. The code changes for variable naming are correct and ready for commit.
+- `load_subjects_and_data()`: Loads subject list and combined dataset for evaluation.
+- `load_model_and_scaler()`: Loads trained model, scaler, and feature selection files.
 """
 
 from src.config import (
