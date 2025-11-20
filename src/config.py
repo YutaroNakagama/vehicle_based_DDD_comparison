@@ -113,3 +113,44 @@ TOP_K_FEATURES = 10
 N_TRIALS = 50
 """int : Number of trials for hyperparameter optimization using Optuna."""
 
+# ---------------------------------------------------------------------
+# Random seed for reproducibility
+# ---------------------------------------------------------------------
+DEFAULT_RANDOM_SEED = 42
+"""int : Default random seed used across training, evaluation, and analysis pipelines."""
+
+# ---------------------------------------------------------------------
+# Logging format
+# ---------------------------------------------------------------------
+LOGGING_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
+"""str : Standard logging format string for all pipeline modules."""
+
+# ---------------------------------------------------------------------
+# Environment setup utilities
+# ---------------------------------------------------------------------
+def configure_blas_threads(n_threads: int = 1) -> None:
+    """Configure BLAS/OpenMP thread limits for HPC environments.
+    
+    This prevents thread oversubscription in PBS/SLURM jobs and ensures
+    reproducible single-threaded execution for CPU-bound operations.
+    
+    Parameters
+    ----------
+    n_threads : int, default=1
+        Number of threads to use for BLAS operations.
+    
+    Notes
+    -----
+    Call this function early in your script (before importing numpy/sklearn).
+    """
+    thread_str = str(n_threads)
+    os.environ["OMP_NUM_THREADS"] = thread_str
+    os.environ["OPENBLAS_NUM_THREADS"] = thread_str
+    os.environ["MKL_NUM_THREADS"] = thread_str
+    os.environ["VECLIB_MAXIMUM_THREADS"] = thread_str
+    os.environ["NUMEXPR_NUM_THREADS"] = thread_str
+    os.environ["NUMBA_NUM_THREADS"] = thread_str
+    os.environ["LIGHTGBM_NUM_THREADS"] = thread_str
+    os.environ["XGBOOST_NUM_THREADS"] = thread_str
+    os.environ["SKLEARN_NO_OPENMP"] = "1"
+
