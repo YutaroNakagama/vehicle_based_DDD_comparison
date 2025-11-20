@@ -23,14 +23,15 @@ def _check_nonfinite(X: pd.DataFrame, name: str) -> pd.DataFrame:
     non_numeric_cols = X.columns.difference(X_num.columns)
 
     if len(non_numeric_cols) > 0:
-        print(f"[WARN] {name} contains non-numeric columns: {list(non_numeric_cols)}")
+        logging.warning(f"{name} contains non-numeric columns: {list(non_numeric_cols)}")
+        X = X.select_dtypes(include=[np.number])
 
     # Detect NaN / Inf
     mask_nan = X_num.isna()
     mask_inf = np.isinf(X_num.to_numpy())
 
     if mask_nan.values.any() or mask_inf.any():
-        print(f"[WARN] {name} detected NaN/Inf values → replacing with column means.")
+        logging.warning(f"{name} detected NaN/Inf values → replacing with column means.")
         # Replace Inf with NaN first, then fill by mean
         X_num = X_num.replace([np.inf, -np.inf], np.nan)
         X_num = X_num.fillna(X_num.mean())
@@ -38,15 +39,16 @@ def _check_nonfinite(X: pd.DataFrame, name: str) -> pd.DataFrame:
 
         # Log which columns were affected
         bad_cols = X_num.columns[(mask_nan.any(axis=0) | mask_inf.any(axis=0))]
-        print(f"[INFO] {name} fixed columns: {list(bad_cols)}")
+        if len(bad_cols) > 0:
+            logging.info(f"{name} fixed columns: {list(bad_cols)}")
     else:
-        print(f"[OK] {name} has no NaN/Inf values.")
+        logging.debug(f"{name} has no NaN/Inf values.")
 
     # Clip extremely large or small values
     max_abs = X_num.abs().max()
     large_cols = max_abs[max_abs > CLIP_THRESHOLD].index.tolist()
     if len(large_cols) > 0:
-        print(f"[WARN] {name} has extremely large values in: {large_cols} → clipping to ±{CLIP_THRESHOLD}")
+        logging.warning(f"{name} has extremely large values in: {large_cols} → clipping to ±{CLIP_THRESHOLD}")
         X[large_cols] = X[large_cols].clip(-CLIP_THRESHOLD, CLIP_THRESHOLD)
 
     return X

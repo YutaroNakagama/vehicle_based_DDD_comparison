@@ -402,7 +402,7 @@ def _plot_projection_auto(matrix: np.ndarray, subjects: list[str], metric: str, 
     base_colors = {"High": "red", "Middle": "gray", "Low": "blue", "Other": "black"}
 
     for name, projector in methods.items():
-        print(f"[INFO] Computing projection using {name}...")
+        logging.info(f"Computing projection using {name}...")
         coords = projector.fit_transform(matrix_filled)
 
         # === Plot ===
@@ -981,7 +981,7 @@ def run_comp_dist(
     groups = _load_groups(Path(groups_file))
 
     for metric in metrics:
-        print(f"[INFO] Computing {metric.upper()} distance matrix... ({len(features)} subjects)")
+        logging.info(f"Computing {metric.upper()} distance matrix... ({len(features)} subjects)")
         # --- ensure output directories exist ---
         metric_dir = base_dir / metric
         metric_dir.mkdir(parents=True, exist_ok=True)

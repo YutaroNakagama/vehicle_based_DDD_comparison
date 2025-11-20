@@ -7,6 +7,7 @@ This module defines:
 """
 
 import os
+import logging
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
@@ -155,7 +156,7 @@ def lstm_train(
         model = build_lstm_model((X_train.shape[1], X_train.shape[2]))
         early_stopping = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
 
-        print(f'--- Fold {fold_no} Training Start ---')
+        logging.info(f'--- Fold {fold_no} Training Start ---')
         model.fit(
             X_train, y_train,
             epochs=epochs,
@@ -177,9 +178,9 @@ def lstm_train(
             model_name=model_name,
             mode=f"fold{fold_no}"
         )
-        print(f"Artifacts for fold {fold_no} saved successfully (via unified saver).")
-        print(f'Fold {fold_no} - Loss: {scores[0]}, Accuracy: {scores[1]}')
+        logging.info(f"Artifacts for fold {fold_no} saved successfully (via unified saver).")
+        logging.info(f'Fold {fold_no} - Loss: {scores[0]}, Accuracy: {scores[1]}')
 
-    print(f'\nScores per fold: {accuracies}')
-    print(f'Average accuracy: {np.mean(accuracies)}')
+    logging.info(f'\nScores per fold: {accuracies}')
+    logging.info(f'Average accuracy: {np.mean(accuracies)}')
 

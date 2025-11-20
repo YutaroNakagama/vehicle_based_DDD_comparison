@@ -174,6 +174,6 @@ def combine_file(subject: str) -> list[pd.DataFrame] | None:
         dfs.append(df)
         return dfs
     except FileNotFoundError:
-        print(f"File not found: {file_name}")
+        logging.warning(f"File not found: {file_name}")
         return None
 

@@ -341,9 +341,9 @@ def common_train(
                 cv = StratifiedKFold(n_splits=2, shuffle=True, random_state=42)
                 for i, (_, va_idx) in enumerate(cv.split(X_all_scaled, y_all)):
                     bincounts = np.bincount(y_all[va_idx].astype(int))
-                    print(f"[CV-Leak] Fold {i} y_val bincount: {bincounts}")
+                    logging.debug(f"[CV-Leak] Fold {i} y_val bincount: {bincounts}")
                     if len(bincounts) < 2 or np.any(bincounts == 0):
-                        print(f"[CV-Leak] Fold {i} has only one class! Skipping trial.")
+                        logging.debug(f"[CV-Leak] Fold {i} has only one class! Skipping trial.")
                         return 0.0
                 # Manual CV with AP scoring and (if possible) sample_weight
                 scores = []

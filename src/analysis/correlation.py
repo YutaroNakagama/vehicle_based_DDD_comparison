@@ -422,8 +422,8 @@ def run_corr_all(
             all_corrs.append(df)
 
     # Merge all correlations into one table
-    if not all_corrs:
-        print("[WARN] No correlation files found.")
+    if not all_corr:
+        logging.warning("No correlation files found.")
         return
 
     merged = pd.concat(all_corrs, ignore_index=True)

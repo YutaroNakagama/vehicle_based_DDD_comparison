@@ -1,5 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
+import logging
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -77,6 +78,6 @@ def make_radar(
         saved += 1
 
     pdf.close()
-    print(f"[radar] Saved {saved} images to {out_dir}")
-    print(f"[radar] Combined PDF: {pdf_path}")
+    logging.info(f"[radar] Saved {saved} images to {out_dir}")
+    logging.info(f"[radar] Combined PDF: {pdf_path}")
     return pdf_path
