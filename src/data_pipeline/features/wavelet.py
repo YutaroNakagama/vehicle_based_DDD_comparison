@@ -1,14 +1,13 @@
-"""Wavelet-based Feature Extraction for Driver Drowsiness Detection.
+"""Wavelet-based feature extraction for SIMlsl (vehicle dynamics) signals.
 
-This module provides functionalities for extracting features from vehicle dynamics signals
-(specifically SIMlsl data) using multi-level GHM (Generalized Haar Multiwavelet) wavelet decomposition.
-It focuses on processing steering and acceleration signals to derive energy features
-per decomposition path, which are then used in driver drowsiness detection models.
+Performs multi-level GHM wavelet decomposition on steering, acceleration, and
+lane offset signals; computes mean power per decomposition path; supports
+optional jittering augmentation and sliding-window extraction.
 
-Key features generated include power values from various decomposition paths (e.g., DDD, DDA, etc.),
-providing a multi-resolution analysis of the signals. The module also supports
-optional jittering for data augmentation and integrates with a sliding window approach
-for feature extraction across time.
+Notes
+-----
+- Input MAT expected: SIM_lsl with time at row 0 and signals at fixed indices.
+- Eight decomposition paths produced (DDD...AAA) via coefficient combinations.
 """
 
 import numpy as np
@@ -32,21 +31,15 @@ from src.config import (
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
-def get_simlsl_window_params(model: str) -> tuple[int, int]:
-    """Retrieve window size and step size in samples for SIMlsl data.
+def get_simlsl_window_params(model_name: str) -> tuple[int, int]:
+    """Return window and step size (samples) for SIMlsl data.
 
     Parameters
     ----------
-    model : str
-        Model name used to look up parameters in ``MODEL_WINDOW_CONFIG``.
-
-    Returns
-    -------
-    tuple of (int, int)
-        - Window size in samples.
-        - Step size in samples.
+    model_name : str
+        Key for MODEL_WINDOW_CONFIG.
     """
-    config = MODEL_WINDOW_CONFIG[model]
+    config = MODEL_WINDOW_CONFIG[model_name]
     window_samples = int(config["window_sec"] * SAMPLE_RATE_SIMLSL)
     step_samples = int(config["step_sec"] * SAMPLE_RATE_SIMLSL)
     return window_samples, step_samples
@@ -156,25 +149,17 @@ def process_window(signal_window: np.ndarray) -> list[float]:
     return [calculate_power(signal) for signal in decomposition_signals]
 
 
-def wavelet_process(subject: str, model: str, use_jittering: bool = False) -> None:
-    """Extract wavelet-based features for a subject.
-
-    Loads SIMlsl data, applies optional jittering, performs
-    wavelet decomposition, computes power per path, and saves results.
+def wavelet_process(subject: str, model_name: str, use_jittering: bool = False) -> None:
+    """Compute wavelet powers for steering/accel/lane offset signals and save CSV.
 
     Parameters
     ----------
     subject : str
-        Subject identifier (format: ``"<id>_<version>"``).
-    model : str
-        Model name used to determine windowing.
-    use_jittering : bool, default=False
-        Whether to apply jittering-based augmentation.
-
-    Returns
-    -------
-    None
-        Processed features are saved to CSV.
+        Subject identifier ("<id>_<version>").
+    model_name : str
+        Determines window size selection.
+    use_jittering : bool
+        Apply jitter augmentation if True.
     """
     parts = subject.split('_')
     if len(parts) != 2:
@@ -194,7 +179,7 @@ def wavelet_process(subject: str, model: str, use_jittering: bool = False) -> No
         logging.error(f"Invalid SIM_lsl data structure in {mat_file_path}")
         return
 
-    window_size, step_size = get_simlsl_window_params(model)
+    window_size, step_size = get_simlsl_window_params(model_name)
 
     steering = np.nan_to_num(sim_data[29, :])
     steering_speed = np.gradient(steering) * SAMPLE_RATE_SIMLSL
@@ -232,5 +217,5 @@ def wavelet_process(subject: str, model: str, use_jittering: bool = False) -> No
     df = pd.DataFrame(all_powers, columns=column_names)
     df.insert(0, 'Timestamp', all_timestamps)
 
-    save_csv(df, subject_id, version, 'wavelet', model)
+    save_csv(df, subject_id, version, 'wavelet', model_name)
 
