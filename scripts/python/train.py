@@ -50,7 +50,7 @@ def main():
 
     Command-line Options
     --------------------
-    --model : str
+    --model_name : str
         Required. Model architecture to train.
         Must be one of ``src.config.MODEL_CHOICES``.
     --mode : {"pooled", "target_only", "source_only", "joint_train"}
@@ -82,7 +82,7 @@ def main():
     )
 
     # --- Core arguments ---
-    parser.add_argument("--model", choices=src.config.MODEL_CHOICES, required=True)
+    parser.add_argument("--model_name", choices=src.config.MODEL_CHOICES, required=True)
     parser.add_argument(
         "--mode",
         choices=["pooled", "target_only", "source_only", "joint_train"],
@@ -118,7 +118,7 @@ def main():
 
     log_train_args(args, target_subjects)
     mp.train_pipeline(
-        model_name=args.model,
+        model_name=args.model_name,
         mode=args.mode,
         target_subjects=target_subjects,
         subject_wise_split=args.subject_wise_split,
