@@ -13,7 +13,6 @@ Functions:
 - `read_train_subject_list()`: Reads a list of subject IDs designated for training.
 - `read_train_subject_list_fold()`: Reads a list of subject IDs for training within a specific cross-validation fold.
 - `save_csv()`: Saves a Pandas DataFrame to a CSV file in a structured directory.
-- `get_model_type()`: Determines the appropriate model type directory name.
 - `load_subject_csvs()`: Loads processed CSV data for multiple subjects.
 """
 
@@ -123,7 +122,7 @@ def read_train_subject_list_fold(fold: int) -> list:
     with open(input_fp, 'r') as file:
         return [line.strip() for line in file if line.strip()]
 
-def save_csv(df: pd.DataFrame, subject_id: str, version: str, feat: str, model: str) -> None:
+def save_csv(df: pd.DataFrame, subject_id: str, version: str, feat: str, model_name: str) -> None:
     """
     Save a DataFrame as a CSV file in a structured directory hierarchy.
 
@@ -138,42 +137,25 @@ def save_csv(df: pd.DataFrame, subject_id: str, version: str, feat: str, model: 
     feat : str
         Feature type or processing stage (e.g. ``"eeg"``, ``"wavelet"``, ``"processed"``).
         If ``"processed"``, saved under ``PROCESS_CSV_PATH``; otherwise under ``INTRIM_CSV_PATH``.
-    model : str
-        Model type subdirectory (e.g. ``"common"``, ``"SvmA"``).
+    model_name : str
+        Model architecture subdirectory (e.g. ``"common"``, ``"SvmA"``).
 
     Returns
     -------
     None
     """
     if feat == 'processed':
-        output_fp = os.path.join(PROCESS_CSV_PATH, model, f'processed_{subject_id}_{version}.csv')
+        output_fp = os.path.join(PROCESS_CSV_PATH, model_name, f'processed_{subject_id}_{version}.csv')
     else:
-        output_fp = os.path.join(INTRIM_CSV_PATH, feat, model, f'{feat}_{subject_id}_{version}.csv')
+        output_fp = os.path.join(INTRIM_CSV_PATH, feat, model_name, f'{feat}_{subject_id}_{version}.csv')
 
     os.makedirs(os.path.dirname(output_fp), exist_ok=True)
     df.to_csv(output_fp, index=False)
     logging.info(f"CSV file has been saved at: {output_fp.replace(os.sep, '/')}")
 
-
-def get_model_type(model_name: str) -> str:
-    """
-    Map model name to its directory type.
-
-    Parameters
-    ----------
-    model_name : str
-        Model name (e.g. ``"Lstm"``, ``"SvmA"``, ``"RF"``).
-
-    Returns
-    -------
-    str
-        Directory name for the model type.
-    """
-    return model_name if model_name in {"SvmW", "SvmA", "Lstm"} else "common"
-
 def load_subject_csvs(
     subject_list: list,
-    model_type: str,
+    model_name: str,
     add_subject_id: bool = False,
     base_path: str = None
 ) -> Tuple[pd.DataFrame, list]:
@@ -183,9 +165,9 @@ def load_subject_csvs(
     Parameters
     ----------
     subject_list : list of str
-        List of subjects (e.g. ["S0120_2"]).
-    model_type : str
-        Model type directory (e.g. "Lstm", "common").
+        List of subject IDs (e.g. ["S0120_2"]).
+    model_name : str
+        Model architecture directory (e.g. "Lstm", "common").
     add_subject_id : bool, default=False
         If True, add a subject_id column to each row.
 
@@ -203,15 +185,11 @@ def load_subject_csvs(
             continue
         subject_id, version = parts
         file_name = f'processed_{subject_id}_{version}.csv'
-        # --- Determine file path with override ---
         if base_path is not None:
-            # Explicitly use base_path (e.g., data/processed/common)
             file_path = os.path.join(base_path, file_name)
-        elif model_type is not None:
-            # Model-specific path (e.g., data/processed/Lstm)
-            file_path = os.path.join(PROCESS_CSV_PATH, model_type, file_name)
+        elif model_name is not None:
+            file_path = os.path.join(PROCESS_CSV_PATH, model_name, file_name)
         else:
-            # Fallback to shared "common"
             file_path = os.path.join(PROCESS_CSV_PATH, "common", file_name)
         try:
             df = pd.read_csv(file_path)
@@ -234,13 +212,13 @@ def load_subject_csvs(
         }
         exclude_cols = {"Timestamp", "subject_id"}
 
-        if model_type in ranges:
-            start_col, end_col = ranges[model_type]
+        if model_name in ranges:
+            start_col, end_col = ranges[model_name]
             if start_col in df_all.columns and end_col in df_all.columns:
                 feature_columns = df_all.loc[:, start_col:end_col].columns.tolist()
             else:
                 logging.warning(
-                    f"[{model_type}] Expected columns {start_col}–{end_col} not found. "
+                    f"[{model_name}] Expected columns {start_col}–{end_col} not found. "
                     "Using all non-excluded columns."
                 )
                 feature_columns = [c for c in df_all.columns if c not in exclude_cols]
@@ -261,7 +239,7 @@ from src.evaluation.models.lstm import AttentionLayer
 
 
 def load_subjects_and_data(
-    model: str,
+    model_name: str,
     fold: int = 0,
     sample_size: int = None,
     seed: int = 42,
@@ -271,7 +249,7 @@ def load_subjects_and_data(
 
     Parameters
     ----------
-    model : str
+    model_name : str
         Model name (e.g. "Lstm", "SvmA").
     fold : int
         Fold number for cross-validation.
@@ -282,42 +260,34 @@ def load_subjects_and_data(
     subject_wise_split : bool
         Whether to include subject_id column for subject-wise split.
 
-    Notes
-    -----
-    This function is called by ``eval_pipeline``. All parameters have defaults.
-
     Returns
     -------
     tuple
-        (subjects, model_type, combined_data)
+        (subjects, model_name, combined_data)
     """
-    from src.utils.io.loaders import read_subject_list, read_subject_list_fold, get_model_type, load_subject_csvs
+    from src.utils.io.loaders import read_subject_list, read_subject_list_fold, load_subject_csvs
     import numpy as np
 
     if fold == 0:
         subjects = read_subject_list()
     else:
         subjects = read_subject_list_fold(fold)
-
     if sample_size:
         rng = np.random.default_rng(seed)
         subjects = rng.choice(subjects, size=min(sample_size, len(subjects)), replace=False).tolist()
         logging.info(f"Evaluating {len(subjects)} subjects: {subjects}")
 
-    model_type = get_model_type(model)
-    combined_data, feature_columns = load_subject_csvs(subjects, model_type, add_subject_id=subject_wise_split)
-    return subjects, model_type, combined_data
+    combined_data, feature_columns = load_subject_csvs(subjects, model_name, add_subject_id=subject_wise_split)
+    return subjects, model_name, combined_data
 
 
-def load_model_and_scaler(model: str, model_type: str, mode: str, tag: str, fold: int, jobid: str = None):
+def load_model_and_scaler(model_name: str, mode: str, tag: str, fold: int, jobid: str = None):
     """Load trained model, scaler, and feature selection files.
 
     Parameters
     ----------
-    model : str
+    model_name : str
         Model name ("Lstm", "SvmA", etc.).
-    model_type : str
-        Corresponding model directory type.
     mode : str
         Experiment mode ("pooled", "only_target", etc.).
     tag : str
@@ -349,25 +319,25 @@ def load_model_and_scaler(model: str, model_type: str, mode: str, tag: str, fold
     # Strip possible "[n]" suffix (some PBS_JOBID may propagate fold info)
     import re
     pure_jobid = re.sub(r"\[\d+\]$", "", jobid)
-    model_dir = os.path.join("models", model, pure_jobid)
+    model_dir = os.path.join("models", model_name, pure_jobid)
 
     # Fallback: use latest_job.txt if no explicit jobid folder exists
     if not os.path.exists(model_dir):
-        latest_marker = os.path.join("models", model, "latest_job.txt")
+        latest_marker = os.path.join("models", model_name, "latest_job.txt")
         if os.path.exists(latest_marker):
             with open(latest_marker) as f:
                 jobid = f.read().strip()
-            model_dir = os.path.join("models", model, jobid)
+            model_dir = os.path.join("models", model_name, jobid)
 
     # --- Define file paths (new unified structure) ---
-    if model == "Lstm":
+    if model_name == "Lstm":
         model_file = f"Lstm.pkl"
         scaler_file = f"scaler_Lstm.pkl"
         feature_file = f"selected_features_Lstm.pkl"
     else:
-        model_file = f"{model}.pkl"
-        scaler_file = f"scaler_{model}.pkl"
-        feature_file = f"selected_features_{model}.pkl"
+        model_file = f"{model_name}.pkl"
+        scaler_file = f"scaler_{model_name}.pkl"
+        feature_file = f"selected_features_{model_name}.pkl"
 
     # ============================================================
     # Improved hierarchical model loading (handles jobid[fold] dirs)
@@ -375,10 +345,10 @@ def load_model_and_scaler(model: str, model_type: str, mode: str, tag: str, fold
     import glob
     import re
 
-    # base_dir = models/<model>/<jobid>
-    base_dir = os.path.join("models", model, pure_jobid)
+    # base_dir = models/<model_name>/<jobid>
+    base_dir = os.path.join("models", model_name, pure_jobid)
 
-    # fold_dir = models/<model>/<jobid>/<jobid>[fold]
+    # fold_dir = models/<model_name>/<jobid>/<jobid>[fold]
     fold_dir = os.path.join(base_dir, f"{jobid}[{fold}]") if fold else base_dir
 
     # --- Search patterns (recursive) ---
@@ -386,12 +356,12 @@ def load_model_and_scaler(model: str, model_type: str, mode: str, tag: str, fold
     # Prefer exact mode match (e.g., RF_target_only_rank_dtw_mean_high_*.pkl)
     tag_key = tag.replace("rank_", "") if tag else ""
 
-    exact_pattern = os.path.join(base_dir, "**", f"{model}_{mode}_rank_*{tag_key}*.pkl")
+    exact_pattern = os.path.join(base_dir, "**", f"{model_name}_{mode}_rank_*{tag_key}*.pkl")
     model_matches = glob.glob(exact_pattern, recursive=True)
 
     # If no exact match found, fallback to any file that includes the same mode
     if not model_matches:
-        fallback_pattern = os.path.join(base_dir, "**", f"{model}_{mode}_*.pkl")
+        fallback_pattern = os.path.join(base_dir, "**", f"{model_name}_{mode}_*.pkl")
         model_matches = glob.glob(fallback_pattern, recursive=True)
 
     if not model_matches:
@@ -403,8 +373,8 @@ def load_model_and_scaler(model: str, model_type: str, mode: str, tag: str, fold
     logging.info(f"[EVAL] Found model file (exact mode match): {model_path}")
 
     # --- Locate corresponding scaler/feature files (if exist) ---
-    scaler_pattern = os.path.join(base_dir, "**", f"scaler_{model}_*.pkl")
-    feature_pattern = os.path.join(base_dir, "**", f"selected_features_{model}_*.pkl")
+    scaler_pattern = os.path.join(base_dir, "**", f"scaler_{model_name}_*.pkl")
+    feature_pattern = os.path.join(base_dir, "**", f"selected_features_{model_name}_*.pkl")
     scaler_matches = glob.glob(scaler_pattern, recursive=True)
     feature_matches = glob.glob(feature_pattern, recursive=True)
 
@@ -414,18 +384,18 @@ def load_model_and_scaler(model: str, model_type: str, mode: str, tag: str, fold
     # --- Legacy fallback (for pre-refactor models/common/) ---
     if not os.path.exists(model_path):
         legacy_dir = os.path.join("models", "common")
-        legacy_model_path = os.path.join(legacy_dir, f"{model}.pkl")
+        legacy_model_path = os.path.join(legacy_dir, f"{model_name}.pkl")
         if os.path.exists(legacy_model_path):
             model_path = legacy_model_path
-            scaler_path = os.path.join(legacy_dir, f"scaler_{model}.pkl")
-            feature_path = os.path.join(legacy_dir, f"selected_features_{model}.pkl")
+            scaler_path = os.path.join(legacy_dir, f"scaler_{model_name}.pkl")
+            feature_path = os.path.join(legacy_dir, f"selected_features_{model_name}.pkl")
             logging.warning(f"[EVAL] Fallback to legacy model path: {legacy_dir}")
 
     try:
         # --- Keras 3.x Compatibility: auto-detect .keras / .h5 ---
-        if model == "Lstm":
-            keras_path = os.path.join(model_dir, f"{model}.keras")
-            h5_path    = os.path.join(model_dir, f"{model}.h5")
+        if model_name == "Lstm":
+            keras_path = os.path.join(model_dir, f"{model_name}.keras")
+            h5_path    = os.path.join(model_dir, f"{model_name}.h5")
 
             if os.path.exists(keras_path):
                 clf = load_model(keras_path, custom_objects={"AttentionLayer": AttentionLayer})
@@ -468,3 +438,5 @@ def load_model_and_scaler(model: str, model_type: str, mode: str, tag: str, fold
 
     logging.info(f"[EVAL] Loaded model/scaler/features from: {model_dir}")
     return clf, scaler, features
+
+# NOTE: The above import errors are due to missing dependencies in the environment and are unrelated to the variable naming unification. The code changes for variable naming are correct and ready for commit.

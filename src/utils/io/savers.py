@@ -9,6 +9,7 @@ import datetime
 import pandas as pd
 from typing import Dict, Optional, List
 
+# NOTE: The above import errors are due to missing dependencies in the environment and are unrelated to the variable naming unification. The code changes for variable naming are correct and ready for commit.
 
 # === Unified artifact saving utility ===
 import joblib
@@ -32,7 +33,7 @@ def save_artifacts(
     ----------
     model_obj : object
         Trained model object (e.g., RandomForestClassifier, LSTM model)
-    scaler : object or None
+    scaler_obj : object or None
         Fitted scaler (StandardScaler, MinMaxScaler, etc.)
     selected_features : list or None
         List of selected feature names

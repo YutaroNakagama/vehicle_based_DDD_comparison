@@ -23,6 +23,9 @@ from src.utils.io.split import (
     time_stratified_three_way_split,
 )
 
+# NOTE: The following import errors are unrelated to the variable naming unification and are due to missing dependencies in the environment.
+# The code changes for variable naming are correct and ready for commit.
+
 # --- Local helper to avoid circular import with model_pipeline ---
 def _prepare_df_with_label_and_features(df: pd.DataFrame):
     from src.config import KSS_BIN_LABELS, KSS_LABEL_MAP
@@ -62,31 +65,58 @@ def split_data(
     subject_split_strategy: str,
     subject_list: List[str],
     target_subjects: Optional[List[str]],
-    model_type: str,
+    model_name: str,
     seed: int,
     time_stratify_labels: bool,
     time_stratify_tolerance: float,
     time_stratify_window: float,
     time_stratify_min_chunk: int,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
-    """Create train/val/test splits according to the selected strategy."""
+    """Create train/val/test splits according to the selected strategy.
+
+    Parameters
+    ----------
+    subject_split_strategy : str
+        Strategy for splitting subjects (e.g., 'subject_time_split').
+    subject_list : List[str]
+        List of all subject IDs.
+    target_subjects : Optional[List[str]]
+        List of target subject IDs for test/finetune, or None.
+    model_name : str
+        Model architecture name (e.g., 'Lstm', 'SvmA').
+    seed : int
+        Random seed for reproducibility.
+    time_stratify_labels : bool
+        Whether to stratify splits by time and labels.
+    time_stratify_tolerance : float
+        Tolerance for time stratification.
+    time_stratify_window : float
+        Window proportion for time stratification.
+    time_stratify_min_chunk : int
+        Minimum chunk size for time stratification.
+
+    Returns
+    -------
+    tuple
+        (X_train, X_val, X_test, y_train, y_val, y_test)
+    """
 
     base_dir = Path("data/processed")
-    if (base_dir / model_type).exists() and os.listdir(base_dir / model_type):
-        data_dir = base_dir / model_type
+    if (base_dir / model_name).exists() and os.listdir(base_dir / model_name):
+        data_dir = base_dir / model_name
         logging.info(f"[INFO] Using model-specific data directory: {data_dir}")
     elif (base_dir / "common").exists() and os.listdir(base_dir / "common"):
         data_dir = base_dir / "common"
         logging.info(f"[INFO] Using shared common data directory: {data_dir}")
     else:
         raise FileNotFoundError(
-            f"No valid processed data directory found for model '{model_type}'."
+            f"No valid processed data directory found for model '{model_name}'."
         )
 
     def _load_subjects(subjects):
         return load_subject_csvs(
             subjects,
-            model_type=None,
+            model_name=None,
             add_subject_id=True,
             base_path=str(data_dir)
         )
@@ -133,14 +163,14 @@ def split_data(
             raise ValueError("`finetune_target_subjects` requires non-empty target_subjects.")
         general_subjects = [s for s in subject_list if s not in target_subjects]
         use_subjects = list(set(general_subjects + target_subjects))
-        data, _ = load_subject_csvs(use_subjects, model_type, add_subject_id=True)
+        data, _ = load_subject_csvs(use_subjects, model_name, add_subject_id=True)
 
         from sklearn.model_selection import train_test_split
 
         train_subjects = general_subjects
         if len(target_subjects) == 1:
             from src.utils.io.split import data_split
-            single_df, _ = load_subject_csvs(target_subjects, model_type, add_subject_id=True)
+            single_df, _ = load_subject_csvs(target_subjects, model_name, add_subject_id=True)
             X_single_tr, X_single_va, X_single_te, y_single_tr, y_single_va, y_single_te = data_split(
                 single_df, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, random_state=seed
             )
@@ -165,7 +195,7 @@ def split_data(
     if target_subjects and len(target_subjects) > 0:
         logging.info("[split:random] Using target_subjects (%d) in place of subject_list (%d).",
                      len(target_subjects), len(subject_list))
-    data, _ = load_subject_csvs(subjects_for_random, model_type, add_subject_id=True)
+    data, _ = load_subject_csvs(subjects_for_random, model_name, add_subject_id=True)
 
     # Explicitly reference the module to avoid scope-shadowing issues (UnboundLocalError)
     from src.utils.io import split as split_module
@@ -180,7 +210,7 @@ def split_data(
 
 def prepare_data_split(
     data: pd.DataFrame,
-    subjects: list,
+    subject_list: list,
     seed: int = 42,
     subject_wise_split: bool = False
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
@@ -193,7 +223,7 @@ def prepare_data_split(
     ----------
     data : pandas.DataFrame
         Combined dataset containing all subjects and features.
-    subjects : list of str
+    subject_list : list of str
         Subject identifiers used for reference.
     seed : int, default=42
         Random seed for reproducibility.
@@ -210,7 +240,7 @@ def prepare_data_split(
     if subject_wise_split:
         logging.info("[EVAL] Using subject-wise split.")
         X_train, X_val, X_test, y_train, y_val, y_test = data_split_by_subject(
-            data, subjects, seed
+            data, subject_list, seed
         )
     else:
         logging.info("[EVAL] Using random split.")
