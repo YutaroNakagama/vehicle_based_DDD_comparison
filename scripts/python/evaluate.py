@@ -2,13 +2,25 @@
 
 This script executes the evaluation pipeline for a specified model. It loads the
 trained model and corresponding test data, computes evaluation metrics (e.g.,
-accuracy, precision, recall, confusion matrix), and prints the results to the console.
+accuracy, precision, recall, confusion matrix), and prints the results.
+
+Supported options (summary):
+  --model <name>              Model architecture (choices: src.config.MODEL_CHOICES)
+  --mode <experiment mode>    pooled | target_only | source_only | joint_train
+  --tag <str>                 Optional variant tag (erm / coral / etc.)
+  --fold <int>                Cross-validation fold (0 = no CV)
+  --sample_size <int>         Subset number of subjects to evaluate
+  --subject_wise_split        Enable subject-wise data partition to avoid leakage
+  --jobid <PBS job id>        Explicit training job ID (auto-detect if omitted)
+  --target_file <path>        Path to target subject list (required for non-pooled modes)
 
 Examples
 --------
-Run evaluation for the LSTM model:
+Evaluate an LSTM model (latest job, pooled mode):
+    python evaluate.py --model Lstm --mode pooled
 
-    $ python evaluate.py --model Lstm
+Evaluate a CORAL-tagged RF model on target_only mode with explicit jobid:
+    python evaluate.py --model RF --mode target_only --tag coral --jobid 14004123 --target_file config/target_groups.txt
 """
 
 import sys
@@ -27,29 +39,29 @@ import src.evaluation.eval_pipeline as mp
 def main():
     """Parse command-line arguments and run the evaluation pipeline.
 
-    This function parses CLI arguments to determine which model to evaluate,
-    then calls the `eval_pipeline` function from the
-    :mod:`src.evaluation.eval_pipeline` module.
-
-    Parameters
-    ----------
-    None
+    This function parses CLI arguments to determine which model variant and
+    experimental mode to evaluate, then calls `eval_pipeline`.
 
     Other Parameters
     ----------------
     --model : str
-        Required. Model to evaluate. Must be one of the options in
-        ``src.config.MODEL_CHOICES``.
+        Required. Model to evaluate. Must be one of ``src.config.MODEL_CHOICES``.
+    --mode : {"pooled", "target_only", "source_only", "joint_train"}
+        Experimental mode controlling subject inclusion.
     --tag : str, optional
         Optional tag to distinguish model variants (e.g., ``erm``, ``coral``).
     --sample_size : int, optional
-        Number of subjects to evaluate (for subset evaluation).
+        Number of subjects to evaluate (subset evaluation).
     --seed : int, default=42
-        Random seed for reproducibility in subset evaluation.
+        Random seed for subset sampling.
     --fold : int, default=0
-        Fold number for cross validation.
+        Cross-validation fold index (0 = no fold subdirectory).
     --subject_wise_split : bool, optional
-        If set, perform subject-wise data splitting to prevent subject leakage.
+        If set, perform subject-wise data splitting to prevent leakage.
+    --jobid : str, optional
+        Explicit training job ID; auto-detected if omitted.
+    --target_file : str, optional
+        Path to target subject list (required for non-pooled modes / ranking).
 
     Returns
     -------

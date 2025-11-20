@@ -1,74 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Unified CLI for analysis tasks.
+"""Unified CLI for analysis tasks in the DDD pipeline.
 
-This script provides a unified command-line interface (CLI) for various
-analysis-related tasks in the DDD pipeline, such as computing distance
-matrices, correlating group distances with evaluation metrics, summarising
-results, and exporting rankings.
+Provides subcommands for distance computation, correlation analyses,
+summary report generation, metrics aggregation, ranking export, and
+pretrain group reporting.
 
-Subcommands
------------
-comp-dist
-    Compute MMD / Wasserstein / DTW distance matrices and summaries.
-corr
-    Correlate group distances (d(U,G), disp(G)) with Δ metrics (finetune - only10).
-summarize
-    Summarize only10 vs finetune for a group list (supports 6 groups / arbitrary lists, with radar plot output).
-summarize-metrics
-    Scan model_dir for metrics_*.csv and build a long-form summary.
-make-table
-    Build a wide table (only10 vs finetune) from the summary; create summary if missing.
-report-pretrain-groups
-    For 10-vs-78 pretrain groups, compute Intra/Inter/NN and export JSON/CSV/PNG.
-corr-collect
-    Collect correlation CSVs (MMD/Wasserstein/DTW) and draw a heatmap.
-rank-export
-    Export top/bottom-k subject lists from mean/std rankings.
+Subcommands (summary):
+  comp-dist            Compute MMD / Wasserstein / DTW distance matrices
+  corr                 Correlate group distances with delta metrics
+  summarize            Summarize only10 vs finetune results (radar optional)
+  summarize-metrics    Aggregate metrics_* CSVs to wide summary
+  make-table           Build wide comparison table (only10 vs finetune)
+  report-pretrain-groups  Intra/Inter/NN distance report for pretrain groups
+  corr-collect         Collect correlation CSVs into heatmap summary
+  rank-export          Export top/bottom-k subject rankings
 
-Examples
---------
-Compute distance matrices:
-
-    $ python bin/analyze.py comp-dist \
-        --subject_list ../../dataset/mdapbe/subject_list.txt \
-        --data_root data/processed/common \
-        --groups_file ../misc/target_groups.txt
-
-Compute correlation between d(U,G) and Δ metrics:
-
-    $ python bin/analyze.py corr \
-        --summary_csv model/common/summary_6groups_only10_vs_finetune_wide.csv \
-        --distance results/mmd/mmd_matrix.npy \
-        --subjects_json results/mmd/mmd_subjects.json \
-        --groups_dir misc/pretrain_groups \
-        --group_names_file misc/pretrain_groups/group_names.txt \
-        --outdir model/common/dist_corr_mmd
-
-Summarize only10 vs finetune (6 groups, with radar plot):
-
-    $ python bin/analyze.py summarize --make_radar
-
-Aggregate metrics_* CSVs:
-
-    $ python bin/analyze.py summarize-metrics --model_dir model/common --model_tag RF
-
-Make a wide comparison table:
-
-    $ python bin/analyze.py make-table --model_dir model/common --model_tag RF
-
-Report intra/inter/NN distances for 10 vs 78 groups:
-
-    $ python bin/analyze.py report-pretrain-groups --group_dir misc/pretrain_groups
-
-Collect multiple correlation CSVs and draw heatmap:
-
-    $ python bin/analyze.py corr-collect \
-        --mmd model/common/dist_corr_mmd/correlations_dUG_vs_deltas.csv \
-        --wass model/common/dist_corr_wasserstein/correlations_dUG_vs_deltas.csv \
-        --dtw model/common/dist_corr_dtw/correlations_dUG_vs_deltas.csv \
-        --out_csv correlation_summary_all.csv \
-        --out_png correlation_heatmap_all.png
+Use `python analyze.py <subcommand> -h` for subcommand-specific options.
 """
 
 import os
@@ -464,6 +412,13 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    """Entry point: parse subcommand and dispatch.
+
+    Returns
+    -------
+    int
+        Process exit code (0 = success, non-zero = failure).
+    """
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     parser = build_parser()
     args = parser.parse_args()
