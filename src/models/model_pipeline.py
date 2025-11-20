@@ -25,10 +25,10 @@ import json
 import pickle
 import logging
 import re
-from typing import Dict, Iterable, List, Optional, Tuple
-
 import numpy as np
 import pandas as pd
+from pathlib import Path
+from typing import Dict, Iterable, List, Optional, Tuple
 
 from src.config import TOP_K_FEATURES, KSS_BIN_LABELS, KSS_LABEL_MAP
 from src.utils.io.loaders import read_subject_list, load_subject_csvs
@@ -160,8 +160,7 @@ def train_pipeline(
 
     # Initialize empty DataFrame for safety; actual data is loaded later
     data = pd.DataFrame()
-    # ensure name exists for later guarded checks
-    excluded_subjects: set[str] = set()
+    # Helper for target subject resolution (target_only / source_only)
     target_subjects_resolved: List[str] = []
 
     # ------------------------------------------------------------------
@@ -170,7 +169,7 @@ def train_pipeline(
     if mode in ["source_only", "target_only"]:
         # NOTE: We'll also filter `subject_list` so split_data() respects exclusions.
         default_rank_file = "results/domain_analysis/distance/rank_names.txt"
-        # keep CLI arg if given; otherwise build from rank files
+        # keep CLI arg if given; otherwise build from rank files (used here for target_only pre-filter)
 
         # --- Load all subject CSVs before filtering (fix for empty data issue) ---
         data, _ = load_subject_csvs(
@@ -237,90 +236,10 @@ def train_pipeline(
                              before, len(subject_list))
             else:
                 logging.warning("[target_only] subject_list was NOT overridden because target_subjects is empty.")
-        elif mode == "source_only":
-            # ==========================================================
-            # Exclude low/middle/high of the same metric (mmd/dtw/wasserstein)
-            # ==========================================================
-            from pathlib import Path
-            ranks_dir = Path("results/domain_analysis/distance/ranks10")
-
-            # Detect metric prefix (e.g., "dtw", "mmd", "wasserstein") from tag_key
-            metric_prefix = None
-            for prefix in ["dtw", "mmd", "wasserstein"]:
-                if prefix in (tag_key or ""):
-                    metric_prefix = prefix
-                    break
-
-            if metric_prefix:
-                for domain in ["low", "middle", "high"]:
-                    file_path = ranks_dir / f"{metric_prefix}_mean_{domain}.txt"
-                    if file_path.exists():
-                        with open(file_path) as f:
-                            excluded_subjects.update(s.strip() for s in f if s.strip())
-                logging.info(f"[source_only] Excluding {len(excluded_subjects)} subjects from {metric_prefix} domains")
-            else:
-                logging.warning("[source_only] Could not detect metric prefix from tag=%s. No subjects excluded.", tag_key)
-
-            # Normalize & filter
-            excl_norm = {s.strip().upper() for s in excluded_subjects}
-            subj_norm = data["subject_id"].astype(str).str.strip().str.upper()
-            mask_keep = ~subj_norm.isin(excl_norm)
-
-            kept_subjects = data.loc[mask_keep, "subject_id"].unique().tolist()
-            removed_subjects = sorted(excluded_subjects)
-
-            logging.info(f"[source_only] Removed subjects: {removed_subjects}")
-            logging.info(f"[source_only] Kept subjects ({len(kept_subjects)}): {sorted(kept_subjects)}")
-
-            data = data[mask_keep].reset_index(drop=True)
-            logging.info(f"[EVAL] source_only complete -> remaining samples: {len(data)}")
-
-            # --- Resolve target 10 subjects from rank_names.txt (same tag_key detection as target_only) ---
-            default_rank_file = "results/domain_analysis/distance/rank_names.txt"
-            if tag and os.path.exists(default_rank_file):
-                with open(default_rank_file) as f:
-                    lines = [x.strip() for x in f.readlines() if x.strip()]
-                match = [x for x in lines if os.path.basename(x).startswith(tag_key)]
-                if match:
-                    group_file = os.path.normpath(match[0])
-                    if os.path.exists(group_file):
-                        with open(group_file) as g:
-                            target_subjects_resolved = [s.strip() for s in g.readlines() if s.strip()]
-                        logging.info(f"[source_only] Resolved target 10 from {group_file} (n={len(target_subjects_resolved)})")
-                    else:
-                        logging.warning(f"[source_only] Target group file not found: {group_file}")
-                else:
-                    logging.warning(f"[source_only] No matching group found for tag={tag_key}")
-            else:
-                logging.warning("[source_only] tag is empty or rank_names.txt missing; target 10 unresolved.")
-
-            if not target_subjects_resolved:
-                logging.error("[source_only] Target subjects could not be resolved. "
-                              "Please provide a valid tag (e.g., rank_dtw_mean_high).")
-                # We still proceed with training-only (no val/test), but downstream checks may stop run.
-
-
-        # === Also filter subject_list so split_data() reflects exclusions ===
-        def _norm_sid(s: str) -> str:
-            return str(s).strip().upper()
-        if mode == "source_only" and excluded_subjects:
-            excl_norm_set = {_norm_sid(s) for s in excluded_subjects}
-            orig_cnt = len(subject_list)
-            subject_list = [s for s in subject_list if _norm_sid(s) not in excl_norm_set]
-            kept_cnt = len(subject_list)
-            logging.info("[source_only] Subject list filtered for split_data(): original=%d, removed=%d, kept=%d",
-                         orig_cnt, orig_cnt - kept_cnt, kept_cnt)
-            try:
-                removed_list = sorted(excluded_subjects)
-                logging.info("[source_only] Removed subjects (sample): %s",
-                             ", ".join(removed_list[:15]) + (" ..." if len(removed_list) > 15 else ""))
-            except Exception:
-                pass
-        elif mode == "source_only" and not excluded_subjects:
-            logging.warning("[source_only] excluded_subjects is empty (tag=%s). Check ranks10 files exist.", tag_key)
 
         # summary log for consistency
-        logging.info(f"[EVAL] Data restricted to {len(data)} samples after {mode} filtering.")
+        if mode == "target_only":
+            logging.info(f"[EVAL] Data restricted to {len(data)} samples after {mode} filtering.")
     elif mode == "joint_train":
         # Use both source and target subjects for training (no row-level filtering; just widen subject_list)
         target_subjects = target_subjects or []
@@ -350,26 +269,138 @@ def train_pipeline(
             time_stratify_min_chunk=time_stratify_min_chunk,
         )
     elif mode == "source_only":
-        df_src, feat_cols = _prepare_df_with_label_and_features(data)
-        X_train = df_src[feat_cols].drop(columns=["subject_id"], errors="ignore").select_dtypes(include=[np.number])
-        y_train = df_src["label"].astype(int)
+#        df_src, feat_cols = _prepare_df_with_label_and_features(data)
+#        X_train = df_src[feat_cols].drop(columns=["subject_id"], errors="ignore").select_dtypes(include=[np.number])
+#        y_train = df_src["label"].astype(int)
 
-        if target_subjects_resolved:
-            X_t_tr, X_val, X_test, y_t_tr, y_val, y_test = split_data(
-                subject_split_strategy="subject_time_split",
-                subject_list=subject_list,                     # not used
-                target_subjects=target_subjects_resolved,
-                model_type=model_type,
-                seed=seed,
-                time_stratify_labels=time_stratify_labels,
-                time_stratify_tolerance=time_stratify_tolerance,
-                time_stratify_window=time_stratify_window,
-                time_stratify_min_chunk=time_stratify_min_chunk,
+        # ==========================================================
+        # source_only モード
+        # - 学習: MIDDLE グループのみ
+        # - 評価: rank(high/low) に対応するターゲット被験者
+        #         （rank_names.txt → なければ CLI の target_subjects を使用）
+        # ==========================================================
+
+        # -- 1. タグから距離メトリックの prefix を抽出 (dtw / mmd / wasserstein) --
+        tag_key = (tag or "").replace("rank_", "")
+        metric_prefix = None
+        for prefix in ["dtw", "mmd", "wasserstein"]:
+            if prefix in tag_key:
+                metric_prefix = prefix
+                break
+
+        ranks_dir = Path("results/domain_analysis/distance/ranks29")
+        if metric_prefix is None:
+            raise ValueError(
+                f"[source_only] Cannot infer metric prefix from tag='{tag}'. "
+                f"Expected one of ['dtw', 'mmd', 'wasserstein']."
             )
-            logging.info("[source_only] Target(10) time-wise split done -> use val/test only for eval.")
+
+        middle_file = ranks_dir / f"{metric_prefix}_mean_middle.txt"
+        if not middle_file.exists():
+            raise FileNotFoundError(
+                f"[ERROR] Middle group file does not exist: {middle_file}"
+            )
+
+        # -- 2. MIDDLE グループ被験者を読み込み → 学習用の train 部分だけ使う --
+        with open(middle_file) as f:
+            middle_subjects = [s.strip() for s in f if s.strip()]
+
+        logging.info(
+            "[source_only] Using MIDDLE subjects for training (n=%d)",
+            len(middle_subjects),
+        )
+
+        # MIDDLE グループを time-based split して、train 部分だけを採用
+        mid_train, mid_val, mid_test, y_mid_train, y_mid_val, y_mid_test = split_data(
+            subject_split_strategy="subject_time_split",
+            subject_list=middle_subjects,
+            target_subjects=middle_subjects,
+            model_type=model_type,
+            seed=seed,
+            time_stratify_labels=time_stratify_labels,
+            time_stratify_tolerance=time_stratify_tolerance,
+            time_stratify_window=time_stratify_window,
+            time_stratify_min_chunk=time_stratify_min_chunk,
+        )
+
+        X_train = mid_train
+        y_train = y_mid_train.astype(int)
+        logging.info(
+            "[source_only] Final training rows (middle-train only): %d",
+            len(X_train),
+        )
+
+        # -- 3. 評価用ターゲット被験者（high/low グループ）を解決する --
+        eval_subjects: List[str] = []
+
+        # 3-1. rank_names.txt があれば、そこから解決
+        if tag and os.path.exists(default_rank_file):
+            with open(default_rank_file) as f:
+                lines = [x.strip() for x in f.readlines() if x.strip()]
+            match = [x for x in lines if os.path.basename(x).startswith(tag_key)]
+            if match:
+                group_file = os.path.normpath(match[0])
+                if os.path.exists(group_file):
+                    with open(group_file) as g:
+                        target_subjects_resolved = [s.strip() for s in g.readlines() if s.strip()]
+                    eval_subjects = list(dict.fromkeys(target_subjects_resolved))
+                    logging.info(
+                        "[source_only] Resolved eval subjects from %s (n=%d)",
+                        group_file,
+                        len(eval_subjects),
+                    )
+                else:
+                    logging.warning(
+                        "[source_only] Target group file not found: %s", group_file
+                    )
+            else:
+                logging.warning(
+                    "[source_only] No matching group found in rank_names.txt for tag=%s",
+                    tag_key,
+                )
         else:
-            X_val = pd.DataFrame(); y_val = pd.Series(dtype=int)
-            X_test = pd.DataFrame(); y_test = pd.Series(dtype=int)
+            logging.warning(
+                "[source_only] rank_names.txt not found or tag empty; "
+                "will try CLI target_subjects as fallback."
+            )
+
+        # 3-2. rank_names.txt で解決できなかった場合は、CLI 引数 target_subjects を使う
+        if not eval_subjects and target_subjects:
+            eval_subjects = list(dict.fromkeys(target_subjects))
+            logging.info(
+                "[source_only] Falling back to CLI target_subjects for evaluation (n=%d)",
+                len(eval_subjects),
+            )
+
+        # 3-3. それでも解決できない場合は、ここで諦めて return
+        if not eval_subjects:
+            logging.error(
+                "[source_only] No evaluation subjects resolved "
+                "(both rank_names.txt and CLI target_subjects are empty)."
+            )
+            # サニティチェックに引っかかる前に明示的に終了
+            return
+
+        # -- 4. 評価対象被験者に対して time-based split → val/test を作成 --
+        _, X_val, X_test, _, y_val, y_test = split_data(
+            subject_split_strategy="subject_time_split",
+            subject_list=eval_subjects,
+            target_subjects=eval_subjects,
+            model_type=model_type,
+            seed=seed,
+            time_stratify_labels=time_stratify_labels,
+            time_stratify_tolerance=time_stratify_tolerance,
+            time_stratify_window=time_stratify_window,
+            time_stratify_min_chunk=time_stratify_min_chunk,
+        )
+
+        logging.info(
+            "[source_only] Eval subjects time-wise split done "
+            "(val n=%d, test n=%d)",
+            len(y_val),
+            len(y_test),
+        )
+
     else:
         X_train, X_val, X_test, y_train, y_val, y_test = split_data(
             subject_split_strategy=subject_split_strategy,
@@ -387,13 +418,6 @@ def train_pipeline(
         y_train, y_val, y_test, 
         tag=f"{subject_split_strategy}|time_stratify={time_stratify_labels}"
     )
-    # Sanity: no excluded subject should appear in any split (source_only)
-    if mode == "source_only" and excluded_subjects:
-        def _get_sids(df):
-            return set(df["subject_id"].astype(str).str.upper()) if "subject_id" in df.columns else set()
-        leak = (_get_sids(X_train) | _get_sids(X_val) | _get_sids(X_test)) & {s.upper() for s in excluded_subjects}
-        if leak:
-            logging.error("[source_only] Found excluded subjects in splits: %s", sorted(list(leak))[:10])
 
     # Sanity checks
     if y_train.nunique() < 2:
