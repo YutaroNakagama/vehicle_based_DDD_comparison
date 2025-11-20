@@ -2,17 +2,20 @@
 
 This script is the command-line entry point to the preprocessing stage. It selects a
 model-specific preprocessing routine from :mod:`src.data_pipeline.processing_pipeline`
-or :mod:`src.data_pipeline.processing_pipeline_mp`.
+or the multiprocessing variant :mod:`src.data_pipeline.processing_pipeline_mp`.
+
+CLI Options (summary):
+  --model <name>          Required. One of src.config.DATA_PROCESS_CHOICES
+  --jittering             Enable jittering augmentation
+  --multi_process         Use multiprocessing pipeline implementation
 
 Examples
 --------
 Run preprocessing for the LSTM model with jittering augmentation:
-
-    $ python preprocess.py --model Lstm --jittering
+    python preprocess.py --model Lstm --jittering
 
 Run preprocessing for the Random Forest model without augmentation:
-
-    $ python preprocess.py --model RF
+    python preprocess.py --model RF
 """
 
 import sys
@@ -32,35 +35,23 @@ import src.data_pipeline.processing_pipeline_mp as dp_mp
 
 
 def main():
-    """Parse command-line arguments and execute the preprocessing pipeline.
+    """Parse CLI arguments and execute the preprocessing pipeline.
 
-    This function parses CLI arguments specifying the model type and whether
-    jittering or multiprocessing should be applied. It then delegates to
-    the appropriate preprocessing pipeline.
-
-    Parameters
-    ----------
-    None
+    Delegates to either the single-process or multiprocessing pipeline depending
+    on ``--multi_process``.
 
     Other Parameters
     ----------------
     --model : str
-        Required. Must be one of the supported model types defined in
-        ``src.config.DATA_PROCESS_CHOICES``. Specifies which model's
-        preprocessing pipeline to run.
-    --jittering : bool, optional
-        If provided, applies jittering augmentation to the input data.
-    --multi_process : bool, optional
-        If provided, uses the multiprocessing variant of the pipeline.
+        Required. One of ``src.config.DATA_PROCESS_CHOICES``.
+    --jittering : bool
+        Apply jittering augmentation if passed.
+    --multi_process : bool
+        Use multiprocessing variant if set.
 
     Returns
     -------
     None
-
-    Raises
-    ------
-    SystemExit
-        If argument parsing fails due to invalid or missing input.
     """
     parser = argparse.ArgumentParser(
         description="Preprocess data for a selected model in the DDD pipeline."

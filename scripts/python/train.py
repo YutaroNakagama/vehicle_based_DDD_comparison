@@ -4,16 +4,20 @@ Used primarily by HPC job scripts:
   - scripts/hpc/train/pbs_train.sh
   - scripts/hpc/domain_analysis/pbs_rank.sh
 
-This script provides a lightweight command-line interface for training models
-on the processed DDD dataset. Subject lists are loaded from external text files,
-enabling flexible batch execution without direct ID specification.
+Provides a lightweight command-line interface for training models on the
+processed DDD dataset. Subject lists are loaded from external text files.
 
-Supported modes
----------------
-- **pooled**: Train/test split over all subjects (domain-agnostic baseline)
-- **target_only**: Use only target subjects (within-domain evaluation)
-- **source_only**: Use all non-target subjects (exclude target subjects)
-- **joint_train**: Combine target and source subjects (mixed-domain training)
+CLI Options (summary):
+  --model_name <name>     Required. One of src.config.MODEL_CHOICES
+  --mode <mode>           pooled | target_only | source_only | joint_train
+  --target_file <path>    Path to target subject IDs file (required unless pooled)
+  --subject_wise_split    Enable subject-wise splitting (avoid leakage)
+  --seed <int>            Random seed (default: 42)
+  --tag <str>             Optional artifact suffix
+  --time_stratify_labels  Enable time/label stratified splitting
+  --time_stratify_tolerance <float>  Positive ratio tolerance (default: 0.02)
+  --time_stratify_window <float>     Boundary search window fraction (default: 0.10)
+  --time_stratify_min_chunk <int>    Minimum rows per split (default: 100)
 """
 
 import sys
@@ -44,38 +48,14 @@ import src.models.model_pipeline as mp
 def main():
     """Parse command-line arguments and execute the training pipeline.
 
-    Parameters
-    ----------
-    None
+    Other Parameters
+    ----------------
+    See module docstring CLI summary for full list. Key options:
+    --model_name, --mode, --target_file, stratification flags.
 
-    Command-line Options
-    --------------------
-    --model_name : str
-        Required. Model architecture to train.
-        Must be one of ``src.config.MODEL_CHOICES``.
-    --mode : {"pooled", "target_only", "source_only", "joint_train"}
-        Training mode controlling which subjects are used.
-        - ``pooled``       : Train/test over all subjects (domain-agnostic baseline)
-        - ``target_only``  : Use only target subjects (within-domain split)
-        - ``source_only``  : Use all non-target subjects (exclude targets)
-        - ``joint_train``  : Combine both target and source subjects
-    --target_file : str, optional
-        Path to a text file containing target subject IDs (space, comma, or newline-separated).
-        Required for all modes except ``pooled``.
-    --subject_wise_split : bool, optional
-        If True, prevents data leakage across subjects.
-    --seed : int, default=42
-        Random seed for reproducibility.
-    --tag : str, optional
-        Tag name used for model and result file naming.
-    --time_stratify_labels : bool, optional
-        If True, enforces class ratio consistency across temporal splits.
-    --time_stratify_tolerance : float, default=0.02
-        Allowed deviation in positive ratio between splits.
-    --time_stratify_window : float, default=0.10
-        Window proportion (±) for adjusting temporal boundaries.
-    --time_stratify_min_chunk : int, default=100
-        Minimum number of samples per split.
+    Returns
+    -------
+    None
     """
     parser = argparse.ArgumentParser(
         description="Lightweight training CLI for DDD experiments (file-based subject lists)."
@@ -110,7 +90,7 @@ def main():
     parser.add_argument("--time_stratify_min_chunk", type=int, default=100)
 
     args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname%s - %(message)s")
 
     # --- Load subjects and map mode ---
     target_subjects = load_subjects_from_file(args.target_file) if args.mode != "pooled" else []
