@@ -70,17 +70,17 @@ def _parse_name(fname: str, model_tag: str) -> Tuple[str, Optional[str]]:
     -------
     tuple of (str, str or None)
         A tuple where the first element is the scheme
-        (``baseline``, ``only10``, or ``finetune``),
+        (``baseline``, ``only29``, or ``finetune``),
         and the second element is the group name, or ``None`` if not applicable.
     """
     # baseline
     if re.fullmatch(rf"metrics_{re.escape(model_tag)}\.csv", fname):
         return "baseline", None
 
-    # only10 (group name free-form)
-    m = re.fullmatch(rf"metrics_{re.escape(model_tag)}_only10_(.+)\.csv", fname)
+    # only29 (group name free-form)
+    m = re.fullmatch(rf"metrics_{re.escape(model_tag)}_only29_(.+)\.csv", fname)
     if m:
-        return "only10", m.group(1)
+        return "only29", m.group(1)
 
     # finetune (free-form group name between the two tokens)
     m = re.fullmatch(rf"metrics_{re.escape(model_tag)}_finetune_(.+?)_finetune\.csv", fname)
@@ -162,7 +162,7 @@ def make_comparison_table(
     """Generate a wide comparison table from summarized metrics.
 
     Converts the long-form summary into a wide table with metrics
-    for ``only10`` and ``finetune`` schemes, and their differences (delta).
+    for ``only29`` and ``finetune`` schemes, and their differences (delta).
 
     Parameters
     ----------
@@ -178,7 +178,7 @@ def make_comparison_table(
     -------
     pandas.DataFrame
         Wide-form DataFrame with columns for each metric:
-        ``{metric}_only10``, ``{metric}_finetune``, and ``{metric}_delta``.
+        ``{metric}_only29``, ``{metric}_finetune``, and ``{metric}_delta``.
     """
     metric_cols = metric_cols or METRIC_COLS_DEFAULT
 
@@ -190,14 +190,14 @@ def make_comparison_table(
     # normalize scheme labels just in case
     scheme_map = {
         "with_pretrain(finetune)": "finetune",
-        "without_pretrain(only10)": "only10",
+        "without_pretrain(only29)": "only29",
         "baseline": "baseline",
     }
     if "scheme" in df.columns:
         df["scheme"] = df["scheme"].map(lambda x: scheme_map.get(x, x))
 
-    # keep only only10/finetune for pivot
-    df2 = df[df["scheme"].isin(["only10", "finetune"])].copy()
+    # keep only only29/finetune for pivot
+    df2 = df[df["scheme"].isin(["only29", "finetune"])].copy()
     # keep group as str (free-form)
     if "group" in df2.columns:
         df2["group"] = df2["group"].astype(str)
@@ -210,13 +210,13 @@ def make_comparison_table(
         observed=False,  # future-proof for pandas
     )
 
-    # build output columns in the order: only10, finetune, delta
+    # build output columns in the order: only29, finetune, delta
     out = pd.DataFrame(index=wide.index)
     for m in metric_cols:
-        c_only = (m, "only10")
+        c_only = (m, "only29")
         c_fine = (m, "finetune")
         if c_only in wide.columns:
-            out[f"{m}_only10"] = wide[c_only]
+            out[f"{m}_only29"] = wide[c_only]
         if c_fine in wide.columns:
             out[f"{m}_finetune"] = wide[c_fine]
         if c_only in wide.columns and c_fine in wide.columns:
