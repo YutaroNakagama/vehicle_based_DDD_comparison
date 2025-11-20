@@ -25,7 +25,8 @@ logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 # ============================================================
 METRICS = ["wasserstein", "mmd", "dtw"]
 ROOT = Path("results/domain_analysis/distance")
-OUT_DIR = ROOT / "ranks10"
+#OUT_DIR = ROOT / "ranks10"
+OUT_DIR = ROOT / "ranks29"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -86,11 +87,27 @@ def main() -> int:
         mean_dist = np.nanmean(M, axis=1)
         ranked_idx = np.argsort(-mean_dist)
 
-        # --- Split into High / Middle / Low (10 each) ---
+#        # --- Split into High / Middle / Low (10 each) ---
+#        n = len(ranked_idx)
+#        high = [subjects[i] for i in ranked_idx[:10]]
+#        middle = [subjects[i] for i in ranked_idx[n // 2 - 5 : n // 2 + 5]]
+#        low = [subjects[i] for i in ranked_idx[-10:]]
+
+        # --- Split into High / Middle / Low (29 each) ---
+        group_size = 29
+        half = group_size // 2   # = 14
         n = len(ranked_idx)
-        high = [subjects[i] for i in ranked_idx[:10]]
-        middle = [subjects[i] for i in ranked_idx[n // 2 - 5 : n // 2 + 5]]
-        low = [subjects[i] for i in ranked_idx[-10:]]
+
+        # High: top 29
+        high = [subjects[i] for i in ranked_idx[:group_size]]
+
+        # Middle: centred 29 around the median
+        mid_start = max(0, n // 2 - half)
+        mid_end   = min(n, n // 2 + half + 1)  # +1 to make total 29
+        middle = [subjects[i] for i in ranked_idx[mid_start:mid_end]]
+
+        # Low: bottom 29
+        low = [subjects[i] for i in ranked_idx[-group_size:]]
 
         # --- Save outputs ---
         save_group(metric, "high", high)
