@@ -143,36 +143,30 @@ def calculate_and_save_perclos_physio_combined(
     return pd.merge(physio_resampled, perclos_df, on="Window", how="inner")
 
 
-def perclos_process(subject: str) -> None:
+def perclos_process(subject: str, model_name: str) -> None:
     """Extract and save combined PERCLOS and physiological features.
 
     Parameters
     ----------
     subject : str
-        Subject identifier (format: ``"<id>_<version>"``).
-
-    Returns
-    -------
-    None
-        Processed features are saved to CSV.
+        Subject identifier ("<id>_<version>").
+    model_name : str
+        Model name (used for window configuration if extended in future).
     """
     parts = subject.split('_')
     if len(parts) != 2:
         logging.error(f"Unexpected subject format: {subject}")
         return
-
     subject_id, version = parts
-
     blink_data_file = f"{DATASET_PATH}/{subject_id}/Blinks_{subject_id}_{version}.mat"
     physio_data_file = f"{DATASET_PATH}/{subject_id}/Physio_{subject_id}_{version}.mat"
-
     df_combined = calculate_and_save_perclos_physio_combined(
         blink_data_file,
         physio_data_file,
-        get_physio_window_sec(subject_id)
+        get_physio_window_sec(model_name if model_name in MODEL_WINDOW_CONFIG else 'common')
     )
     if df_combined is not None:
-        save_csv(df_combined, subject_id, version, 'perclos')
+        save_csv(df_combined, subject_id, version, 'perclos', model_name)
 
 
 # ----- Pupil Processing -----
@@ -269,28 +263,23 @@ def process_pupil_data(subject_id: str, version: str, threshold: float = 3) -> p
     })
 
 
-def pupil_process(subject: str) -> None:
+def pupil_process(subject: str, model_name: str) -> None:
     """Process and save pupil diameter data.
 
     Parameters
     ----------
     subject : str
-        Subject identifier (format: ``"<id>_<version>"``).
-
-    Returns
-    -------
-    None
-        Processed pupil features are saved to CSV.
+        Subject identifier ("<id>_<version>").
+    model_name : str
+        Model name (reserved for future window/param control).
     """
     parts = subject.split('_')
     if len(parts) != 2:
         logging.error(f"Unexpected subject format: {subject}")
         return
-
     subject_id, version = parts
     df_pupil = process_pupil_data(subject_id, version)
-
     if df_pupil is not None:
-        save_csv(df_pupil, subject_id, version, 'pupil')
+        save_csv(df_pupil, subject_id, version, 'pupil', model_name)
         logging.info(f"Processed and saved pupil data for {subject_id}_{version}")
 

@@ -1,12 +1,14 @@
 """EEG Feature Extraction Pipeline for Driver Drowsiness Detection.
 
-This module provides a comprehensive pipeline for processing Electroencephalography (EEG) data.
-It includes functionalities for loading raw EEG signals, applying bandpass filtering to isolate
-specific frequency components, computing band power within standard EEG frequency ranges
-(Delta, Theta, Alpha, Beta, Gamma), and saving the extracted features for use in
-driver drowsiness detection models.
+Processes raw EEG signals: load, window, bandpass filter per standard bands
+(Delta, Theta, Alpha, Beta, Gamma), compute band powers, and save per-window
+features. Window parameters are derived from MODEL_WINDOW_CONFIG.
 
-The module supports window-based feature extraction and parallel processing for efficiency.
+Notes
+-----
+- Expected MAT structure: rawEEG (channels x time); channel 0 holds timestamps.
+- Uses joblib (thread preference) for per-window parallelization.
+- Missing or malformed EEG data returns without saving.
 """
 
 from src.config import (
@@ -25,25 +27,15 @@ from joblib import Parallel, delayed
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
-def get_eeg_window_params(model: str) -> tuple[int, int]:
-    """Retrieve window size and step size in samples for EEG data.
-
-    This function accesses the ``MODEL_WINDOW_CONFIG`` to find the appropriate
-    window duration and step for processing EEG signals, ensuring consistency
-    with the model's requirements and the EEG sampling rate.
+def get_eeg_window_params(model_name: str) -> tuple[int, int]:
+    """Return window and step size (samples) for EEG data.
 
     Parameters
     ----------
-    model : str
-        Model name used to retrieve window parameters.
-
-    Returns
-    -------
-    tuple of (int, int)
-        - Window size in samples.
-        - Step size in samples.
+    model_name : str
+        Model architecture key for MODEL_WINDOW_CONFIG.
     """
-    config = MODEL_WINDOW_CONFIG[model]
+    config = MODEL_WINDOW_CONFIG[model_name]
     window_samples = int(config["window_sec"] * SAMPLE_RATE_EEG)
     step_samples = int(config["step_sec"] * SAMPLE_RATE_EEG)
     return window_samples, step_samples
@@ -65,6 +57,7 @@ def bandpass_filter(data: np.ndarray, lowcut: float, highcut: float, order: int 
 
     Returns
     -------
+
     ndarray
         Filtered 1D signal.
     """
@@ -181,29 +174,20 @@ def process_eeg_windows(eeg_data: np.ndarray, timestamps: np.ndarray,
 
     return timestamp_windows, channel_band_powers
 
-def eeg_process(subject: str, model: str) -> None:
-    """Run the full EEG feature extraction pipeline.
-
-    This function loads raw EEG data, computes band powers per window,
-    and saves the results as a CSV file.
+def eeg_process(subject: str, model_name: str) -> None:
+    """Extract EEG band power features and save CSV.
 
     Parameters
     ----------
     subject : str
-        Subject identifier (format: ``"<id>_<version>"``).
-    model : str
-        Model name to determine windowing strategy.
-
-    Returns
-    -------
-    None
-        Processed features are written to disk.
+        Subject identifier ("<id>_<version>").
+    model_name : str
+        Model name for window sizing.
     """
     parts = subject.split('_')
     if len(parts) != 2:
         logging.error(f"Unexpected subject format: {subject}")
         return
-
     subject_id, version = parts
 
     frequency_bands = {
@@ -218,14 +202,14 @@ def eeg_process(subject: str, model: str) -> None:
     if eeg_data is None:
         return
 
-    timestamp_windows, channel_band_powers = process_eeg_windows(eeg_data, timestamps, frequency_bands, model)
+    timestamp_windows, channel_band_powers = process_eeg_windows(eeg_data, timestamps, frequency_bands, model_name)
 
     data_for_csv = {'Timestamp': timestamp_windows}
     for ch in channel_band_powers:
         for band_name in frequency_bands:
-            column_name = f"Channel_{ch}_{band_name}"
-            data_for_csv[column_name] = channel_band_powers[ch][band_name]
+            col = f"Channel_{ch}_{band_name}"
+            data_for_csv[col] = channel_band_powers[ch][band_name]
 
     df_results = pd.DataFrame(data_for_csv)
-    save_csv(df_results, subject_id, version, 'eeg', model)
+    save_csv(df_results, subject_id, version, 'eeg', model_name)
 

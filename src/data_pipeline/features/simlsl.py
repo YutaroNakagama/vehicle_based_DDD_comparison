@@ -1,11 +1,17 @@
 """Feature extraction for vehicle dynamics (SIMlsl) signals.
 
-This module includes functions to extract statistical and time-frequency
-domain features from vehicle dynamics data such as steering angle,
-acceleration, and lane offset.
+Extracts statistical, spectral, time-frequency, and prediction-error based
+features from steering, acceleration, lane offset signals. Supports:
+- Statistical & spectral window features (extract_statistical_features)
+- Smooth/std/prediction-error features (smooth_std_pe_process)
+- Time-frequency domain summary features (time_freq_domain_process)
+- Optional jittering augmentation (Gaussian noise based)
 
-Supports jittering-based data augmentation and multi-window sliding
-feature extraction for machine learning models.
+Notes
+-----
+- Expects MAT key 'SIM_lsl' with time at row 0 and signals at fixed indices:
+  steering=29, lat_acc=19, long_acc=18, lane_offset=27
+- Window config derived from MODEL_WINDOW_CONFIG[model_name]
 """
 
 import numpy as np
@@ -140,30 +146,20 @@ def extract_statistical_features(signal: np.ndarray, prefix: str = "") -> dict:
     return features
 
 
-def get_simlsl_window_params(model: str) -> tuple[int, int]:
-    """Retrieve window and step size (in samples) for SIMlsl data.
-
-    This function looks up the window configuration for the given model
-    in ``MODEL_WINDOW_CONFIG`` and converts the window/step durations
-    from seconds into samples.
+def get_simlsl_window_params(model_name: str) -> tuple[int, int]:
+    """Return window and step size (samples) for SIMlsl data.
 
     Parameters
     ----------
-    model : str
-        Model name used to retrieve configuration (e.g., ``"Lstm"``, ``"SvmW"``).
-
-    Returns
-    -------
-    tuple of (int, int)
-        - Window size in samples.
-        - Step size in samples.
+    model_name : str
+        Key for MODEL_WINDOW_CONFIG.
     """
-    config = MODEL_WINDOW_CONFIG[model]
+    config = MODEL_WINDOW_CONFIG[model_name]
     window_samples = int(config["window_sec"] * SAMPLE_RATE_SIMLSL)
     step_samples = int(config["step_sec"] * SAMPLE_RATE_SIMLSL)
     return window_samples, step_samples
 
-def process_simlsl_data(signals: list[np.ndarray], prefixes: list[str], model: str) -> pd.DataFrame:
+def process_simlsl_data(signals: list[np.ndarray], prefixes: list[str], model_name: str) -> pd.DataFrame:
     """Process SIMlsl signals with sliding windows and extract features.
 
     For each signal, statistical and spectral features are extracted
@@ -175,7 +171,7 @@ def process_simlsl_data(signals: list[np.ndarray], prefixes: list[str], model: s
         List of 1D SIMlsl signals.
     prefixes : list of str
         Prefixes corresponding to each signal, used in feature names.
-    model : str
+    model_name : str
         Model name used to determine window and step size.
 
     Returns
@@ -183,7 +179,7 @@ def process_simlsl_data(signals: list[np.ndarray], prefixes: list[str], model: s
     DataFrame
         A DataFrame where rows represent windows and columns are extracted features.
     """
-    window_size, step_size = get_simlsl_window_params(model)
+    window_size, step_size = get_simlsl_window_params(model_name)
     starts = range(0, len(signals[0]) - window_size + 1, step_size)
 
     def process_one_window(start):
@@ -199,7 +195,7 @@ def process_simlsl_data(signals: list[np.ndarray], prefixes: list[str], model: s
 
     return pd.DataFrame(features_list)
 
-def smooth_std_pe_features(signal: np.ndarray, model: str) -> dict:
+def smooth_std_pe_features(signal: np.ndarray, model_name: str) -> dict:
     """Compute smoothed standard deviation and prediction error features.
 
     Applies a sliding window to compute the standard deviation,
@@ -209,7 +205,7 @@ def smooth_std_pe_features(signal: np.ndarray, model: str) -> dict:
     ----------
     signal : ndarray
         Input 1D signal.
-    model : str
+    model_name : str
         Model name used to determine window and step size.
 
     Returns
@@ -220,7 +216,7 @@ def smooth_std_pe_features(signal: np.ndarray, model: str) -> dict:
         - ``pred_error`` : prediction error values.
         - ``gaussian_smooth`` : Gaussian-smoothed values.
     """
-    window_size, step_size = get_simlsl_window_params(model)
+    window_size, step_size = get_simlsl_window_params(model_name)
     features = {'std_dev': [], 'pred_error': [], 'gaussian_smooth': []}
 
     for start in range(0, len(signal) - window_size + 1, step_size):
@@ -240,26 +236,17 @@ def smooth_std_pe_features(signal: np.ndarray, model: str) -> dict:
     return features
 
 
-def smooth_std_pe_process(subject: str, model: str, use_jittering: bool = False) -> None:
-    """Extract smoothed std-dev and prediction error features for a subject.
-
-    Loads SIMlsl data, extracts steering/acceleration/lane offset signals,
-    applies optional jittering, computes smoothed standard deviation and
-    prediction error features, and saves results to CSV.
+def smooth_std_pe_process(subject: str, model_name: str, use_jittering: bool = False) -> None:
+    """Compute smooth/std/pred-error features for steering & related signals.
 
     Parameters
     ----------
     subject : str
-        Subject identifier (format: ``"<id>_<version>"``).
-    model : str
-        Model name used to determine window settings.
-    use_jittering : bool, default=False
-        Whether to apply jittering-based data augmentation.
-
-    Returns
-    -------
-    None
-        Processed features are saved to CSV.
+        Subject identifier ("<id>_<version>").
+    model_name : str
+        Model name for window sizing.
+    use_jittering : bool
+        Apply jittering augmentation if True.
     """
     parts = subject.split('_')
     if len(parts) != 2:
@@ -293,39 +280,30 @@ def smooth_std_pe_process(subject: str, model: str, use_jittering: bool = False)
 
     features = {}
     for signal, name in zip(signals, signal_names):
-        result = smooth_std_pe_features(signal, model)
+        result = smooth_std_pe_features(signal, model_name)
         for key in result:
             features[f'{name}_{key}'] = result[key]
 
-    window_size, step_size = get_simlsl_window_params(model)
+    window_size, step_size = get_simlsl_window_params(model_name)
     timestamps = sim_data[0][::step_size][:len(features['steering_std_dev'])]
 
     df = pd.DataFrame(features)
     df.insert(0, 'Timestamp', timestamps)
 
-    save_csv(df, subject_id, version, 'smooth_std_pe', model)
+    save_csv(df, subject_id, version, 'smooth_std_pe', model_name)
 
 
-def time_freq_domain_process(subject: str, model: str, use_jittering: bool = False) -> None:
-    """Extract time-frequency domain features for a subject.
-
-    Loads SIMlsl data, extracts steering/acceleration/lane offset signals,
-    applies optional jittering, and computes time-frequency domain features
-    using sliding windows. Results are saved to CSV.
+def time_freq_domain_process(subject: str, model_name: str, use_jittering: bool = False) -> None:
+    """Extract time-frequency domain features (statistical + spectral) per window.
 
     Parameters
     ----------
     subject : str
-        Subject identifier (format: ``"<id>_<version>"``).
-    model : str
-        Model name used to determine window settings.
-    use_jittering : bool, default=False
-        Whether to apply jittering-based data augmentation.
-
-    Returns
-    -------
-    None
-        Processed features are saved to CSV.
+        Subject identifier ("<id>_<version>").
+    model_name : str
+        Model name for window sizing.
+    use_jittering : bool
+        Apply jittering augmentation if True.
     """
     parts = subject.split('_')
     if len(parts) != 2:
@@ -351,12 +329,12 @@ def time_freq_domain_process(subject: str, model: str, use_jittering: bool = Fal
     if use_jittering:
         signals = [jittering(sig, sigma=0.03) for sig in signals]
 
-    window_size, step_size = get_simlsl_window_params(model)
+    window_size, step_size = get_simlsl_window_params(model_name)
 
-    features_df = process_simlsl_data(signals, prefixes, model)
+    features_df = process_simlsl_data(signals, prefixes, model_name)
     timestamps = sim_data[0, ::step_size][:len(features_df)]
 
     features_df.insert(0, 'Timestamp', timestamps)
-    save_csv(features_df, subject_id, version, 'time_freq_domain', model)
+    save_csv(features_df, subject_id, version, 'time_freq_domain', model_name)
 
 

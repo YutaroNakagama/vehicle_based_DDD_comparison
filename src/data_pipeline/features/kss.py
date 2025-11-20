@@ -98,33 +98,32 @@ def adjust_scores_length(scores: list, target_length: int) -> list:
         arr = arr[:target_length]
     return arr.tolist()
 
-def kss_process(subject: str, model: str) -> None:
+def kss_process(subject: str, model_name: str) -> None:
     """Compute and save KSS (Karolinska Sleepiness Scale) scores.
 
-    This function derives KSS scores from EEG band powers using:
-    - Global (Theta + Alpha) / Beta ratio.
-    - FC1/FC2-based (Theta + Alpha) / Beta ratio.
+    Derives per-window KSS estimates from EEG band powers:
+    - Global (Theta + Alpha) / Beta ratio across all channels.
+    - FC1/FC2-based (Theta + Alpha) / Beta ratio (if channels present).
+
+    Notes
+    -----
+    - Expects merged EEG feature CSV at: INTRIM_CSV_PATH/merged/<model_name>/merged_<id>_<version>.csv
+    - Nonexistent or malformed files are logged and skipped.
+    - Saves both raw ratio-based labels and percentile-based labels.
 
     Parameters
     ----------
     subject : str
-        Subject identifier (format: ``"<id>_<version>"``).
-    model : str
-        Model name used for resolving file paths.
-
-    Returns
-    -------
-    None
-        Processed data with KSS scores is saved to CSV.
+        Subject identifier ("<id>_<version>").
+    model_name : str
+        Model architecture used in file path resolution.
     """
     parts = subject.split('_')
     if len(parts) != 2:
         logging.error(f"Unexpected subject format: {subject}")
         return
-
     subject_id, version = parts
-    file_path = os.path.join(INTRIM_CSV_PATH, 'merged', model, f'merged_{subject_id}_{version}.csv')
-
+    file_path = os.path.join(INTRIM_CSV_PATH, 'merged', model_name, f'merged_{subject_id}_{version}.csv')
     try:
         data = pd.read_csv(file_path)
 
@@ -173,7 +172,7 @@ def kss_process(subject: str, model: str) -> None:
             logging.warning(f"Missing FC1/FC2 EEG band columns for {subject}")
 
         # ---- Save result ----
-        save_csv(data, subject_id, version, 'processed', model)
+        save_csv(data, subject_id, version, 'processed', model_name)
 
     except FileNotFoundError:
         logging.error(f"File not found: {file_path}")
