@@ -37,6 +37,12 @@ from imblearn.ensemble import BalancedRandomForestClassifier
 from src.config import MODEL_PKL_PATH, N_TRIALS
 
 from src.utils.io.savers import save_artifacts
+from src.utils.metrics_helper import (
+    calculate_extended_metrics,
+    find_optimal_threshold,
+    apply_threshold,
+)
+from src.utils.artifact_loader import load_model_artifacts
 
 # --- Limit CPU threads globally (important for PBS environments) ---
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -119,31 +125,28 @@ def common_train(
         # define out_dir (was referenced before assignment)
         out_dir = f"{MODEL_PKL_PATH}/{model_name}"
 
-        with open(f"{out_dir}/{model}_{mode}{suffix}.pkl", "rb") as f:
-            best_clf = pickle.load(f)
-        with open(f"{out_dir}/scaler_{model}_{mode}{suffix}.pkl", "rb") as f:
-            scaler = pickle.load(f)
-        with open(f"{out_dir}/selected_features_train_{model}_{mode}{suffix}.pkl", "rb") as f:
-            selected_features = pickle.load(f)
+        # Use unified artifact loader
+        best_clf, scaler, selected_features = load_model_artifacts(
+            model_name=model,
+            base_dir=out_dir,
+            suffix=suffix,
+            mode=mode,
+            use_joblib=True
+        )
+
+        if best_clf is None or scaler is None or selected_features is None:
+            logging.error("[EVAL_ONLY] Failed to load required artifacts. Aborting.")
+            return {}
 
         # Scaling
         X_val_scaled  = scaler.transform(X_val[selected_features])
         X_test_scaled = scaler.transform(X_test[selected_features])
 
-        # Reuse evaluation function
+        # Reuse evaluation function (unified metrics)
         def _eval_split(Xs, ys):
             yhat = best_clf.predict(Xs)
-            out = {
-                "accuracy": float(accuracy_score(ys, yhat)),
-                "precision": float(precision_score(ys, yhat, zero_division=0)),
-                "recall": float(recall_score(ys, yhat, zero_division=0)),
-                "f1": float(f1_score(ys, yhat, zero_division=0)),
-            }
-            if hasattr(best_clf, "predict_proba"):
-                proba = best_clf.predict_proba(Xs)[:, 1]
-                out["auc"] = float(roc_auc_score(ys, proba))
-                out["ap"] = float(average_precision_score(ys, proba))
-            return out
+            proba = best_clf.predict_proba(Xs)[:, 1] if hasattr(best_clf, "predict_proba") else None
+            return calculate_extended_metrics(ys, yhat, proba, zero_division=0)
 
         m_val  = _eval_split(X_val_scaled, y_val)
         m_test = _eval_split(X_test_scaled, y_test)
@@ -583,41 +586,19 @@ def common_train(
     # ---------- Evaluate & Save per-split metrics ----------
     def _eval_split(Xs, ys):
         yhat = best_clf.predict(Xs)
-        out = {
-            "accuracy": float(accuracy_score(ys, yhat)),
-            "precision": float(precision_score(ys, yhat, zero_division=0)),
-            "recall": float(recall_score(ys, yhat, zero_division=0)),
-            "f1": float(f1_score(ys, yhat, zero_division=0)),
-            "auc": None,
-            "ap":  float("nan"),
-            "_y_true": ys,
-            "_y_pred": yhat,
-        }
+        # Get scores for ROC/PR curves
+        y_score = None
         if hasattr(best_clf, "predict_proba"):
-            proba = best_clf.predict_proba(Xs)[:,1]
-            try:
-                auc_val = roc_auc_score(ys, proba)
-                out["auc"] = float(auc_val)
-            except Exception as e_auc:
-                logging.warning(f"[EVAL] AUC calculation failed: {e_auc}")
-            try:
-                out["ap"] = float(average_precision_score(ys, proba))
-            except Exception:
-                pass
-            out["_proba"] = proba  # for threshold search
+            y_score = best_clf.predict_proba(Xs)[:, 1]
         elif hasattr(best_clf, "decision_function"):
-            score = best_clf.decision_function(Xs)
-            try:
-                out["auc"] = float(roc_auc_score(ys, score))
-            except Exception:
-                pass
-            try:
-                out["ap"] = float(average_precision_score(ys, score))
-            except Exception:
-                pass
-            out["_proba"] = score
-        else:
-            out["_proba"] = None
+            y_score = best_clf.decision_function(Xs)
+        
+        # Use unified metrics calculation
+        out = calculate_extended_metrics(ys, yhat, y_score, zero_division=0)
+        # Preserve internal keys for downstream threshold search
+        out["_y_true"] = ys
+        out["_y_pred"] = yhat
+        out["_proba"] = y_score
         return out
 
     m_train = _eval_split(X_train_scaled, y_train)
@@ -671,28 +652,16 @@ def common_train(
     best_threshold = None
     if m_val["_proba"] is not None:
 
-        # --- (CHANGED) Optimize F2 instead of F1 to emphasize recall on rare positives ---
-        precision, recall, thresholds = precision_recall_curve(y_val, m_val["_proba"])
-        beta = 2.0
-        # precision_recall_curve returns len(thresholds) = len(precision) - 1
-        prec_t = precision[:-1]
-        rec_t  = recall[:-1]
-        denom  = (beta**2) * prec_t + rec_t + 1e-8
-        f2_scores = (1 + beta**2) * (prec_t * rec_t) / denom
-        best_idx = int(np.argmax(f2_scores)) if f2_scores.size else 0
-        best_threshold = thresholds[best_idx] if thresholds.size else 0.5
-
-        logging.info(f"Optimal threshold for F2 (β=2): {best_threshold:.3f}")
+        # Use unified threshold optimization (F2 emphasizes recall)
+        best_threshold, best_f2 = find_optimal_threshold(y_val, m_val["_proba"], beta=2.0)
+        logging.info(f"Optimal threshold for F2 (β=2): {best_threshold:.3f} (F2={best_f2:.3f})")
         
         def _apply_thr(proba, y_true):
-            yhat = (proba >= best_threshold).astype(int)
-            return {
-                "accuracy": float(accuracy_score(y_true, yhat)),
-                "precision": float(precision_score(y_true, yhat, zero_division=0)),
-                "recall": float(recall_score(y_true, yhat, zero_division=0)),
-                "f1": float(f1_score(y_true, yhat, zero_division=0)),
-                "f2": float(fbeta_score(y_true, yhat, beta=2, zero_division=0)),
-            }
+            yhat = apply_threshold(proba, best_threshold)
+            metrics = calculate_extended_metrics(y_true, yhat, proba, zero_division=0, include_roc=False, include_pr=False)
+            # Add F2 score
+            metrics["f2"] = float(fbeta_score(y_true, yhat, beta=2, zero_division=0))
+            return metrics
 
         thr_val  = _apply_thr(m_val["_proba"],  y_val)
         thr_test = _apply_thr(m_test["_proba"], y_test) if m_test["_proba"] is not None else None

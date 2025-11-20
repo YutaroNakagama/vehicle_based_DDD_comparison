@@ -12,8 +12,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import StandardScaler
 from src.config import MODEL_PKL_PATH
 
-# --- Added imports for PRC (Precision-Recall Curve) evaluation ---
-from sklearn.metrics import precision_recall_curve, average_precision_score
+from src.utils.metrics_helper import calculate_extended_metrics, calculate_class_specific_metrics
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -62,9 +61,8 @@ def common_eval(
     """
     y_pred = clf.predict(X_test)
 
-    roc_auc = None
-    fpr, tpr = None, None  # Add to capture ROC curve if possible
-
+    # Get probability scores for ROC/PR curves
+    y_score = None
     if hasattr(clf, "predict_proba"):
         classes = getattr(clf, "classes_", np.array([0, 1]))
         if 1 in classes:
@@ -73,7 +71,7 @@ def common_eval(
             # fallback: assume the second column corresponds to positive
             pos_idx = 1 if len(classes) > 1 else 0
 
-        y_pred_proba = clf.predict_proba(X_test)[:, pos_idx]
+        y_score = clf.predict_proba(X_test)[:, pos_idx]
 
         logging.info(
             f"[EVAL] Using predict_proba column index {pos_idx} for positive class "
@@ -83,89 +81,49 @@ def common_eval(
         # --- Check for inverted probability direction (AUC < 0.5) ---
         from sklearn.metrics import roc_auc_score
         try:
-            auc_check = roc_auc_score(y_test, y_pred_proba)
+            auc_check = roc_auc_score(y_test, y_score)
             if auc_check < 0.5:
                 logging.warning(f"[EVAL] AUC={auc_check:.3f} < 0.5 → Inverting predicted probabilities")
-                y_pred_proba = 1.0 - y_pred_proba
-                auc_check = 1.0 - auc_check
+                y_score = 1.0 - y_score
         except Exception as e:
             logging.warning(f"[EVAL] AUC check failed: {e}")
 
+    # Use unified metrics calculation
+    result = calculate_extended_metrics(
+        y_test, y_pred, y_score, 
+        zero_division=0, 
+        include_roc=True, 
+        include_pr=True
+    )
 
-        fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
-        roc_auc = auc(fpr, tpr)
+    # Add model name and MSE for backward compatibility
+    from sklearn.metrics import mean_squared_error
+    result["model"] = model_name
+    result["mse"] = float(mean_squared_error(y_test, y_pred))
 
-        # === Compute Precision-Recall Curve (PRC) and Average Precision (AUPRC) ===
-        precision, recall, _ = precision_recall_curve(y_test, y_pred_proba)
-        auc_pr = average_precision_score(y_test, y_pred_proba)
+    # Extract class-specific metrics
+    report_dict = classification_report(y_test, y_pred, output_dict=True)
+    conf_matrix = np.array(result["confusion_matrix"])
+    class_metrics = calculate_class_specific_metrics(conf_matrix, report_dict)
+    result.update(class_metrics)
 
-        result_pr = {
-            "precision": precision.tolist(),
-            "recall": recall.tolist(),
-            "auc_pr": float(auc_pr)
-        }
-        # Also keep raw probabilities for downstream diagnostics (histogram, threshold search)
-        # NOTE: This can be ~O(n_test) in size; acceptable for 1回の評価。
-        result_proba = y_pred_proba.tolist()
+    # Add classification report for backward compatibility
+    result["classification_report"] = report_dict
 
-    mse = mean_squared_error(y_test, y_pred)
-    report = classification_report(y_test, y_pred, output_dict=True)
-    conf_matrix = confusion_matrix(y_test, y_pred)
-    mse = mean_squared_error(y_test, y_pred)
-    report = classification_report(y_test, y_pred, output_dict=True)
-    conf_matrix = confusion_matrix(y_test, y_pred)
-
-    # ---- Extract positive-class metrics (label=1) and specificity ----
-    pos = report.get("1", {})
-    neg = report.get("0", {})
-    # specificity = TN / (TN + FP)
-    try:
-        tn, fp, fn, tp = conf_matrix.ravel()
-        specificity = float(tn / (tn + fp)) if (tn + fp) > 0 else None
-    except Exception:
-        specificity = None
-
-    logging.info(f"Model: {model_name}")
-    logging.info(f"MSE: {mse:.4f}")
-    logging.info(f"ROC AUC: {roc_auc:.4f}" if roc_auc is not None else "ROC AUC: N/A")
-    logging.info(f"Classification Report:\n{classification_report(y_test, y_pred)}")
-
-    result = {
-        "model": model_name,
-        "mse": float(mse),
-        "roc_auc": float(roc_auc) if roc_auc is not None else None,
-        "classification_report": report,
-        "confusion_matrix": conf_matrix.tolist(),
-        # Positive-class metrics (more relevant for detection)
-        "precision_pos": float(pos.get("precision")) if "precision" in pos else None,
-        "recall_pos": float(pos.get("recall")) if "recall" in pos else None,
-        "f1_pos": float(pos.get("f1-score")) if "f1-score" in pos else None,
-        "support_pos": int(pos.get("support")) if "support" in pos else None,
-        # Negative-class quick reference (optional)
-        "precision_neg": float(neg.get("precision")) if "precision" in neg else None,
-        "recall_neg": float(neg.get("recall")) if "recall" in neg else None,
-        "specificity": specificity
-    }
-
-    # Include ROC curve data if available
-    if fpr is not None and tpr is not None:
-        result["roc_curve"] = {
-            "fpr": fpr.tolist(),
-            "tpr": tpr.tolist(),
-            "auc": roc_auc
-        }
-
-    # Include PRC (Precision–Recall Curve) data if available
-    if hasattr(clf, "predict_proba"):
-        result["pr_curve"] = result_pr
-        result["auc_pr"] = result_pr["auc_pr"]
-        result["y_pred_proba"] = result_proba
-        # Default threshold diagnostics (@0.5)
-        y_hat_05 = (y_pred_proba >= 0.5).astype(int)
+    # Default threshold diagnostics (@0.5) if probabilities available
+    if y_score is not None:
+        y_hat_05 = (y_score >= 0.5).astype(int)
         pos_rate_pred_05 = float(y_hat_05.mean())
         result["decision_threshold_default"] = 0.5
         result["pred_pos_rate_at_0p5"] = pos_rate_pred_05
+        result["y_pred_proba"] = y_score.tolist()
 
-        logging.info(f"AUPRC (Average Precision): {auc_pr:.4f}")
+    logging.info(f"Model: {model_name}")
+    logging.info(f"MSE: {result['mse']:.4f}")
+    if result.get("roc_auc"):
+        logging.info(f"ROC AUC: {result['roc_auc']:.4f}")
+    if result.get("auc_pr"):
+        logging.info(f"AUPRC (Average Precision): {result['auc_pr']:.4f}")
+    logging.info(f"Classification Report:\n{classification_report(y_test, y_pred)}")
 
     return result
