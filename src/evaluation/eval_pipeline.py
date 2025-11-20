@@ -29,6 +29,7 @@ from sklearn.metrics import (
 
 from src.utils.io.loaders import load_subjects_and_data, load_model_and_scaler
 from src.utils.io.savers import save_eval_results
+from src import config as cfg
 from src.evaluation.models import lstm_eval, SvmA_eval, common_eval
 from src.utils.io.split_helpers import split_data, log_split_ratios
 
@@ -115,7 +116,9 @@ def eval_pipeline(
     # --------------------------------------------------------------
     # Step 1.5: Restrict evaluation to target group for tagged runs
     # --------------------------------------------------------------
-    default_rank_file = "results/domain_analysis/distance/rank_names.txt"
+    default_rank_file = os.path.join(
+        cfg.RESULTS_DOMAIN_ANALYSIS_PATH, "distance", cfg.RANK_NAMES_FILENAME
+    )
     target_subjects = []
     if (tag and os.path.exists(default_rank_file)):
         with open(default_rank_file) as f:
@@ -171,7 +174,7 @@ def eval_pipeline(
 
         # If not set, try reading from latest_job.txt
         if not jobid:
-            latest_path = f"models/{model}/latest_job.txt"
+            latest_path = f"models/{model}/{cfg.LATEST_JOB_FILENAME}"
             if os.path.exists(latest_path):
                 with open(latest_path, "r") as f:
                     jobid = f.readline().strip()
@@ -204,7 +207,7 @@ def eval_pipeline(
     # --- fallback only if nothing found ---
     if not locals().get("latest_model_found", False):
         model_path = None
-        jobid_path = f"{model_root}/latest_job.txt"
+        jobid_path = f"{model_root}/{cfg.LATEST_JOB_FILENAME}"
         if os.path.exists(jobid_path):
             with open(jobid_path) as f:
                 jobid = f.read().strip()
@@ -482,7 +485,7 @@ def eval_pipeline(
         model_name=model,
         mode=mode,
         job_id=os.getenv("PBS_JOBID", jobid),  # Prefer evaluation jobid if available
-        out_dir="results/evaluation"
+        out_dir=cfg.RESULTS_EVALUATION_PATH
     )
 
     logging.info(

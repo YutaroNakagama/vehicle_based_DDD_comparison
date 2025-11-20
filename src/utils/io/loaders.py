@@ -26,6 +26,7 @@ from src.config import (
     PROCESS_CSV_PATH,
     SCALING_FILTER,
     WAVELET_FILTER,
+    LATEST_JOB_FILENAME,
 )
 
 import os
@@ -324,7 +325,7 @@ def load_model_and_scaler(model_name: str, mode: str, tag: str, fold: int, jobid
 
     # Fallback: use latest_job.txt if no explicit jobid folder exists
     if not os.path.exists(model_dir):
-        latest_marker = os.path.join("models", model_name, "latest_job.txt")
+        latest_marker = os.path.join("models", model_name, LATEST_JOB_FILENAME)
         if os.path.exists(latest_marker):
             with open(latest_marker) as f:
                 jobid = f.read().strip()

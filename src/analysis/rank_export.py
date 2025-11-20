@@ -29,6 +29,8 @@ from typing import Iterable, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
+from src import config as cfg
+
 
 def _load_subject_names(path: Path) -> List[str]:
     """Load subject names from a JSON file.
@@ -254,7 +256,7 @@ def run_rank_export(
     *,
     outdir: Path,
     k: int = 29,
-    metrics_root: Path = Path("results/domain_generalization"),
+    metrics_root: Path = None,
 ) -> int:
     """Export subject rankings for all distance metrics.
 
@@ -264,16 +266,20 @@ def run_rank_export(
         Directory to save the ranking files.
     k : int, default=29
         Number of subjects to export for each category.
-    metrics_root : Path, default="results/domain_generalization"
+    metrics_root : Path, default=None
         Root directory that contains subfolders for each metric
         (e.g., mmd/, wasserstein/, dtw/), each including
         "<metric>_matrix.npy" and "<metric>_subjects.json".
+        If None, uses cfg.RESULTS_DOMAIN_GENERALIZATION_PATH.
 
     Returns
     -------
     int
         0 on success.
     """
+    if metrics_root is None:
+        metrics_root = Path(cfg.RESULTS_DOMAIN_GENERALIZATION_PATH)
+    
     outdir.mkdir(parents=True, exist_ok=True)
 
     metrics = ["mmd", "wasserstein", "dtw"]

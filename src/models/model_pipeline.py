@@ -37,6 +37,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
 from src.config import TOP_K_FEATURES, KSS_BIN_LABELS, KSS_LABEL_MAP
+from src import config as cfg
 from src.utils.io.loaders import read_subject_list, load_subject_csvs
 from src.utils.io.split_helpers import split_data, log_split_ratios
 from src.utils.io.feature_utils import normalize_feature_names
@@ -154,8 +155,7 @@ def train_pipeline(
         logging.info(f"[TRAIN] Appended jobid to suffix -> {suffix}")
 
     logging.info(
-        "[Start] model=%s | mode=%s | strategy=%s", 
-        model_name, mode, subject_split_strategy
+        f"[Start] model={model_name} | mode={mode} | strategy={subject_split_strategy}"
     )
 
     # ------------------------------------------------------------------
@@ -172,14 +172,16 @@ def train_pipeline(
     # ------------------------------------------------------------------
     if mode in ["source_only", "target_only"]:
         # NOTE: We'll also filter `subject_list` so split_data() respects exclusions.
-        default_rank_file = "results/domain_analysis/distance/rank_names.txt"
+        default_rank_file = os.path.join(
+            cfg.RESULTS_DOMAIN_ANALYSIS_PATH, "distance", cfg.RANK_NAMES_FILENAME
+        )
         # keep CLI arg if given; otherwise build from rank files (used here for target_only pre-filter)
 
         # --- Load all subject CSVs before filtering (fix for empty data issue) ---
         data, _ = load_subject_csvs(
             subject_list=subject_list,
             model_name=model_name,
-            base_path="data/processed/common",
+            base_path=cfg.PROCESS_CSV_COMMON_PATH,
             add_subject_id=True,   # ← ensure subject_id is available for row-level filtering
         )
         logging.info(f"[LOAD] Loaded {len(data)} rows from all subject CSVs before {mode} filtering.")
@@ -231,7 +233,7 @@ def train_pipeline(
             if target_subjects:
                 data = data[data["subject_id"].isin(target_subjects)].reset_index(drop=True)
             else:
-                logging.warning("[target_only] target_subjects is empty (tag=%s). Skipping filtering.", tag_key)
+                logging.warning(f"[target_only] target_subjects is empty (tag={tag_key}). Skipping filtering.")
             # === NEW: also restrict subject_list so split_data() truly uses only targets ===
             if target_subjects:
                 before = len(subject_list)
@@ -256,7 +258,7 @@ def train_pipeline(
         data, _ = load_subject_csvs(
             subject_list=subject_list,
             model_name=model_name,
-            base_path="data/processed/common",
+            base_path=cfg.PROCESS_CSV_COMMON_PATH,
             add_subject_id=True,   # ← ensure subject_id is available for row-level filtering
         )
 
@@ -292,7 +294,7 @@ def train_pipeline(
                 metric_prefix = prefix
                 break
 
-        ranks_dir = Path("results/domain_analysis/distance/ranks29")
+        ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "ranks29"
         if metric_prefix is None:
             raise ValueError(
                 f"[source_only] Cannot infer metric prefix from tag='{tag}'. "
@@ -310,8 +312,7 @@ def train_pipeline(
             middle_subjects = [s.strip() for s in f if s.strip()]
 
         logging.info(
-            "[source_only] Using MIDDLE subjects for training (n=%d)",
-            len(middle_subjects),
+            f"[source_only] Using MIDDLE subjects for training (n={len(middle_subjects)})"
         )
 
         # MIDDLE グループを time-based split して、train 部分だけを採用
@@ -355,12 +356,11 @@ def train_pipeline(
                     )
                 else:
                     logging.warning(
-                        "[source_only] Target group file not found: %s", group_file
+                        f"[source_only] Target group file not found: {group_file}"
                     )
             else:
                 logging.warning(
-                    "[source_only] No matching group found in rank_names.txt for tag=%s",
-                    tag_key,
+                    f"[source_only] No matching group found in rank_names.txt for tag={tag_key}"
                 )
         else:
             logging.warning(
@@ -569,5 +569,5 @@ def train_pipeline(
     # Keeping this step NO-OP avoids double saving.
     logging.info("[DONE] Training stage completed (artifacts already saved).")
 
-    logging.info("[DONE] Training complete for %s%s", model_name, suffix)
+    logging.info(f"[DONE] Training complete for {model_name}{suffix}")
 

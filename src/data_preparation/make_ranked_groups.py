@@ -17,6 +17,8 @@ import sys
 import numpy as np
 from pathlib import Path
 
+from src import config as cfg
+
 import logging
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
@@ -24,7 +26,7 @@ logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 # Configuration
 # ============================================================
 METRICS = ["wasserstein", "mmd", "dtw"]
-ROOT = Path("results/domain_analysis/distance")
+ROOT = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance"
 #OUT_DIR = ROOT / "ranks10"
 OUT_DIR = ROOT / "ranks29"
 OUT_DIR.mkdir(parents=True, exist_ok=True)

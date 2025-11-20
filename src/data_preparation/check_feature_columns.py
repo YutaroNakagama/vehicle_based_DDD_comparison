@@ -2,8 +2,10 @@
 import pandas as pd
 import glob, os, re, sys
 
+from src import config as cfg
+
 ROOT = os.path.dirname(os.path.abspath(__file__)) + "/.."
-DATA_DIR = os.path.join(ROOT, "data/processed/common")
+DATA_DIR = os.path.join(ROOT, cfg.PROCESS_CSV_COMMON_PATH)
 RANK_LIST = os.path.join(ROOT, "misc/pretrain_groups/rank_names.txt")
 
 # IDを正規化（余分な記号除去・大文字化）

@@ -7,6 +7,8 @@ import json
 import numpy as np
 import pandas as pd
 
+from src import config as cfg
+
 # Safe for HPC / non-GUI environments
 import matplotlib
 matplotlib.use("Agg")
@@ -282,7 +284,7 @@ def run_report_pretrain_groups(
     out_summary_json: Path = Path("misc/pretrain_groups/summary_report_ext.json"),
     out_summary_csv: Path  = Path("misc/pretrain_groups/summary_report_ext.csv"),
     # unified root directory
-    metrics_root: Path = Path("results/domain_generalization"),
+    metrics_root: Path = None,
 ) -> Dict[str, Dict[str, Dict[str, float]]]:
     """Run reports for all available metrics (MMD, Wasserstein, DTW).
 
@@ -294,16 +296,20 @@ def run_report_pretrain_groups(
         Path to save combined summary JSON.
     out_summary_csv : Path, default="misc/pretrain_groups/summary_report_ext.csv"
         Path to save combined summary CSV.
-    metrics_root : Path, default="results/domain_generalization"
+    metrics_root : Path, default=None
         Root directory that contains subfolders for each metric
         (e.g., mmd/, wasserstein/, dtw/), each including
         "<metric>_matrix.npy" and "<metric>_subjects.json".
+        If None, uses cfg.RESULTS_DOMAIN_GENERALIZATION_PATH.
 
     Returns
     -------
     dict of {str: dict of {str: dict of float}}
         Nested dictionary: metric → group → {intra, inter, nn, ids}.
     """
+    if metrics_root is None:
+        metrics_root = Path(cfg.RESULTS_DOMAIN_GENERALIZATION_PATH)
+        
     metrics = ["mmd", "wasserstein", "dtw"]
     all_stats: Dict[str, Dict[str, Dict[str, float]]] = {}
 

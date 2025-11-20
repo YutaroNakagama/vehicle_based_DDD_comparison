@@ -36,6 +36,7 @@ os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 # ---- import backend functions from src/analysis ----
+from src import config as cfg
 from src.analysis.distances import run_comp_dist
 from src.analysis.correlation import run_distance_vs_delta
 from src.analysis.summary_groups import run_summarize_only10_vs_finetune
@@ -292,7 +293,7 @@ def cmd_rank_export(args) -> int:
     rc = run_rank_export(
         outdir=Path(args.outdir),
         k=int(args.k),
-        metrics_root=Path("results/domain_generalization"),
+        metrics_root=Path(cfg.RESULTS_DOMAIN_GENERALIZATION_PATH),
     )
     logging.info("[DONE] rank-export rc=%s", rc)
     return rc
@@ -306,7 +307,7 @@ def build_parser() -> argparse.ArgumentParser:
     # comp-dist
     s = sub.add_parser("comp-dist", help="Compute distance matrices and summaries.")
     s.add_argument("--subject_list", default=str(PRJ / "dataset" / "mdapbe" / "subject_list.txt"))
-    s.add_argument("--data_root", default="data/processed/common")
+    s.add_argument("--data_root", default=cfg.PROCESS_CSV_COMMON_PATH)
     s.add_argument("--groups_file", default=str(PRJ / "misc" / "target_groups.txt"))
     s.add_argument(
         "--metric",
@@ -341,9 +342,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Directory containing group definition text files.")
     s.add_argument("--group_names_file", required=True,
                    help="Path to file listing group names (e.g., misc/pretrain_groups/group_names.txt).")
-    s.add_argument("--metrics_root", default="results/domain_generalization",
+    s.add_argument("--metrics_root", default=cfg.RESULTS_DOMAIN_GENERALIZATION_PATH,
                    help="Root directory containing mmd/, wasserstein/, dtw/ subfolders.")
-    s.add_argument("--out_root", default="results/domain_generalization/corr_all",
+    s.add_argument("--out_root", default=os.path.join(cfg.RESULTS_DOMAIN_GENERALIZATION_PATH, "corr_all"),
                    help="Output directory for combined correlation results.")
     s.set_defaults(func=lambda args: run_corr_all(
         summary_csv=Path(args.summary_csv),
@@ -387,7 +388,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--group_dir", default=str(PRJ / "misc" / "pretrain_groups"))
     s.add_argument("--out_summary_json", default=str(PRJ / "misc" / "pretrain_groups" / "summary_report_ext.json"))
     s.add_argument("--out_summary_csv",  default=str(PRJ / "misc" / "pretrain_groups" / "summary_report_ext.csv"))
-    s.add_argument("--metrics_root", default=str(PRJ / "results/domain_generalization"),
+    s.add_argument("--metrics_root", default=str(PRJ / cfg.RESULTS_DOMAIN_GENERALIZATION_PATH),
                    help="Root directory containing metric results (mmd/wasserstein/dtw).")
     s.set_defaults(func=cmd_report_pretrain_groups)
 
@@ -404,7 +405,7 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("rank-export", help="Export top/bottom-k subject lists from mean/std rankings (MMD/Wasserstein/DTW).")
     s.add_argument("--outdir", default="results/ranks")
     s.add_argument("--k", type=int, default=10)
-    s.add_argument("--metrics_root", default="results/domain_generalization",
+    s.add_argument("--metrics_root", default=cfg.RESULTS_DOMAIN_GENERALIZATION_PATH,
                    help="Root directory containing metric results (mmd/wasserstein/dtw).")
     s.set_defaults(func=cmd_rank_export)
 
