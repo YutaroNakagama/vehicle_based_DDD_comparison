@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 # ============================================================
 # Configuration
 # ============================================================
-METRICS = ["wasserstein", "mmd", "dtw"]
+METRICS = cfg.DISTANCE_METRICS
 ROOT = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance"
 #OUT_DIR = ROOT / "ranks10"
 OUT_DIR = ROOT / "ranks29"

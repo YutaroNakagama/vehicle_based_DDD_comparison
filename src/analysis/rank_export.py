@@ -282,7 +282,7 @@ def run_rank_export(
     
     outdir.mkdir(parents=True, exist_ok=True)
 
-    metrics = ["mmd", "wasserstein", "dtw"]
+    metrics = cfg.DISTANCE_METRICS
 
     for metric in metrics:
         metric_dir = metrics_root / metric

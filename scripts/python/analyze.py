@@ -63,7 +63,7 @@ def cmd_comp_dist(args) -> int:
         "[RUN] comp-dist | subject_list=%s | data_root=%s | groups_file=%s",
         args.subject_list, args.data_root, args.groups_file
     )
-    metrics_to_run = [args.metric] if args.metric != "all" else ["mmd", "wasserstein", "dtw"]
+    metrics_to_run = [args.metric] if args.metric != "all" else cfg.DISTANCE_METRICS
     for metric in metrics_to_run:
         print(f"[INFO] Computing {metric.upper()} distance...")
         rc = run_comp_dist(

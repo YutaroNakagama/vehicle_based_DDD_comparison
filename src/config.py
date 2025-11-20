@@ -158,6 +158,33 @@ TOP_K_FEATURES = 10
 N_TRIALS = 50
 """int : Number of trials for hyperparameter optimization using Optuna."""
 
+OPTUNA_N_STARTUP_TRIALS = 5
+"""int : Number of startup trials for Optuna's MedianPruner."""
+
+OPTUNA_N_WARMUP_STEPS = 1
+"""int : Number of warmup steps for Optuna's MedianPruner."""
+
+OPTUNA_INTERVAL_STEPS = 1
+"""int : Interval steps for Optuna's MedianPruner."""
+
+# ---------------------------------------------------------------------
+# Distance metrics and training modes
+# ---------------------------------------------------------------------
+DISTANCE_METRICS = ["mmd", "wasserstein", "dtw"]
+"""list of str : Supported distance metrics for domain analysis."""
+
+TRAINING_MODES = ["source_only", "target_only", "finetune", "only10", "only_general"]
+"""list of str : Supported training modes for domain generalization experiments."""
+
+RANKING_LEVELS = ["high", "middle", "low"]
+"""list of str : Ranking levels for subject group stratification."""
+
+# ---------------------------------------------------------------------
+# Evaluation metrics
+# ---------------------------------------------------------------------
+CLASSIFICATION_METRICS = ["accuracy", "precision", "recall", "f1", "auc", "auc_pr"]
+"""list of str : Standard classification metrics tracked across experiments."""
+
 # ---------------------------------------------------------------------
 # Random seed for reproducibility
 # ---------------------------------------------------------------------
