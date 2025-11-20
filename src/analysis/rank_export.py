@@ -253,7 +253,7 @@ def _export_one(metric: str, mat_path: Optional[Path], subjects_path: Optional[P
 def run_rank_export(
     *,
     outdir: Path,
-    k: int = 10,
+    k: int = 29,
     metrics_root: Path = Path("results/domain_generalization"),
 ) -> int:
     """Export subject rankings for all distance metrics.
@@ -262,7 +262,7 @@ def run_rank_export(
     ----------
     outdir : Path
         Directory to save the ranking files.
-    k : int, default=10
+    k : int, default=29
         Number of subjects to export for each category.
     metrics_root : Path, default="results/domain_generalization"
         Root directory that contains subfolders for each metric
