@@ -306,7 +306,7 @@ def _plot_bar_auto(names, means, stds, metric: str, kind: str, outdir: Path):
         Save directory.
     """
     # === Determine color per subject ===
-    ranks_dir = Path("results/domain_analysis/distance/ranks10")
+    ranks_dir = Path("results/domain_analysis/distance/ranks29")
     rank_files = {
         "High": ranks_dir / f"{metric}_mean_high.txt",
         "Middle": ranks_dir / f"{metric}_mean_middle.txt",
@@ -314,7 +314,7 @@ def _plot_bar_auto(names, means, stds, metric: str, kind: str, outdir: Path):
     }
     rank_members = {k: set(f.read_text().splitlines())
                     for k, f in rank_files.items() if f.exists()}
-    color_map = {"High": "red", "Middle": "green", "Low": "blue", "Other": "gray"}
+    color_map = {"High": "red", "Middle": "gray", "Low": "blue", "Other": "black"}
 
     bar_colors = []
     for sid in names:
@@ -330,8 +330,11 @@ def _plot_bar_auto(names, means, stds, metric: str, kind: str, outdir: Path):
     ax.tick_params(axis='x', labelsize=6)
     ax.tick_params(axis='y', labelsize=6)
     # === Add legend ===
-    handles = [plt.Line2D([0], [0], color=color_map[g], lw=6, label=g)
-               for g in ["High", "Middle", "Low", "Other"]]
+    legend_groups = ["High", "Middle", "Low"]
+    handles = [
+        plt.Line2D([0], [0], color=color_map[g], lw=6, label=g)
+        for g in legend_groups
+    ]
     ax.legend(handles=handles, title="Group", loc="best", fontsize=7, title_fontsize=8)
 
     fig.tight_layout()
@@ -384,7 +387,7 @@ def _plot_projection_auto(matrix: np.ndarray, subjects: list[str], metric: str, 
         methods["UMAP"] = umap.UMAP(n_components=2, metric="precomputed", random_state=42)
 
     # === Load ranked groups (if available) ===
-    ranks_dir = Path("results/domain_analysis/distance/ranks10")
+    ranks_dir = Path("results/domain_analysis/distance/ranks29")
     group_files = {
         "High": ranks_dir / f"{metric}_mean_high.txt",
         "Middle": ranks_dir / f"{metric}_mean_middle.txt",
@@ -394,7 +397,7 @@ def _plot_projection_auto(matrix: np.ndarray, subjects: list[str], metric: str, 
                      for k, f in group_files.items() if f.exists()}
 
     # === Define colors ===
-    base_colors = {"High": "red", "Middle": "green", "Low": "blue", "Other": "black"}
+    base_colors = {"High": "red", "Middle": "gray", "Low": "blue", "Other": "black"}
 
     for name, projector in methods.items():
         print(f"[INFO] Computing projection using {name}...")
@@ -418,10 +421,13 @@ def _plot_projection_auto(matrix: np.ndarray, subjects: list[str], metric: str, 
             ax.scatter(coords[i, 0], coords[i, 1], color=color, s=30)
             ax.text(coords[i, 0], coords[i, 1], sid, fontsize=6, color=color)
 
-        # === Add legend (High/Middle/Low/Other) ===
-        handles = [plt.Line2D([0], [0], marker='o', color='w',
-                              markerfacecolor=base_colors[g], markersize=6, label=g)
-                   for g in base_colors.keys()]
+        # === Add legend (High/Middle/Low only) ===
+        legend_groups = ["High", "Middle", "Low"]
+        handles = [
+            plt.Line2D([0], [0], marker='o', color='w',
+                       markerfacecolor=base_colors[g], markersize=6, label=g)
+            for g in legend_groups
+        ]
         ax.legend(handles=handles, title="Group", loc="best", fontsize=7, title_fontsize=8)
 
         ax.set_title(f"{metric.upper()} Projection by {name} (High/Mid/Low/Other)")
@@ -440,7 +446,7 @@ def _plot_projection_auto(matrix: np.ndarray, subjects: list[str], metric: str, 
     s2xy = {sid: coords[i] for i, sid in enumerate(subjects)}
 
     # === Load ranked groups (if available) ===
-    ranks_dir = Path("results/domain_analysis/distance/ranks10")
+    ranks_dir = Path("results/domain_analysis/distance/ranks29")
     group_files = {
         "High": ranks_dir / f"{metric}_mean_high.txt",
         "Middle": ranks_dir / f"{metric}_mean_middle.txt",
@@ -450,7 +456,7 @@ def _plot_projection_auto(matrix: np.ndarray, subjects: list[str], metric: str, 
                      for k, f in group_files.items() if f.exists()}
 
     # === Define colors ===
-    colors = {"High": "red", "Middle": "green", "Low": "blue", "Other": "black"}
+    colors = {"High": "red", "Middle": "gray", "Low": "blue", "Other": "black"}
 
     # === Plot ===
     fig, ax = plt.subplots(figsize=(8, 8))
@@ -466,10 +472,11 @@ def _plot_projection_auto(matrix: np.ndarray, subjects: list[str], metric: str, 
         # Label every point
         ax.text(x, y, sid, fontsize=6, color=colors[group])
 
-    # === Clean up legend (avoid duplicates) ===
+    # === Clean up legend (High/Middle/Low only) ===
     handles, labels = ax.get_legend_handles_labels()
-    unique = dict(zip(labels, handles))
-    ax.legend(unique.values(), unique.keys(), title="Group")
+    legend_map = {lab: h for lab, h in zip(labels, handles)
+                  if lab in ["High", "Middle", "Low"]}
+    ax.legend(legend_map.values(), legend_map.keys(), title="Group")
 
     ax.set_title(f"{metric.upper()} Projection by Ranked Groups")
     ax.set_aspect('equal', adjustable='box')
