@@ -4,14 +4,16 @@ import json
 import pandas as pd
 from typing import Optional, Dict
 
-EVAL_DIR = "results/evaluation/RF"
-OUT_DIR  = "results/domain_analysis/summary/csv"
+from src import config as cfg
+
+EVAL_DIR = os.path.join(cfg.RESULTS_EVALUATION_PATH, "RF")
+OUT_DIR  = os.path.join(cfg.RESULTS_DOMAIN_ANALYSIS_PATH, "summary", "csv")
 os.makedirs(OUT_DIR, exist_ok=True)
 
 # --- collect all eval_results_*.json recursively ---
 # (extended: handle nested metrics and backward compatibility)
 records = []
-latest_job_file = os.path.join(EVAL_DIR, "latest_job.txt")
+latest_job_file = os.path.join(EVAL_DIR, cfg.LATEST_JOB_FILENAME)
 if os.path.exists(latest_job_file):
     with open(latest_job_file, "r") as f:
         latest_jobid = f.read().strip()

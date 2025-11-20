@@ -32,6 +32,8 @@ matplotlib.use("Agg")  # headless
 import matplotlib.pyplot as plt
 from scipy.stats import pearsonr, spearmanr
 
+from src import config as cfg
+
 
 def _read_group_members(groups_dir: str | Path, group_names_file: str | Path) -> dict[str, list[str]]:
     """Read group member lists from text files.
@@ -355,8 +357,8 @@ def run_corr_all(
     summary_csv: Path,
     groups_dir: Path,
     group_names_file: Path,
-    metrics_root: Path = Path("results/domain_generalization"),
-    out_root: Path = Path("results/domain_generalization/corr_all"),
+    metrics_root: Path = None,
+    out_root: Path = None,
 ) -> None:
     """
     Run correlation analysis for all available metrics (MMD, Wasserstein, DTW)
@@ -370,10 +372,12 @@ def run_corr_all(
         Directory containing group definition text files.
     group_names_file : Path
         File listing group names (used for iteration).
-    metrics_root : Path, default="results/domain_generalization"
+    metrics_root : Path, default=None
         Root directory containing mmd/, wasserstein/, and dtw/ folders.
-    out_root : Path, default="results/domain_generalization/corr_all"
+        If None, uses cfg.RESULTS_DOMAIN_GENERALIZATION_PATH.
+    out_root : Path, default=None
         Output directory where correlation summaries and heatmaps will be stored.
+        If None, uses cfg.RESULTS_DOMAIN_GENERALIZATION_PATH/corr_all.
 
     Returns
     -------
@@ -382,6 +386,11 @@ def run_corr_all(
     import pandas as pd
     import matplotlib.pyplot as plt
     import seaborn as sns
+
+    if metrics_root is None:
+        metrics_root = Path(cfg.RESULTS_DOMAIN_GENERALIZATION_PATH)
+    if out_root is None:
+        out_root = Path(cfg.RESULTS_DOMAIN_GENERALIZATION_PATH) / "corr_all"
 
     out_root.mkdir(parents=True, exist_ok=True)
     metrics = ["mmd", "wasserstein", "dtw"]

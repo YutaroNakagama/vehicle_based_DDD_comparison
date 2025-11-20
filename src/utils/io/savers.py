@@ -9,6 +9,8 @@ import datetime
 import pandas as pd
 from typing import Dict, Optional, List
 
+from src.config import LATEST_JOB_FILENAME
+
 # NOTE: The above import errors are due to missing dependencies in the environment and are unrelated to the variable naming unification. The code changes for variable naming are correct and ready for commit.
 
 # === Unified artifact saving utility ===
@@ -218,7 +220,7 @@ def save_artifacts(
 
     # --- save job marker (latest successful jobid) ---
     try:
-        with open(os.path.join("models", model_name, "latest_job.txt"), "w") as f:
+        with open(os.path.join("models", model_name, LATEST_JOB_FILENAME), "w") as f:
             f.write(str(job_id))
     except Exception as e:
         logging.warning(f"[SAVE] Could not update latest_job.txt: {e}")
@@ -285,7 +287,7 @@ def save_eval_results(
 
     # --- optional: record the latest job ID for reference ---
     try:
-        latest_marker = os.path.join(out_dir, model_name, "latest_job.txt")
+        latest_marker = os.path.join(out_dir, model_name, LATEST_JOB_FILENAME)
         with open(latest_marker, "w") as f:
             f.write(str(pure_job_id) + "\n")
     except Exception as e:

@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import logging
 
+from src import config as cfg
+
 mpl.set_loglevel("warning")  # Suppress overall Matplotlib logs
 logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)  # Stop findfont spam
 
@@ -16,9 +18,9 @@ if not logger.handlers:
     logging.basicConfig(level=logging.INFO)
 
 
-IN   = "results/domain_analysis/summary/csv/summary_40cases_test_mode_compare_with_levels.csv"
-OUT1 = "results/domain_analysis/summary/png/summary_metrics_bar.png"
-OUT2 = "results/domain_analysis/summary/png/summary_diff_heatmap.png"
+IN   = os.path.join(cfg.RESULTS_DOMAIN_ANALYSIS_PATH, "summary", "csv", "summary_40cases_test_mode_compare_with_levels.csv")
+OUT1 = os.path.join(cfg.RESULTS_DOMAIN_ANALYSIS_PATH, "summary", "png", "summary_metrics_bar.png")
+OUT2 = os.path.join(cfg.RESULTS_DOMAIN_ANALYSIS_PATH, "summary", "png", "summary_diff_heatmap.png")
 
 # --- fallback (for backward compatibility) ---
 if not os.path.exists(IN):

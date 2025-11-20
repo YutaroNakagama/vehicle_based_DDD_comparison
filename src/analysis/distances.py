@@ -12,6 +12,8 @@ from tslearn.metrics import dtw
 from tqdm import tqdm
 from joblib import Parallel, delayed
 
+from src import config as cfg
+
 CACHE_VERSION = "v1"  # bump this when feature layout/filters change
 
 # Limit BLAS threads
@@ -306,7 +308,7 @@ def _plot_bar_auto(names, means, stds, metric: str, kind: str, outdir: Path):
         Save directory.
     """
     # === Determine color per subject ===
-    ranks_dir = Path("results/domain_analysis/distance/ranks29")
+    ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "ranks29"
     rank_files = {
         "High": ranks_dir / f"{metric}_mean_high.txt",
         "Middle": ranks_dir / f"{metric}_mean_middle.txt",
@@ -387,7 +389,7 @@ def _plot_projection_auto(matrix: np.ndarray, subjects: list[str], metric: str, 
         methods["UMAP"] = umap.UMAP(n_components=2, metric="precomputed", random_state=42)
 
     # === Load ranked groups (if available) ===
-    ranks_dir = Path("results/domain_analysis/distance/ranks29")
+    ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "ranks29"
     group_files = {
         "High": ranks_dir / f"{metric}_mean_high.txt",
         "Middle": ranks_dir / f"{metric}_mean_middle.txt",
@@ -446,7 +448,7 @@ def _plot_projection_auto(matrix: np.ndarray, subjects: list[str], metric: str, 
     s2xy = {sid: coords[i] for i, sid in enumerate(subjects)}
 
     # === Load ranked groups (if available) ===
-    ranks_dir = Path("results/domain_analysis/distance/ranks29")
+    ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "ranks29"
     group_files = {
         "High": ranks_dir / f"{metric}_mean_high.txt",
         "Middle": ranks_dir / f"{metric}_mean_middle.txt",
@@ -975,7 +977,7 @@ def run_comp_dist(
         metrics = ["mmd", "wasserstein", "dtw"]
     else:
         metrics = [metric]
-    base_dir = Path("results/domain_analysis/distance")
+    base_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance"
     groups = _load_groups(Path(groups_file))
 
     for metric in metrics:

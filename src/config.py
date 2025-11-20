@@ -42,11 +42,56 @@ INTRIM_CSV_PATH = './data/interim'
 PROCESS_CSV_PATH = './data/processed'
 """str : Directory to store final processed CSV files ready for model training."""
 
+PROCESS_CSV_COMMON_PATH = './data/processed/common'
+"""str : Directory for processed common feature CSVs (used across models)."""
+
 MODEL_PKL_PATH = os.environ.get("DDD_MODEL_PKL_PATH", "./models/")
 """str : Directory to save trained machine learning models (e.g., `.pkl`)."""
 
+RESULTS_PATH = './results'
+"""str : Root directory for storing analysis results and evaluation metrics."""
+
+RESULTS_EVALUATION_PATH = './results/evaluation'
+"""str : Directory for evaluation metrics (JSON/CSV outputs)."""
+
+RESULTS_DOMAIN_ANALYSIS_PATH = './results/domain_analysis'
+"""str : Directory for domain analysis results (distances, rankings)."""
+
+RESULTS_DOMAIN_GENERALIZATION_PATH = './results/domain_generalization'
+"""str : Directory for domain generalization experiments and metrics."""
+
+CONFIG_PATH = './config'
+"""str : Directory containing configuration files (subject lists, target groups)."""
+
 OUTPUT_SVG_PATH = './output/svg'
 """str : Directory to save generated SVG plots and visualizations."""
+
+# ---------------------------------------------------------------------
+# Common file name patterns
+# ---------------------------------------------------------------------
+LATEST_JOB_FILENAME = "latest_job.txt"
+"""str : Filename for tracking the latest training job ID."""
+
+RANK_NAMES_FILENAME = "rank_names.txt"
+"""str : Filename for mapping tags to target subject groups."""
+
+TARGET_GROUPS_FILENAME = "target_groups.txt"
+"""str : Default filename for target subject group definitions."""
+
+SUBJECT_LIST_FILENAME = "subject_list.txt"
+"""str : Default filename for subject ID lists."""
+
+# ---------------------------------------------------------------------
+# File extensions
+# ---------------------------------------------------------------------
+MODEL_FILE_EXTENSION = ".pkl"
+"""str : File extension for saved model artifacts."""
+
+METRICS_FILE_EXTENSION_JSON = ".json"
+"""str : File extension for JSON metric outputs."""
+
+METRICS_FILE_EXTENSION_CSV = ".csv"
+"""str : File extension for CSV metric outputs."""
 
 # ---------------------------------------------------------------------
 # Choices for processing and modeling
