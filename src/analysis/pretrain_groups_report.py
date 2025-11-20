@@ -310,7 +310,7 @@ def run_report_pretrain_groups(
     if metrics_root is None:
         metrics_root = Path(cfg.RESULTS_DOMAIN_GENERALIZATION_PATH)
         
-    metrics = ["mmd", "wasserstein", "dtw"]
+    metrics = cfg.DISTANCE_METRICS
     all_stats: Dict[str, Dict[str, Dict[str, float]]] = {}
 
     for metric in metrics:

@@ -34,7 +34,14 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from imblearn.ensemble import BalancedRandomForestClassifier
 
-from src.config import MODEL_PKL_PATH, N_TRIALS, configure_blas_threads
+from src.config import (
+    MODEL_PKL_PATH,
+    N_TRIALS,
+    OPTUNA_N_STARTUP_TRIALS,
+    OPTUNA_N_WARMUP_STEPS,
+    OPTUNA_INTERVAL_STEPS,
+    configure_blas_threads,
+)
 
 from src.utils.io.savers import save_artifacts
 from src.utils.metrics_helper import (
@@ -411,7 +418,11 @@ def common_train(
     if model in optuna_supported:
         study = optuna.create_study(
             direction="maximize",
-            pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=1, interval_steps=1)
+            pruner=optuna.pruners.MedianPruner(
+                n_startup_trials=OPTUNA_N_STARTUP_TRIALS,
+                n_warmup_steps=OPTUNA_N_WARMUP_STEPS,
+                interval_steps=OPTUNA_INTERVAL_STEPS
+            )
         )
         # === Safe Optuna execution (no parallel trials, forced GC after each) ===
         optimize_kwargs = dict(

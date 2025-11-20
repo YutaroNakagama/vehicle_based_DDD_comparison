@@ -974,7 +974,7 @@ def run_comp_dist(
 
     # === Unified computation & output ===
     if metric == "all":
-        metrics = ["mmd", "wasserstein", "dtw"]
+        metrics = cfg.DISTANCE_METRICS
     else:
         metrics = [metric]
     base_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance"
