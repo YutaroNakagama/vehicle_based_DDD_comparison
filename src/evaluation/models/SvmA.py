@@ -115,7 +115,7 @@ def evaluate_model(svm_model, X_test: pd.DataFrame, y_test: pd.Series):
 def SvmA_eval(
     X_test: pd.DataFrame,
     y_test: pd.Series,
-    model: str,
+    model_name: str,
     clf,
     selected_features: list
 ) -> dict:
@@ -129,8 +129,8 @@ def SvmA_eval(
         filled with zeros if necessary.
     y_test : pandas.Series
         Ground truth labels corresponding to ``X_test``.
-    model : str
-        Model name used for saving and logging.
+    model_name : str
+        Unified model identifier used for saving and logging.
     clf : sklearn.svm.SVC
         Trained SVM classifier loaded from pickle.
     selected_features : list of str
@@ -183,13 +183,13 @@ def SvmA_eval(
     
     mse = mean_squared_error(y_test, y_pred)
 
-    logging.info(f"Model: {model}")  
+    logging.info(f"Model: {model_name}")  
     logging.info(f"MSE: {mse:.4f}")
     logging.info(f"ROC AUC: {roc_auc:.4f}" if roc_auc is not None else "ROC AUC: N/A")
     logging.info(f"Classification Report:\n{classification_report(y_test, y_pred)}")
 
     return {
-        "model": model,
+        "model": model_name,
         "accuracy": float(accuracy),
         "precision": precision.tolist(),
         "recall": recall.tolist(),

@@ -60,13 +60,13 @@ import gc
 
 def common_train(
     X_train, X_val, X_test, y_train, y_val, y_test,
-    selected_features,  
-    model: str, model_type: str,
-    mode: str,   
+    selected_features,
+    model: str, model_name: str,
+    mode: str,
     clf=None, scaler=None, suffix: str = "",
     data_leak: bool = False,
-    eval_only: bool = False,   
-    train_only: bool = False,  
+    eval_only: bool = False,
+    train_only: bool = False,
 ):
     """
     Train a classical ML model using Optuna and ANFIS-based feature selection.
@@ -95,8 +95,8 @@ def common_train(
         List of selected feature names.
     model : str
         Model name (used for file naming).
-    model_type : str
-        Model group (e.g., ``"common"``, ``"SvmA"``).
+    model_name : str
+        Model name (previously `model_type`); unified naming across pipeline.
     clf : object, optional
         Classifier to train. If ``None``, a default model is selected internally.
     scaler : sklearn.preprocessing.StandardScaler, optional
@@ -117,7 +117,7 @@ def common_train(
         # ====== eval_only mode ======
         logging.info("[EVAL_ONLY] Loading pre-trained model and scaler...")
         # define out_dir (was referenced before assignment)
-        out_dir = f"{MODEL_PKL_PATH}/{model_type}"
+        out_dir = f"{MODEL_PKL_PATH}/{model_name}"
 
         with open(f"{out_dir}/{model}_{mode}{suffix}.pkl", "rb") as f:
             best_clf = pickle.load(f)
@@ -155,12 +155,12 @@ def common_train(
         rows = []
         rows.append({"split": "val",  **m_val})
         rows.append({"split": "test", **m_test})
-        os.makedirs(f"{MODEL_PKL_PATH}/{model_type}", exist_ok=True)
+        os.makedirs(f"{MODEL_PKL_PATH}/{model_name}", exist_ok=True)
     
         # Ensure mode is included in the suffix
-        eval_suffix = suffix + f"_{model_type}_evalonly"
+        eval_suffix = suffix + f"_{model_name}_evalonly"
         pd.DataFrame(rows).to_csv(
-            f"{MODEL_PKL_PATH}/{model_type}/metrics_{model}_{mode}{eval_suffix}.csv",
+            f"{MODEL_PKL_PATH}/{model_name}/metrics_{model}_{mode}{eval_suffix}.csv",
             index=False
         )
         logging.info(f"[EVAL_ONLY] Saved metrics CSV -> metrics_{model}_{mode}{eval_suffix}.csv")
@@ -573,7 +573,7 @@ def common_train(
     # ---------- Prepare feature metadata ----------
     feature_meta = {
         "selected_features": selected_features,
-        "feature_source": model_type
+        "feature_source": model_name
     }
 
     if train_only:

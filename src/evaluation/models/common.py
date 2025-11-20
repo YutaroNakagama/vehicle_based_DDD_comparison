@@ -22,7 +22,6 @@ def common_eval(
     X_test,
     y_test,
     model_name: str,
-    model_type: str,
     clf
 ) -> dict:
     """
@@ -39,9 +38,7 @@ def common_eval(
     y_test : array-like of shape (n_samples,)
         True labels corresponding to ``X_test``.
     model_name : str
-        The name of the model (e.g., ``"RF"``, ``"SvmW"``).
-    model_type : str
-        The model type identifier, used to locate saved artifacts.
+        Unified model identifier used across pipeline (was `model_type`).
     clf : sklearn.base.BaseEstimator
         Trained classifier object (loaded from pickle).
 

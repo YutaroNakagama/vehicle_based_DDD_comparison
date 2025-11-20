@@ -108,7 +108,7 @@ def eval_pipeline(
     target_subjects = []
 
     # Step 1: Load subjects and dataset
-    subjects, model_type, data = load_subjects_and_data(
+    subjects, model_name, data = load_subjects_and_data(
         model, fold, sample_size, seed, subject_wise_split
     )
 
@@ -117,7 +117,7 @@ def eval_pipeline(
     # --------------------------------------------------------------
     default_rank_file = "results/domain_analysis/distance/rank_names.txt"
     target_subjects = []
-    if tag and os.path.exists(default_rank_file):
+    if (tag and os.path.exists(default_rank_file)):
         with open(default_rank_file) as f:
             lines = [x.strip() for x in f.readlines() if x.strip()]
         tag_key = tag.replace("rank_", "")
@@ -141,7 +141,7 @@ def eval_pipeline(
             subject_split_strategy="subject_time_split",
             subject_list=subjects,                      # ignored when target_subjects provided
             target_subjects=target_subjects,
-            model_type=model_type,
+            model_name=model_name,
             seed=seed,
             time_stratify_labels=False,
             time_stratify_tolerance=0.02,
@@ -154,7 +154,7 @@ def eval_pipeline(
             subject_split_strategy="random",
             subject_list=subjects,
             target_subjects=[],
-            model_type=model_type,
+            model_name=model_name,
             seed=seed,
             time_stratify_labels=None,
             time_stratify_tolerance=0.1,
@@ -214,7 +214,7 @@ def eval_pipeline(
             logging.warning(f"[EVAL] No model file or latest_job.txt found, using default jobid={jobid}")
 
     # --- Load model/scaler/features from resolved jobid ---
-    clf, scaler, features = load_model_and_scaler(model, model_type, mode, tag, fold, jobid)
+    clf, scaler, features = load_model_and_scaler(model, mode, tag, fold, jobid)
     if clf is None:
         logging.error(f"[EVAL] Model or scaler could not be loaded for jobid={jobid}. Evaluation aborted.")
         return
@@ -275,11 +275,11 @@ def eval_pipeline(
 
     # Step 5: Model-specific evaluation
     if model == "Lstm":
-        result = lstm_eval(X_test, y_test, model_type, clf, scaler)
+        result = lstm_eval(X_test, y_test, model_name, clf, scaler)
     elif model == "SvmA":
-        result = SvmA_eval(X_test, y_test, model, model_type, clf)
+        result = SvmA_eval(X_test, y_test, model_name, clf, features)
     else:
-        result = common_eval(X_test, y_test, model, model_type, clf)
+        result = common_eval(X_test, y_test, model, model_name, clf)
 
     try:
         if tag and tag.startswith("rank_"):
