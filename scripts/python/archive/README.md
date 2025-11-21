@@ -129,7 +129,7 @@ python -m src.utils.visualization.plot_roc_cli --results_dir results/common --ti
 
 ---
 
-## `make_pretrain_groups.py`
+## `domain_analysis/make_comparison_table.py`
 
 **Purpose**
 Generate a **wide-format comparison table** for *only10* vs *finetune* experiments.
@@ -144,7 +144,7 @@ Ensures that summary CSVs exist (creating them if missing), then produces the fi
 **Example Usage**
 
 ```bash
-python make_pretrain_groups.py --model_dir model/common --model_tag RF
+python domain_analysis/make_comparison_table.py --model_dir model/common --model_tag RF
 ```
 
 ---

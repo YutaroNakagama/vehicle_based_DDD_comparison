@@ -31,7 +31,7 @@ These are thin wrappers around `src/` modules, designed to be run as CLI tools.
 - **`train.py`** → Model training (baseline, only10, finetune, domain generalization, feature selection)  
 - **`evaluate.py`** → Evaluation (cross-validation, subject-wise split, metrics)  
 - **`domain_analysis/analyze.py`** → Post-hoc analysis (distances, correlations, summary tables, rankings)  
-- **`make_pretrain_groups.py`** → Wide-format comparison of *only10* vs *finetune*  
+- **`domain_analysis/make_comparison_table.py`** → Wide-format comparison of *only10* vs *finetune*    
 
 Note: ROC visualization is available via `python -m src.utils.visualization.plot_roc_cli`  
 
