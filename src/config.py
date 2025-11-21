@@ -17,7 +17,7 @@ import numpy as np
 # File paths (from environment variables, fallback to defaults)
 # ---------------------------------------------------------------------
 SUBJECT_LIST_PATH = os.environ.get(
-    "DDD_SUBJECT_LIST_PATH", "../dataset/mdapbe/subject_list.txt"
+    "DDD_SUBJECT_LIST_PATH", "config/subjects/subject_list.txt"
 )
 """str : Path to the file containing the list of all subject IDs."""
 

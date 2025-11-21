@@ -20,7 +20,7 @@ Evaluate an LSTM model (latest job, pooled mode):
     python evaluate.py --model Lstm --mode pooled
 
 Evaluate a CORAL-tagged RF model on target_only mode with explicit jobid:
-    python evaluate.py --model RF --mode target_only --tag coral --jobid 14004123 --target_file config/target_groups.txt
+    python evaluate.py --model RF --mode target_only --tag coral --jobid 14004123 --target_file config/subjects/target_groups.txt
 """
 
 import sys
