@@ -1,5 +1,5 @@
 from __future__ import annotations
-import os, json, hashlib
+import os, json, hashlib, logging
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -13,6 +13,13 @@ from tqdm import tqdm
 from joblib import Parallel, delayed
 
 from src import config as cfg
+from src.utils.io.data_io import (
+    save_numpy, save_json, save_csv,
+    load_numpy, load_json, load_csv, save_npz, load_npz
+)
+from src.utils.visualization import save_current_figure
+
+logger = logging.getLogger(__name__)
 
 CACHE_VERSION = "v1"  # bump this when feature layout/filters change
 
@@ -62,10 +69,9 @@ def _extract_features_with_cache(subjects, data_root: Path, cache_dir: Path = Pa
     key = _cache_key(subjects, data_root)
     npz = cache_dir / f"features_{key}.npz"
     if npz.exists():
-        z = np.load(npz, allow_pickle=True)
-        return {k: z[k] for k in z.files}
+        return load_npz(npz)
     feats = _extract_features(subjects, data_root)
-    np.savez_compressed(npz, **feats)
+    save_npz(feats, npz)
     return feats
 
 
@@ -989,8 +995,8 @@ def run_comp_dist(
 
         # --- compute and save subject-level distance matrix ---
         matrix, subjects_valid = _compute_distance_matrix(features, metric, n_jobs=n_jobs)
-        np.save(metric_dir / f"{metric}_matrix.npy", matrix)
-        (metric_dir / f"{metric}_subjects.json").write_text(json.dumps(subjects_valid))
+        save_numpy(matrix, metric_dir / f"{metric}_matrix.npy")
+        save_json(subjects_valid, metric_dir / f"{metric}_subjects.json")
         # --- sort subjects by descending mean distance for ranked heatmap ---
         n = matrix.shape[0]
         mask = ~np.eye(n, dtype=bool)
@@ -1015,11 +1021,11 @@ def run_comp_dist(
         sorted_idx = np.argsort(-means_for_sort)
         subj_sorted = [subjects_valid[i] for i in sorted_idx]
 
-        np.save(metric_dir / f"{metric}_mean.npy", means)
-        np.save(metric_dir / f"{metric}_std.npy", stds)
-        np.save(metric_dir / f"{metric}_mean_sorted.npy", means[sorted_idx])
-        np.save(metric_dir / f"{metric}_std_sorted.npy", stds[sorted_idx])
-        (metric_dir / f"{metric}_subjects_sorted.json").write_text(json.dumps(subj_sorted))
+        save_numpy(means, metric_dir / f"{metric}_mean.npy")
+        save_numpy(stds, metric_dir / f"{metric}_std.npy")
+        save_numpy(means[sorted_idx], metric_dir / f"{metric}_mean_sorted.npy")
+        save_numpy(stds[sorted_idx], metric_dir / f"{metric}_std_sorted.npy")
+        save_json(subj_sorted, metric_dir / f"{metric}_subjects_sorted.json")
         _plot_bar_auto(subj_sorted, means[sorted_idx], stds[sorted_idx],
                        metric, "subjects", metric_dir)
 
