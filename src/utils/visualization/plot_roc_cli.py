@@ -10,14 +10,16 @@ CLI Options (summary):
 Examples
 --------
 Plot ROC curves from results in ``results/common``:
-    python plot.py --results_dir results/common
+    python -m src.utils.visualization.plot_roc_cli --results_dir results/common
 """
 
 import sys
 import os
 import argparse
 import logging
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+# Add project root to path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
 from src.utils.visualization.visualization import plot_roc_curves_from_latest_json
 
@@ -58,6 +60,6 @@ def main():
     plot_roc_curves_from_latest_json(args.results_dir, title=args.title)
 
 
+
 if __name__ == "__main__":
     main()
-
