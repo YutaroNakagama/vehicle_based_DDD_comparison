@@ -124,7 +124,7 @@ Automatically loads `metrics_*.json` files in a results directory and generates 
 **Example Usage**
 
 ```bash
-python plot.py --results_dir results/common --title "ROC Comparison"
+python -m src.utils.visualization.plot_roc_cli --results_dir results/common --title "ROC Comparison"
 ```
 
 ---
