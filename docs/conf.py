@@ -18,14 +18,16 @@ release     = '0.0'
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath('../project/src'))
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+# Add project source to path for autodoc
+sys.path.insert(0, os.path.abspath('../src'))
+sys.path.insert(0, os.path.abspath('..'))
 
 extensions = [
     "sphinx.ext.autodoc",         # docstringを拾う
     "sphinx.ext.napoleon",        # Google/Numpyスタイルdocstring対応
     "sphinx.ext.viewcode",        # ソースコードリンク
     "sphinx_autodoc_typehints",   # 型ヒントを自動表示
+    "myst_parser",                # Markdown support
 ]
 
 # conf.py
@@ -37,8 +39,17 @@ napoleon_include_special_with_doc = True
 napoleon_use_param = True
 napoleon_use_rtype = True
 
+# Source directory configuration
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md': 'markdown',
+}
+
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+
+# Use source/ as the master document location
+master_doc = 'source/index'
 
 
 # -- Options for HTML output -------------------------------------------------

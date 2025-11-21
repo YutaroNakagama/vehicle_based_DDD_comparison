@@ -1,17 +1,22 @@
-Vehicle-based DDD Documentation
-===============================
+Vehicle-based Driver Drowsiness Detection
+==========================================
+
+This project provides analysis pipelines and models for
+vehicle dynamics-based driver drowsiness detection (DDD).
 
 .. toctree::
    :maxdepth: 2
-   :caption: Guides
+   :caption: User Guides
 
-   guide/analysis
+   guide/developer_guide
    guide/data_pipeline
-   guide/evaluation
    guide/models
+   guide/evaluation
+   guide/analysis
+   guide/domain_generalization_pipline
 
 .. toctree::
    :maxdepth: 2
    :caption: API Reference
 
-   api_reference
+   api/modules
