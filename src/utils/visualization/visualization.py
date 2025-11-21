@@ -10,6 +10,7 @@ Key functionalities include:
 - Custom colored histograms to highlight specific data ranges.
 - Overlaying Kernel Density Estimation (KDE) curves for distribution shape analysis.
 - Plotting ROC curves from model evaluation metrics for performance comparison.
+- Common figure saving utilities with consistent DPI and layout settings.
 """
 
 import numpy as np
@@ -18,12 +19,87 @@ import scipy.stats
 import matplotlib
 import os
 import json
+from pathlib import Path
+from typing import Union, Optional
 from collections import defaultdict
 from datetime import datetime
 import re
 
 matplotlib.use('TkAgg')  # For compatibility with interactive environments
 import matplotlib.pyplot as plt
+
+logger = logging.getLogger(__name__)
+
+
+# === Common Figure Saving Utilities ===
+
+def save_figure(
+    fig,
+    path: Union[str, Path],
+    dpi: int = 200,
+    bbox_inches: str = "tight",
+    **kwargs
+) -> None:
+    """Save a matplotlib figure with consistent settings.
+    
+    Parameters
+    ----------
+    fig : matplotlib.figure.Figure
+        Figure to save.
+    path : str or Path
+        Output path for the figure.
+    dpi : int, default=200
+        Resolution in dots per inch.
+    bbox_inches : str, default="tight"
+        Bounding box setting for the saved figure.
+    **kwargs
+        Additional arguments passed to fig.savefig.
+    
+    Returns
+    -------
+    None
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    
+    logger.debug(f"Saving figure to {path}")
+    fig.savefig(path, dpi=dpi, bbox_inches=bbox_inches, **kwargs)
+
+
+def save_current_figure(
+    path: Union[str, Path],
+    dpi: int = 200,
+    bbox_inches: str = "tight",
+    close: bool = True,
+    **kwargs
+) -> None:
+    """Save the current matplotlib figure and optionally close it.
+    
+    Parameters
+    ----------
+    path : str or Path
+        Output path for the figure.
+    dpi : int, default=200
+        Resolution in dots per inch.
+    bbox_inches : str, default="tight"
+        Bounding box setting for the saved figure.
+    close : bool, default=True
+        If True, close the figure after saving.
+    **kwargs
+        Additional arguments passed to plt.savefig.
+    
+    Returns
+    -------
+    None
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    
+    logger.debug(f"Saving current figure to {path}")
+    plt.savefig(path, dpi=dpi, bbox_inches=bbox_inches, **kwargs)
+    
+    if close:
+        plt.close()
 
 
 def remove_outliers(data: list, threshold: float = 3) -> list:
