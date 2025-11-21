@@ -916,9 +916,9 @@ def _save_group_analysis_results(base_dir: Path, metric: str, analysis: dict):
 
 # ===== Orchestrator =====
 def run_comp_dist(
-    subject_list_path: str = "dataset/mdapbe/subject_list.txt",
+    subject_list_path: str = "config/subjects/subject_list.txt",
     data_root: str = "data/processed/common",
-    groups_file: str = "config/target_groups.txt",
+    groups_file: str = "config/subjects/target_groups.txt",
     metric: str = "all",
     n_jobs: int = 4,
 ) -> int:
@@ -945,11 +945,11 @@ def run_comp_dist(
 
     Parameters
     ----------
-    subject_list_path : str, default="../../dataset/mdapbe/subject_list.txt"
+    subject_list_path : str, default="config/subjects/subject_list.txt"
         Path to subject list file.
     data_root : str, default="data/processed/common"
         Directory containing processed feature CSVs.
-    groups_file : str, default="../misc/target_groups.txt"
+    groups_file : str, default="config/subjects/target_groups.txt"
         Path to group definitions file.
 
     Returns

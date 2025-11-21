@@ -306,7 +306,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # comp-dist
     s = sub.add_parser("comp-dist", help="Compute distance matrices and summaries.")
-    s.add_argument("--subject_list", default=str(PRJ / "dataset" / "mdapbe" / "subject_list.txt"))
+    s.add_argument("--subject_list", default=str(PRJ / "config" / "subjects" / "subject_list.txt"))
     s.add_argument("--data_root", default=cfg.PROCESS_CSV_COMMON_PATH)
     s.add_argument("--groups_file", default=str(PRJ / "misc" / "target_groups.txt"))
     s.add_argument(
