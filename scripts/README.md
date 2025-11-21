@@ -30,7 +30,7 @@ These are thin wrappers around `src/` modules, designed to be run as CLI tools.
 - **`preprocess.py`** → Data preprocessing (single/multi-process, augmentation)  
 - **`train.py`** → Model training (baseline, only10, finetune, domain generalization, feature selection)  
 - **`evaluate.py`** → Evaluation (cross-validation, subject-wise split, metrics)  
-- **`domain/analyze.py`** → Post-hoc analysis (distances, correlations, summary tables, rankings)  
+- **`domain_analysis/analyze.py`** → Post-hoc analysis (distances, correlations, summary tables, rankings)  
 - **`plot.py`** → ROC and metric visualizations  
 - **`make_pretrain_groups.py`** → Wide-format comparison of *only10* vs *finetune*  
 
