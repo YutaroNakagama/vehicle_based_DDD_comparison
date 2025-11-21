@@ -389,8 +389,8 @@ C1 & C2 -. "Target group (10 subjects)" .-> E2b
 ### 3. Performance Aggregation and Visualization
 
 **Job scripts:**
-- `scripts/python/make_summary_tables.py`
-- `scripts/python/plot_summary_results.py`
+- `scripts/python/domain_analysis/aggregate_evaluation_results.py`
+- `scripts/python/domain_analysis/plot_summary_results.py`
 
 This stage performs **final aggregation and visualization of model performance**
 across all domain ranking groups (High / Middle / Low × MMD / Wasserstein / DTW).  
@@ -403,12 +403,12 @@ and visualizes their cross-domain differences.
 
 | Step | Script | Description | Output |
 |------|---------|-------------|---------|
-| 1 | `make_summary_tables.py` | Collects all per-run metrics from `results/evaluation/common/` and merges them by domain type and rank level. | `results/analysis/summary_40cases_*.csv` |
+| 1 | `aggregate_evaluation_results.py` | Collects all per-run metrics from `results/evaluation/common/` and merges them by domain type and rank level. | `results/analysis/summary_40cases_*.csv` |
 | 2 | `plot_summary_results.py` | Visualizes aggregated scores as multi-panel bar plots and heatmaps for metric deltas between modes. | `results/analysis/summary_metrics_40_mean_tri_bar.png`, `diff_heatmap_all5_40.png` |
 
 ---
 
-#### Step 1 — Aggregation: `make_summary_tables.py`
+#### Step 1 — Aggregation: `aggregate_evaluation_results.py`
 
 This script parses all metric CSVs from `results/evaluation/common/`,  
 infers experimental mode and rank grouping from filenames,  
@@ -457,7 +457,7 @@ domain-level and metric-level performance trends.
 ```mermaid
 flowchart TB
 
-subgraph Step1["make_summary_tables.py"]
+subgraph Step1["aggregate_evaluation_results.py"]
   B1["Parse filenames → infer distance/rank/mode"]
   B2["Merge all test metrics into one table"]
   B3["Pivot per metric (AUC, Precision, Recall, Accuracy, F1)"]
