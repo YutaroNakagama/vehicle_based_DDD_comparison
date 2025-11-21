@@ -82,7 +82,7 @@ python evaluate.py --model Lstm --fold 3
 
 ---
 
-## `domain/analyze.py`
+## `domain_analysis/analyze.py`
 
 **Purpose**
 Unified CLI for post-hoc analysis of results and domain distances.
@@ -102,9 +102,9 @@ Provides subcommands to compute distances, correlate metrics, summarize experime
 **Example Usage**
 
 ```bash
-python domain/analyze.py comp-dist --subject_list misc/subject_list.txt --data_root data/processed/common
-python domain/analyze.py corr --summary_csv results/summary.csv --distance results/mmd/mmd_matrix.npy --groups_dir misc/pretrain_groups
-python domain/analyze.py summarize --make_radar
+python domain_analysis/analyze.py comp-dist --subject_list misc/subject_list.txt --data_root data/processed/common
+python domain_analysis/analyze.py corr --summary_csv results/summary.csv --distance results/mmd/mmd_matrix.npy --groups_dir misc/pretrain_groups
+python domain_analysis/analyze.py summarize --make_radar
 ```
 
 ---

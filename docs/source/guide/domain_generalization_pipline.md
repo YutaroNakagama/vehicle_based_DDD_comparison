@@ -10,11 +10,11 @@ The DG pipeline consists of three sequential stages:
 
 1. **Distance computation**  
    Compute subject- and group-level distance matrices (MMD, Wasserstein, DTW) from processed features.  
-   → `scripts/python/domain/analyze.py comp-dist`
+   → `scripts/python/domain_analysis/analyze.py comp-dist`
 
 2. **Subject ranking**  
    Rank subjects by inter-domain distances (mean/std) to identify *general* and *target* domains.  
-   → `scripts/python/domain/analyze.py rank-export`
+   → `scripts/python/domain_analysis/analyze.py rank-export`
 
 3. **Domain-specific training / evaluation**  
    Fine-tune or evaluate models using ranked subject groups (e.g., “only general”, “only target”, “finetune”).  
@@ -26,9 +26,9 @@ The DG pipeline consists of three sequential stages:
 
 ```mermaid
 graph TD
-  A["pbs_compute_distances.sh"] --> B["domain/analyze.py comp-dist"]
+  A["pbs_compute_distances.sh"] --> B["domain_analysis/analyze.py comp-dist"]
   B --> C["distance matrices (.npy)"]
-  C --> D["domain/analyze.py rank-export"]
+  C --> D["domain_analysis/analyze.py rank-export"]
   D --> E["ranked subject lists (.txt)"]
   E --> F["pbs_rank_only_general.sh / pbs_rank_only_target.sh"]
   F --> G["train.py (fine-tune or evaluate)"]
@@ -36,7 +36,7 @@ graph TD
 
 ---
 
-## 1. Distance Computation (`domain/analyze.py comp-dist` → `run_comp_dist()`)
+## 1. Distance Computation (`domain_analysis/analyze.py comp-dist` → `run_comp_dist()`)
 
 ### Purpose
 
@@ -102,7 +102,7 @@ results/domain_generalization/
 
 ---
 
-## 2. Subject Ranking (`domain/analyze.py rank-export` → `run_rank_export()`)
+## 2. Subject Ranking (`domain_analysis/analyze.py rank-export` → `run_rank_export()`)
 
 ### Purpose
 
@@ -111,7 +111,7 @@ To categorize subjects into **general / neutral / target domains** based on thei
 ### Entry Point
 
 ```bash
-$ python scripts/python/domain/analyze.py rank-export \
+$ python scripts/python/domain_analysis/analyze.py rank-export \
     --outdir results/ranks10 \
     --k 10
 ```
@@ -176,7 +176,7 @@ qsub scripts/hpc/domain_gen/pbs_compute_distances.sh
 #### (2) Rank Generation
 
 ```bash
-python scripts/python/domain/analyze.py rank-export --outdir results/ranks10 --k 10
+python scripts/python/domain_analysis/analyze.py rank-export --outdir results/ranks10 --k 10
 ```
 
 #### (3) Group-Specific Fine-Tuning
@@ -215,14 +215,14 @@ results/
 
 ---
 
-## 4. Correlation Analysis (`domain/analyze.py corr`)
+## 4. Correlation Analysis (`domain_analysis/analyze.py corr`)
 
 ### Purpose
 
 To relate *domain distance metrics* (e.g., MMD mean) to *performance gaps* (Δ metrics).
 
 ```bash
-python scripts/python/domain/analyze.py corr \
+python scripts/python/domain_analysis/analyze.py corr \
   --summary_csv model/common/summary_6groups_only10_vs_finetune_wide.csv \
   --distance results/mmd/mmd_matrix.npy \
   --subjects_json results/mmd/mmd_subjects.json \
@@ -255,7 +255,7 @@ This enables interpretation of how domain distance relates to model degradation.
 
 | Extension                       | How to Add                                                       | Affected Modules           |
 | ------------------------------- | ---------------------------------------------------------------- | -------------------------- |
-| **New distance metric**         | Implement in `src/analysis/distances.py` (following MMD pattern) | `domain/analyze.py comp-dist`     |
+| **New distance metric**         | Implement in `src/analysis/distances.py` (following MMD pattern) | `domain_analysis/analyze.py comp-dist`     |
 | **New ranking logic**           | Extend `_write_rank_with_middle()`                               | `rank_export.py`           |
 | **Alternative visualization**   | Add in `src/analysis/radar.py` or `summary_groups.py`            | Optional                   |
 | **New domain group definition** | Update `config/target_groups.txt`                                | Reused across all analyses |
