@@ -1,7 +1,12 @@
-"""Shared model artifact loading utilities.
+"""Model artifact loading utilities.
 
-Consolidates repeated pickle/joblib model loading patterns used across 
-evaluation and training pipelines. Handles legacy paths and file naming conventions.
+This module provides functions for loading trained models, scalers, and feature
+selection artifacts from disk. It handles various file formats (pickle, joblib,
+Keras) and supports legacy naming conventions.
+
+For comprehensive model loading with jobid/fold/mode support, see:
+- `src.utils.io.loaders.load_model_and_scaler()` (evaluation-specific)
+- This module provides simpler utilities for training and basic loading
 
 Unified naming: all functions use `model_name` consistently.
 """
