@@ -12,7 +12,7 @@ Examples
 Generate a wide comparison table for Random Forest results in
 ``model/common``:
 
-    $ python make_comparison_table.py --model_dir model/common --model_tag RF
+    $ python generate_comparison_table.py --model_dir model/common --model_tag RF
 """
 
 import sys

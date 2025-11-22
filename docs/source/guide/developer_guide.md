@@ -389,8 +389,8 @@ C1 & C2 -. "Target group (10 subjects)" .-> E2b
 ### 3. Performance Aggregation and Visualization
 
 **Job scripts:**
-- `scripts/python/domain_analysis/aggregate_evaluation_results.py`
-- `scripts/python/domain_analysis/plot_summary_results.py`
+- `scripts/python/domain_analysis/collect_evaluation_metrics.py`
+- `scripts/python/domain_analysis/visualize_summary_metrics.py`
 
 This stage performs **final aggregation and visualization of model performance**
 across all domain ranking groups (High / Middle / Low × MMD / Wasserstein / DTW).  
@@ -403,12 +403,12 @@ and visualizes their cross-domain differences.
 
 | Step | Script | Description | Output |
 |------|---------|-------------|---------|
-| 1 | `aggregate_evaluation_results.py` | Collects all per-run metrics from `results/evaluation/common/` and merges them by domain type and rank level. | `results/analysis/summary_40cases_*.csv` |
-| 2 | `plot_summary_results.py` | Visualizes aggregated scores as multi-panel bar plots and heatmaps for metric deltas between modes. | `results/analysis/summary_metrics_40_mean_tri_bar.png`, `diff_heatmap_all5_40.png` |
+| 1 | `collect_evaluation_metrics.py` | Collects all per-run metrics from `results/evaluation/common/` and merges them by domain type and rank level. | `results/analysis/summary_40cases_*.csv` |
+| 2 | `visualize_summary_metrics.py` | Visualizes aggregated scores as multi-panel bar plots and heatmaps for metric deltas between modes. | `results/analysis/summary_metrics_40_mean_tri_bar.png`, `diff_heatmap_all5_40.png` |
 
 ---
 
-#### Step 1 — Aggregation: `aggregate_evaluation_results.py`
+#### Step 1 — Aggregation: `collect_evaluation_metrics.py`
 
 This script parses all metric CSVs from `results/evaluation/common/`,  
 infers experimental mode and rank grouping from filenames,  
@@ -433,7 +433,7 @@ and produces both long-form and comparison-form summary tables.
 
 ---
 
-#### 📊 Step 2 — Visualization: `plot_summary_results.py`
+#### 📊 Step 2 — Visualization: `visualize_summary_metrics.py`
 
 This script reads the comparison table (`summary_40cases_test_mode_compare.csv`)  
 and generates publication-ready visualizations summarizing  
