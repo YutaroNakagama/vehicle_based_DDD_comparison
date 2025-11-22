@@ -173,11 +173,33 @@ OPTUNA_INTERVAL_STEPS = 1
 DISTANCE_METRICS = ["mmd", "wasserstein", "dtw"]
 """list of str : Supported distance metrics for domain analysis."""
 
-TRAINING_MODES = ["source_only", "target_only", "finetune", "only10", "only_general"]
-"""list of str : Supported training modes for domain generalization experiments."""
+# Note: TRAINING_MODES includes dynamic scheme names based on TARGET_GROUP_SIZE
+# These are computed after TARGET_GROUP_SIZE is defined below
+TRAINING_MODES_BASE = ["source_only", "target_only", "finetune", "only_general"]
+"""list of str : Base training modes (before adding target size-specific modes)."""
 
 RANKING_LEVELS = ["high", "middle", "low"]
 """list of str : Ranking levels for subject group stratification."""
+
+# ---------------------------------------------------------------------
+# Target group sizes for domain generalization experiments
+# ---------------------------------------------------------------------
+TARGET_GROUP_SIZE = 10
+"""int : Number of subjects in target domain groups (used in training schemes like 'only10')."""
+
+SOURCE_GROUP_SIZE = 78
+"""int : Number of subjects in source/general domain groups (complement of target group)."""
+
+# Scheme naming based on target group size
+TARGET_SCHEME_NAME = f"only{TARGET_GROUP_SIZE}"
+"""str : Training scheme name for target-only experiments (e.g., 'only10')."""
+
+SOURCE_SCHEME_NAME = f"only{SOURCE_GROUP_SIZE}"
+"""str : Training scheme name for source-only experiments (e.g., 'only78')."""
+
+# Construct complete training modes list
+TRAINING_MODES = TRAINING_MODES_BASE + [TARGET_SCHEME_NAME]
+"""list of str : Supported training modes for domain generalization experiments."""
 
 # ---------------------------------------------------------------------
 # Evaluation metrics
