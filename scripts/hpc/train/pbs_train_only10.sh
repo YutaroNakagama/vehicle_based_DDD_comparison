@@ -42,8 +42,5 @@ python "$ROOT/bin/train.py" \
   --subject_split_strategy subject_time_split \
   --target_subjects $TARGETS \
   --tag only10_${NAME} \
-  --time_stratify_labels \
-  --time_stratify_tolerance 0.02 \
-  --time_stratify_window 0.10 \
-  --time_stratify_min_chunk 100
+  --time_stratify_labels
 

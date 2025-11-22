@@ -46,10 +46,7 @@ for MODE in pooled source_only target_only; do
     --target_file "$GROUP_FILE" \
     --tag "$TAG" \
     --seed "$SEED" \
-    --time_stratify_labels \
-    --time_stratify_tolerance 0.02 \
-    --time_stratify_window 0.10 \
-    --time_stratify_min_chunk 100
+    --time_stratify_labels
 done
 
 echo "[INFO] Training completed: $TAG"

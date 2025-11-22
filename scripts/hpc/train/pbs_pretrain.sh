@@ -37,8 +37,5 @@ python bin/train.py \
     --save_pretrain pretrain_setting_group${PBS_ARRAY_INDEX}.pkl \
     --tag pretrain_group${PBS_ARRAY_INDEX} \
     --seed 42 \
-    --time_stratify_labels \
-    --time_stratify_tolerance 0.02 \
-    --time_stratify_window 0.10 \
-    --time_stratify_min_chunk 100
+    --time_stratify_labels
 
