@@ -52,10 +52,15 @@ def resolve_target_subjects_from_tag(
         logging.info("[TARGET] No tag provided; using CLI target_subjects if available.")
         return cli_target_subjects or []
     
-    # Check if rank_names.txt exists
-    rank_file = os.path.join(
+    # Check if rank_names.txt exists (try both ranks29 and root directory)
+    rank_file_new = os.path.join(
+        cfg.RESULTS_DOMAIN_ANALYSIS_PATH, "distance", "ranks29", "ranks29_names.txt"
+    )
+    rank_file_old = os.path.join(
         cfg.RESULTS_DOMAIN_ANALYSIS_PATH, "distance", cfg.RANK_NAMES_FILENAME
     )
+    
+    rank_file = rank_file_new if os.path.exists(rank_file_new) else rank_file_old
     
     if not os.path.exists(rank_file):
         logging.warning(f"[TARGET] rank_names.txt not found at {rank_file}. Using CLI targets.")
