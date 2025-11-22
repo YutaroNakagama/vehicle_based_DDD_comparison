@@ -471,6 +471,10 @@ def plot_grouped_bar_chart_raw(
 ) -> matplotlib.figure.Figure:
     """Create multi-panel bar chart from raw (unpivoted) data.
     
+    Layout: 3 distance metrics (columns 1-3) + 1 pooled column (column 4)
+    - Columns 1-3: source_only vs target_only comparison for high/middle/low
+    - Column 4: pooled mode only (all 3 modes: pooled/source_only/target_only)
+    
     Parameters
     ----------
     data : pd.DataFrame
@@ -478,13 +482,13 @@ def plot_grouped_bar_chart_raw(
     metrics : list of str
         List of metric names to plot.
     modes : list of str
-        List of mode names (e.g., ['source_only', 'target_only']).
+        List of mode names (e.g., ['pooled', 'source_only', 'target_only']).
     distance_col : str, default="distance"
         Column name containing distance type.
     level_col : str, default="level"
         Column name containing level type.
     mode_col : str, default="mode"
-        Column name containing mode (source_only/target_only).
+        Column name containing mode (source_only/target_only/pooled).
     figsize : tuple, optional
         Figure size (width, height).
     baseline_rates : dict, optional
@@ -499,11 +503,15 @@ def plot_grouped_bar_chart_raw(
     """
     import pandas as pd
     
-    distances = sorted(data[distance_col].unique())
+    distances = sorted(data[data[distance_col].notna()][distance_col].unique())
     ordered_levels = ["high", "middle", "low"]
     
+    # 4 columns: 3 distances + 1 pooled
+    n_cols = len(metrics)
+    n_rows = 4  # 3 distances + 1 pooled row
+    
     if figsize is None:
-        figsize = (5 * len(metrics), 3 * len(distances))
+        figsize = (5 * n_cols, 3 * n_rows)
     
     if title_map is None:
         title_map = {
@@ -516,14 +524,13 @@ def plot_grouped_bar_chart_raw(
             "recall": "Recall (pos)",
         }
     
-    fig, axes = plt.subplots(
-        len(distances), len(metrics), 
-        figsize=figsize, 
-        squeeze=False
-    )
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize, squeeze=False)
     
     colors = ["#66cc99", "#6699cc", "#ff9966"]
     mode_labels = {"pooled": "Pooled", "source_only": "Source-only", "target_only": "Target-only"}
+    
+    # Rows 1-3: Distance metrics (source_only vs target_only)
+    comparison_modes = ["source_only", "target_only"]
     
     for i, dist in enumerate(distances):
         sub = data[data[distance_col] == dist]
@@ -538,35 +545,34 @@ def plot_grouped_bar_chart_raw(
             # Filter to present levels
             levels_present = [lvl for lvl in ordered_levels if lvl in sub[level_col].unique()]
             x = np.arange(len(levels_present))
-            width = 0.25
+            width = 0.35
             
-            # Collect values for each mode from raw data
+            # Collect values for source_only and target_only
             mode_values = {}
-            for mode in modes:
+            for mode in comparison_modes:
                 vals = []
                 for lvl in levels_present:
-                    # Filter by level and mode
                     mode_data = sub[(sub[level_col] == lvl) & (sub[mode_col] == mode)]
                     vals.append(mode_data[metric].mean() if not mode_data.empty else np.nan)
                 mode_values[mode] = vals
             
-            # Plot bars
+            # Plot bars (only 2 modes)
             bars = []
-            for idx, mode in enumerate(modes):
-                offset = (idx - len(modes)/2 + 0.5) * width
+            for idx, mode in enumerate(comparison_modes):
+                offset = (idx - 1 + 0.5) * width
                 bar = ax.bar(
                     x + offset, 
                     mode_values[mode], 
                     width, 
                     label=mode_labels.get(mode, mode),
-                    color=colors[idx % len(colors)]
+                    color=colors[idx + 1]  # Use source_only and target_only colors
                 )
                 bars.append(bar)
             
             ax.set_xticks(x)
             ax.set_xticklabels([lvl.capitalize() for lvl in levels_present])
             
-            # Baseline line for specific metrics
+            # Baseline line
             if baseline_rates and metric in baseline_rates:
                 baseline = baseline_rates[metric]
                 ax.axhline(baseline, color='gray', linestyle='--', linewidth=1)
@@ -576,7 +582,6 @@ def plot_grouped_bar_chart_raw(
                     fontsize=8, color='gray'
                 )
                 
-                # Dynamic y-axis for metrics with baseline
                 all_vals = [v for vals in mode_values.values() for v in vals if not np.isnan(v)]
                 if all_vals:
                     ymin, ymax = min(all_vals), max(all_vals)
@@ -602,14 +607,88 @@ def plot_grouped_bar_chart_raw(
                 )
             
             # Legend on top-right subplot
-            if i == 0 and j == len(metrics) - 1:
+            if i == 0 and j == n_cols - 1:
                 ax.legend(
                     handles=bars,
-                    labels=[mode_labels.get(m, m) for m in modes],
+                    labels=[mode_labels.get(m, m) for m in comparison_modes],
                     loc="upper right",
                     fontsize=8,
                     frameon=False,
                 )
+    
+    # Row 4: Pooled mode (all 3 modes comparison)
+    pooled_data = data[data[mode_col] == "pooled"]
+    
+    for j, metric in enumerate(metrics):
+        ax = axes[3, j]
+        
+        if pooled_data.empty:
+            ax.axis("off")
+            continue
+        
+        # For pooled, show all 3 modes across distances
+        distances_present = [d for d in distances if d in pooled_data[distance_col].unique()]
+        x = np.arange(len(distances_present))
+        width = 0.25
+        
+        # Collect values for all 3 modes
+        mode_values = {}
+        for mode in modes:
+            vals = []
+            for dist in distances_present:
+                mode_data = data[(data[distance_col] == dist) & (data[mode_col] == mode)]
+                vals.append(mode_data[metric].mean() if not mode_data.empty else np.nan)
+            mode_values[mode] = vals
+        
+        # Plot bars (all 3 modes)
+        bars = []
+        for idx, mode in enumerate(modes):
+            offset = (idx - len(modes)/2 + 0.5) * width
+            bar = ax.bar(
+                x + offset, 
+                mode_values[mode], 
+                width, 
+                label=mode_labels.get(mode, mode),
+                color=colors[idx]
+            )
+            bars.append(bar)
+        
+        ax.set_xticks(x)
+        pretty_dist = {"dtw": "DTW", "mmd": "MMD", "wasserstein": "Wasserstein"}
+        ax.set_xticklabels([pretty_dist.get(str(d).lower(), str(d)) for d in distances_present])
+        
+        # Baseline line
+        if baseline_rates and metric in baseline_rates:
+            baseline = baseline_rates[metric]
+            ax.axhline(baseline, color='gray', linestyle='--', linewidth=1)
+            
+            all_vals = [v for vals in mode_values.values() for v in vals if not np.isnan(v)]
+            if all_vals:
+                ymin, ymax = min(all_vals), max(all_vals)
+                margin = (ymax - ymin) * 0.3 if ymax > ymin else 0.02
+                ax.set_ylim(max(0, ymin - margin), min(1.0, ymax + margin))
+        else:
+            ax.set_ylim(0, 1.0)
+        
+        # "Pooled" label on left column
+        if j == 0:
+            ax.text(
+                0.02, 0.95, "Pooled", 
+                transform=ax.transAxes, 
+                ha="left", va="top",
+                fontsize=12, fontweight="bold",
+                bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.6)
+            )
+        
+        # Legend on row 4 right column
+        if j == n_cols - 1:
+            ax.legend(
+                handles=bars,
+                labels=[mode_labels.get(m, m) for m in modes],
+                loc="upper right",
+                fontsize=8,
+                frameon=False,
+            )
     
     plt.tight_layout()
     return fig
