@@ -501,13 +501,46 @@ def extract_metrics_from_eval_json(
     if pos_rate is None:
         pos_rate = data.get("pos_rate") or data.get("positive_rate")
     
+    # Extract distance and level from filename if not in data
+    # Example: eval_results_RF_pooled_rank_dtw_mean_high_mean_test.json
+    distance = data.get("distance")
+    level = data.get("level")
+    
+    # If level is a split name (test/val/train) instead of high/middle/low, extract from filename
+    if level in ("test", "val", "train", "validation"):
+        level = None
+    
+    # Extract from filename if distance/level not properly set
+    if ((not distance or distance == "unknown") or not level) and filename:
+        import re
+        # Match pattern: rank_{metric}_mean_{level}
+        match = re.search(r'rank_(dtw|mmd|wasserstein)_mean_(high|middle|low)', filename)
+        if match:
+            metric = match.group(1)
+            level_extracted = match.group(2)
+            if not distance or distance == "unknown":
+                distance = f"{metric}_mean_{level_extracted}"
+            if not level:
+                level = level_extracted
+    
+    # Ensure level is set even if distance extraction failed
+    if not level or level == "unknown":
+        if distance and '_' in distance:
+            parts = distance.split('_')
+            if 'high' in parts:
+                level = 'high'
+            elif 'middle' in parts:
+                level = 'middle'
+            elif 'low' in parts:
+                level = 'low'
+    
     # Extract core metrics with fallback chain
     metrics = {
         "file": filename,
         "model": data.get("model", "RF"),
         "mode": data.get("mode", "source_only"),
-        "distance": data.get("distance", "unknown"),
-        "level": data.get("level", "unknown"),
+        "distance": distance if distance else "unknown",
+        "level": level if level else None,
         "pos_rate": pos_rate,
         
         # AUC metrics
