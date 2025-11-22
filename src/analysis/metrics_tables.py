@@ -5,6 +5,8 @@ import re
 import pandas as pd
 from typing import Optional, Tuple, Dict, List, Any
 
+from utils.io.data_io import load_csv, save_csv
+
 METRIC_COLS_DEFAULT = ["accuracy", "precision", "recall", "f1", "auc", "ap"]
 
 def _safe_get(d: Dict[str, Any], k: str, default=float("nan")) -> Any:
@@ -47,7 +49,7 @@ def _read_test_row(csv_path: Path, split: str = "test") -> Dict[str, Any] | None
     if not csv_path.exists():
         return None
     try:
-        df = pd.read_csv(csv_path)
+        df = load_csv(csv_path)
     except Exception:
         return None
 
@@ -151,7 +153,7 @@ def summarize_metrics(
 
     if out_csv:
         out_csv.parent.mkdir(parents=True, exist_ok=True)
-        df.to_csv(out_csv, index=False)
+        save_csv(df, out_csv)
     return df
 
 def make_comparison_table(
@@ -183,7 +185,7 @@ def make_comparison_table(
     metric_cols = metric_cols or METRIC_COLS_DEFAULT
 
     if isinstance(summary_df_or_path, Path):
-        df = pd.read_csv(summary_df_or_path)
+        df = load_csv(summary_df_or_path)
     else:
         df = summary_df_or_path.copy()
 
@@ -226,6 +228,6 @@ def make_comparison_table(
 
     if out_csv:
         out_csv.parent.mkdir(parents=True, exist_ok=True)
-        out.to_csv(out_csv)
+        save_csv(out, out_csv)
     return out
 

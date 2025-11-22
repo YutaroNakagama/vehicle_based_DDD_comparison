@@ -240,8 +240,7 @@ def _plot_heatmap(matrix: np.ndarray, row_labels: list[str], col_labels: list[st
                 cmap="viridis", annot=annot, fmt=fmt)
     plt.title(title)
     plt.tight_layout()
-    plt.savefig(save_path)
-    plt.close()
+    save_current_figure(save_path, dpi=200, close=True)
 
 
 
@@ -526,7 +525,8 @@ def _plot_bar(labels: list[str], means: np.ndarray, stds: np.ndarray,
     plt.bar(x, means, yerr=stds, capsize=5)
     plt.title(title); plt.ylabel(ylabel)
     plt.xticks(x, labels, rotation=90)
-    plt.tight_layout(); plt.savefig(save_path); plt.close()
+    plt.tight_layout()
+    save_current_figure(save_path, dpi=200, close=True)
 
 def _compute_mmd_matrix(features: dict[str, np.ndarray]) -> tuple[np.ndarray, list[str]]:
     """Compute the pairwise MMD distance matrix between subjects.
@@ -739,7 +739,9 @@ def _plot_intra_inter(stats: dict[str, dict[str, float]], dist_name: str, save_p
     plt.bar(x + width/2, inter_means, width, yerr=inter_stds, label="Inter", capsize=5)
     plt.xticks(x, gnames, rotation=45); plt.ylabel("Distance")
     plt.title(f"Intra vs Inter Group Distance ({dist_name})")
-    plt.legend(); plt.tight_layout(); plt.savefig(save_path); plt.close()
+    plt.legend()
+    plt.tight_layout()
+    save_current_figure(save_path, dpi=200, close=True)
 
 
 
@@ -890,8 +892,8 @@ def _save_group_analysis_results(base_dir: Path, metric: str, analysis: dict):
     group_dir.mkdir(parents=True, exist_ok=True)
 
     # (1) Group matrix heatmap
-    np.save(group_dir / "group_matrix.npy", analysis["group_matrix"])
-    (group_dir / "group_names.json").write_text(json.dumps(analysis["group_names"]))
+    save_numpy(analysis["group_matrix"], group_dir / "group_matrix.npy")
+    save_json(analysis["group_names"], group_dir / "group_names.json")
     _plot_heatmap(analysis["group_matrix"], analysis["group_names"], analysis["group_names"],
                   f"{metric.upper()} Distance Between Groups",
                   group_dir / "group_heatmap.png")
@@ -905,8 +907,8 @@ def _save_group_analysis_results(base_dir: Path, metric: str, analysis: dict):
     # (3) Intra-group variability
     intra_dir = group_dir / "intra"; intra_dir.mkdir(exist_ok=True)
     intra = analysis["intra"]
-    (intra_dir / "intra_group_variability.json").write_text(json.dumps(intra, indent=2))
-    pd.DataFrame(intra).T.to_csv(intra_dir / "intra_group_variability.csv")
+    save_json(intra, intra_dir / "intra_group_variability.json")
+    save_csv(pd.DataFrame(intra).T, intra_dir / "intra_group_variability.csv")
     _plot_bar(list(intra.keys()),
               np.array([intra[g]["mean"] for g in intra]),
               np.array([intra[g]["std"] for g in intra]),

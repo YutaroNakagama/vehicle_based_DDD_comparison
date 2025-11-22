@@ -64,10 +64,10 @@ def load_matrix_subjects(matrix_path: Path, subjects_path: Path) -> Tuple[np.nda
     ValueError
         If the matrix is not square or does not match the number of subjects.
     """
-    M = np.load(matrix_path)
-    subs = json.loads(subjects_path.read_text())
+    M = load_numpy(matrix_path)
+    subs = load_json(subjects_path)
     if M.shape[0] != M.shape[1] or M.shape[0] != len(subs):
-        raise ValueError(f"Matrix/subjects mismatch: {M.shape} vs {len(subs)}")
+        raise ValueError(f\"Matrix/subjects mismatch: {M.shape} vs {len(subs)}\")
     np.fill_diagonal(M, 0.0)
     return M, subs
 
@@ -205,8 +205,7 @@ def plot_bars(
     plt.legend()
     plt.tight_layout()
     ensure_dir(out_png.parent)
-    plt.savefig(out_png, dpi=180)
-    plt.close()
+    save_current_figure(out_png, dpi=180, close=True)
 
 
 # ---------- per-metric core ----------
@@ -269,9 +268,10 @@ def report_for_metric(
 
     # outputs
     ensure_dir(out_dir)
-    save_json(stats, out_dir / f"{metric_name}_report_ext.json")
-    pd.DataFrame.from_dict(stats, orient="index")[["intra","inter","nn"]].to_csv(
-        out_dir / f"{metric_name}_report_ext.csv"
+    save_json(stats, out_dir / f\"{metric_name}_report_ext.json\")
+    save_csv(
+        pd.DataFrame.from_dict(stats, orient=\"index\")[[\"intra\",\"inter\",\"nn\"]],
+        out_dir / f\"{metric_name}_report_ext.csv\"
     )
     plot_bars(metric_name, stats, out_dir / f"{metric_name}_bars.png")
     return stats

@@ -150,17 +150,15 @@ def _load_distance_matrix(
     """
     distance_path = Path(distance_path)
     if distance_path.suffix.lower() == ".csv":
-        D = pd.read_csv(distance_path, index_col=0)
+        D = load_csv(distance_path, index_col=0)
         D.index = D.index.str.strip()
         D.columns = D.columns.str.strip()
         return D
     elif distance_path.suffix.lower() == ".npy":
         if subjects_json is None:
             raise ValueError("subjects_json is required when using a .npy distance matrix.")
-        arr = np.load(distance_path)
-        import json
-        with open(subjects_json, "r", encoding="utf-8") as f:
-            subjects = json.load(f)
+        arr = load_numpy(distance_path)
+        subjects = load_json(subjects_json)
         if len(subjects) != arr.shape[0]:
             raise ValueError(f"subjects length ({len(subjects)}) and matrix shape {arr.shape} mismatch.")
         D = pd.DataFrame(arr, index=subjects, columns=subjects)
@@ -233,7 +231,7 @@ def run_distance_vs_delta(
     # Groups and summary
     groups = _read_group_members(groups_dir, group_names_file)
 
-    df = pd.read_csv(summary_csv)
+    df = load_csv(summary_csv)
     df = df.rename(columns={c: c.lower() for c in df.columns})
     needed_delta = ["accuracy_delta", "f1_delta", "auc_delta", "precision_delta", "recall_delta"]
     for c in needed_delta:
@@ -259,7 +257,7 @@ def run_distance_vs_delta(
     merged = dist_df.merge(df.drop(columns=["group"], errors="ignore"), on="group_norm", how="left")
     merged_out = merged.drop(columns=["group_norm"]).copy()
     merged_csv = out / "distance_vs_delta_merged.csv"
-    merged_out.to_csv(merged_csv, index=False)
+    save_csv(merged_out, merged_csv)
 
     # Correlations: d(U,G)
     metrics = ["accuracy_delta", "f1_delta", "auc_delta", "precision_delta", "recall_delta"]
@@ -276,7 +274,7 @@ def run_distance_vs_delta(
             p_r = p_p = s_r = s_p = np.nan
         corr_rows.append({"metric": m, "pearson_r": p_r, "pearson_p": p_p, "spearman_rho": s_r, "spearman_p": s_p})
     corr_df = pd.DataFrame(corr_rows)
-    corr_df.to_csv(out / "correlations_dUG_vs_deltas.csv", index=False)
+    save_csv(corr_df, out / "correlations_dUG_vs_deltas.csv")
 
     # Correlations: disp(G)
     corr_rows2 = []
@@ -323,8 +321,7 @@ def run_distance_vs_delta(
         plt.ylabel(label)
         plt.title(f"d(U,G) vs {label}")
         plt.tight_layout()
-        plt.savefig(out / f"scatter_dUG_vs_{m}.png", dpi=200)
-        plt.close()
+        save_current_figure(out / f"scatter_dUG_vs_{m}.png", dpi=200, close=True)
 
     # disp(G) vs Δ
     for m, label in [
@@ -351,8 +348,7 @@ def run_distance_vs_delta(
         plt.ylabel(label)
         plt.title(f"disp(G) vs {label}")
         plt.tight_layout()
-        plt.savefig(out / f"scatter_dispG_vs_{m}.png", dpi=200)
-        plt.close()
+        save_current_figure(out / f"scatter_dispG_vs_{m}.png", dpi=200, close=True)
 
     return 0
 
@@ -436,7 +432,7 @@ def run_corr_all(
 
     merged = pd.concat(all_corrs, ignore_index=True)
     merged_csv = out_root / "correlation_summary_all.csv"
-    merged.to_csv(merged_csv, index=False)
+    save_csv(merged, merged_csv)
 
     # Draw heatmap (Pearson r)
     pivot = merged.pivot(index="metric", columns="metric_type", values="pearson_r")
@@ -445,8 +441,7 @@ def run_corr_all(
     plt.title("Pearson correlation (d(U,G) vs Δmetrics)")
     plt.tight_layout()
     out_png = out_root / "correlation_heatmap_all.png"
-    plt.savefig(out_png, dpi=300)
-    plt.close()
+    save_current_figure(out_png, dpi=300, close=True)
 
     print(f"[DONE] Merged correlations written to {merged_csv}")
     print(f"[DONE] Heatmap saved to {out_png}")
