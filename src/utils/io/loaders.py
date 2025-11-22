@@ -364,7 +364,12 @@ def load_model_and_scaler(model_name: str, mode: str, tag: str, fold: int, jobid
     # Prefer exact mode match (e.g., RF_target_only_rank_dtw_mean_high_*.pkl)
     tag_key = tag.replace("rank_", "") if tag else ""
 
-    exact_pattern = os.path.join(base_dir, "**", f"{model_name}_{mode}_rank_*{tag_key}*.pkl")
+    # For pooled mode without tag, search for mode-only pattern
+    if mode == "pooled" and not tag_key:
+        exact_pattern = os.path.join(base_dir, "**", f"{model_name}_{mode}_*.pkl")
+    else:
+        exact_pattern = os.path.join(base_dir, "**", f"{model_name}_{mode}_rank_*{tag_key}*.pkl")
+    
     model_matches = glob.glob(exact_pattern, recursive=True)
 
     # If no exact match found, fallback to any file that includes the same mode
@@ -380,9 +385,19 @@ def load_model_and_scaler(model_name: str, mode: str, tag: str, fold: int, jobid
     model_path = model_matches[0]
     logging.info(f"[EVAL] Found model file (exact mode match): {model_path}")
 
-    # --- Locate corresponding scaler/feature files (if exist) ---
-    scaler_pattern = os.path.join(base_dir, "**", f"scaler_{model_name}_*.pkl")
-    feature_pattern = os.path.join(base_dir, "**", f"selected_features_{model_name}_*.pkl")
+    # --- Locate corresponding scaler/feature files using same basename logic ---
+    # Extract base name from model path to ensure matching files
+    model_basename = os.path.basename(model_path)
+    model_prefix = model_basename.replace(f"{model_name}_", "").replace(".pkl", "")
+    
+    # Try to match scaler/features with same suffix
+    if mode == "pooled" and not tag_key:
+        scaler_pattern = os.path.join(base_dir, "**", f"scaler_{model_name}_{mode}_*.pkl")
+        feature_pattern = os.path.join(base_dir, "**", f"feature_meta_{model_name}_{mode}_*.json")
+    else:
+        scaler_pattern = os.path.join(base_dir, "**", f"scaler_{model_name}_*{model_prefix}*.pkl")
+        feature_pattern = os.path.join(base_dir, "**", f"feature_meta_{model_name}_*{model_prefix}*.json")
+    
     scaler_matches = glob.glob(scaler_pattern, recursive=True)
     feature_matches = glob.glob(feature_pattern, recursive=True)
 
