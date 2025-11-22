@@ -306,3 +306,267 @@ def calculate_class_specific_metrics(
         result["specificity"] = None
 
     return result
+
+
+# === JSON Evaluation Metric Extraction ===
+
+def get_positive_class_block(classification_report: Dict) -> Optional[Dict]:
+    """Extract the positive-class metrics block from a classification report.
+    
+    Handles historical key variations such as "1", "1.0", "True", "pos", "positive".
+    
+    Parameters
+    ----------
+    classification_report : dict
+        Classification report dictionary from sklearn or custom evaluator.
+    
+    Returns
+    -------
+    dict or None
+        Positive class metrics block if found, else None.
+    
+    Examples
+    --------
+    >>> cr = {"0": {...}, "1": {"precision": 0.8, "recall": 0.7}}
+    >>> block = get_positive_class_block(cr)
+    >>> block["precision"]
+    0.8
+    """
+    if not isinstance(classification_report, dict):
+        return None
+    
+    # Try common positive class keys
+    for key in ("1", "1.0", "True", "pos", "positive"):
+        block = classification_report.get(key)
+        if isinstance(block, dict):
+            return block
+    
+    return None
+
+
+def get_metric_from_positive_class(
+    classification_report: Dict,
+    field: str
+) -> Optional[float]:
+    """Extract a specific metric from the positive class block.
+    
+    Parameters
+    ----------
+    classification_report : dict
+        Classification report dictionary.
+    field : str
+        Metric field name (e.g., 'precision', 'recall', 'f1-score').
+    
+    Returns
+    -------
+    float or None
+        Metric value if found, else None.
+    
+    Examples
+    --------
+    >>> cr = {"1": {"precision": 0.8, "recall": 0.7, "f1-score": 0.74}}
+    >>> get_metric_from_positive_class(cr, "f1-score")
+    0.74
+    """
+    block = get_positive_class_block(classification_report)
+    if block is None:
+        return None
+    
+    value = block.get(field)
+    try:
+        return float(value) if value is not None else None
+    except (ValueError, TypeError):
+        return None
+
+
+def estimate_positive_rate(classification_report: Dict) -> Optional[float]:
+    """Estimate positive class rate from classification report support counts.
+    
+    Parameters
+    ----------
+    classification_report : dict
+        Classification report with class-wise support counts.
+    
+    Returns
+    -------
+    float or None
+        Positive class rate (proportion of positive samples) if found, else None.
+    
+    Examples
+    --------
+    >>> cr = {"0": {"support": 970}, "1": {"support": 30}}
+    >>> estimate_positive_rate(cr)
+    0.03
+    """
+    if not isinstance(classification_report, dict):
+        return None
+    
+    # Try common key pairs for negative/positive classes
+    key_pairs = [
+        ("0", "1"),
+        ("0.0", "1.0"),
+        ("False", "True"),
+        ("neg", "pos"),
+        ("negative", "positive"),
+    ]
+    
+    for neg_key, pos_key in key_pairs:
+        neg_block = classification_report.get(neg_key)
+        pos_block = classification_report.get(pos_key)
+        
+        if (neg_block and pos_block and 
+            "support" in neg_block and "support" in pos_block):
+            try:
+                n_neg = float(neg_block["support"])
+                n_pos = float(pos_block["support"])
+                total = n_neg + n_pos
+                if total > 0:
+                    return n_pos / total
+            except (ValueError, TypeError):
+                continue
+    
+    return None
+
+
+def compute_f2_score_from_pr(precision: float, recall: float) -> Optional[float]:
+    """Compute F2 score from precision and recall.
+    
+    F2 score weighs recall higher than precision: F2 = 5*P*R / (4*P + R)
+    
+    Parameters
+    ----------
+    precision : float
+        Precision value.
+    recall : float
+        Recall value.
+    
+    Returns
+    -------
+    float or None
+        F2 score if inputs are valid, else None.
+    
+    Examples
+    --------
+    >>> compute_f2_score_from_pr(0.8, 0.7)
+    0.7291666666666666
+    """
+    if precision is None or recall is None:
+        return None
+    
+    try:
+        denominator = 4 * precision + recall
+        if denominator == 0:
+            return None
+        return 5 * precision * recall / denominator
+    except (ValueError, TypeError):
+        return None
+
+
+def extract_metrics_from_eval_json(
+    data: Dict[str, Any],
+    filename: str = ""
+) -> Dict[str, Any]:
+    """Extract standardized metrics from an evaluation JSON file.
+    
+    This function handles backward compatibility with various JSON formats
+    and extracts metrics consistently regardless of format variations.
+    
+    Parameters
+    ----------
+    data : dict
+        Parsed evaluation JSON data.
+    filename : str, optional
+        Source filename for logging purposes.
+    
+    Returns
+    -------
+    dict
+        Dictionary with extracted metrics including:
+        - model, mode, distance, level
+        - auc, auc_pr, f1, f2, accuracy, precision, recall, specificity
+        - pos_rate (positive class proportion)
+        - threshold-optimized metrics (*_thr variants)
+    
+    Examples
+    --------
+    >>> data = {"auc": 0.85, "classification_report": {"1": {"f1-score": 0.7}}}
+    >>> metrics = extract_metrics_from_eval_json(data)
+    >>> metrics["auc"]
+    0.85
+    """
+    cr = data.get("classification_report", {}) or {}
+    
+    # Extract positive rate
+    pos_rate = estimate_positive_rate(cr)
+    if pos_rate is None:
+        pos_rate = data.get("pos_rate") or data.get("positive_rate")
+    
+    # Extract core metrics with fallback chain
+    metrics = {
+        "file": filename,
+        "model": data.get("model", "RF"),
+        "mode": data.get("mode", "source_only"),
+        "distance": data.get("distance", "unknown"),
+        "level": data.get("level", "unknown"),
+        "pos_rate": pos_rate,
+        
+        # AUC metrics
+        "auc": (
+            data.get("auc") or 
+            data.get("roc_auc") or 
+            data.get("metrics", {}).get("auc")
+        ),
+        "auc_pr": (
+            data.get("auc_pr") or 
+            data.get("metrics", {}).get("auc_pr") or 
+            data.get("pr_curve", {}).get("auc_pr")
+        ),
+        
+        # Classification metrics
+        "f1": (
+            data.get("f1_pos") or 
+            get_metric_from_positive_class(cr, "f1-score") or 
+            cr.get("macro avg", {}).get("f1-score")
+        ),
+        "accuracy": data.get("accuracy") or cr.get("accuracy"),
+        "precision": (
+            data.get("precision_pos") or 
+            get_metric_from_positive_class(cr, "precision") or 
+            cr.get("macro avg", {}).get("precision")
+        ),
+        "recall": (
+            data.get("recall_pos") or 
+            get_metric_from_positive_class(cr, "recall") or 
+            cr.get("macro avg", {}).get("recall")
+        ),
+        "specificity": data.get("specificity"),
+        "mse": data.get("mse") or data.get("metrics", {}).get("mse"),
+        
+        # Threshold-optimized metrics
+        "precision_thr": (
+            data.get("precision_thr_pos") or data.get("prec_thr")
+        ),
+        "recall_thr": (
+            data.get("recall_thr_pos") or data.get("recall_thr")
+        ),
+        "f1_thr": (
+            data.get("f1_thr_pos") or data.get("f1_thr")
+        ),
+        "f2_thr": (
+            data.get("f2_thr_pos") or data.get("f2_thr")
+        ),
+        "specificity_thr": data.get("specificity_thr"),
+        
+        "split": "test",  # Default for compatibility
+    }
+    
+    # Compute F2 score if not present
+    if metrics.get("f2") is None:
+        precision = metrics.get("precision")
+        recall = metrics.get("recall")
+        metrics["f2"] = compute_f2_score_from_pr(precision, recall)
+    else:
+        metrics["f2"] = data.get("f2")
+    
+    return metrics
+

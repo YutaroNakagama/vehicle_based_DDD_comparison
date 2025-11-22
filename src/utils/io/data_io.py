@@ -143,6 +143,49 @@ def save_json(
         json.dump(data, f, indent=indent, ensure_ascii=ensure_ascii, **kwargs)
 
 
+def load_json_glob(
+    pattern: str,
+    skip_errors: bool = True
+) -> List[Tuple[Path, Dict]]:
+    """Load multiple JSON files matching a glob pattern.
+    
+    Parameters
+    ----------
+    pattern : str
+        Glob pattern to match JSON files (e.g., "results/**/eval_*.json").
+    skip_errors : bool, default=True
+        If True, skip files that fail to load and log a warning.
+        If False, raise exceptions on load errors.
+    
+    Returns
+    -------
+    List[Tuple[Path, Dict]]
+        List of (file_path, data) tuples for successfully loaded files.
+    
+    Examples
+    --------
+    >>> results = load_json_glob("results/**/eval_*.json")
+    >>> for path, data in results:
+    ...     print(f"Loaded {path}: {data.keys()}")
+    """
+    import glob
+    
+    results = []
+    for path_str in glob.glob(pattern, recursive=True):
+        path = Path(path_str)
+        try:
+            data = load_json(path)
+            results.append((path, data))
+        except Exception as e:
+            if skip_errors:
+                logger.warning(f"Failed to load {path}: {e}")
+            else:
+                raise
+    
+    logger.info(f"Loaded {len(results)} JSON files matching pattern: {pattern}")
+    return results
+
+
 # === NumPy Operations ===
 
 def load_numpy(path: Union[str, Path], allow_pickle: bool = True) -> np.ndarray:
