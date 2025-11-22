@@ -8,6 +8,8 @@ matplotlib.use("Agg") # Safe for HPC / non-GUI environments
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
+from utils.visualization.visualization import save_figure
+
 def make_radar(
     wide_df: pd.DataFrame,
     out_dir: Path | str,
