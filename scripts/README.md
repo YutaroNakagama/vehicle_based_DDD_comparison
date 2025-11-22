@@ -11,6 +11,12 @@ It includes both **Python entry points** for local runs and **PBS job scripts** 
 
 scripts/
 ├── python/      # Python entry points (wrappers around src/*)
+│   ├── domain_analysis/  # Post-hoc analysis scripts
+│   ├── setup/            # One-time setup and validation scripts
+│   ├── archive/          # Deprecated/legacy scripts
+│   ├── preprocess.py
+│   ├── train.py
+│   └── evaluate.py
 ├── hpc/         # HPC job scripts for JAIST KAGAYAKI cluster
 │   ├── preprocess/       # Data preprocessing jobs
 │   ├── train/            # Model training jobs
@@ -27,11 +33,25 @@ scripts/
 
 These are thin wrappers around `src/` modules, designed to be run as CLI tools.
 
+### Main Scripts
+
 - **`preprocess.py`** → Data preprocessing (single/multi-process, augmentation)  
-- **`train.py`** → Model training (baseline, only10, finetune, domain generalization, feature selection)  
-- **`evaluate.py`** → Evaluation (cross-validation, subject-wise split, metrics)  
-- **`domain_analysis/run_analysis.py`** → Post-hoc analysis (distances, correlations, summary tables, rankings)  
-- **`domain_analysis/generate_comparison_table.py`** → Wide-format comparison of *only10* vs *finetune*    
+- **`train.py`** → Model training (baseline, domain generalization, feature selection)  
+- **`evaluate.py`** → Evaluation (cross-validation, subject-wise split, metrics)
+
+### Domain Analysis (`domain_analysis/`)
+
+- **`run_analysis.py`** → Unified CLI for post-hoc analysis (distances, correlations, rankings)  
+- **`collect_evaluation_metrics.py`** → Aggregate evaluation metrics from JSON files
+- **`visualize_summary_metrics.py`** → Generate bar plots and heatmaps for domain analysis
+- **`generate_comparison_table.py`** → Create wide-format comparison tables
+
+### Setup and Validation (`setup/`)
+
+- **`generate_target_groups.py`** → Create target subject groups from master list
+- **`generate_pretrain_group.py`** → Generate pretrain (general) subject list
+- **`check_feature_columns.py`** → Validate feature consistency across subjects
+- **`check_only_modes.py`** → Compare metrics between training modes
 
 Note: ROC visualization is available via `python -m src.utils.visualization.plot_roc_cli`  
 
