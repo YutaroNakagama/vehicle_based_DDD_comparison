@@ -27,8 +27,8 @@ echo "[TEST MODE] Generating rankings at $(date)"
 # Generate rankings (this creates ranks29 directory and files)
 python "${PROJECT_ROOT}/scripts/python/analyze.py" rank-export \
   --k 29 \
-  --method mean \
-  --outdir "${PROJECT_ROOT}/results/domain_analysis/distance/ranks29"
+  --outdir "${PROJECT_ROOT}/results/domain_analysis/distance/ranks29" \
+  --metrics_root "${PROJECT_ROOT}/results/domain_analysis/distance"
 
 echo "[DONE] Ranking complete. Created ranks29/ directory with high/middle/low splits."
 echo "[INFO] Results saved to results/domain_analysis/distance/ranks29/"
