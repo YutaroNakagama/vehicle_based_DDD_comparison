@@ -201,7 +201,7 @@ def plot_bars(
     plt.bar(x + width/2, hard_vals,     width, label="Hard")
     plt.xticks(x, labels)
     plt.ylabel(ylabel)
-    plt.title(f"{metric_name.upper()}: Intra / Inter / NN (10 vs 78)")
+    plt.title(f"{metric_name.upper()}: Intra / Inter / NN ({cfg.TARGET_GROUP_SIZE} vs {cfg.SOURCE_GROUP_SIZE})")
     plt.legend()
     plt.tight_layout()
     ensure_dir(out_png.parent)

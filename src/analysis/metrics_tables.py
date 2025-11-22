@@ -5,6 +5,7 @@ import re
 import pandas as pd
 from typing import Optional, Tuple, Dict, List, Any
 
+from src import config as cfg
 from utils.io.data_io import load_csv, save_csv
 
 METRIC_COLS_DEFAULT = ["accuracy", "precision", "recall", "f1", "auc", "ap"]
@@ -72,17 +73,17 @@ def _parse_name(fname: str, model_tag: str) -> Tuple[str, Optional[str]]:
     -------
     tuple of (str, str or None)
         A tuple where the first element is the scheme
-        (``baseline``, ``only29``, or ``finetune``),
+        (``baseline``, ``{cfg.TARGET_SCHEME_NAME}``, or ``finetune``),
         and the second element is the group name, or ``None`` if not applicable.
     """
     # baseline
     if re.fullmatch(rf"metrics_{re.escape(model_tag)}\.csv", fname):
         return "baseline", None
 
-    # only29 (group name free-form)
-    m = re.fullmatch(rf"metrics_{re.escape(model_tag)}_only29_(.+)\.csv", fname)
+    # target-only scheme (e.g., only10, only29) - using config
+    m = re.fullmatch(rf"metrics_{re.escape(model_tag)}_{re.escape(cfg.TARGET_SCHEME_NAME)}_(.+)\.csv", fname)
     if m:
-        return "only29", m.group(1)
+        return cfg.TARGET_SCHEME_NAME, m.group(1)
 
     # finetune (free-form group name between the two tokens)
     m = re.fullmatch(rf"metrics_{re.escape(model_tag)}_finetune_(.+?)_finetune\.csv", fname)
@@ -164,7 +165,9 @@ def make_comparison_table(
     """Generate a wide comparison table from summarized metrics.
 
     Converts the long-form summary into a wide table with metrics
-    for ``only29`` and ``finetune`` schemes, and their differences (delta).
+    for target-only (e.g., ``only10``, ``only29``) and ``finetune`` schemes,
+    and their differences (delta). The target scheme name is read from
+    ``cfg.TARGET_SCHEME_NAME``.
 
     Parameters
     ----------
@@ -180,7 +183,7 @@ def make_comparison_table(
     -------
     pandas.DataFrame
         Wide-form DataFrame with columns for each metric:
-        ``{metric}_only29``, ``{metric}_finetune``, and ``{metric}_delta``.
+        ``{metric}_{target_scheme}``, ``{metric}_finetune``, and ``{metric}_delta``.
     """
     metric_cols = metric_cols or METRIC_COLS_DEFAULT
 
@@ -192,14 +195,15 @@ def make_comparison_table(
     # normalize scheme labels just in case
     scheme_map = {
         "with_pretrain(finetune)": "finetune",
-        "without_pretrain(only29)": "only29",
+        f"without_pretrain({cfg.TARGET_SCHEME_NAME})": cfg.TARGET_SCHEME_NAME,
+        "without_pretrain(only29)": cfg.TARGET_SCHEME_NAME,  # legacy compatibility
         "baseline": "baseline",
     }
     if "scheme" in df.columns:
         df["scheme"] = df["scheme"].map(lambda x: scheme_map.get(x, x))
 
-    # keep only only29/finetune for pivot
-    df2 = df[df["scheme"].isin(["only29", "finetune"])].copy()
+    # keep only target_scheme/finetune for pivot
+    df2 = df[df["scheme"].isin([cfg.TARGET_SCHEME_NAME, "finetune"])].copy()
     # keep group as str (free-form)
     if "group" in df2.columns:
         df2["group"] = df2["group"].astype(str)
@@ -212,13 +216,13 @@ def make_comparison_table(
         observed=False,  # future-proof for pandas
     )
 
-    # build output columns in the order: only29, finetune, delta
+    # build output columns in the order: target_scheme, finetune, delta
     out = pd.DataFrame(index=wide.index)
     for m in metric_cols:
-        c_only = (m, "only29")
+        c_only = (m, cfg.TARGET_SCHEME_NAME)
         c_fine = (m, "finetune")
         if c_only in wide.columns:
-            out[f"{m}_only29"] = wide[c_only]
+            out[f"{m}_{cfg.TARGET_SCHEME_NAME}"] = wide[c_only]
         if c_fine in wide.columns:
             out[f"{m}_finetune"] = wide[c_fine]
         if c_only in wide.columns and c_fine in wide.columns:

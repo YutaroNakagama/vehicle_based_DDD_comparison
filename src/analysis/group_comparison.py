@@ -6,6 +6,7 @@ import json
 import numpy as np
 import pandas as pd
 
+from src import config as cfg
 from utils.io.data_io import load_csv, save_csv
 
 METRICS = ["accuracy", "f1", "auc", "precision", "recall"]
@@ -52,7 +53,7 @@ def run_summarize_only10_vs_finetune(
     model: str = "RF",
     split: Optional[str] = "test",
     make_radar: bool = False,
-    only10_pattern: str = "metrics_{model}_only10_{group}.csv",
+    only10_pattern: str = f"metrics_{{model}}_{cfg.TARGET_SCHEME_NAME}_{{group}}.csv",
     finetune_pattern: str = "metrics_{model}_finetune_{group}_finetune.csv",
 ) -> Dict[str, Path]:
     """Summarize only10 vs finetune results across groups.
@@ -148,12 +149,12 @@ def run_summarize_only10_vs_finetune(
     print(f"Saved: {out_long}")
 
     # wide (+ delta)
-    wide_src = long_df[long_df["scheme"].isin(["only10", "finetune"])].copy()
+    wide_src = long_df[long_df["scheme"].isin([cfg.TARGET_SCHEME_NAME, "finetune"])].copy()
     wide = wide_src.pivot_table(index="group", columns="scheme", values=METRICS, aggfunc="first", observed=False)
     wide.columns = [f"{m}_{sch}" for m, sch in wide.columns]
     wide = wide.reset_index()
     for m in METRICS:
-        co, cf = f"{m}_only10", f"{m}_finetune"
+        co, cf = f"{m}_{cfg.TARGET_SCHEME_NAME}", f"{m}_finetune"
         if co in wide.columns and cf in wide.columns:
             wide[f"{m}_delta"] = wide[cf] - wide[co]
     save_csv(wide, out_wide)
@@ -181,7 +182,7 @@ def run_summarize_only10_vs_finetune(
 
     # Markdown
     lines = []
-    lines.append(f"# Summary: only10 vs finetune (groups={len(names)}, split={split or 'ALL'})\n")
+    lines.append(f"# Summary: {cfg.TARGET_SCHEME_NAME} vs finetune (groups={len(names)}, split={split or 'ALL'})\n")
     lines.append("## Improvements summary\n")
     head = ["metric","n_groups","n_improved","n_tied","n_worse","mean_delta","median_delta"]
     lines += [

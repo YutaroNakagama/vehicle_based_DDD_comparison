@@ -8,6 +8,7 @@ matplotlib.use("Agg") # Safe for HPC / non-GUI environments
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
+from src import config as cfg
 from utils.visualization.visualization import save_figure
 
 def make_radar(
@@ -16,18 +17,19 @@ def make_radar(
     metrics: list[str],
     ylim: tuple[float, float] = (0.0, 1.0),
 ) -> Path:
-    """Generate radar plots comparing finetune vs only10 metrics.
+    """Generate radar plots comparing finetune vs target-only metrics.
 
     This function creates individual radar charts for each group in the input
     DataFrame and saves them as PNG images. It also generates a combined PDF
-    containing all radar plots.
+    containing all radar plots. The target scheme name (e.g., 'only10', 'only29')
+    is read from ``cfg.TARGET_SCHEME_NAME``.
 
     Parameters
     ----------
     wide_df : pandas.DataFrame
         Wide-form DataFrame containing per-group metrics.
         Must include a ``group`` column and columns of the form
-        ``{metric}_finetune`` and ``{metric}_only10`` for each metric.
+        ``{metric}_finetune`` and ``{metric}_{target_scheme}`` for each metric.
     out_dir : Path or str
         Directory where output PNG and PDF files will be saved.
     metrics : list of str
@@ -58,18 +60,18 @@ def make_radar(
     for _, row in wide_df.iterrows():
         group = str(row["group"])
         fins = [row.get(f"{m}_finetune", np.nan) for m in metrics]
-        onls = [row.get(f"{m}_only10",   np.nan) for m in metrics]
-        if all(np.isnan(fins)) and all(np.isnan(onls)):
+        target_vals = [row.get(f"{m}_{cfg.TARGET_SCHEME_NAME}", np.nan) for m in metrics]
+        if all(np.isnan(fins)) and all(np.isnan(target_vals)):
             continue
         fins = fins + fins[:1]
-        onls = onls + onls[:1]
+        target_vals = target_vals + target_vals[:1]
 
         fig = plt.figure(figsize=(6,6))
         ax = plt.subplot(111, polar=True)
         ax.set_xticks(angles[:-1]); ax.set_xticklabels(metrics)
         ax.set_ylim(*ylim)
         ax.plot(angles, fins, linewidth=2, label="finetune"); ax.fill(angles, fins, alpha=0.1)
-        ax.plot(angles, onls, linewidth=2, linestyle="--", label="only10"); ax.fill(angles, onls, alpha=0.1)
+        ax.plot(angles, target_vals, linewidth=2, linestyle="--", label=cfg.TARGET_SCHEME_NAME); ax.fill(angles, target_vals, alpha=0.1)
         ax.set_title(f"Group: {group}", va="bottom")
         ax.legend(loc="upper right", bbox_to_anchor=(1.25, 1.1))
 
