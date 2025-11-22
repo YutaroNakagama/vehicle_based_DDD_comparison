@@ -33,7 +33,7 @@ def prepare_suffix_with_jobid(mode: Optional[str], tag: Optional[str]) -> str:
     Returns
     -------
     str
-        Suffix string including mode, tag, and job ID (e.g., "_target_only_rank_dtw_mean_high_14209090").
+        Suffix string including mode, tag, and job ID (e.g., "_target_only_rank_dtw_mean_high_14209090[1]").
     """
     suffix = f"_{mode}" if mode else ""
     if tag:
@@ -45,7 +45,13 @@ def prepare_suffix_with_jobid(mode: Optional[str], tag: Optional[str]) -> str:
         jobid = jobid.split(".")[0]  # Remove hostname part
     
     if jobid and jobid not in suffix:
-        suffix = f"{suffix}_{jobid}"
+        # Check if jobid already has [n] format (from PBS_ARRAY_INDEX)
+        array_idx = os.environ.get("PBS_ARRAY_INDEX", "")
+        if array_idx:
+            suffix = f"{suffix}_{jobid}[{array_idx}]"
+        else:
+            # For non-array jobs (like pooled mode), default to [1]
+            suffix = f"{suffix}_{jobid}[1]"
         logging.info(f"[TRAIN] Appended jobid to suffix -> {suffix}")
     
     return suffix
