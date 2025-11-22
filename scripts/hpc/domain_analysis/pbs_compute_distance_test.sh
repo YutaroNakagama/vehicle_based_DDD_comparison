@@ -42,10 +42,10 @@ METRIC=${METRICS[$((PBS_ARRAY_INDEX-1))]}
 echo "[INFO] Running metric: ${METRIC} (TEST MODE with 8 cores)"
 
 # Use reduced parallelism for test
-python scripts/python/analyze.py comp-dist --metric "$METRIC" \
+python "${PBS_O_WORKDIR}/scripts/python/analyze.py" comp-dist --metric "$METRIC" \
   --subject_list ../dataset/mdapbe/subject_list.txt \
-  --data_root data/processed/common \
-  --groups_file config/subjects/target_groups.txt \
+  --data_root "${PBS_O_WORKDIR}/data/processed/common" \
+  --groups_file "${PBS_O_WORKDIR}/config/subjects/target_groups.txt" \
   --n_jobs 4
 
 echo "[DONE] ${METRIC} computation complete."
