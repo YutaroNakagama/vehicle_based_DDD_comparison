@@ -268,10 +268,10 @@ def report_for_metric(
 
     # outputs
     ensure_dir(out_dir)
-    save_json(stats, out_dir / f\"{metric_name}_report_ext.json\")
+    save_json(stats, out_dir / f"{metric_name}_report_ext.json")
     save_csv(
-        pd.DataFrame.from_dict(stats, orient=\"index\")[[\"intra\",\"inter\",\"nn\"]],
-        out_dir / f\"{metric_name}_report_ext.csv\"
+        pd.DataFrame.from_dict(stats, orient="index")[["intra","inter","nn"]],
+        out_dir / f"{metric_name}_report_ext.csv"
     )
     plot_bars(metric_name, stats, out_dir / f"{metric_name}_bars.png")
     return stats
