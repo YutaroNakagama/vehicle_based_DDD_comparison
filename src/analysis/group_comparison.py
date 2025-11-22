@@ -212,7 +212,7 @@ def run_summarize_only10_vs_finetune(
         try:
             from .radar import make_radar
         except Exception:
-            from src.analysis.radar import make_radar  # type: ignore
+            from src.utils.visualization.radar import make_radar  # type: ignore
         make_radar(wide, model_dir / "radar_allgroups", metrics=METRICS, ylim=(0,1))
 
     return {"long": out_long, "wide": out_wide, "markdown": out_md, "improvements": imp_csv}
