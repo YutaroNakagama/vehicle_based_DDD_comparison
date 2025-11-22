@@ -42,6 +42,16 @@ from src.utils.io.loaders import read_subject_list, load_subject_csvs
 from src.utils.io.split_helpers import split_data, log_split_ratios
 from src.utils.io.feature_utils import normalize_feature_names
 from src.utils.io.savers import save_artifacts
+from src.utils.io.preprocessing import (
+    drop_eeg_columns,
+    clean_feature_dataframe,
+    align_train_val_test_columns,
+)
+from src.utils.io.target_resolution import (
+    resolve_target_subjects_from_tag,
+    resolve_middle_group_subjects,
+    filter_data_by_mode,
+)
 from src.models.architectures.helpers import get_classifier
 from src.models.architectures.SvmA import SvmA_train
 from src.models.architectures.lstm import lstm_train
@@ -436,6 +446,7 @@ def train_pipeline(
         )
         return
 
+
     # 3) Feature selection & scaling
     # Normalize feature names for consistency between training and evaluation
     X_train.columns = normalize_feature_names(X_train.columns)
@@ -443,40 +454,14 @@ def train_pipeline(
     if X_test is not None:
         X_test.columns = normalize_feature_names(X_test.columns)
 
-    # Remove duplicated or non-numeric columns before feature selection
-    X_train = X_train.loc[:, ~X_train.columns.duplicated()]
-    X_val = X_val.loc[:, ~X_val.columns.duplicated()]
+    # Clean and preprocess features using shared utilities
+    X_train = clean_feature_dataframe(X_train, drop_subject_id=True, drop_eeg=True, numeric_only=True)
+    X_val = clean_feature_dataframe(X_val, drop_subject_id=True, drop_eeg=True, numeric_only=True)
     if X_test is not None:
-        X_test = X_test.loc[:, ~X_test.columns.duplicated()]
-
-    # Drop unnecessary columns (e.g., subject_id) and keep only numeric columns
-    X_train = X_train.drop(columns=["subject_id"], errors="ignore").select_dtypes(include=[np.number])
-    X_val = X_val.drop(columns=["subject_id"], errors="ignore").select_dtypes(include=[np.number])
-    if X_test is not None:
-        X_test = X_test.drop(columns=["subject_id"], errors="ignore").select_dtypes(include=[np.number])
-
-    # --- Explicitly drop EEG-related columns (we use vehicle signals only) ---
-    eeg_keywords = ["Channel_", "EEG", "Theta", "Alpha", "Beta", "Gamma", "Delta"]
-    def drop_eeg(df):
-        drop_cols = [c for c in df.columns if any(k in c for k in eeg_keywords)]
-        if drop_cols:
-            logging.info(f"[TRAIN] Dropping {len(drop_cols)} EEG-related columns (e.g., {drop_cols[:5]})")
-            df = df.drop(columns=drop_cols)
-        return df
-
-    X_train = drop_eeg(X_train)
-    X_val = drop_eeg(X_val)
-    if X_test is not None:
-        X_test = drop_eeg(X_test)
+        X_test = clean_feature_dataframe(X_test, drop_subject_id=True, drop_eeg=True, numeric_only=True)
 
     # Align columns (train/val/test) to common subset to avoid misalignment
-    common_cols = X_train.columns.intersection(X_val.columns)
-    if X_test is not None:
-        common_cols = common_cols.intersection(X_test.columns)
-    X_train = X_train[common_cols]
-    X_val = X_val[common_cols]
-    if X_test is not None:
-        X_test = X_test[common_cols]
+    X_train, X_val, X_test = align_train_val_test_columns(X_train, X_val, X_test)
 
     selected_features, scaler, X_train_fs, X_val_fs, X_test_fs = select_features_and_scale(
         X_train=X_train,
