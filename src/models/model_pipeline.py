@@ -214,6 +214,7 @@ def train_pipeline(
             selected_features=selected_features,
             scaler=scaler,
             suffix=suffix,
+            mode=mode,
             use_oversampling=use_oversampling,
             oversample_method=oversample_method,
         )
