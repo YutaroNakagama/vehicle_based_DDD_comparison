@@ -182,17 +182,36 @@ def common_train(
         logging.info(f"Applying oversampling method: {oversample_method}")
         logging.info(f"Class distribution before oversampling: {np.bincount(y_train)}")
         
+        # Use conservative sampling_strategy to avoid extreme oversampling
+        # Instead of 1:1 balance, aim for minority:majority = 1:3 ratio
+        minority_count = np.bincount(y_train).min()
+        majority_count = np.bincount(y_train).max()
+        target_minority = int(majority_count * 0.33)  # 1:3 ratio
+        
         if oversample_method == "smote":
-            sampler = SMOTE(random_state=42, k_neighbors=min(5, np.bincount(y_train).min() - 1))
+            sampler = SMOTE(
+                sampling_strategy=target_minority,
+                random_state=42,
+                k_neighbors=min(5, minority_count - 1)
+            )
         elif oversample_method == "adasyn":
-            sampler = ADASYN(random_state=42, n_neighbors=min(5, np.bincount(y_train).min() - 1))
+            sampler = ADASYN(
+                sampling_strategy=target_minority,
+                random_state=42,
+                n_neighbors=min(5, minority_count - 1)
+            )
         elif oversample_method == "borderline":
-            sampler = BorderlineSMOTE(random_state=42, k_neighbors=min(5, np.bincount(y_train).min() - 1))
+            sampler = BorderlineSMOTE(
+                sampling_strategy=target_minority,
+                random_state=42,
+                k_neighbors=min(5, minority_count - 1)
+            )
         else:
             raise ValueError(f"Unknown oversample_method: {oversample_method}")
         
         X_train, y_train = sampler.fit_resample(X_train, y_train)
         logging.info(f"Class distribution after oversampling: {np.bincount(y_train)}")
+        logging.info(f"Oversampling ratio: minority increased from {minority_count} to {np.bincount(y_train).min()}")
 
     def objective(trial):
         logging.debug(f'X_train.shape: {X_train.shape}')
