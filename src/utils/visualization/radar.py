@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
 from src import config as cfg
-from utils.visualization.visualization import save_figure
+from src.utils.visualization.visualization import save_figure
 
 def make_radar(
     wide_df: pd.DataFrame,
