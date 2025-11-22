@@ -105,6 +105,7 @@ def train_pipeline(
             model_name=model_name,
             tag=tag,
             seed=seed,
+            target_subjects=target_subjects_resolved or target_subjects or [],
             time_stratify_labels=time_stratify_labels,
             time_stratify_tolerance=time_stratify_tolerance,
             time_stratify_window=time_stratify_window,

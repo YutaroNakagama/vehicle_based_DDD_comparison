@@ -167,6 +167,7 @@ def prepare_source_only_splits(
     model_name: str,
     tag: str,
     seed: int,
+    target_subjects: List[str],
     time_stratify_labels: bool,
     time_stratify_tolerance: float,
     time_stratify_window: float,
@@ -228,7 +229,7 @@ def prepare_source_only_splits(
     eval_subjects = resolve_target_subjects_from_tag(
         tag=tag,
         mode="source_only",
-        cli_target_subjects=None,
+        cli_target_subjects=target_subjects,
     )
     
     if not eval_subjects:
