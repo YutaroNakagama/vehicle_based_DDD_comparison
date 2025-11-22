@@ -10,7 +10,7 @@ to ensure proper evaluation and prevent data leakage.
 import numpy as np
 import pandas as pd
 import logging
-from src.config import KSS_BIN_LABELS, KSS_LABEL_MAP
+from src.config import KSS_BIN_LABELS, KSS_LABEL_MAP, TRAIN_RATIO, VAL_RATIO, TEST_RATIO
 from typing import List, Tuple
 from sklearn.model_selection import train_test_split
 
@@ -56,9 +56,9 @@ def _check_nonfinite(X: pd.DataFrame, name: str) -> pd.DataFrame:
 
 def data_split(
     df: pd.DataFrame,
-    train_ratio: float = 0.6,
-    val_ratio: float = 0.2,
-    test_ratio: float = 0.2,
+    train_ratio: float = None,
+    val_ratio: float = None,
+    test_ratio: float = None,
     random_state: int = 42,
 ):
     """
@@ -69,12 +69,12 @@ def data_split(
     ----------
     df : pandas.DataFrame
         Input dataset containing features and label columns.
-    train_ratio : float, default=0.7
-        Proportion of the dataset to allocate for training.
-    val_ratio : float, default=0.2
-        Proportion of the dataset to allocate for validation.
-    test_ratio : float, default=0.1
-        Proportion of the dataset to allocate for testing.
+    train_ratio : float, optional
+        Proportion of the dataset to allocate for training. If None, uses config.TRAIN_RATIO.
+    val_ratio : float, optional
+        Proportion of the dataset to allocate for validation. If None, uses config.VAL_RATIO.
+    test_ratio : float, optional
+        Proportion of the dataset to allocate for testing. If None, uses config.TEST_RATIO.
     random_state : int, default=42
         Random seed for reproducibility.
 
@@ -83,6 +83,13 @@ def data_split(
     tuple of (pandas.DataFrame, pandas.DataFrame, pandas.DataFrame,
               pandas.Series, pandas.Series, pandas.Series)
     """
+    # Use config defaults if not provided
+    if train_ratio is None:
+        train_ratio = TRAIN_RATIO
+    if val_ratio is None:
+        val_ratio = VAL_RATIO
+    if test_ratio is None:
+        test_ratio = TEST_RATIO
 
     if not np.isclose(train_ratio + val_ratio + test_ratio, 1.0):
         raise ValueError("Train, validation, and test ratios must sum to 1.0")
