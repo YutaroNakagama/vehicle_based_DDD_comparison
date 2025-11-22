@@ -131,8 +131,13 @@ SAMPLE_RATE_EEG = 500
 KSS_BIN_LABELS = [1, 2, 3, 4, 5, 8, 9]
 """list of int : Original Karolinska Sleepiness Scale (KSS) labels in dataset."""
 
-KSS_LABEL_MAP = {1:0, 2:0, 3:0, 4:0, 5:0, 8:1, 9:1}
-"""dict : Mapping of KSS labels to binary states (0=Alert, 1=Drowsy)."""
+# Allow test mode override: simplified KSS mapping (1-3=0, 8-9=1)
+if os.environ.get("KSS_SIMPLIFIED") == "1":
+    KSS_LABEL_MAP = {1:0, 2:0, 3:0, 8:1, 9:1}
+    """dict : TEST MODE - Simplified KSS mapping (1-3=Alert, 8-9=Drowsy)."""
+else:
+    KSS_LABEL_MAP = {1:0, 2:0, 3:0, 4:0, 5:0, 8:1, 9:1}
+    """dict : Mapping of KSS labels to binary states (0=Alert, 1=Drowsy)."""
 
 # ---------------------------------------------------------------------
 # Filters for EEG wavelet decomposition
@@ -155,7 +160,8 @@ TOP_K_FEATURES = 10
 # ---------------------------------------------------------------------
 # Optuna
 # ---------------------------------------------------------------------
-N_TRIALS = 50
+# Allow test mode override for faster training
+N_TRIALS = int(os.environ.get("N_TRIALS_OVERRIDE", 50))
 """int : Number of trials for hyperparameter optimization using Optuna."""
 
 OPTUNA_N_STARTUP_TRIALS = 5
@@ -212,6 +218,19 @@ CLASSIFICATION_METRICS = ["accuracy", "precision", "recall", "f1", "auc", "auc_p
 # ---------------------------------------------------------------------
 DEFAULT_RANDOM_SEED = 42
 """int : Default random seed used across training, evaluation, and analysis pipelines."""
+
+# ---------------------------------------------------------------------
+# Data split ratios (train:val:test)
+# ---------------------------------------------------------------------
+# Allow test mode override for faster training (e.g., 0.4:0.3:0.3 instead of 0.6:0.2:0.2)
+TRAIN_RATIO = float(os.environ.get("TRAIN_RATIO", 0.6))
+"""float : Training set ratio (default: 0.6)."""
+
+VAL_RATIO = float(os.environ.get("VAL_RATIO", 0.2))
+"""float : Validation set ratio (default: 0.2)."""
+
+TEST_RATIO = float(os.environ.get("TEST_RATIO", 0.2))
+"""float : Test set ratio (default: 0.2)."""
 
 # ---------------------------------------------------------------------
 # Time-stratified splitting configuration
