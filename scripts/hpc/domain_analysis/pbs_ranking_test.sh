@@ -24,10 +24,10 @@ export PYTHONNOUSERSITE=1
 echo "[TEST MODE] Generating rankings at $(date)"
 
 # Generate rankings (this creates ranks29 directory and files)
-python scripts/python/analyze.py rank-export \
+python "${PBS_O_WORKDIR}/scripts/python/analyze.py" rank-export \
   --k 29 \
   --method mean \
-  --outdir results/domain_analysis/distance/ranks29
+  --outdir "${PBS_O_WORKDIR}/results/domain_analysis/distance/ranks29"
 
 echo "[DONE] Ranking complete. Created ranks29/ directory with high/middle/low splits."
 echo "[INFO] Results saved to results/domain_analysis/distance/ranks29/"
