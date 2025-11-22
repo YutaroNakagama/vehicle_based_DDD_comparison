@@ -6,6 +6,8 @@ import json
 import numpy as np
 import pandas as pd
 
+from utils.io.data_io import load_csv, save_csv
+
 METRICS = ["accuracy", "f1", "auc", "precision", "recall"]
 
 def _read_test_metrics(csv_path: Path, split: Optional[str]) -> Optional[Dict[str, float]]:
@@ -30,7 +32,7 @@ def _read_test_metrics(csv_path: Path, split: Optional[str]) -> Optional[Dict[st
     if not csv_path.exists():
         return None
     try:
-        df = pd.read_csv(csv_path)
+        df = load_csv(csv_path)
     except Exception:
         return None
     if "split" in df.columns and split:
@@ -142,7 +144,7 @@ def run_summarize_only10_vs_finetune(
     cat_order = ["baseline"] + names if "baseline" in long_df["group"].values else names
     long_df["group"] = pd.Categorical(long_df["group"], categories=cat_order, ordered=True)
     long_df = long_df.sort_values(["group", "scheme"]).reset_index(drop=True)
-    long_df.to_csv(out_long, index=False)
+    save_csv(long_df, out_long)
     print(f"Saved: {out_long}")
 
     # wide (+ delta)
@@ -154,7 +156,7 @@ def run_summarize_only10_vs_finetune(
         co, cf = f"{m}_only10", f"{m}_finetune"
         if co in wide.columns and cf in wide.columns:
             wide[f"{m}_delta"] = wide[cf] - wide[co]
-    wide.to_csv(out_wide, index=False)
+    save_csv(wide, out_wide)
     print(f"Saved: {out_wide}")
 
     # Improvement summary
@@ -174,7 +176,7 @@ def run_summarize_only10_vs_finetune(
             "median_delta": float(vals.median()),
         })
     improve_df = pd.DataFrame(imp_rows)
-    improve_df.to_csv(imp_csv, index=False)
+    save_csv(improve_df, imp_csv)
     print(f"Saved: {imp_csv}")
 
     # Markdown

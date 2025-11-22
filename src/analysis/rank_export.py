@@ -29,6 +29,8 @@ from typing import Iterable, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
+from utils.io.data_io import load_csv, load_json, load_numpy
+
 from src import config as cfg
 
 
@@ -52,8 +54,7 @@ def _load_subject_names(path: Path) -> List[str]:
     ValueError
         If the JSON format is not supported.
     """
-    with path.open("r", encoding="utf-8") as f:
-        data = json.load(f)
+    data = load_json(path)
     if isinstance(data, dict) and "subjects" in data:
         return list(data["subjects"])
     if isinstance(data, list):
@@ -82,9 +83,9 @@ def _load_matrix(path: Path) -> np.ndarray:
         If the file type is unsupported or the array is not square.
     """
     if path.suffix.lower() == ".npy":
-        arr = np.load(path)
+        arr = load_numpy(path)
     elif path.suffix.lower() == ".csv":
-        df = pd.read_csv(path, header=None)
+        df = load_csv(path, header=None)
         arr = df.values
     else:
         raise ValueError(f"Unsupported matrix file type: {path}")
