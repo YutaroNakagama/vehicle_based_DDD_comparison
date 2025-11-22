@@ -67,7 +67,7 @@ def load_matrix_subjects(matrix_path: Path, subjects_path: Path) -> Tuple[np.nda
     M = load_numpy(matrix_path)
     subs = load_json(subjects_path)
     if M.shape[0] != M.shape[1] or M.shape[0] != len(subs):
-        raise ValueError(f\"Matrix/subjects mismatch: {M.shape} vs {len(subs)}\")
+        raise ValueError(f"Matrix/subjects mismatch: {M.shape} vs {len(subs)}")
     np.fill_diagonal(M, 0.0)
     return M, subs
 
