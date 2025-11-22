@@ -155,7 +155,7 @@ def eval_pipeline(
     elif model == "SvmA":
         result = SvmA_eval(X_test_prepared, y_test, model_name, clf, features)
     else:
-        result = common_eval(X_test_prepared, y_test, model, model_name, clf)
+        result = common_eval(X_test_prepared, y_test, model_name, clf)
 
     # Stage 7: Load or optimize threshold
     try:

@@ -190,7 +190,13 @@ def load_subject_csvs(
         if base_path is not None:
             file_path = os.path.join(base_path, file_name)
         elif model_name is not None:
-            file_path = os.path.join(PROCESS_CSV_PATH, model_name, file_name)
+            # RF and other tree-based models use common directory
+            if model_name in ["RF", "BalancedRF", "DecisionTree", "AdaBoost", 
+                             "GradientBoosting", "XGBoost", "LightGBM", "CatBoost",
+                             "LogisticRegression", "SVM", "K-Nearest Neighbors", "MLP"]:
+                file_path = os.path.join(PROCESS_CSV_PATH, "common", file_name)
+            else:
+                file_path = os.path.join(PROCESS_CSV_PATH, model_name, file_name)
         else:
             file_path = os.path.join(PROCESS_CSV_PATH, "common", file_name)
         try:
