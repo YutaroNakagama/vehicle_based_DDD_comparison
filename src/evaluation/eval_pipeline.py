@@ -29,6 +29,15 @@ from sklearn.metrics import (
 
 from src.utils.io.loaders import load_subjects_and_data, load_model_and_scaler
 from src.utils.io.savers import save_eval_results
+from src.utils.io.preprocessing import (
+    prepare_evaluation_features,
+    EEG_KEYWORDS,
+)
+from src.utils.io.target_resolution import resolve_target_subjects_from_tag
+from src.utils.evaluation.threshold import (
+    load_or_optimize_threshold,
+    extract_jobid_components,
+)
 from src import config as cfg
 from src.evaluation.models import lstm_eval, SvmA_eval, common_eval
 from src.utils.io.split_helpers import split_data, log_split_ratios
@@ -113,32 +122,14 @@ def eval_pipeline(
         model, fold, sample_size, seed, subject_wise_split
     )
 
-    # --------------------------------------------------------------
-    # Step 1.5: Restrict evaluation to target group for tagged runs
-    # --------------------------------------------------------------
-    default_rank_file = os.path.join(
-        cfg.RESULTS_DOMAIN_ANALYSIS_PATH, "distance", cfg.RANK_NAMES_FILENAME
+    # Step 1.5: Resolve target subjects using utility function
+    target_subjects = resolve_target_subjects_from_tag(
+        tag=tag,
+        mode=mode,
+        cli_target_subjects=target_file if target_file else None
     )
-    target_subjects = []
-    if (tag and os.path.exists(default_rank_file)):
-        with open(default_rank_file) as f:
-            lines = [x.strip() for x in f.readlines() if x.strip()]
-        tag_key = tag.replace("rank_", "")
-        match = [x for x in lines if os.path.basename(x).startswith(tag_key)]
-        if match:
-            group_file = os.path.normpath(match[0])
-            if os.path.exists(group_file):
-                with open(group_file) as g:
-                    target_subjects = [s.strip() for s in g.readlines() if s.strip()]
-                logging.info(f"[EVAL] Loaded target group list ({len(target_subjects)}) from {group_file}")
-                logging.info(f"[EVAL] Mode={mode} | target_subjects={len(target_subjects)}")
-            else:
-                logging.warning(f"[EVAL] Target group file not found: {group_file}")
-        else:
-            logging.warning(f"[EVAL] No matching group found for tag={tag}")
-    else:
-        logging.info("[EVAL] No tag or rank_names.txt not found; evaluating all subjects.")
 
+    # Step 2: Split data for evaluation
     if mode in ["source_only", "target_only"] and len(target_subjects) > 0:
         X_t_tr, X_val, X_test, y_t_tr, y_val, y_test = split_data(
             subject_split_strategy="subject_time_split",
@@ -224,56 +215,13 @@ def eval_pipeline(
     else:
         logging.info(f"[EVAL] Successfully loaded model and scaler for jobid={jobid}")
 
-    # keywords for EEG columns (removed during evaluation)
-    eeg_keywords = ["Channel_", "EEG", "Theta", "Alpha", "Beta", "Gamma", "Delta"]
-
-    def _prep(df: pd.DataFrame) -> pd.DataFrame:
-        drop_cols = [c for c in df.columns if any(k in c for k in eeg_keywords)]
-        if drop_cols:
-            logging.info(f"[EVAL] Dropping {len(drop_cols)} EEG columns (e.g., {drop_cols[:5]})")
-            df = df.drop(columns=drop_cols)
-        df = df.loc[:, ~df.columns.duplicated()]
-        df = df.drop(columns=["subject_id"], errors="ignore")
-        df = df.select_dtypes(include=[np.number]).replace([np.inf, -np.inf], np.nan).fillna(0.0)
-
-        def safe_align_columns(df_in: pd.DataFrame, expected_cols):
-            extra_cols = [c for c in df_in.columns if c not in expected_cols]
-            missing_cols = [c for c in expected_cols if c not in df_in.columns]
-            if extra_cols:
-                logging.info(f"[EVAL] Dropping {len(extra_cols)} extra columns (e.g., {extra_cols[:5]})")
-                df_in = df_in.drop(columns=extra_cols, errors="ignore")
-            if missing_cols:
-                logging.warning(f"[EVAL] {len(missing_cols)} missing columns filled with 0.0 (e.g., {missing_cols[:5]})")
-                for c in missing_cols:
-                    df_in[c] = 0.0
-            return df_in.reindex(columns=expected_cols)
-
-        if features is not None and len(features) > 0:
-            df = safe_align_columns(df, features)
-        elif hasattr(scaler, "feature_names_in_"):
-            df = safe_align_columns(df, list(scaler.feature_names_in_))
-
-        df = df.clip(lower=-1_000_000.0, upper=1_000_000.0, axis=1)
-
-        if hasattr(scaler, "feature_names_in_"):
-            expected_scaler_cols = list(scaler.feature_names_in_)
-            missing_for_scaler = [c for c in expected_scaler_cols if c not in df.columns]
-            extra_for_scaler = [c for c in df.columns if c not in expected_scaler_cols]
-            if extra_for_scaler:
-                logging.warning(f"[EVAL] Dropping {len(extra_for_scaler)} columns unseen at fit time (e.g., {extra_for_scaler[:5]})")
-                df = df.drop(columns=extra_for_scaler, errors="ignore")
-            if missing_for_scaler:
-                logging.warning(f"[EVAL] {len(missing_for_scaler)} columns seen at fit time but now missing (e.g., {missing_for_scaler[:5]}). Filling with 0.0.")
-                for c in missing_for_scaler:
-                    df[c] = 0.0
-            df = df.reindex(columns=expected_scaler_cols)
-        return pd.DataFrame(scaler.transform(df), index=df.index)
-
-    X_test = _prep(X_test)
+    # Step 4: Prepare evaluation features using shared preprocessing
+    X_test = prepare_evaluation_features(X_test, scaler, features)
     logging.info(f"[EVAL] Transformed X_test shape={X_test.shape}")
+    
     X_val_prepared = None
-    if 'X_val' in locals():
-        X_val_prepared = _prep(X_val)
+    if 'X_val' in locals() and X_val is not None:
+        X_val_prepared = prepare_evaluation_features(X_val, scaler, features)
         logging.info(f"[EVAL] Transformed X_val shape={X_val_prepared.shape}")
 
     # Step 5: Model-specific evaluation
@@ -284,96 +232,27 @@ def eval_pipeline(
     else:
         result = common_eval(X_test, y_test, model, model_name, clf)
 
+    # Step 6: Load or optimize threshold using utility function
     try:
-        if tag and tag.startswith("rank_"):
-            parts = tag.split("_")  # ["rank", "dtw", "mean", "high"]
-            distance_key = "_".join(parts[1:-1]) if len(parts) >= 3 else "unknown"  # "dtw_mean"
-            level = parts[-1] if len(parts) >= 2 else "unknown"                      # "high"
-        else:
-            distance_key, level = "unknown", "unknown"
-
-        base_jobid, run_idx = None, None
-        if 'model_path' in locals() and model_path:
-            # .../models/RF/14209090/14209090[1]/RF_...
-            mroot = model_path.split("/")  # ["models","RF","14209090","14209090[1]",...]
-            if len(mroot) >= 4:
-                base_jobid = mroot[2]
-                subdir = mroot[3]  # "14209090[1]"
-                import re
-                mm = re.match(r"^(\d+)\[(\d+)\]$", subdir)
-                if mm:
-                    base_jobid = mm.group(1)
-                    run_idx = mm.group(2)
-        if base_jobid is None:
-            import re
-            mm = re.match(r"^(\d+)(?:\[(\d+)\])?$", str(jobid))
-            if mm:
-                base_jobid = mm.group(1)
-                run_idx = mm.group(2) or "1"
-        if base_jobid is None:
-            base_jobid = str(jobid).replace("[","").replace("]","")
-        if run_idx is None:
-            run_idx = "1"
-
-        fold_idx = int(fold) if isinstance(fold, int) else 0
-        jobid_idx = f"{base_jobid}_{run_idx}"  # e.g., "14209090_1"
-
-        pattern = (
-            f"models/{model}/{base_jobid}/{base_jobid}[{run_idx}]/"
-            f"threshold_{model}_{mode}_rank_{distance_key}_{level}_{jobid_idx}_{fold_idx}.json"
+        # Extract job ID components
+        base_jobid, run_idx = extract_jobid_components(
+            jobid, 
+            model_path=locals().get('model_path')
         )
-        cand = glob.glob(pattern, recursive=True)
-
-        threshold_path = None
-        if cand and os.path.exists(cand[0]):
-            cand.sort(key=os.path.getmtime, reverse=True)
-            threshold_path = cand[0]
-            with open(threshold_path, "r") as f:
-                meta = json.load(f)
-            thr = float(meta.get("threshold", 0.5))
-            logging.info(f"[EVAL] Found strict-matched threshold file: {threshold_path} (thr={thr:.3f})")
-        else:
-            logging.info(f"[EVAL] No strict-matched threshold. Searching F2-opt on VAL (jobid_idx={jobid_idx})...")
-            if X_val_prepared is None or 'y_val' not in locals():
-                logging.warning("[EVAL] Validation split not available; cannot optimize threshold. Skipping.")
-                thr = None
-            else:
-                # Prob on VAL
-                if hasattr(clf, "predict_proba"):
-                    p_val = clf.predict_proba(X_val_prepared)[:, 1]
-                elif hasattr(clf, "decision_function"):
-                    p_val = clf.decision_function(X_val_prepared)
-                    p_min, p_max = float(np.min(p_val)), float(np.max(p_val))
-                    p_val = (p_val - p_min) / (p_max - p_min + 1e-12)
-                else:
-                    p_val = None
-
-                thr = None
-                if p_val is not None:
-                    thrs = np.linspace(0, 1, 1001)
-                    best, best_f2 = 0.5, -1.0
-                    yv = y_val.astype(int)
-                    for t in thrs:
-                        yhat = (p_val >= t).astype(int)
-                        f2 = fbeta_score(yv, yhat, beta=2, zero_division=0)
-                        if f2 > best_f2:
-                            best_f2, best = f2, t
-                    thr = float(best)
-                    logging.info(f"[EVAL] Optimized F2 on VAL: thr={thr:.3f}, F2={best_f2:.4f}")
-
-                    candidate_subdir = os.path.join("models", model, base_jobid, f"{base_jobid}[{run_idx}]")
-                    target_dir = candidate_subdir if os.path.isdir(candidate_subdir) else os.path.join("models", model, base_jobid)
-                    os.makedirs(target_dir, exist_ok=True)
-                    expected_name = (
-                        f"threshold_{model}_{mode}_rank_{distance_key}_{level}_{jobid_idx}_{fold_idx}.json"
-                    )
-                    threshold_path = os.path.join(target_dir, expected_name)
-                    with open(threshold_path, "w") as f:
-                        json.dump({"threshold": thr}, f, indent=2)
-                    logging.info(f"[EVAL] Saved new threshold file → {threshold_path}")
-                else:
-                    logging.warning("[EVAL] Classifier has no probability-like scores; cannot optimize threshold.")
-                    thr = None
+        fold_idx = int(fold) if isinstance(fold, int) else 0
+        
+        # Load or optimize threshold
+        thr = load_or_optimize_threshold(
+            model=model,
+            mode=mode,
+            tag=tag,
+            base_jobid=base_jobid,
+            run_idx=run_idx,
+            fold_idx=fold_idx,
+            clf=clf,
+            X_val=X_val_prepared if 'X_val_prepared' in locals() else None,
+            y_val=y_val if 'y_val' in locals() else None,
+        )
 
         if thr is not None:
             if hasattr(clf, "predict_proba"):
@@ -398,9 +277,8 @@ def eval_pipeline(
                     "f2_thr": float(fbeta_score(y_test, yhat_thr, beta=2, zero_division=0)),
                     "specificity_thr": spec_thr,
                     "_proba_len": int(len(proba)),
-                    "_threshold_file": threshold_path,
                 })
-                logging.info(f"[EVAL] Applied threshold={thr:.3f} on TEST (file={threshold_path})")
+                logging.info(f"[EVAL] Applied threshold={thr:.3f} on TEST")
             else:
                 logging.info("[EVAL] Classifier has no probabilities; threshold application skipped.")
         else:

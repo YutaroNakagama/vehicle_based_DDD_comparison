@@ -19,6 +19,12 @@ from .metrics import (
     extract_metrics_from_eval_json,
 )
 
+from .threshold import (
+    optimize_threshold_f2,
+    load_or_optimize_threshold,
+    extract_jobid_components,
+)
+
 __all__ = [
     "calculate_classification_metrics",
     "calculate_roc_metrics",
@@ -32,4 +38,7 @@ __all__ = [
     "estimate_positive_rate",
     "compute_f2_score_from_pr",
     "extract_metrics_from_eval_json",
+    "optimize_threshold_f2",
+    "load_or_optimize_threshold",
+    "extract_jobid_components",
 ]
