@@ -287,3 +287,269 @@ def plot_roc_curves_from_latest_json(results_dir: str, title: str = "ROC Curve C
     plt.grid(True)
     plt.tight_layout()
     plt.show()
+
+
+# === Domain Analysis Visualization ===
+
+def plot_grouped_bar_chart(
+    data: "pd.DataFrame",
+    metrics: list,
+    modes: list,
+    distance_col: str = "distance",
+    level_col: str = "level",
+    figsize: tuple = None,
+    baseline_rates: Optional[dict] = None,
+    title_map: Optional[dict] = None,
+) -> matplotlib.figure.Figure:
+    """Create multi-panel bar chart for domain analysis metrics.
+    
+    Generates a grid of subplots showing metrics across different distances and levels
+    (e.g., high/middle/low) for source-only vs target-only comparisons.
+    
+    Parameters
+    ----------
+    data : pd.DataFrame
+        DataFrame with columns for model, distance, level, and metric values.
+    metrics : list of str
+        List of metric names to plot (e.g., ['auc', 'auc_pr', 'f1']).
+    modes : list of str
+        List of mode names (e.g., ['source_only', 'target_only']).
+    distance_col : str, default="distance"
+        Column name containing distance type (e.g., 'mmd', 'wasserstein', 'dtw').
+    level_col : str, default="level"
+        Column name containing level type (e.g., 'high', 'middle', 'low').
+    figsize : tuple, optional
+        Figure size (width, height). If None, auto-calculated based on layout.
+    baseline_rates : dict, optional
+        Mapping from metric name to baseline value for reference lines.
+    title_map : dict, optional
+        Mapping from metric name to display title.
+    
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Figure object containing the bar chart grid.
+    
+    Examples
+    --------
+    >>> fig = plot_grouped_bar_chart(
+    ...     df, 
+    ...     metrics=['auc', 'f1'],
+    ...     modes=['source_only', 'target_only'],
+    ...     baseline_rates={'auc_pr': 0.033}
+    ... )
+    >>> fig.savefig('metrics_comparison.png')
+    """
+    import pandas as pd
+    
+    distances = sorted(data[distance_col].unique())
+    ordered_levels = ["high", "middle", "low"]
+    
+    if figsize is None:
+        figsize = (5 * len(metrics), 3 * len(distances))
+    
+    if title_map is None:
+        title_map = {
+            "auc": "AUROC",
+            "auc_pr": "AUPRC",
+            "accuracy": "Accuracy",
+            "f1": "F1",
+            "f2": "F2",
+            "precision": "Precision (pos)",
+            "recall": "Recall (pos)",
+        }
+    
+    fig, axes = plt.subplots(
+        len(distances), len(metrics), 
+        figsize=figsize, 
+        squeeze=False
+    )
+    
+    colors = ["#6699cc", "#ff9966"]
+    mode_labels = {"source_only": "Source-only", "target_only": "Target-only"}
+    
+    for i, dist in enumerate(distances):
+        sub = data[data[distance_col] == dist]
+        
+        for j, metric in enumerate(metrics):
+            ax = axes[i, j]
+            
+            if sub.empty:
+                ax.axis("off")
+                continue
+            
+            # Filter to present levels
+            levels_present = [lvl for lvl in ordered_levels if lvl in sub[level_col].unique()]
+            x = np.arange(len(levels_present))
+            width = 0.35
+            
+            # Collect values for each mode
+            mode_values = {}
+            for mode in modes:
+                vals = []
+                for lvl in levels_present:
+                    sub_lvl = sub[sub[level_col] == lvl]
+                    col = f"{metric}_{mode}"
+                    vals.append(sub_lvl[col].mean() if col in sub_lvl.columns else np.nan)
+                mode_values[mode] = vals
+            
+            # Plot bars
+            bars = []
+            for idx, mode in enumerate(modes):
+                offset = (idx - len(modes)/2 + 0.5) * width
+                bar = ax.bar(
+                    x + offset, 
+                    mode_values[mode], 
+                    width, 
+                    label=mode_labels.get(mode, mode),
+                    color=colors[idx % len(colors)]
+                )
+                bars.append(bar)
+            
+            ax.set_xticks(x)
+            ax.set_xticklabels([lvl.capitalize() for lvl in levels_present])
+            
+            # Baseline line for specific metrics
+            if baseline_rates and metric in baseline_rates:
+                baseline = baseline_rates[metric]
+                ax.axhline(baseline, color='gray', linestyle='--', linewidth=1)
+                ax.text(
+                    len(levels_present)-0.5, baseline + 0.01,
+                    f"Baseline ({baseline:.3f})", 
+                    fontsize=8, color='gray'
+                )
+                
+                # Dynamic y-axis for metrics with baseline
+                all_vals = [v for vals in mode_values.values() for v in vals if not np.isnan(v)]
+                if all_vals:
+                    ymin, ymax = min(all_vals), max(all_vals)
+                    margin = (ymax - ymin) * 0.3 if ymax > ymin else 0.02
+                    ax.set_ylim(max(0, ymin - margin), min(1.0, ymax + margin))
+            else:
+                ax.set_ylim(0, 1.0)
+            
+            # Title on top row
+            if i == 0:
+                ax.set_title(title_map.get(metric, metric.upper()), fontsize=11)
+            
+            # Distance label on left column
+            if j == 0:
+                pretty_dist = {"dtw": "DTW", "mmd": "MMD", "wasserstein": "Wasserstein"}
+                dist_label = pretty_dist.get(str(dist).lower(), str(dist))
+                ax.text(
+                    0.02, 0.95, dist_label, 
+                    transform=ax.transAxes, 
+                    ha="left", va="top",
+                    fontsize=12, fontweight="bold",
+                    bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.6)
+                )
+            
+            # Legend on top-right subplot
+            if i == 0 and j == len(metrics) - 1:
+                ax.legend(
+                    handles=bars,
+                    labels=[mode_labels.get(m, m) for m in modes],
+                    loc="upper right",
+                    fontsize=8,
+                    frameon=False,
+                )
+    
+    plt.tight_layout()
+    return fig
+
+
+def plot_metric_difference_heatmap(
+    data: "pd.DataFrame",
+    metrics: list,
+    comparisons: list,
+    distance_col: str = "distance",
+    level_col: str = "level",
+    figsize: tuple = None,
+    cmap: str = "coolwarm",
+    vmin: float = -1,
+    vmax: float = 1,
+) -> matplotlib.figure.Figure:
+    """Create heatmap showing metric differences between modes.
+    
+    Parameters
+    ----------
+    data : pd.DataFrame
+        DataFrame with metric columns in format '{metric}_{mode}'.
+    metrics : list of str
+        List of metrics to compare.
+    comparisons : list of tuple
+        List of (mode_a, mode_b, label) tuples for comparison.
+    distance_col : str, default="distance"
+        Column name for distance type.
+    level_col : str, default="level"
+        Column name for level type.
+    figsize : tuple, optional
+        Figure size. If None, auto-calculated.
+    cmap : str, default="coolwarm"
+        Colormap name.
+    vmin, vmax : float, default=-1, 1
+        Color scale limits.
+    
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Figure object containing heatmap grid.
+    
+    Examples
+    --------
+    >>> fig = plot_metric_difference_heatmap(
+    ...     df,
+    ...     metrics=['auc', 'f1'],
+    ...     comparisons=[('source_only', 'target_only', 'Source - Target')]
+    ... )
+    """
+    import pandas as pd
+    
+    if figsize is None:
+        figsize = (4 * len(comparisons), 4 * len(metrics))
+    
+    fig, axes = plt.subplots(
+        len(metrics), len(comparisons),
+        figsize=figsize,
+        squeeze=False
+    )
+    
+    for i, metric in enumerate(metrics):
+        for j, (mode_a, mode_b, title) in enumerate(comparisons):
+            ax = axes[i, j]
+            
+            diffs, labels = [], []
+            for _, row in data.iterrows():
+                val_a = row.get(f"{metric}_{mode_a}", np.nan)
+                val_b = row.get(f"{metric}_{mode_b}", np.nan)
+                
+                if pd.notna(val_a) and pd.notna(val_b):
+                    diffs.append(val_a - val_b)
+                else:
+                    diffs.append(np.nan)
+                
+                lbl_dist = str(row.get(distance_col, "unknown"))
+                lbl_lvl = str(row.get(level_col, "unknown"))
+                labels.append(f"{lbl_dist}/{lbl_lvl}")
+            
+            # Reshape to column matrix
+            mat = np.array(diffs).reshape(-1, 1)
+            
+            im = ax.imshow(mat, cmap=cmap, vmin=vmin, vmax=vmax, aspect='auto')
+            ax.set_yticks(range(len(labels)))
+            ax.set_yticklabels(labels, fontsize=9)
+            ax.set_xticks([])
+            ax.set_title(f"{metric.upper()} ({title})", fontsize=10)
+            
+            # Annotate values
+            for k, v in enumerate(diffs):
+                if not np.isnan(v):
+                    color = 'white' if abs(v) > 0.5 else 'black'
+                    ax.text(
+                        0, k, f"{v:.2f}",
+                        ha="center", va="center",
+                        fontsize=9, color=color
+                    )
+    
+    plt.tight_layout()
+    return fig
