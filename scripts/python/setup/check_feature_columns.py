@@ -8,12 +8,12 @@ ROOT = os.path.dirname(os.path.abspath(__file__)) + "/.."
 DATA_DIR = os.path.join(ROOT, cfg.PROCESS_CSV_COMMON_PATH)
 RANK_LIST = os.path.join(ROOT, "misc/pretrain_groups/rank_names.txt")
 
-# IDを正規化（余分な記号除去・大文字化）
+# Normalize subject ID (remove extra symbols, uppercase)
 def normalize_id(tok: str) -> str:
     tok = tok.strip().strip(",;")
     return tok
 
-# グループファイル群からターゲットIDを収集
+# Collect target subject IDs from group files
 target_ids = []
 with open(RANK_LIST) as f:
     for line in f:
@@ -29,16 +29,16 @@ with open(RANK_LIST) as f:
             for raw in g:
                 if not raw.strip():
                     continue
-                # 空白区切りでも改行でも拾う
+                # Handle whitespace or newline delimiters
                 for tok in raw.strip().split():
                     tid = normalize_id(tok)
                     if tid: 
                         target_ids.append(tid)
 
-# 重複除去
+# Remove duplicatesve duplicates
 target_ids = sorted(set(target_ids))
 
-# CSVパスを組み立て
+# Build CSV file path from subject ID
 def id_to_csv(id_):
     return os.path.join(DATA_DIR, f"processed_{id_}.csv")
 
@@ -51,7 +51,7 @@ for tid in target_ids:
     else:
         missing_target.append((tid, fp))
 
-# すべてのCSV（S*.csv）からターゲットを除外して「一般（事前学習）側」ファイル集合を作る
+# Create general (pretrain) file set by excluding targets from all CSVs (S*.csv)
 all_files = sorted(glob.glob(os.path.join(DATA_DIR, "processed_S*.csv")))
 target_set = set(os.path.basename(p) for p in target_files)
 general_files = [p for p in all_files if os.path.basename(p) not in target_set]
@@ -87,7 +87,7 @@ print("\n=== Column diff ===")
 print("Only in general:", only_in_general)
 print("Only in target :", only_in_target)
 
-# 終了コード：差分があれば1を返すようにしてCI等でも使いやすく
+# Exit code: return 1 if differences found (useful for CI/CD)
 if only_in_general or only_in_target or missing_target:
     sys.exit(1)
 

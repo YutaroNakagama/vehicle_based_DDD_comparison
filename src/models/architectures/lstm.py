@@ -46,11 +46,15 @@ class AttentionLayer(Layer):
     def call(self, x):
         """Forward pass: apply attention to input sequence.
 
-        Args:
-            x (tensor): LSTM output tensor of shape (batch, timesteps, features).
+        Parameters
+        ----------
+        x : tensor
+            LSTM output tensor of shape (batch, timesteps, features).
 
-        Returns:
-            tensor: Aggregated context vector (batch, features).
+        Returns
+        -------
+        tensor
+            Aggregated context vector (batch, features).
         """
         e = tf.keras.backend.tanh(tf.keras.backend.dot(x, self.W) + self.b)
         a = tf.keras.backend.softmax(e, axis=1)

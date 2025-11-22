@@ -33,11 +33,15 @@ class AttentionLayer(Layer):
     def call(self, x):
         """Apply attention mechanism to input sequence.
 
-        Args:
-            x (tensor): Input sequence of shape (batch, timesteps, features)
+        Parameters
+        ----------
+        x : tensor
+            Input sequence of shape (batch, timesteps, features)
 
-        Returns:
-            tensor: Aggregated output with attention applied
+        Returns
+        -------
+        tensor
+            Aggregated output with attention applied
         """
         e = tf.keras.backend.tanh(tf.keras.backend.dot(x, self.W) + self.b)
         a = tf.keras.backend.softmax(e, axis=1)

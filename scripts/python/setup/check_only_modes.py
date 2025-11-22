@@ -27,7 +27,7 @@ def compare_metrics(tag):
     print()
 
 if __name__ == "__main__":
-    # evalonly ファイルを基準にタグ一覧を取得
+    # Get tag list based on evalonly files
     BASE = os.path.dirname(os.path.abspath(__file__))
     eval_files = glob.glob(os.path.join(BASE, "../model/common/metrics_RF_*_evalonly_on_targets.csv"))
     tags = [os.path.basename(f).replace("metrics_RF_", "").replace("_evalonly_on_targets.csv", "") for f in eval_files]
