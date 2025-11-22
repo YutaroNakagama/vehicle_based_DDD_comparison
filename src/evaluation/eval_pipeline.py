@@ -18,6 +18,7 @@ eval_pipeline(model, mode, ...) -> None
 
 import datetime
 import logging
+import os
 from typing import Optional
 
 from sklearn.metrics import (
@@ -95,14 +96,21 @@ def eval_pipeline(
         model, fold, sample_size, seed, subject_wise_split
     )
 
-    # Stage 2: Resolve target subjects for mode-based filtering
+    # Stage 2: Load CLI target subjects from file if provided
+    cli_target_subjects = None
+    if target_file and os.path.exists(target_file):
+        with open(target_file, 'r') as f:
+            cli_target_subjects = [line.strip() for line in f if line.strip()]
+        logging.info(f"[EVAL] Loaded {len(cli_target_subjects)} target subjects from {target_file}")
+
+    # Stage 3: Resolve target subjects for mode-based filtering
     target_subjects = resolve_target_subjects_from_tag(
         tag=tag,
         mode=mode,
-        cli_target_subjects=[target_file] if target_file else None
+        cli_target_subjects=cli_target_subjects
     )
 
-    # Stage 3: Split data for evaluation
+    # Stage 4: Split data for evaluation
     if mode in ["source_only", "target_only"] and len(target_subjects) > 0:
         X_t_tr, X_val, X_test, y_t_tr, y_val, y_test = split_data(
             subject_split_strategy="subject_time_split",
@@ -130,7 +138,7 @@ def eval_pipeline(
         )
         log_split_ratios(y_train, y_val, y_test, tag=f"eval|random|mode={mode}|tag={tag}")
 
-    # Stage 4: Resolve job ID and load model artifacts
+    # Stage 5: Resolve job ID and load model artifacts
     jobid, model_path = resolve_jobid_for_evaluation(model, mode, tag, jobid)
     
     clf, scaler, features = load_model_and_scaler(model, mode, tag, fold, jobid)
@@ -140,7 +148,7 @@ def eval_pipeline(
     
     logging.info(f"[EVAL] Loaded model for jobid={jobid}")
 
-    # Stage 5: Prepare evaluation features
+    # Stage 6: Prepare evaluation features
     X_test_prepared = prepare_evaluation_features(X_test, scaler, features)
     logging.info(f"[EVAL] Transformed X_test shape={X_test_prepared.shape}")
     
@@ -149,7 +157,7 @@ def eval_pipeline(
         X_val_prepared = prepare_evaluation_features(X_val, scaler, features)
         logging.info(f"[EVAL] Transformed X_val shape={X_val_prepared.shape}")
 
-    # Stage 6: Model-specific evaluation
+    # Stage 7: Model-specific evaluation
     if model == "Lstm":
         result = lstm_eval(X_test_prepared, y_test, model_name, clf, scaler)
     elif model == "SvmA":
@@ -157,7 +165,7 @@ def eval_pipeline(
     else:
         result = common_eval(X_test_prepared, y_test, model_name, clf)
 
-    # Stage 7: Load or optimize threshold
+    # Stage 8: Load or optimize threshold
     try:
         base_jobid, run_idx = extract_jobid_components(jobid, model_path=model_path)
         fold_idx = int(fold) if isinstance(fold, int) else 0
