@@ -101,7 +101,9 @@ def main():
         )
     except Exception as e:
         import logging
+        import traceback
         logging.error(f"Evaluation failed: {e}")
+        logging.error(f"Traceback:\n{traceback.format_exc()}")
         sys.exit(1)
 
 
