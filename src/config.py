@@ -184,18 +184,18 @@ RANKING_LEVELS = ["high", "middle", "low"]
 # ---------------------------------------------------------------------
 # Target group sizes for domain generalization experiments
 # ---------------------------------------------------------------------
-TARGET_GROUP_SIZE = 10
-"""int : Number of subjects in target domain groups (used in training schemes like 'only10')."""
+TARGET_GROUP_SIZE = 29
+"""int : Number of subjects in target domain groups (used in training schemes like 'only29')."""
 
-SOURCE_GROUP_SIZE = 78
+SOURCE_GROUP_SIZE = 59
 """int : Number of subjects in source/general domain groups (complement of target group)."""
 
 # Scheme naming based on target group size
 TARGET_SCHEME_NAME = f"only{TARGET_GROUP_SIZE}"
-"""str : Training scheme name for target-only experiments (e.g., 'only10')."""
+"""str : Training scheme name for target-only experiments (e.g., 'only29')."""
 
 SOURCE_SCHEME_NAME = f"only{SOURCE_GROUP_SIZE}"
-"""str : Training scheme name for source-only experiments (e.g., 'only78')."""
+"""str : Training scheme name for source-only experiments (e.g., 'only59')."""
 
 # Construct complete training modes list
 TRAINING_MODES = TRAINING_MODES_BASE + [TARGET_SCHEME_NAME]
