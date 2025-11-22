@@ -616,7 +616,8 @@ def plot_grouped_bar_chart_raw(
                     frameon=False,
                 )
     
-    # Row 4: Pooled mode (all 3 modes comparison)
+    # Row 4: Pooled mode (single baseline bar)
+    # Pooled mode does not use distance metrics or source/target split
     pooled_data = data[data[mode_col] == "pooled"]
     
     for j, metric in enumerate(metrics):
@@ -626,47 +627,31 @@ def plot_grouped_bar_chart_raw(
             ax.axis("off")
             continue
         
-        # For pooled, show all 3 modes across distances
-        distances_present = [d for d in distances if d in pooled_data[distance_col].unique()]
-        x = np.arange(len(distances_present))
-        width = 0.25
+        # Pooled is a single baseline: average across all levels
+        pooled_mean = pooled_data[metric].mean()
         
-        # Collect values for all 3 modes
-        mode_values = {}
-        for mode in modes:
-            vals = []
-            for dist in distances_present:
-                mode_data = data[(data[distance_col] == dist) & (data[mode_col] == mode)]
-                vals.append(mode_data[metric].mean() if not mode_data.empty else np.nan)
-            mode_values[mode] = vals
+        # Plot single bar
+        bar = ax.bar(
+            [0], 
+            [pooled_mean], 
+            0.6, 
+            label=mode_labels.get("pooled", "Pooled"),
+            color=colors[0]
+        )
         
-        # Plot bars (all 3 modes)
-        bars = []
-        for idx, mode in enumerate(modes):
-            offset = (idx - len(modes)/2 + 0.5) * width
-            bar = ax.bar(
-                x + offset, 
-                mode_values[mode], 
-                width, 
-                label=mode_labels.get(mode, mode),
-                color=colors[idx]
-            )
-            bars.append(bar)
-        
-        ax.set_xticks(x)
-        pretty_dist = {"dtw": "DTW", "mmd": "MMD", "wasserstein": "Wasserstein"}
-        ax.set_xticklabels([pretty_dist.get(str(d).lower(), str(d)) for d in distances_present])
+        ax.set_xticks([0])
+        ax.set_xticklabels(["Pooled\nBaseline"])
+        ax.set_xlim(-0.5, 0.5)
         
         # Baseline line
         if baseline_rates and metric in baseline_rates:
             baseline = baseline_rates[metric]
             ax.axhline(baseline, color='gray', linestyle='--', linewidth=1)
             
-            all_vals = [v for vals in mode_values.values() for v in vals if not np.isnan(v)]
-            if all_vals:
-                ymin, ymax = min(all_vals), max(all_vals)
-                margin = (ymax - ymin) * 0.3 if ymax > ymin else 0.02
-                ax.set_ylim(max(0, ymin - margin), min(1.0, ymax + margin))
+            margin = 0.05
+            ymin = min(pooled_mean, baseline) - margin
+            ymax = max(pooled_mean, baseline) + margin
+            ax.set_ylim(max(0, ymin), min(1.0, ymax))
         else:
             ax.set_ylim(0, 1.0)
         
@@ -678,16 +663,6 @@ def plot_grouped_bar_chart_raw(
                 ha="left", va="top",
                 fontsize=12, fontweight="bold",
                 bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.6)
-            )
-        
-        # Legend on row 4 right column
-        if j == n_cols - 1:
-            ax.legend(
-                handles=bars,
-                labels=[mode_labels.get(m, m) for m in modes],
-                loc="upper right",
-                fontsize=8,
-                frameon=False,
             )
     
     plt.tight_layout()
