@@ -126,16 +126,18 @@ SAMPLE_RATE_EEG = 500
 """int : Sampling rate for EEG (Electroencephalography) data [Hz]."""
 
 # ---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # KSS labels
 # ---------------------------------------------------------------------
-KSS_BIN_LABELS = [1, 2, 3, 4, 5, 8, 9]
-"""list of int : Original Karolinska Sleepiness Scale (KSS) labels in dataset."""
-
-# Allow test mode override: simplified KSS mapping (1-3=0, 8-9=1)
+# Allow test mode override: simplified KSS to only use 1-3 (Alert) and 8-9 (Drowsy)
 if os.environ.get("KSS_SIMPLIFIED") == "1":
+    KSS_BIN_LABELS = [1, 2, 3, 8, 9]
+    """list of int : TEST MODE - Simplified KSS labels (excluding 4-5 intermediate states)."""
     KSS_LABEL_MAP = {1:0, 2:0, 3:0, 8:1, 9:1}
     """dict : TEST MODE - Simplified KSS mapping (1-3=Alert, 8-9=Drowsy)."""
 else:
+    KSS_BIN_LABELS = [1, 2, 3, 4, 5, 8, 9]
+    """list of int : Original Karolinska Sleepiness Scale (KSS) labels in dataset."""
     KSS_LABEL_MAP = {1:0, 2:0, 3:0, 4:0, 5:0, 8:1, 9:1}
     """dict : Mapping of KSS labels to binary states (0=Alert, 1=Drowsy)."""
 
