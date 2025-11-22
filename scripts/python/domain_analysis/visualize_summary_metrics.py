@@ -38,7 +38,7 @@ logger.debug("=== First rows ===")
 logger.debug(df.head())
 
 # --- detect available modes dynamically ---
-modes = ["source_only", "target_only"]
+modes = ["pooled", "source_only", "target_only"]
 logger.info(f"Processing modes: {modes}")
 
 # --- detect available distance/level combinations ---

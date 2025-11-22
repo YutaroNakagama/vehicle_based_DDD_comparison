@@ -365,8 +365,8 @@ def plot_grouped_bar_chart(
         squeeze=False
     )
     
-    colors = ["#6699cc", "#ff9966"]
-    mode_labels = {"source_only": "Source-only", "target_only": "Target-only"}
+    colors = ["#66cc99", "#6699cc", "#ff9966"]
+    mode_labels = {"pooled": "Pooled", "source_only": "Source-only", "target_only": "Target-only"}
     
     for i, dist in enumerate(distances):
         sub = data[data[distance_col] == dist]
@@ -381,7 +381,7 @@ def plot_grouped_bar_chart(
             # Filter to present levels
             levels_present = [lvl for lvl in ordered_levels if lvl in sub[level_col].unique()]
             x = np.arange(len(levels_present))
-            width = 0.35
+            width = 0.25
             
             # Collect values for each mode
             mode_values = {}
@@ -522,8 +522,8 @@ def plot_grouped_bar_chart_raw(
         squeeze=False
     )
     
-    colors = ["#6699cc", "#ff9966"]
-    mode_labels = {"source_only": "Source-only", "target_only": "Target-only"}
+    colors = ["#66cc99", "#6699cc", "#ff9966"]
+    mode_labels = {"pooled": "Pooled", "source_only": "Source-only", "target_only": "Target-only"}
     
     for i, dist in enumerate(distances):
         sub = data[data[distance_col] == dist]
@@ -538,7 +538,7 @@ def plot_grouped_bar_chart_raw(
             # Filter to present levels
             levels_present = [lvl for lvl in ordered_levels if lvl in sub[level_col].unique()]
             x = np.arange(len(levels_present))
-            width = 0.35
+            width = 0.25
             
             # Collect values for each mode from raw data
             mode_values = {}
