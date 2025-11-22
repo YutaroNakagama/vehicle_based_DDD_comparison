@@ -12,14 +12,15 @@
 
 set -euo pipefail
 
-# === Set working directory ===
-cd "${PBS_O_WORKDIR:?Project root not set}"
+# === Set working directory to project root ===
+PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
+cd "$PROJECT_ROOT"
 
 # === Conda environment setup ===
 export PATH=~/conda/bin:$PATH
 source ~/conda/etc/profile.d/conda.sh
 conda activate python310
-export PYTHONPATH="${PBS_O_WORKDIR}:${PYTHONPATH:-}"
+export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
 
 # === Thread and backend settings ===
 export OMP_NUM_THREADS=1
@@ -42,10 +43,10 @@ METRIC=${METRICS[$((PBS_ARRAY_INDEX-1))]}
 echo "[INFO] Running metric: ${METRIC} (TEST MODE with 8 cores)"
 
 # Use reduced parallelism for test
-python "${PBS_O_WORKDIR}/scripts/python/analyze.py" comp-dist --metric "$METRIC" \
+python "${PROJECT_ROOT}/scripts/python/analyze.py" comp-dist --metric "$METRIC" \
   --subject_list ../dataset/mdapbe/subject_list.txt \
-  --data_root "${PBS_O_WORKDIR}/data/processed/common" \
-  --groups_file "${PBS_O_WORKDIR}/config/subjects/target_groups.txt" \
+  --data_root "${PROJECT_ROOT}/data/processed/common" \
+  --groups_file "${PROJECT_ROOT}/config/subjects/target_groups.txt" \
   --n_jobs 4
 
 echo "[DONE] ${METRIC} computation complete."
