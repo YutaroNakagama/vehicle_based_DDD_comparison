@@ -191,7 +191,7 @@ The **domain generalisation analysis** quantifies the difference between subject
 #PBS -j oe
 #PBS -q SINGLE
 
-python scripts/python/domain_analysis/analyze.py comp-dist --metric "$METRIC" \
+python scripts/python/domain_analysis/run_analysis.py comp-dist --metric "$METRIC" \
   --subject_list ../dataset/mdapbe/subject_list.txt \
   --data_root data/processed/common \
   --groups_file config/target_groups.txt
@@ -209,7 +209,7 @@ All computations share a unified backend implemented in
 `src/analysis/distances.py`, invoked through the command:
 
 ```bash
-python scripts/python/domain_analysis/analyze.py comp-dist
+python scripts/python/domain_analysis/run_analysis.py comp-dist
 ```
 
 Intermediate features are **cached under `results/.cache/`**
@@ -247,7 +247,7 @@ subgraph PBS["PBS Array Job (1–3)"]
   A3["#3: DTW"]
 end
 
-subgraph CLI["scripts/python/domain_analysis/analyze.py"]
+subgraph CLI["scripts/python/domain_analysis/run_analysis.py"]
   B1["cmd_comp_dist()"]
   B2["→ run_comp_dist() (src/analysis/distances.py)"]
 end
@@ -537,7 +537,7 @@ Implements reproducible data splits:
 | Preprocessing   | `.mat` raw files   | `data/processed/*.csv`      | `src/data_pipeline`                    |
 | Training        | processed CSVs     | models + metrics            | `src/models/model_pipeline`            |
 | Evaluation      | models + CSVs      | evaluation metrics          | `src/evaluation/eval_pipeline`         |
-| Domain Analysis | features + metrics | distance matrices, rankings | `src/analysis/distances`, `domain_analysis/analyze.py` |
+| Domain Analysis | features + metrics | distance matrices, rankings | `src/analysis/distances`, `domain_analysis/run_analysis.py` |
 
 ---
 -->

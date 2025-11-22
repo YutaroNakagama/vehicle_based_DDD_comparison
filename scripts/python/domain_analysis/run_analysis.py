@@ -16,7 +16,7 @@ Subcommands (summary):
   corr-collect         Collect correlation CSVs into heatmap summary
   rank-export          Export top/bottom-k subject rankings
 
-Use `python domain_analysis/analyze.py <subcommand> -h` for subcommand-specific options.
+Use `python domain_analysis/run_analysis.py <subcommand> -h` for subcommand-specific options.
 """
 
 import os
@@ -38,12 +38,13 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 # ---- import backend functions from src/analysis ----
 from src import config as cfg
 from src.analysis.distance_computation import run_comp_dist
-from src.analysis.distance_correlation import run_distance_vs_delta
+from src.analysis.distance_correlation import (
+    run_distance_vs_delta, run_corr_all, collect_correlation_csvs
+)
 from src.analysis.group_comparison import run_summarize_only10_vs_finetune
 from src.analysis.metrics_tables import summarize_metrics, make_comparison_table
 from src.analysis.group_distance_report import run_report_pretrain_groups
 from src.analysis.subject_ranking import run_rank_export
-from src.analysis.distance_correlation import run_corr_all
 
 # ---------------------- subcommand handlers ----------------------
 def cmd_comp_dist(args) -> int:
@@ -243,36 +244,16 @@ def cmd_corr_collect(args) -> int:
     int
         Return code (0 = success, non-zero = error).
     """
-    import pandas as pd
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-
     logging.info("[RUN] corr-collect")
-    items = []
-    if args.mmd and Path(args.mmd).exists():
-        df = pd.read_csv(args.mmd); df["distance_type"] = "MMD"; items.append(df)
-    if args.wass and Path(args.wass).exists():
-        df = pd.read_csv(args.wass); df["distance_type"] = "Wasserstein"; items.append(df)
-    if args.dtw and Path(args.dtw).exists():
-        df = pd.read_csv(args.dtw); df["distance_type"] = "DTW"; items.append(df)
-    if not items:
-        logging.error("No input CSVs found.")
-        return 1
-
-    pearson_df = pd.concat(items, ignore_index=True)
-    pearson_df.to_csv(args.out_csv, index=False)
-    logging.info("Saved: %s", args.out_csv)
-
-    # Heatmap on pearson_r
-    pivot_df = pearson_df.pivot(index="metric", columns="distance_type", values="pearson_r")
-    plt.figure(figsize=(8, 5))
-    sns.heatmap(pivot_df, annot=True, cmap="coolwarm", center=0, fmt=".2f")
-    plt.title("Pearson correlation (d(U,G) vs Δmetrics)")
-    plt.tight_layout()
-    plt.savefig(args.out_png, dpi=300)
-    plt.close()
-    logging.info("Saved: %s", args.out_png)
-    return 0
+    rc = collect_correlation_csvs(
+        mmd_csv=Path(args.mmd) if args.mmd else None,
+        wasserstein_csv=Path(args.wass) if args.wass else None,
+        dtw_csv=Path(args.dtw) if args.dtw else None,
+        out_csv=Path(args.out_csv),
+        out_png=Path(args.out_png),
+    )
+    logging.info("[DONE] corr-collect rc=%s", rc)
+    return rc
 
 def cmd_rank_export(args) -> int:
     """Export top/bottom-k subject rankings from distance matrices.
