@@ -6,13 +6,18 @@ accuracy, precision, recall, confusion matrix), and prints the results.
 
 Supported options (summary):
   --model <name>              Model architecture (choices: src.config.MODEL_CHOICES)
-  --mode <experiment mode>    pooled | target_only | source_only | joint_train
-  --tag <str>                 Optional variant tag (erm / coral / etc.)
+  --mode <mode>               pooled | target_only | source_only | joint_train
+  --tag <str>                 Optional variant tag (e.g., 'erm', 'coral')
+  --seed <int>                Random seed (default: from config.DEFAULT_RANDOM_SEED)
+  --target_file <path>        Path to target subject list (required for non-pooled modes)
   --fold <int>                Cross-validation fold (0 = no CV)
   --sample_size <int>         Subset number of subjects to evaluate
   --subject_wise_split        Enable subject-wise data partition to avoid leakage
   --jobid <PBS job id>        Explicit training job ID (auto-detect if omitted)
-  --target_file <path>        Path to target subject list (required for non-pooled modes)
+
+Note:
+  --fold is evaluation-only (used for cross-validation evaluation).
+  --sample_size and --jobid are also evaluation-specific.
 
 Examples
 --------
@@ -26,13 +31,17 @@ Evaluate a CORAL-tagged RF model on target_only mode with explicit jobid:
 import sys
 import os
 import argparse
-import logging
-logging.basicConfig(level=logging.INFO)
 
 # Add project root to the module search path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.config import MODEL_CHOICES, DEFAULT_RANDOM_SEED
+from src.utils.cli.train_cli_helpers import (
+    load_subjects_from_file,
+    log_eval_args,
+    add_common_arguments,
+    add_eval_arguments,
+    setup_logging,
+)
 import src.evaluation.eval_pipeline as mp
 
 
@@ -44,24 +53,7 @@ def main():
 
     Other Parameters
     ----------------
-    --model : str
-        Required. Model to evaluate. Must be one of ``src.config.MODEL_CHOICES``.
-    --mode : {"pooled", "target_only", "source_only", "joint_train"}
-        Experimental mode controlling subject inclusion.
-    --tag : str, optional
-        Optional tag to distinguish model variants (e.g., ``erm``, ``coral``).
-    --sample_size : int, optional
-        Number of subjects to evaluate (subset evaluation).
-    --seed : int, default=42
-        Random seed for subset sampling.
-    --fold : int, default=0
-        Cross-validation fold index (0 = no fold subdirectory).
-    --subject_wise_split : bool, optional
-        If set, perform subject-wise data splitting to prevent leakage.
-    --jobid : str, optional
-        Explicit training job ID; auto-detected if omitted.
-    --target_file : str, optional
-        Path to target subject list (required for non-pooled modes / ranking).
+    See module docstring for full CLI options summary.
 
     Returns
     -------
@@ -75,69 +67,25 @@ def main():
     parser = argparse.ArgumentParser(
         description="Run the evaluation pipeline for a trained DDD model."
     )
-    parser.add_argument(
-        "--model",
-        choices=MODEL_CHOICES,
-        required=True,
-        help=f"Model to evaluate. Choices: {', '.join(MODEL_CHOICES)}"
-    )
-    parser.add_argument(
-        "--tag",
-        type=str,
-        default=None,
-        help="Optional tag to distinguish model variants (e.g., 'erm', 'coral')"
-    )
-    parser.add_argument(
-        "--sample_size",
-        type=int,
-        default=None,
-        help="Number of subjects to evaluate (for subset evaluation)"
-    )
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=DEFAULT_RANDOM_SEED,
-        help="Random seed for reproducibility in subset evaluation"
-    )
-    parser.add_argument(
-        "--fold",
-        type=int,
-        default=0,
-        help="Fold number for cross validation"
-    )
-    parser.add_argument(
-        "--subject_wise_split",
-        action="store_true",
-        help="Use subject-wise data splitting to prevent subject leakage"
-    )
-    parser.add_argument(
-        "--mode",
-        choices=["pooled", "target_only", "source_only", "joint_train"],
-        default="pooled",
-        help="Experiment mode: pooled / target_only / source_only / joint_train"
-    )
-    parser.add_argument(
-        "--jobid",
-        type=str,
-        default=None,
-        help="Specify training job ID (e.g., 14004123). "
-             "If not provided, the latest training job will be used automatically."
-    )
-    parser.add_argument(
-        "--target_file",
-        type=str,
-        default=None,
-        help="Path to target subject list file (used in ranking experiments)."
-    )
+
+    # Add common and evaluation-specific arguments
+    add_common_arguments(parser)
+    add_eval_arguments(parser)
 
     args = parser.parse_args()
+    setup_logging()
 
     # Normalize tag handling: treat None or "default" as no suffix
     eval_tag = args.tag
     if eval_tag is None or eval_tag.strip().lower() == "default":
         eval_tag = ""
 
-    logging.info(f"Running evaluation for model={args.model}, tag={eval_tag or '(none)'}, mode={args.mode}")
+    # Load target subjects if specified
+    target_subjects = None
+    if args.target_file:
+        target_subjects = load_subjects_from_file(args.target_file)
+
+    log_eval_args(args, target_subjects)
 
     try:
         mp.eval_pipeline(
@@ -152,10 +100,10 @@ def main():
             target_file=args.target_file,
         )
     except Exception as e:
+        import logging
         logging.error(f"Evaluation failed: {e}")
         sys.exit(1)
 
 
 if __name__ == '__main__':
     main()
-
