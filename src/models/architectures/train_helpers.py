@@ -34,6 +34,7 @@ def train_model(
     selected_features: List[str],
     scaler: Optional[StandardScaler],
     suffix: str,
+    mode: str = "pooled",
     use_oversampling: bool = False,
     oversample_method: str = "smote",
 ) -> Tuple[Optional[object], Optional[StandardScaler], Optional[float], Dict, Dict]:
@@ -59,7 +60,8 @@ def train_model(
         X_train_fs, X_val_fs, X_test_fs,
         y_train, y_val, y_test,
         selected_features,
-        model_name, model_name, clf,  # pass model_name for both legacy slots
+        model_name, model_name, mode,
+        clf=clf,
         scaler=scaler,
         suffix=suffix,
         data_leak=False,
