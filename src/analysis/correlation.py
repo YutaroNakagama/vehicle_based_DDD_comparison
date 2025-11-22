@@ -23,6 +23,7 @@ run_distance_vs_delta(summary_csv, distance_path, groups_dir, group_names_file, 
 
 from __future__ import annotations
 import os
+import logging
 from pathlib import Path
 from itertools import combinations
 import numpy as np
@@ -33,6 +34,13 @@ import matplotlib.pyplot as plt
 from scipy.stats import pearsonr, spearmanr
 
 from src import config as cfg
+from src.utils.io.data_io import (
+    load_csv, save_csv, load_json, save_json,
+    load_numpy, load_distance_data
+)
+from src.utils.visualization import save_current_figure
+
+logger = logging.getLogger(__name__)
 
 
 def _read_group_members(groups_dir: str | Path, group_names_file: str | Path) -> dict[str, list[str]]:
@@ -283,7 +291,7 @@ def run_distance_vs_delta(
         else:
             p_r = p_p = s_r = s_p = np.nan
         corr_rows2.append({"metric": m, "pearson_r": p_r, "pearson_p": p_p, "spearman_rho": s_r, "spearman_p": s_p})
-    pd.DataFrame(corr_rows2).to_csv(out / "correlations_dispG_vs_deltas.csv", index=False)
+    save_csv(pd.DataFrame(corr_rows2), out / "correlations_dispG_vs_deltas.csv")
 
     # Plots
     def _annotate(ax, x, y, labels):
@@ -415,9 +423,9 @@ def run_corr_all(
             subjects_json=subj_path,
         )
 
-        corr_file = outdir / "correlations_dUG_vs_deltas.csv"
+        corr_file = corr_dir / "correlations_dUG_vs_deltas.csv"
         if corr_file.exists():
-            df = pd.read_csv(corr_file)
+            df = load_csv(corr_file)
             df["metric_type"] = metric
             all_corrs.append(df)
 

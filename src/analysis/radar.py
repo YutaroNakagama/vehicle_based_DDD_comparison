@@ -72,7 +72,7 @@ def make_radar(
         ax.legend(loc="upper right", bbox_to_anchor=(1.25, 1.1))
 
         png_path = out_dir / f"radar_{group}.png"
-        fig.savefig(png_path, bbox_inches="tight", dpi=150)
+        save_figure(fig, png_path, bbox_inches="tight", dpi=150)
         pdf.savefig(fig, bbox_inches="tight")
         plt.close(fig)
         saved += 1

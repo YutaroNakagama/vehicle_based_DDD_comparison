@@ -354,6 +354,6 @@ def run_report_pretrain_groups(
                 "inter": st[kind]["inter"],
                 "nn":    st[kind]["nn"],
             })
-    pd.DataFrame(rows).to_csv(out_summary_csv, index=False)
+    save_csv(pd.DataFrame(rows), out_summary_csv)
     return all_stats
 
