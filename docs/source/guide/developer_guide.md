@@ -217,7 +217,7 @@ to accelerate repeated runs and avoid redundant data loading.
 
 After all three metrics are computed,
 the script automatically calls
-`src/data_preparation/make_ranked_groups.py`
+`src/analysis/subject_group_generator.py`
 to generate ranked subject groups for downstream fine-tuning experiments.
 
 ---
@@ -268,7 +268,7 @@ subgraph Stage2["Group-level Analysis (within run_comp_dist)"]
   E3["Save and visualize group results"]
 end
 
-subgraph Stage3["src/analysis/make_ranked_groups.py)"]
+subgraph Stage3["src/analysis/subject_group_generator.py"]
   F2["Load subject-level results<br/>(matrix.npy, subjects.json)"]
   F3["Compute mean distance per subject &<br/>save 10-subject groups"]
 end

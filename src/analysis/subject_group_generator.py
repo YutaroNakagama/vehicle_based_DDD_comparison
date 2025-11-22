@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-make_ranked_groups.py
-=====================
+subject_group_generator.py
+==========================
 
-Generate ranked 10-subject group files (high / middle / low)
+Generate ranked subject group files (high / middle / low)
 based on domain distance matrices (MMD, Wasserstein, DTW).
 
+This module is automatically called after distance computation to create
+subject groups for domain generalization experiments.
+
 Outputs are saved under:
-    results/domain_analysis/group_distances/ranks10/{metric}_mean_{level}.txt
+    results/domain_analysis/distance/ranks{N}/{metric}_mean_{level}.txt
 """
 
 import argparse
