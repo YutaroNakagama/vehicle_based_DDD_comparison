@@ -445,3 +445,91 @@ def run_corr_all(
 
     print(f"[DONE] Merged correlations written to {merged_csv}")
     print(f"[DONE] Heatmap saved to {out_png}")
+
+
+def collect_correlation_csvs(
+    mmd_csv: Path | None = None,
+    wasserstein_csv: Path | None = None,
+    dtw_csv: Path | None = None,
+    out_csv: Path = None,
+    out_png: Path = None,
+) -> int:
+    """Collect individual correlation CSVs and create unified summary with heatmap.
+
+    This function merges correlation results from multiple distance metrics
+    (MMD, Wasserstein, DTW) into a single CSV and generates a Pearson correlation
+    heatmap visualization.
+
+    Parameters
+    ----------
+    mmd_csv : Path, optional
+        Path to MMD correlation CSV file.
+    wasserstein_csv : Path, optional
+        Path to Wasserstein correlation CSV file.
+    dtw_csv : Path, optional
+        Path to DTW correlation CSV file.
+    out_csv : Path, optional
+        Output path for merged correlation CSV.
+        Defaults to current directory / "correlation_summary_collected.csv".
+    out_png : Path, optional
+        Output path for heatmap PNG.
+        Defaults to current directory / "correlation_heatmap_collected.png".
+
+    Returns
+    -------
+    int
+        Return code (0 = success, 1 = no input files found).
+
+    Examples
+    --------
+    >>> collect_correlation_csvs(
+    ...     mmd_csv=Path("corr/mmd/correlations_dUG_vs_deltas.csv"),
+    ...     wasserstein_csv=Path("corr/wasserstein/correlations_dUG_vs_deltas.csv"),
+    ...     out_csv=Path("results/correlation_summary.csv"),
+    ...     out_png=Path("results/correlation_heatmap.png"),
+    ... )
+    0
+    """
+    import pandas as pd
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    if out_csv is None:
+        out_csv = Path("correlation_summary_collected.csv")
+    if out_png is None:
+        out_png = Path("correlation_heatmap_collected.png")
+
+    items = []
+    if mmd_csv and mmd_csv.exists():
+        df = load_csv(mmd_csv)
+        df["distance_type"] = "MMD"
+        items.append(df)
+    if wasserstein_csv and wasserstein_csv.exists():
+        df = load_csv(wasserstein_csv)
+        df["distance_type"] = "Wasserstein"
+        items.append(df)
+    if dtw_csv and dtw_csv.exists():
+        df = load_csv(dtw_csv)
+        df["distance_type"] = "DTW"
+        items.append(df)
+
+    if not items:
+        logging.error("No input CSVs found.")
+        return 1
+
+    pearson_df = pd.concat(items, ignore_index=True)
+    save_csv(pearson_df, out_csv)
+    logging.info("Saved merged correlations: %s", out_csv)
+
+    # Generate heatmap
+    pivot_df = pearson_df.pivot(index="metric", columns="distance_type", values="pearson_r")
+    plt.figure(figsize=(8, 5))
+    sns.heatmap(pivot_df, annot=True, cmap="coolwarm", center=0, fmt=".2f")
+    plt.title("Pearson correlation (d(U,G) vs Δmetrics)")
+    plt.tight_layout()
+    save_current_figure(out_png, dpi=300, close=True)
+    logging.info("Saved heatmap: %s", out_png)
+
+    return 0
