@@ -177,7 +177,10 @@ def prepare_source_only_splits(
 
     In source_only mode:
     - Training: Use MIDDLE group (source domain)
-    - Evaluation: Use high/low groups (target domain)
+    - Evaluation: Use target group (high/middle/low) specified by tag
+
+    For middle-level experiments, this ensures identical data splits as target_only mode,
+    since both use the same subject group.
 
     Parameters
     ----------
@@ -206,26 +209,7 @@ def prepare_source_only_splits(
     # Resolve MIDDLE group subjects for training
     middle_subjects = resolve_middle_group_subjects(tag)
     
-    # Split MIDDLE group into train/val/test (use only train)
-    mid_train, mid_val, mid_test, y_mid_train, y_mid_val, y_mid_test = split_data(
-        subject_split_strategy="subject_time_split",
-        subject_list=middle_subjects,
-        target_subjects=middle_subjects,
-        model_name=model_name,
-        seed=seed,
-        time_stratify_labels=time_stratify_labels,
-        time_stratify_tolerance=time_stratify_tolerance,
-        time_stratify_window=time_stratify_window,
-        time_stratify_min_chunk=time_stratify_min_chunk,
-    )
-    
-    X_train = mid_train
-    y_train = y_mid_train.astype(int)
-    logging.info(
-        f"[SOURCE_ONLY] Training on MIDDLE group: {len(X_train)} samples from {len(middle_subjects)} subjects"
-    )
-    
-    # Resolve evaluation subjects (high/low groups)
+    # Resolve evaluation subjects (high/middle/low groups based on tag)
     eval_subjects = resolve_target_subjects_from_tag(
         tag=tag,
         mode="source_only",
@@ -238,21 +222,64 @@ def prepare_source_only_splits(
             "Cannot proceed without target group."
         )
     
-    # Split evaluation subjects into val/test
-    _, X_val, X_test, _, y_val, y_test = split_data(
-        subject_split_strategy="subject_time_split",
-        subject_list=eval_subjects,
-        target_subjects=eval_subjects,
-        model_name=model_name,
-        seed=seed,
-        time_stratify_labels=time_stratify_labels,
-        time_stratify_tolerance=time_stratify_tolerance,
-        time_stratify_window=time_stratify_window,
-        time_stratify_min_chunk=time_stratify_min_chunk,
-    )
+    # Check if training and evaluation groups are identical (middle-level case)
+    is_middle_case = set(middle_subjects) == set(eval_subjects)
     
-    logging.info(
-        f"[SOURCE_ONLY] Evaluation on target group: val={len(y_val)}, test={len(y_test)} samples"
-    )
+    if is_middle_case:
+        # For middle-level: use single split to ensure consistency with target_only
+        logging.info(
+            f"[SOURCE_ONLY] Middle-level case detected: training and evaluation use same {len(middle_subjects)} subjects"
+        )
+        X_train, X_val, X_test, y_train, y_val, y_test = split_data(
+            subject_split_strategy="subject_time_split",
+            subject_list=middle_subjects,
+            target_subjects=middle_subjects,
+            model_name=model_name,
+            seed=seed,
+            time_stratify_labels=time_stratify_labels,
+            time_stratify_tolerance=time_stratify_tolerance,
+            time_stratify_window=time_stratify_window,
+            time_stratify_min_chunk=time_stratify_min_chunk,
+        )
+        logging.info(
+            f"[SOURCE_ONLY] Middle case: train={len(y_train)}, val={len(y_val)}, test={len(y_test)} samples"
+        )
+    else:
+        # For high/low-level: train on middle, evaluate on target group
+        logging.info(
+            f"[SOURCE_ONLY] Cross-domain case: training on MIDDLE ({len(middle_subjects)} subjects), "
+            f"evaluating on target group ({len(eval_subjects)} subjects)"
+        )
+        
+        # Split MIDDLE group (use only train partition)
+        mid_train, _, _, y_mid_train, _, _ = split_data(
+            subject_split_strategy="subject_time_split",
+            subject_list=middle_subjects,
+            target_subjects=middle_subjects,
+            model_name=model_name,
+            seed=seed,
+            time_stratify_labels=time_stratify_labels,
+            time_stratify_tolerance=time_stratify_tolerance,
+            time_stratify_window=time_stratify_window,
+            time_stratify_min_chunk=time_stratify_min_chunk,
+        )
+        
+        X_train = mid_train
+        y_train = y_mid_train.astype(int)
+        logging.info(f"[SOURCE_ONLY] Training: {len(X_train)} samples from MIDDLE group")
+        
+        # Split target group (use val/test partitions)
+        _, X_val, X_test, _, y_val, y_test = split_data(
+            subject_split_strategy="subject_time_split",
+            subject_list=eval_subjects,
+            target_subjects=eval_subjects,
+            model_name=model_name,
+            seed=seed,
+            time_stratify_labels=time_stratify_labels,
+            time_stratify_tolerance=time_stratify_tolerance,
+            time_stratify_window=time_stratify_window,
+            time_stratify_min_chunk=time_stratify_min_chunk,
+        )
+        logging.info(f"[SOURCE_ONLY] Evaluation: val={len(y_val)}, test={len(y_test)} samples from target group")
     
     return X_train, X_val, X_test, y_train, y_val, y_test
