@@ -47,6 +47,8 @@ def train_pipeline(
     time_stratify_tolerance: float = 0.02,
     time_stratify_window: float = 0.10,
     time_stratify_min_chunk: int = 100,
+    use_oversampling: bool = False,
+    oversample_method: str = "smote",
     *,
     feature_selection_method: str = "rf",
     data_leak: bool = False,
@@ -77,6 +79,10 @@ def train_pipeline(
         Window (fraction of N) for boundary search.
     time_stratify_min_chunk : int, default=100
         Minimum rows per split.
+    use_oversampling : bool, default=False
+        Apply oversampling to minority class in training data.
+    oversample_method : {"smote", "adasyn", "borderline"}, default="smote"
+        Oversampling method to use.
     feature_selection_method : {"rf", "mi", "anova"}, default="rf"
         Feature selection method.
     data_leak : bool, default=False
@@ -208,6 +214,8 @@ def train_pipeline(
             selected_features=selected_features,
             scaler=scaler,
             suffix=suffix,
+            use_oversampling=use_oversampling,
+            oversample_method=oversample_method,
         )
     except KeyboardInterrupt:
         logging.error("[TRAIN] Interrupted (KeyboardInterrupt). Will persist current checkpoint.")

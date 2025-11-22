@@ -33,6 +33,7 @@ from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from imblearn.ensemble import BalancedRandomForestClassifier
+from imblearn.over_sampling import SMOTE, ADASYN, BorderlineSMOTE
 
 from src.config import (
     MODEL_PKL_PATH,
@@ -73,6 +74,8 @@ def common_train(
     data_leak: bool = False,
     eval_only: bool = False,
     train_only: bool = False,
+    use_oversampling: bool = False,
+    oversample_method: str = "smote",
 ):
     """
     Train a classical ML model using Optuna and ANFIS-based feature selection.
@@ -174,6 +177,23 @@ def common_train(
     X_val   = X_val.loc[:,   ~X_val.columns.duplicated()]
     X_test  = X_test.loc[:,  ~X_test.columns.duplicated()]
 
+    # Apply oversampling if requested
+    if use_oversampling:
+        logging.info(f"Applying oversampling method: {oversample_method}")
+        logging.info(f"Class distribution before oversampling: {np.bincount(y_train)}")
+        
+        if oversample_method == "smote":
+            sampler = SMOTE(random_state=42, k_neighbors=min(5, np.bincount(y_train).min() - 1))
+        elif oversample_method == "adasyn":
+            sampler = ADASYN(random_state=42, n_neighbors=min(5, np.bincount(y_train).min() - 1))
+        elif oversample_method == "borderline":
+            sampler = BorderlineSMOTE(random_state=42, k_neighbors=min(5, np.bincount(y_train).min() - 1))
+        else:
+            raise ValueError(f"Unknown oversample_method: {oversample_method}")
+        
+        X_train, y_train = sampler.fit_resample(X_train, y_train)
+        logging.info(f"Class distribution after oversampling: {np.bincount(y_train)}")
+
     def objective(trial):
         logging.debug(f'X_train.shape: {X_train.shape}')
         logging.debug(f'X_train nan: {np.isnan(X_train.values).sum()} inf: {np.isinf(X_train.values).sum()}')
@@ -220,18 +240,19 @@ def common_train(
 
         elif model == "RF":
             params = {
-                "max_depth": trial.suggest_int("max_depth", 6, 20),
-                "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
-                "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 5),
-                # try smaller feature subsampling for minority recall/variance reduction
-                "max_features": trial.suggest_categorical("max_features", ["sqrt", "log2", None]),
+                "n_estimators": trial.suggest_int("n_estimators", 200, 500),
+                "max_depth": trial.suggest_int("max_depth", 6, 30),
+                "min_samples_split": trial.suggest_int("min_samples_split", 2, 20),
+                "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 10),
+                "max_features": trial.suggest_categorical("max_features", ["sqrt", "log2", 0.3, 0.5, 0.7]),
+                "min_weight_fraction_leaf": trial.suggest_float("min_weight_fraction_leaf", 0.0, 0.1),
                 "random_state": 42,
-#                "class_weight": "balanced_subsample",
-                "class_weight": "balanced",
+                "class_weight": "balanced_subsample",
                 "n_jobs": 1,  
-                "n_estimators": trial.suggest_int("n_estimators", 120, 220),
-                "max_samples": None,  # avoid internal parallel chunking
+                "max_samples": None,
                 "warm_start": False,
+                "bootstrap": True,
+                "oob_score": False,
             }
             clf = RandomForestClassifier(**params)
 

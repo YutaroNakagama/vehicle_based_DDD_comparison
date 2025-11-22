@@ -92,6 +92,8 @@ def main():
         time_stratify_tolerance=cfg.TIME_STRATIFY_TOLERANCE,
         time_stratify_window=cfg.TIME_STRATIFY_WINDOW,
         time_stratify_min_chunk=cfg.TIME_STRATIFY_MIN_CHUNK,
+        use_oversampling=args.use_oversampling,
+        oversample_method=args.oversample_method,
     )
 
 

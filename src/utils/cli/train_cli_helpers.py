@@ -216,6 +216,19 @@ def add_train_arguments(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="Enable time-stratified splitting with label balance (uses config.TIME_STRATIFY_*).",
     )
+    
+    # Oversampling options for class imbalance
+    parser.add_argument(
+        "--use_oversampling",
+        action="store_true",
+        help="Enable oversampling of minority class in training data.",
+    )
+    parser.add_argument(
+        "--oversample_method",
+        choices=["smote", "adasyn", "borderline"],
+        default="smote",
+        help="Oversampling method: SMOTE, ADASYN, or BorderlineSMOTE (default: smote).",
+    )
 
 
 def add_eval_arguments(parser: argparse.ArgumentParser) -> None:
