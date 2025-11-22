@@ -393,10 +393,10 @@ def load_model_and_scaler(model_name: str, mode: str, tag: str, fold: int, jobid
     # Try to match scaler/features with same suffix
     if mode == "pooled" and not tag_key:
         scaler_pattern = os.path.join(base_dir, "**", f"scaler_{model_name}_{mode}_*.pkl")
-        feature_pattern = os.path.join(base_dir, "**", f"feature_meta_{model_name}_{mode}_*.json")
+        feature_pattern = os.path.join(base_dir, "**", f"selected_features_{model_name}_{mode}_*.pkl")
     else:
         scaler_pattern = os.path.join(base_dir, "**", f"scaler_{model_name}_*{model_prefix}*.pkl")
-        feature_pattern = os.path.join(base_dir, "**", f"feature_meta_{model_name}_*{model_prefix}*.json")
+        feature_pattern = os.path.join(base_dir, "**", f"selected_features_{model_name}_*{model_prefix}*.pkl")
     
     scaler_matches = glob.glob(scaler_pattern, recursive=True)
     feature_matches = glob.glob(feature_pattern, recursive=True)
