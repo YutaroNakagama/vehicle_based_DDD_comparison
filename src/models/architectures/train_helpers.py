@@ -34,6 +34,8 @@ def train_model(
     selected_features: List[str],
     scaler: Optional[StandardScaler],
     suffix: str,
+    use_oversampling: bool = False,
+    oversample_method: str = "smote",
 ) -> Tuple[Optional[object], Optional[StandardScaler], Optional[float], Dict, Dict]:
     """Dispatch to the appropriate training routine and return artifacts.
 
@@ -61,7 +63,7 @@ def train_model(
         scaler=scaler,
         suffix=suffix,
         data_leak=False,
+        use_oversampling=use_oversampling,
+        oversample_method=oversample_method,
     )
     return best_clf, scaler, best_threshold, feature_meta, results
-
-
