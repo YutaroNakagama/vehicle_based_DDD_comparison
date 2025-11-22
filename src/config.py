@@ -214,6 +214,18 @@ DEFAULT_RANDOM_SEED = 42
 """int : Default random seed used across training, evaluation, and analysis pipelines."""
 
 # ---------------------------------------------------------------------
+# Time-stratified splitting configuration
+# ---------------------------------------------------------------------
+TIME_STRATIFY_TOLERANCE = 0.02
+"""float : Tolerance for positive class ratio in time-stratified split."""
+
+TIME_STRATIFY_WINDOW = 0.10
+"""float : Boundary search window fraction for time-stratified split."""
+
+TIME_STRATIFY_MIN_CHUNK = 100
+"""int : Minimum rows per split in time-stratified split."""
+
+# ---------------------------------------------------------------------
 # Logging format
 # ---------------------------------------------------------------------
 LOGGING_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
