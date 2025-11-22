@@ -25,7 +25,7 @@ from collections import defaultdict
 from datetime import datetime
 import re
 
-matplotlib.use('TkAgg')  # For compatibility with interactive environments
+matplotlib.use('Agg')  # Non-interactive backend for HPC environments
 import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)
@@ -391,6 +391,163 @@ def plot_grouped_bar_chart(
                     sub_lvl = sub[sub[level_col] == lvl]
                     col = f"{metric}_{mode}"
                     vals.append(sub_lvl[col].mean() if col in sub_lvl.columns else np.nan)
+                mode_values[mode] = vals
+            
+            # Plot bars
+            bars = []
+            for idx, mode in enumerate(modes):
+                offset = (idx - len(modes)/2 + 0.5) * width
+                bar = ax.bar(
+                    x + offset, 
+                    mode_values[mode], 
+                    width, 
+                    label=mode_labels.get(mode, mode),
+                    color=colors[idx % len(colors)]
+                )
+                bars.append(bar)
+            
+            ax.set_xticks(x)
+            ax.set_xticklabels([lvl.capitalize() for lvl in levels_present])
+            
+            # Baseline line for specific metrics
+            if baseline_rates and metric in baseline_rates:
+                baseline = baseline_rates[metric]
+                ax.axhline(baseline, color='gray', linestyle='--', linewidth=1)
+                ax.text(
+                    len(levels_present)-0.5, baseline + 0.01,
+                    f"Baseline ({baseline:.3f})", 
+                    fontsize=8, color='gray'
+                )
+                
+                # Dynamic y-axis for metrics with baseline
+                all_vals = [v for vals in mode_values.values() for v in vals if not np.isnan(v)]
+                if all_vals:
+                    ymin, ymax = min(all_vals), max(all_vals)
+                    margin = (ymax - ymin) * 0.3 if ymax > ymin else 0.02
+                    ax.set_ylim(max(0, ymin - margin), min(1.0, ymax + margin))
+            else:
+                ax.set_ylim(0, 1.0)
+            
+            # Title on top row
+            if i == 0:
+                ax.set_title(title_map.get(metric, metric.upper()), fontsize=11)
+            
+            # Distance label on left column
+            if j == 0:
+                pretty_dist = {"dtw": "DTW", "mmd": "MMD", "wasserstein": "Wasserstein"}
+                dist_label = pretty_dist.get(str(dist).lower(), str(dist))
+                ax.text(
+                    0.02, 0.95, dist_label, 
+                    transform=ax.transAxes, 
+                    ha="left", va="top",
+                    fontsize=12, fontweight="bold",
+                    bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.6)
+                )
+            
+            # Legend on top-right subplot
+            if i == 0 and j == len(metrics) - 1:
+                ax.legend(
+                    handles=bars,
+                    labels=[mode_labels.get(m, m) for m in modes],
+                    loc="upper right",
+                    fontsize=8,
+                    frameon=False,
+                )
+    
+    plt.tight_layout()
+    return fig
+
+
+def plot_grouped_bar_chart_raw(
+    data: "pd.DataFrame",
+    metrics: list,
+    modes: list,
+    distance_col: str = "distance",
+    level_col: str = "level",
+    mode_col: str = "mode",
+    figsize: tuple = None,
+    baseline_rates: Optional[dict] = None,
+    title_map: Optional[dict] = None,
+) -> matplotlib.figure.Figure:
+    """Create multi-panel bar chart from raw (unpivoted) data.
+    
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Raw DataFrame with 'mode' column and metric columns.
+    metrics : list of str
+        List of metric names to plot.
+    modes : list of str
+        List of mode names (e.g., ['source_only', 'target_only']).
+    distance_col : str, default="distance"
+        Column name containing distance type.
+    level_col : str, default="level"
+        Column name containing level type.
+    mode_col : str, default="mode"
+        Column name containing mode (source_only/target_only).
+    figsize : tuple, optional
+        Figure size (width, height).
+    baseline_rates : dict, optional
+        Mapping from metric name to baseline value.
+    title_map : dict, optional
+        Mapping from metric name to display title.
+    
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Figure object containing the bar chart grid.
+    """
+    import pandas as pd
+    
+    distances = sorted(data[distance_col].unique())
+    ordered_levels = ["high", "middle", "low"]
+    
+    if figsize is None:
+        figsize = (5 * len(metrics), 3 * len(distances))
+    
+    if title_map is None:
+        title_map = {
+            "auc": "AUROC",
+            "auc_pr": "AUPRC",
+            "accuracy": "Accuracy",
+            "f1": "F1",
+            "f2": "F2",
+            "precision": "Precision (pos)",
+            "recall": "Recall (pos)",
+        }
+    
+    fig, axes = plt.subplots(
+        len(distances), len(metrics), 
+        figsize=figsize, 
+        squeeze=False
+    )
+    
+    colors = ["#6699cc", "#ff9966"]
+    mode_labels = {"source_only": "Source-only", "target_only": "Target-only"}
+    
+    for i, dist in enumerate(distances):
+        sub = data[data[distance_col] == dist]
+        
+        for j, metric in enumerate(metrics):
+            ax = axes[i, j]
+            
+            if sub.empty:
+                ax.axis("off")
+                continue
+            
+            # Filter to present levels
+            levels_present = [lvl for lvl in ordered_levels if lvl in sub[level_col].unique()]
+            x = np.arange(len(levels_present))
+            width = 0.35
+            
+            # Collect values for each mode from raw data
+            mode_values = {}
+            for mode in modes:
+                vals = []
+                for lvl in levels_present:
+                    # Filter by level and mode
+                    mode_data = sub[(sub[level_col] == lvl) & (sub[mode_col] == mode)]
+                    vals.append(mode_data[metric].mean() if not mode_data.empty else np.nan)
                 mode_values[mode] = vals
             
             # Plot bars
