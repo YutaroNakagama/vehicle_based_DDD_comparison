@@ -58,7 +58,7 @@ $ python scripts/python/analyze.py comp-dist \
 ### Core Function
 
 ```python
-from src.analysis.distances import run_comp_dist
+from src.analysis.distance_computation import run_comp_dist
 ```
 
 #### Data Flow
@@ -119,7 +119,7 @@ $ python scripts/python/domain_analysis/analyze.py rank-export \
 ### Core Function
 
 ```python
-from src.analysis.rank_export import run_rank_export
+from src.analysis.subject_ranking import run_rank_export
 ```
 
 #### Algorithm Summary

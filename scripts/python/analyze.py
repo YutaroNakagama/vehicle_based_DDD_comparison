@@ -16,7 +16,7 @@ Subcommands (summary):
   corr-collect         Collect correlation CSVs into heatmap summary
   rank-export          Export top/bottom-k subject rankings
 
-Use `python domain_analysis/analyze.py <subcommand> -h` for subcommand-specific options.
+Use `python analyze.py <subcommand> -h` for subcommand-specific options.
 """
 
 import os
