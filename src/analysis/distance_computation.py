@@ -313,7 +313,7 @@ def _plot_bar_auto(names, means, stds, metric: str, kind: str, outdir: Path):
         Save directory.
     """
     # === Determine color per subject ===
-    ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "ranks29"
+    ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks" / "ranks29"
     rank_files = {
         "High": ranks_dir / f"{metric}_mean_high.txt",
         "Middle": ranks_dir / f"{metric}_mean_middle.txt",
@@ -394,7 +394,7 @@ def _plot_projection_auto(matrix: np.ndarray, subjects: list[str], metric: str, 
         methods["UMAP"] = umap.UMAP(n_components=2, metric="precomputed", random_state=42)
 
     # === Load ranked groups (if available) ===
-    ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "ranks29"
+    ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks" / "ranks29"
     group_files = {
         "High": ranks_dir / f"{metric}_mean_high.txt",
         "Middle": ranks_dir / f"{metric}_mean_middle.txt",
@@ -448,52 +448,6 @@ def _plot_projection_auto(matrix: np.ndarray, subjects: list[str], metric: str, 
         fig.savefig(out_path, dpi=300, bbox_inches="tight", pad_inches=0.05)
         plt.close(fig)
         print(f"[PLOT] Saved: {out_path}")
-
-    # === Prepare 2D coordinate mapping for ranked projection ===
-    s2xy = {sid: coords[i] for i, sid in enumerate(subjects)}
-
-    # === Load ranked groups (if available) ===
-    ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "ranks29"
-    group_files = {
-        "High": ranks_dir / f"{metric}_mean_high.txt",
-        "Middle": ranks_dir / f"{metric}_mean_middle.txt",
-        "Low": ranks_dir / f"{metric}_mean_low.txt",
-    }
-    group_members = {k: set(f.read_text().splitlines())
-                     for k, f in group_files.items() if f.exists()}
-
-    # === Define colors ===
-    colors = {"High": "red", "Middle": "gray", "Low": "blue", "Other": "black"}
-
-    # === Plot ===
-    fig, ax = plt.subplots(figsize=(8, 8))
-    ax.set_aspect('equal', adjustable='box')
-    for sid, (x, y) in s2xy.items():
-        # Determine group membership
-        if any(sid in group_members[g] for g in group_members):
-            group = next(g for g in group_members if sid in group_members[g])
-        else:
-            group = "Other"
-        ax.scatter(x, y, color=colors[group], s=30, label=group if group != "Other" else None)
-
-        # Label every point
-        ax.text(x, y, sid, fontsize=6, color=colors[group])
-
-    # === Clean up legend (High/Middle/Low only) ===
-    handles, labels = ax.get_legend_handles_labels()
-    legend_map = {lab: h for lab, h in zip(labels, handles)
-                  if lab in ["High", "Middle", "Low"]}
-    ax.legend(legend_map.values(), legend_map.keys(), title="Group")
-
-    ax.set_title(f"{metric.upper()} Projection by Ranked Groups")
-    ax.set_aspect('equal', adjustable='box')
-    fig.tight_layout()
-
-    # === Save ===
-    out_path = outdir / f"{metric}_group_projection_ranked.png"
-    fig.savefig(out_path, dpi=300)
-    plt.close(fig)
-    print(f"[PLOT] Saved ranked group projection: {out_path}")
 
 
 def _plot_bar(labels: list[str], means: np.ndarray, stds: np.ndarray,
@@ -888,7 +842,7 @@ def _compute_group_analysis(matrix: np.ndarray, subjects: list[str], groups: dic
 
 def _save_group_analysis_results(base_dir: Path, metric: str, analysis: dict):
     """Save and visualize all group-level results in consistent directory layout."""
-    group_dir = base_dir / "distances" / metric
+    group_dir = base_dir / "group-wise" / metric
     group_dir.mkdir(parents=True, exist_ok=True)
 
     # (1) Group matrix heatmap
@@ -991,9 +945,9 @@ def run_comp_dist(
     for metric in metrics:
         logging.info(f"Computing {metric.upper()} distance matrix... ({len(features)} subjects)")
         # --- ensure output directories exist ---
-        metric_dir = base_dir / metric
+        metric_dir = base_dir / "subject-wise" / metric
         metric_dir.mkdir(parents=True, exist_ok=True)
-        (base_dir / "distances").mkdir(parents=True, exist_ok=True)
+        (base_dir / "group-wise").mkdir(parents=True, exist_ok=True)
 
         # --- compute and save subject-level distance matrix ---
         matrix, subjects_valid = _compute_distance_matrix(features, metric, n_jobs=n_jobs)

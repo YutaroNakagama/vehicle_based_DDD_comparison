@@ -54,7 +54,7 @@ def resolve_target_subjects_from_tag(
     
     # Check if rank_names.txt exists (try both ranks29 and root directory)
     rank_file_new = os.path.join(
-        cfg.RESULTS_DOMAIN_ANALYSIS_PATH, "distance", "ranks29", "ranks29_names.txt"
+        cfg.RESULTS_DOMAIN_ANALYSIS_PATH, "distance", "subject-wise", "ranks", "ranks29", "ranks29_names.txt"
     )
     rank_file_old = os.path.join(
         cfg.RESULTS_DOMAIN_ANALYSIS_PATH, "distance", cfg.RANK_NAMES_FILENAME
@@ -143,7 +143,7 @@ def resolve_middle_group_subjects(tag: Optional[str]) -> List[str]:
         )
     
     # Load middle group file
-    ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "ranks29"
+    ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks" / "ranks29"
     middle_file = ranks_dir / f"{metric_prefix}_mean_middle.txt"
     
     if not middle_file.exists():

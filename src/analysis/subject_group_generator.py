@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
+"""                                                                                                                                                                                                                                                                                                     
 subject_group_generator.py
 ==========================
 
@@ -12,9 +12,7 @@ subject groups for domain generalization experiments.
 
 Outputs are saved under:
     results/domain_analysis/distance/ranks{N}/{metric}_mean_{level}.txt
-"""
-
-import argparse
+"""import argparse
 import json
 import sys
 import numpy as np
@@ -29,9 +27,10 @@ logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 # Configuration
 # ============================================================
 METRICS = cfg.DISTANCE_METRICS
-ROOT = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance"
-#OUT_DIR = ROOT / "ranks10"
-OUT_DIR = ROOT / "ranks29"
+ROOT = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise"
+RANKS_ROOT = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks"
+#OUT_DIR = RANKS_ROOT / "ranks10"
+OUT_DIR = RANKS_ROOT / "ranks29"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
