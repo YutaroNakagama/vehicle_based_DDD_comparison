@@ -42,15 +42,16 @@ modes = ["pooled", "source_only", "target_only"]
 logger.info(f"Processing modes: {modes}")
 
 # --- detect available distance/level combinations ---
-distances = sorted(df["distance"].unique()) if "distance" in df.columns else ["unknown"]
-levels    = sorted(df["level"].unique()) if "level" in df.columns else ["unknown"]
+distances = sorted([str(d) for d in df["distance"].unique()]) if "distance" in df.columns else ["unknown"]
+levels    = sorted([str(l) for l in df["level"].unique()]) if "level" in df.columns else ["unknown"]
 logger.info(f"Detected combinations: {[(d,l) for d in distances for l in levels]}")
 
 # --- metrics to plot (logical order) ---
-# Primary: AUC, Recall (Sensitivity), Specificity
-# Classification: Precision, F1, F2
-# Overall: Accuracy, AUPRC
-metrics = ["auc", "recall", "specificity", "precision", "f1", "f2", "accuracy", "auc_pr"]
+# Overall: Accuracy
+# Primary: Recall (Sensitivity), Precision
+# Classification: F1, F2
+# Discrimination: AUC (AUROC), AUPRC
+metrics = ["accuracy", "recall", "precision", "f1", "f2", "auc", "auc_pr"]
 
 # === BAR PLOT (Model × Metric × Mode) ==
 fig = plot_grouped_bar_chart_raw(
