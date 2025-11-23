@@ -23,6 +23,47 @@ from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score, fbeta_score,
     confusion_matrix, precision_recall_curve, average_precision_score
 )
+
+
+# ========== Custom metric: Precision at minimum Recall ==========
+def precision_at_min_recall(y_true, y_proba, min_recall=0.70):
+    """Calculate maximum precision at or above minimum recall.
+    
+    This metric is useful for Precision-focused optimization while
+    maintaining a minimum safety threshold (Recall).
+    
+    Parameters
+    ----------
+    y_true : array-like
+        True binary labels.
+    y_proba : array-like
+        Predicted probabilities for the positive class.
+    min_recall : float, default=0.70
+        Minimum recall threshold. Returns max precision where recall >= min_recall.
+    
+    Returns
+    -------
+    float
+        Maximum precision at recall >= min_recall. Returns 0.0 if no threshold
+        satisfies the minimum recall constraint.
+    """
+    if len(y_true) == 0 or len(y_proba) == 0:
+        return 0.0
+    
+    # Handle edge case: only one class present
+    if len(np.unique(y_true)) < 2:
+        return 0.0
+    
+    precisions, recalls, thresholds = precision_recall_curve(y_true, y_proba)
+    
+    # Find indices where recall >= min_recall
+    valid_idx = recalls >= min_recall
+    if not np.any(valid_idx):
+        return 0.0  # No threshold satisfies min_recall
+    
+    # Return maximum precision in valid range
+    return float(np.max(precisions[valid_idx]))
+# ================================================================
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score, StratifiedKFold
 from sklearn.preprocessing import StandardScaler
@@ -396,7 +437,8 @@ def common_train(
                         p = clf.predict_proba(X_all_scaled[va_idx])[:, 1]
                     else:
                         p = clf.decision_function(X_all_scaled[va_idx])
-                    scores.append(average_precision_score(y_all[va_idx], p))
+                    # Use Precision@Recall≥70% for Precision-focused optimization
+                    scores.append(precision_at_min_recall(y_all[va_idx], p, min_recall=0.70))
                 score = float(np.nanmean(scores)) if len(scores) else 0.0
             else:
                 # Use pre-trained scaler even inside the objective function
@@ -427,10 +469,11 @@ def common_train(
                         p = clf.predict_proba(X_train_scaled[va_idx])[:, 1]
                     else:
                         p = clf.decision_function(X_train_scaled[va_idx])
-                    ap = average_precision_score(y_va, p)
+                    # Use Precision@Recall≥70% for Precision-focused optimization
+                    prec_at_rec = precision_at_min_recall(y_va, p, min_recall=0.70)
                     # Avoid flooding stdout; keep detailed per-fold in debug only
-                    logging.debug(f"[CV] Fold {i}: AP = {ap:.6f}")
-                    scores.append(ap)
+                    logging.debug(f"[CV] Fold {i}: Prec@Rec≥0.7 = {prec_at_rec:.6f}")
+                    scores.append(prec_at_rec)
                 if not scores or np.any(np.isnan(scores)):
                     return 0.0
                 score = float(np.nanmean(scores))
@@ -522,8 +565,8 @@ def common_train(
     elif model == "RF":
         if "class_weight" in best_params:
             best_params.pop("class_weight")
-        # Narrower & lighter defaults for speed; still keep strong minority weight
-        best_clf = RandomForestClassifier(**best_params, class_weight={0:1.0, 1:10.0}, n_jobs=1)
+        # Precision-focused: reduced minority weight from 10.0 to 3.0
+        best_clf = RandomForestClassifier(**best_params, class_weight={0:1.0, 1:3.0}, n_jobs=1)
 
         # --- Simplified calibration using train+val together (more stable) ---
         from sklearn.calibration import CalibratedClassifierCV
@@ -696,23 +739,23 @@ def common_train(
     best_threshold = None
     if m_val["_proba"] is not None:
 
-        # Use unified threshold optimization (F2 emphasizes recall)
-        best_threshold, best_f2 = find_optimal_threshold(y_val, m_val["_proba"], beta=2.0)
-        logging.info(f"Optimal threshold for F2 (β=2): {best_threshold:.3f} (F2={best_f2:.3f})")
+        # Use unified threshold optimization (F0.5 emphasizes precision)
+        best_threshold, best_f05 = find_optimal_threshold(y_val, m_val["_proba"], beta=0.5)
+        logging.info(f"Optimal threshold for F0.5 (β=0.5): {best_threshold:.3f} (F0.5={best_f05:.3f})")
         
         def _apply_thr(proba, y_true):
             yhat = apply_threshold(proba, best_threshold)
             metrics = calculate_extended_metrics(y_true, yhat, proba, zero_division=0, include_roc=False, include_pr=False)
-            # Add F2 score
-            metrics["f2"] = float(fbeta_score(y_true, yhat, beta=2, zero_division=0))
+            # Add F0.5 score (Precision-focused)
+            metrics["f05"] = float(fbeta_score(y_true, yhat, beta=0.5, zero_division=0))
             return metrics
 
         thr_val  = _apply_thr(m_val["_proba"],  y_val)
         thr_test = _apply_thr(m_test["_proba"], y_test) if m_test["_proba"] is not None else None
 
-        logging.info("Validation (F2-opt threshold) metrics: " + json.dumps(thr_val))
+        logging.info("Validation (F0.5-opt threshold) metrics: " + json.dumps(thr_val))
         if thr_test:
-            logging.info("Test (F2-opt threshold from Val) metrics: " + json.dumps(thr_test))
+            logging.info("Test (F0.5-opt threshold from Val) metrics: " + json.dumps(thr_test))
 
         # NOTE: Actual threshold saving is unified in savers.save_artifacts()
         # via train_pipeline finally-block. We just return the value here.
