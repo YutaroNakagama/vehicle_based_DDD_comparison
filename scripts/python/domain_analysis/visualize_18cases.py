@@ -27,12 +27,12 @@ def main():
     df = df[df['mode'].isin(['source_only', 'target_only'])].copy()
     logger.info(f"Filtered to source_only/target_only: {len(df)} rows")
     
-    # Calculate mean positive rate for baseline
+    # Calculate mean positive rate for baseline (used for AUPRC reference)
     mean_pos = df['pos_rate'].mean()
-    logger.info(f"Using mean pos_rate: {mean_pos:.4f}")
+    logger.info(f"Using mean pos_rate for AUPRC baseline: {mean_pos:.4f}")
     
-    # Metrics to plot
-    metrics = ['auc', 'auc_pr', 'f1', 'accuracy', 'precision', 'recall']
+    # Metrics to plot - key performance indicators
+    metrics = ['auc', 'auc_pr', 'accuracy', 'f1', 'f2', 'recall', 'specificity']
     modes = ['source_only', 'target_only']
     
     logger.info(f"Processing modes: {modes}")
@@ -51,9 +51,10 @@ def main():
             'auc': 'AUROC',
             'auc_pr': 'AUPRC',
             'f1': 'F1 Score',
+            'f2': 'F2 Score',
             'accuracy': 'Accuracy',
-            'precision': 'Precision',
-            'recall': 'Recall',
+            'recall': 'Recall (Sensitivity)',
+            'specificity': 'Specificity',
         }
     )
     
