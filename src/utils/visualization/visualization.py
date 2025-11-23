@@ -529,6 +529,13 @@ def plot_grouped_bar_chart_raw(
     colors = ["#66cc99", "#6699cc", "#ff9966"]
     mode_labels = {"pooled": "Pooled", "source_only": "Source-only", "target_only": "Target-only"}
     
+    # Calculate pooled baseline values for each metric
+    pooled_data = data[data[mode_col] == "pooled"]
+    pooled_baselines = {}
+    for metric in metrics:
+        if not pooled_data.empty:
+            pooled_baselines[metric] = pooled_data[metric].mean()
+    
     # Rows 1-3: Distance metrics (source_only vs target_only)
     comparison_modes = ["source_only", "target_only"]
     
@@ -568,12 +575,39 @@ def plot_grouped_bar_chart_raw(
                     color=colors[idx + 1]  # Use source_only and target_only colors
                 )
                 bars.append(bar)
+                
+                # Add value labels on top of bars
+                for pos_idx, val in enumerate(mode_values[mode]):
+                    if not np.isnan(val):
+                        ax.text(
+                            pos_idx + offset, val,
+                            f'{val:.2f}',
+                            ha='center', va='bottom',
+                            fontsize=7, color='black'
+                        )
+            
+            # Add pooled baseline as horizontal dashed line
+            if metric in pooled_baselines:
+                pooled_val = pooled_baselines[metric]
+                ax.axhline(pooled_val, color='black', linestyle='--', linewidth=2, alpha=0.7, zorder=3)
+                # Add label on the right side
+                ax.text(
+                    len(levels_present) - 0.1, pooled_val,
+                    f"Pooled ({pooled_val:.3f})",
+                    fontsize=8, color='black', 
+                    ha='right', va='bottom',
+                    bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", alpha=0.8)
+                )
             
             ax.set_xticks(x)
             ax.set_xticklabels([lvl.capitalize() for lvl in levels_present])
             
-            # Baseline line
-            if baseline_rates and metric in baseline_rates:
+            # Set y-axis limits: force 0:0.4 for precision/f1/f2, 0:1 for auc_pr, otherwise dynamic
+            if metric in ["precision", "f1", "f2"]:
+                ax.set_ylim(0, 0.4)
+            elif metric == "auc_pr":
+                ax.set_ylim(0, 1.0)
+            elif baseline_rates and metric in baseline_rates:
                 baseline = baseline_rates[metric]
                 ax.axhline(baseline, color='gray', linestyle='--', linewidth=1)
                 ax.text(
@@ -639,12 +673,24 @@ def plot_grouped_bar_chart_raw(
             color=colors[0]
         )
         
+        # Add value label on top of bar
+        ax.text(
+            0, pooled_mean,
+            f'{pooled_mean:.2f}',
+            ha='center', va='bottom',
+            fontsize=7, color='black'
+        )
+        
         ax.set_xticks([0])
         ax.set_xticklabels(["Pooled\nBaseline"])
         ax.set_xlim(-0.5, 0.5)
         
-        # Baseline line
-        if baseline_rates and metric in baseline_rates:
+        # Set y-axis limits: force 0:0.4 for precision/f1/f2, 0:1 for auc_pr, otherwise dynamic
+        if metric in ["precision", "f1", "f2"]:
+            ax.set_ylim(0, 0.4)
+        elif metric == "auc_pr":
+            ax.set_ylim(0, 1.0)
+        elif baseline_rates and metric in baseline_rates:
             baseline = baseline_rates[metric]
             ax.axhline(baseline, color='gray', linestyle='--', linewidth=1)
             
