@@ -40,9 +40,27 @@ def load_distance_matrix(metric: str) -> np.ndarray:
     return np.load(matrix_path)
 
 
-def load_group_subjects(metric: str, level: str) -> list:
-    """グループの被験者リストを読み込む"""
-    group_path = DISTANCE_DIR / "subject-wise" / "ranks" / "ranks29" / f"{metric}_{level}.txt"
+def load_group_subjects(metric: str, level: str, ranking_method: str = "mean_distance") -> list:
+    """グループの被験者リストを読み込む
+    
+    Parameters
+    ----------
+    metric : str
+        距離指標 (dtw_mean, mmd_mean, wasserstein_mean)
+    level : str
+        グループレベル (high, middle, low)
+    ranking_method : str
+        ランキング手法 (mean_distance, centroid_mds, centroid_umap, medoid, lof)
+    """
+    # 新しいフォルダ構造: ranks29/{ranking_method}/{metric}_{level}.txt
+    # metric から "_mean" サフィックスを除去
+    metric_base = metric.replace("_mean", "")
+    group_path = DISTANCE_DIR / "subject-wise" / "ranks" / "ranks29" / ranking_method / f"{metric_base}_{level}.txt"
+    
+    # フォールバック: 古い形式 (mean_distance_legacy)
+    if not group_path.exists():
+        group_path = DISTANCE_DIR / "subject-wise" / "ranks" / "ranks29" / "mean_distance_legacy" / f"{metric}_{level}.txt"
+    
     with open(group_path, "r") as f:
         return [line.strip() for line in f if line.strip()]
 
