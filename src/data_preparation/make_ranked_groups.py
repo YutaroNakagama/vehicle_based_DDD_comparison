@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""                                                                                                                                                                                                                                                                                                     
+"""
 make_ranked_groups.py
 =====================
 
@@ -9,7 +9,9 @@ based on domain distance matrices (MMD, Wasserstein, DTW).
 
 Outputs are saved under:
     results/domain_analysis/distance/subject-wise/ranks/ranks10/{metric}_mean_{level}.txt
-"""import argparse
+"""
+
+import argparse
 import json
 import sys
 import numpy as np
@@ -26,8 +28,8 @@ logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 METRICS = cfg.DISTANCE_METRICS
 ROOT = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise"
 RANKS_ROOT = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks"
-#OUT_DIR = RANKS_ROOT / "ranks10"
-OUT_DIR = RANKS_ROOT / "ranks29"
+# Output to mean_distance subfolder (new structure)
+OUT_DIR = RANKS_ROOT / "ranks29" / "mean_distance"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -43,8 +45,11 @@ def safe_relpath(path: Path) -> str:
 
 
 def save_group(metric: str, name: str, subjects: list[str]) -> None:
-    """Save a group of subject IDs to a text file."""
-    path = OUT_DIR / f"{metric}_mean_{name}.txt"
+    """Save a group of subject IDs to a text file.
+    
+    New format: {metric}_{level}.txt (without 'mean_' prefix)
+    """
+    path = OUT_DIR / f"{metric}_{name}.txt"
     path.write_text("\n".join(subjects) + "\n", encoding="utf-8")
     print(f"[SAVED] {safe_relpath(path)}")
 
