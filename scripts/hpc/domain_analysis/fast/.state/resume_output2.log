@@ -1,0 +1,13 @@
+nohup: ignoring input
+[2025-11-29 17:10:15] ============================================================
+[2025-11-29 17:10:15] Resuming Both-Modes Pipeline
+[2025-11-29 17:10:15] ============================================================
+[2025-11-29 17:10:15] Detecting running jobs...
+[2025-11-29 17:10:15]   Found running training job: mean_distance = 14464696[]
+[2025-11-29 17:10:16]   Found running training job: centroid_umap = 14464697[]
+[2025-11-29 17:10:16] 
+[2025-11-29 17:10:16] Checking for missing training jobs...
+[2025-11-29 17:10:16]   Submitting missing training job: lof
+[2025-11-29 17:10:16] Waiting for queue capacity...
+[2025-11-29 17:10:16] Queue capacity available
+qsub: would exceed queue generic's per-user limit
