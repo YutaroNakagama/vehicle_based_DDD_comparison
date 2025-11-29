@@ -31,6 +31,12 @@ scripts/hpc/log/**
 *.e*
 *.swp
 
+# ===== Execution logs =====
+continue_output*.log
+resume_output*.log
+launch_output*.log
+nohup.out
+
 # ===== Documentation build (Sphinx) =====
 docs/_build/
 docs/_modules/
