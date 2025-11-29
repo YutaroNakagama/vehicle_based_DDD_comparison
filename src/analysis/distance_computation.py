@@ -291,7 +291,9 @@ def _plot_heatmap_auto(matrix, labels, metric: str, kind: str, outdir: Path):
     ax.tick_params(axis='x', labelsize=5)
     ax.tick_params(axis='y', labelsize=5)
     fig.tight_layout()
-    _plot_save_wrapper(fig, outdir / f"{metric}_{kind}_heatmap.png")
+    png_dir = outdir / "png"
+    png_dir.mkdir(parents=True, exist_ok=True)
+    _plot_save_wrapper(fig, png_dir / f"{metric}_{kind}_heatmap.png")
 
 
 def _plot_bar_auto(names, means, stds, metric: str, kind: str, outdir: Path):
@@ -313,11 +315,11 @@ def _plot_bar_auto(names, means, stds, metric: str, kind: str, outdir: Path):
         Save directory.
     """
     # === Determine color per subject ===
-    ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks" / "ranks29"
+    ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks" / "ranks29" / "mean_distance"
     rank_files = {
-        "High": ranks_dir / f"{metric}_mean_high.txt",
-        "Middle": ranks_dir / f"{metric}_mean_middle.txt",
-        "Low": ranks_dir / f"{metric}_mean_low.txt",
+        "High": ranks_dir / f"{metric}_high.txt",
+        "Middle": ranks_dir / f"{metric}_middle.txt",
+        "Low": ranks_dir / f"{metric}_low.txt",
     }
     rank_members = {k: set(f.read_text().splitlines())
                     for k, f in rank_files.items() if f.exists()}
@@ -345,7 +347,9 @@ def _plot_bar_auto(names, means, stds, metric: str, kind: str, outdir: Path):
     ax.legend(handles=handles, title="Group", loc="best", fontsize=7, title_fontsize=8)
 
     fig.tight_layout()
-    _plot_save_wrapper(fig, outdir / f"{metric}_{kind}_bar.png")
+    png_dir = outdir / "png"
+    png_dir.mkdir(parents=True, exist_ok=True)
+    _plot_save_wrapper(fig, png_dir / f"{metric}_{kind}_bar.png")
 
 
 def _plot_intra_inter_auto(stats: dict[str, dict[str, float]], metric: str, outdir: Path):
@@ -394,11 +398,11 @@ def _plot_projection_auto(matrix: np.ndarray, subjects: list[str], metric: str, 
         methods["UMAP"] = umap.UMAP(n_components=2, metric="precomputed", random_state=42)
 
     # === Load ranked groups (if available) ===
-    ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks" / "ranks29"
+    ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks" / "ranks29" / "mean_distance"
     group_files = {
-        "High": ranks_dir / f"{metric}_mean_high.txt",
-        "Middle": ranks_dir / f"{metric}_mean_middle.txt",
-        "Low": ranks_dir / f"{metric}_mean_low.txt",
+        "High": ranks_dir / f"{metric}_high.txt",
+        "Middle": ranks_dir / f"{metric}_middle.txt",
+        "Low": ranks_dir / f"{metric}_low.txt",
     }
     group_members = {k: set(f.read_text().splitlines())
                      for k, f in group_files.items() if f.exists()}
@@ -444,7 +448,9 @@ def _plot_projection_auto(matrix: np.ndarray, subjects: list[str], metric: str, 
         ax.set_aspect('equal', adjustable='datalim')
         plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
 
-        out_path = outdir / f"{metric}_projection_{name.lower()}.png"
+        png_dir = outdir / "png"
+        png_dir.mkdir(parents=True, exist_ok=True)
+        out_path = png_dir / f"{metric}_projection_{name.lower()}.png"
         fig.savefig(out_path, dpi=300, bbox_inches="tight", pad_inches=0.05)
         plt.close(fig)
         print(f"[PLOT] Saved: {out_path}")
