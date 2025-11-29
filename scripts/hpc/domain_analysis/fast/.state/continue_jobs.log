@@ -1,0 +1,48 @@
+[2025-11-29 17:14:06] ============================================================
+[2025-11-29 17:14:06] Continuing from existing jobs
+[2025-11-29 17:14:06] ============================================================
+[2025-11-29 17:14:06] Step 1: Waiting for existing training jobs
+[2025-11-29 17:14:06] Waiting for mean_distance training (14464696[])...
+[2025-11-29 17:15:37] mean_distance training completed!
+[2025-11-29 17:15:37] Waiting for centroid_umap training (14464697[])...
+[2025-11-29 17:17:07] centroid_umap training completed!
+[2025-11-29 17:17:07] 
+[2025-11-29 17:17:07] Step 2: Submitting evaluation jobs
+[2025-11-29 17:18:24] ============================================================
+[2025-11-29 17:18:24] Continuing from existing jobs
+[2025-11-29 17:18:24] ============================================================
+[2025-11-29 17:18:24] Step 1: Waiting for existing training jobs
+[2025-11-29 17:18:24] Waiting for mean_distance training (14464696[])...
+[2025-11-29 17:18:24] mean_distance training completed!
+[2025-11-29 17:18:24] Waiting for centroid_umap training (14464697[])...
+[2025-11-29 17:18:24] centroid_umap training completed!
+[2025-11-29 17:18:24] 
+[2025-11-29 17:18:24] Step 2: Submitting evaluation jobs
+[2025-11-29 17:18:24] Submitted mean_distance eval: 14464771[].spcc-adm1
+[2025-11-29 17:18:25] Submitted centroid_umap eval: 14464772[].spcc-adm1
+[2025-11-29 17:18:25] 
+[2025-11-29 17:18:25] Step 3: Submitting lof training
+[2025-11-29 17:18:25] Submitted lof training: 14464773[].spcc-adm1
+[2025-11-29 17:18:25] 
+[2025-11-29 17:18:25] Step 4: Waiting for lof training
+[2025-11-29 17:18:25] Waiting for lof training (14464773[].spcc-adm1)...
+[2025-11-29 17:28:26] lof training completed!
+[2025-11-29 17:28:26] 
+[2025-11-29 17:28:26] Step 5: Submitting lof evaluation
+[2025-11-29 17:28:26] Submitted lof eval: 14464831[].spcc-adm1
+[2025-11-29 17:28:26] 
+[2025-11-29 17:28:26] Step 6: Waiting for all evaluations
+[2025-11-29 17:28:26] Waiting for mean_distance eval (14464771[].spcc-adm1)...
+[2025-11-29 17:28:26] mean_distance eval completed!
+[2025-11-29 17:28:26] Waiting for centroid_umap eval (14464772[].spcc-adm1)...
+[2025-11-29 17:28:27] centroid_umap eval completed!
+[2025-11-29 17:28:27] Waiting for lof eval (14464831[].spcc-adm1)...
+[2025-11-29 17:29:57] lof eval completed!
+[2025-11-29 17:29:57] 
+[2025-11-29 17:29:57] Step 7: Running analysis
+[2025-11-29 17:30:18] 
+[2025-11-29 17:30:18] ============================================================
+[2025-11-29 17:30:18] All 54 cases completed!
+[2025-11-29 17:30:18] ============================================================
+[2025-11-29 17:30:18] Results: results/domain_analysis/summary/
+[2025-11-29 17:30:18] ============================================================

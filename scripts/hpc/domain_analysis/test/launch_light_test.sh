@@ -54,6 +54,20 @@ for method in "${RANKING_METHODS[@]}"; do
     echo "[INFO] Submitted eval (${method}): $jid_eval"
 done
 
+# Build dependency string for all eval jobs
+EVAL_DEPEND=""
+for jid in "${eval_jobs[@]}"; do
+    if [[ -z "$EVAL_DEPEND" ]]; then
+        EVAL_DEPEND="${jid%%.*}"
+    else
+        EVAL_DEPEND="${EVAL_DEPEND}:${jid%%.*}"
+    fi
+done
+
+# --- 3. Analysis job (after all evals complete) ---
+jid_analysis=$(qsub -W depend=afterok:${EVAL_DEPEND} "${SCRIPT_DIR}/pbs_analysis_light.sh")
+echo "[INFO] Submitted analysis job: $jid_analysis"
+
 echo ""
 echo "============================================================"
 echo "=== Light Test Submitted ==="
@@ -69,7 +83,9 @@ for i in "${!RANKING_METHODS[@]}"; do
     echo "  ${RANKING_METHODS[$i]}: ${eval_jobs[$i]}"
 done
 echo ""
-echo "Expected completion: ~10-20 minutes"
+echo "Analysis: $jid_analysis"
+echo ""
+echo "Expected completion: ~15-25 minutes"
 echo "============================================================"
 echo ""
 echo "Monitor with: qstat -u \$USER"
