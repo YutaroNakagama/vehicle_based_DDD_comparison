@@ -100,7 +100,7 @@ DATA_PROCESS_CHOICES = ["SvmA", "SvmW", "Lstm", "common"]
 """list of str : Supported data processing strategies/models for preprocessing."""
 
 MODEL_CHOICES = [
-    "SvmA", "SvmW", "Lstm", "RF", "BalancedRF", "DecisionTree", "AdaBoost", "GradientBoosting",
+    "SvmA", "SvmW", "Lstm", "RF", "BalancedRF", "EasyEnsemble", "DecisionTree", "AdaBoost", "GradientBoosting",
     "XGBoost", "LightGBM", "CatBoost", "LogisticRegression", "SVM", "K-Nearest Neighbors", "MLP"
 ]
 """list of str : Supported machine learning models for training and evaluation."""
@@ -186,7 +186,7 @@ DISTANCE_METRICS = ["mmd", "wasserstein", "dtw"]
 TRAINING_MODES_BASE = ["source_only", "target_only", "finetune", "only_general"]
 """list of str : Base training modes (before adding target size-specific modes)."""
 
-RANKING_LEVELS = ["high", "middle", "low"]
+RANKING_LEVELS = ["out_domain", "mid_domain", "in_domain"]
 """list of str : Ranking levels for subject group stratification."""
 
 # ---------------------------------------------------------------------
