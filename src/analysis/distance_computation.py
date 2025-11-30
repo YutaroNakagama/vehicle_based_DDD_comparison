@@ -317,13 +317,13 @@ def _plot_bar_auto(names, means, stds, metric: str, kind: str, outdir: Path):
     # === Determine color per subject ===
     ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks" / "ranks29" / "mean_distance"
     rank_files = {
-        "High": ranks_dir / f"{metric}_high.txt",
-        "Middle": ranks_dir / f"{metric}_middle.txt",
-        "Low": ranks_dir / f"{metric}_low.txt",
+        "out_domain": ranks_dir / f"{metric}_out_domain.txt",
+        "mid_domain": ranks_dir / f"{metric}_mid_domain.txt",
+        "in_domain": ranks_dir / f"{metric}_in_domain.txt",
     }
     rank_members = {k: set(f.read_text().splitlines())
                     for k, f in rank_files.items() if f.exists()}
-    color_map = {"High": "red", "Middle": "gray", "Low": "blue", "Other": "black"}
+    color_map = {"out_domain": "red", "mid_domain": "gray", "in_domain": "blue", "Other": "black"}
 
     bar_colors = []
     for sid in names:
@@ -339,7 +339,7 @@ def _plot_bar_auto(names, means, stds, metric: str, kind: str, outdir: Path):
     ax.tick_params(axis='x', labelsize=6)
     ax.tick_params(axis='y', labelsize=6)
     # === Add legend ===
-    legend_groups = ["High", "Middle", "Low"]
+    legend_groups = ["out_domain", "mid_domain", "in_domain"]
     handles = [
         plt.Line2D([0], [0], color=color_map[g], lw=6, label=g)
         for g in legend_groups
@@ -400,15 +400,15 @@ def _plot_projection_auto(matrix: np.ndarray, subjects: list[str], metric: str, 
     # === Load ranked groups (if available) ===
     ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks" / "ranks29" / "mean_distance"
     group_files = {
-        "High": ranks_dir / f"{metric}_high.txt",
-        "Middle": ranks_dir / f"{metric}_middle.txt",
-        "Low": ranks_dir / f"{metric}_low.txt",
+        "out_domain": ranks_dir / f"{metric}_out_domain.txt",
+        "mid_domain": ranks_dir / f"{metric}_mid_domain.txt",
+        "in_domain": ranks_dir / f"{metric}_in_domain.txt",
     }
     group_members = {k: set(f.read_text().splitlines())
                      for k, f in group_files.items() if f.exists()}
 
     # === Define colors ===
-    base_colors = {"High": "red", "Middle": "gray", "Low": "blue", "Other": "black"}
+    base_colors = {"out_domain": "red", "mid_domain": "gray", "in_domain": "blue", "Other": "black"}
 
     for name, projector in methods.items():
         logging.info(f"Computing projection using {name}...")
@@ -432,8 +432,8 @@ def _plot_projection_auto(matrix: np.ndarray, subjects: list[str], metric: str, 
             ax.scatter(coords[i, 0], coords[i, 1], color=color, s=30)
             ax.text(coords[i, 0], coords[i, 1], sid, fontsize=6, color=color)
 
-        # === Add legend (High/Middle/Low only) ===
-        legend_groups = ["High", "Middle", "Low"]
+        # === Add legend (out_domain/mid_domain/in_domain only) ===
+        legend_groups = ["out_domain", "mid_domain", "in_domain"]
         handles = [
             plt.Line2D([0], [0], marker='o', color='w',
                        markerfacecolor=base_colors[g], markersize=6, label=g)

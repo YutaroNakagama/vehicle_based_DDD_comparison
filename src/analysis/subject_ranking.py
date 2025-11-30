@@ -5,12 +5,12 @@ This module computes per-subject mean and std (excluding the diagonal) for each
 distance type (MMD, Wasserstein, DTW), ranks subjects, and writes top/bottom-k
 lists with neutral, research-friendly filenames:
 
-- {metric}_mean_low.txt      : subjects with smallest mean distance (k)
-- {metric}_mean_middle.txt   : subjects closest to the median mean  (k)
-- {metric}_mean_high.txt     : subjects with largest mean distance  (k)
-- {metric}_std_low.txt       : subjects with smallest std           (k)
-- {metric}_std_middle.txt    : subjects closest to the median std   (k)
-- {metric}_std_high.txt      : subjects with largest std            (k)
+- {metric}_mean_in_domain.txt      : subjects with smallest mean distance (k)
+- {metric}_mean_mid_domain.txt   : subjects closest to the median mean  (k)
+- {metric}_mean_out_domain.txt     : subjects with largest mean distance  (k)
+- {metric}_std_in_domain.txt       : subjects with smallest std           (k)
+- {metric}_std_mid_domain.txt    : subjects closest to the median std   (k)
+- {metric}_std_out_domain.txt      : subjects with largest std            (k)
 
 
 Notes
@@ -231,18 +231,18 @@ def _export_one(metric: str, mat_path: Optional[Path], subjects_path: Optional[P
         names,
         mean,
         k,
-        outdir / f"{metric}_mean_low.txt",
-        outdir / f"{metric}_mean_middle.txt",
-        outdir / f"{metric}_mean_high.txt",
+        outdir / f"{metric}_mean_in_domain.txt",
+        outdir / f"{metric}_mean_mid_domain.txt",
+        outdir / f"{metric}_mean_out_domain.txt",
     )
     # std-based (low / middle / high)
     _write_rank_with_middle(
         names,
         std,
         k,
-        outdir / f"{metric}_std_low.txt",
-        outdir / f"{metric}_std_middle.txt",
-        outdir / f"{metric}_std_high.txt",
+        outdir / f"{metric}_std_in_domain.txt",
+        outdir / f"{metric}_std_mid_domain.txt",
+        outdir / f"{metric}_std_out_domain.txt",
     )
 
     order = np.argsort(mean)  # ascending
