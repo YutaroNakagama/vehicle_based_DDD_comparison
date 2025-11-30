@@ -105,7 +105,7 @@ def resolve_target_subjects_from_tag(
     return target_subjects
 
 
-def resolve_middle_group_subjects(tag: Optional[str]) -> List[str]:
+def resolve_mid_domain_group_subjects(tag: Optional[str]) -> List[str]:
     """Resolve middle group subjects for source_only mode.
 
     Parameters
@@ -144,7 +144,7 @@ def resolve_middle_group_subjects(tag: Optional[str]) -> List[str]:
     
     # Load middle group file (use mean_distance method by default)
     ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks" / "ranks29" / "mean_distance"
-    middle_file = ranks_dir / f"{metric_prefix}_middle.txt"
+    middle_file = ranks_dir / f"{metric_prefix}_mid_domain.txt"
     
     if not middle_file.exists():
         raise FileNotFoundError(

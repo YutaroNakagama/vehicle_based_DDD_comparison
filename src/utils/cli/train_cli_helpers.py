@@ -225,9 +225,9 @@ def add_train_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--oversample_method",
-        choices=["smote", "adasyn", "borderline"],
+        choices=["smote", "adasyn", "borderline", "smote_tomek", "smote_enn", "smote_rus"],
         default="smote",
-        help="Oversampling method: SMOTE, ADASYN, or BorderlineSMOTE (default: smote).",
+        help="Oversampling method: SMOTE, ADASYN, BorderlineSMOTE, SMOTE+Tomek, SMOTE+ENN, or SMOTE+RUS (default: smote).",
     )
 
 
@@ -267,6 +267,12 @@ def add_eval_arguments(parser: argparse.ArgumentParser) -> None:
         type=str,
         default=None,
         help="Specify training job ID (e.g., 14004123). Auto-detected if omitted.",
+    )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=None,
+        help="Custom prediction threshold (0.0-1.0). If not specified, uses default 0.5 or optimized threshold.",
     )
 
 
