@@ -75,9 +75,11 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from imblearn.ensemble import BalancedRandomForestClassifier, EasyEnsembleClassifier
 from imblearn.over_sampling import SMOTE, ADASYN, BorderlineSMOTE
-from imblearn.under_sampling import RandomUnderSampler
+from imblearn.under_sampling import RandomUnderSampler, TomekLinks
 from imblearn.combine import SMOTETomek, SMOTEENN
 from imblearn.pipeline import Pipeline as ImbPipeline
+
+from src.data_pipeline.augmentation import augment_minority_class
 
 from src.config import (
     MODEL_PKL_PATH,
@@ -293,10 +295,41 @@ def common_train(
                 ('rus', rus)
             ])
             logging.info("Using SMOTE + RandomUnderSampler (hybrid sampling)")
+        elif oversample_method == "undersample_rus":
+            # Random Under-Sampling only (no oversampling)
+            # Reduces majority class to achieve target_ratio
+            sampler = RandomUnderSampler(
+                sampling_strategy=target_ratio,  # minority/majority ratio after sampling
+                random_state=42
+            )
+            logging.info(f"Using Random Under-Sampling only (target ratio: {target_ratio})")
+        elif oversample_method == "undersample_tomek":
+            # Tomek Links only (boundary cleaning)
+            # Removes majority samples that form Tomek links with minority
+            sampler = TomekLinks(
+                sampling_strategy='majority',  # Only remove majority class samples
+                n_jobs=1
+            )
+            logging.info("Using Tomek Links only (boundary cleaning)")
+        elif oversample_method in ["jitter", "scale", "jitter_scale"]:
+            # Time-series inspired augmentation (does not use imblearn sampler)
+            logging.info(f"Using time-series augmentation: {oversample_method}")
+            X_train, y_train = augment_minority_class(
+                X_train, y_train,
+                method=oversample_method,
+                target_ratio=target_ratio,
+                jitter_sigma=0.03,
+                scale_sigma=0.1,
+                random_state=42,
+            )
+            # Skip the fit_resample step below
+            sampler = None
         else:
             raise ValueError(f"Unknown oversample_method: {oversample_method}")
         
-        X_train, y_train = sampler.fit_resample(X_train, y_train)
+        # Apply imblearn sampler (skip if using jitter/scale augmentation)
+        if sampler is not None:
+            X_train, y_train = sampler.fit_resample(X_train, y_train)
         logging.info(f"Class distribution after oversampling: {np.bincount(y_train)}")
         logging.info(f"Oversampling ratio: minority increased from {minority_count} to {np.bincount(y_train).min()}")
 

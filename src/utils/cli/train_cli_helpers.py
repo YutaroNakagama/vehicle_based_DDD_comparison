@@ -225,9 +225,9 @@ def add_train_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--oversample_method",
-        choices=["smote", "adasyn", "borderline", "smote_tomek", "smote_enn", "smote_rus"],
+        choices=["smote", "adasyn", "borderline", "smote_tomek", "smote_enn", "smote_rus", "jitter", "scale", "jitter_scale", "undersample_rus", "undersample_tomek"],
         default="smote",
-        help="Oversampling method: SMOTE, ADASYN, BorderlineSMOTE, SMOTE+Tomek, SMOTE+ENN, or SMOTE+RUS (default: smote).",
+        help="Sampling method: SMOTE, ADASYN, BorderlineSMOTE, SMOTE+Tomek, SMOTE+ENN, SMOTE+RUS, Jitter, Scale, Jitter+Scale, Undersample-RUS, or Undersample-Tomek (default: smote).",
     )
 
 
