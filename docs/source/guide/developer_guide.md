@@ -323,8 +323,8 @@ The script runs three experiment modes sequentially:
 python scripts/python/train.py \
   --model RF \
   --mode only_general \
-  --target_subjects $(cat results/domain_analysis/distance/ranks10/wasserstein_mean_high.txt) \
-  --tag rank_was_high
+  --target_subjects $(cat results/domain_analysis/distance/ranks10/wasserstein_mean_out_domain.txt) \
+  --tag rank_was_out_domain
 ````
 
 ---
@@ -380,7 +380,7 @@ C1 & C2 -. "Target group (10 subjects)" .-> E2b
 
 | Category       | Path                                            | Example                                |
 | -------------- | ----------------------------------------------- | -------------------------------------- |
-| Trained models | `models/{model}/rank_*`                         | `models/RF/rank_was_high_finetune.pkl` |
+| Trained models | `models/{model}/rank_*`                         | `models/RF/rank_was_out_domain_finetune.pkl` |
 | Metrics        | `results/train/{model}/trainmetrics_*.csv/json` |                                        |
 | Thresholds     | `results/train/{model}/threshold_*.json`        |                                        |
 
@@ -417,7 +417,7 @@ and produces both long-form and comparison-form summary tables.
 **Core operations:**
 - Detects file mode from filename:  
   `metrics_<model>_<mode>_<rank_key>.csv`
-- Extracts `distance` (dtw/mmd/wasserstein), `stat` (mean/std), and `level` (high/middle/low)
+- Extracts `distance` (dtw/mmd/wasserstein), `stat` (mean/std), and `level` (out_domain/mid_domain/in_domain)
 - Aggregates per-metric averages across runs
 - Computes deltas between modes:
   - Δ(fin.) = `finetune - only_general`
