@@ -41,7 +41,7 @@ print(f"[INFO] Loaded {len(all_metrics)} evaluation JSONs.")
 # Save only test metrics
 test_df = all_metrics[all_metrics["split"]=="test"].copy()
 if "level" in test_df.columns:
-    cat = pd.CategoricalDtype(categories=["high", "middle", "low"], ordered=True)
+    cat = pd.CategoricalDtype(categories=["out_domain", "mid_domain", "in_domain"], ordered=True)
     test_df["level"] = test_df["level"].astype(cat)
 
 test_path = os.path.join(OUT_DIR, "summary_40cases_test.csv")

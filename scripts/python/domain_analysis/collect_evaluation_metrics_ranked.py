@@ -5,10 +5,13 @@ collect_evaluation_metrics_ranked.py
 ====================================
 Collect evaluation metrics from multiple ranking methods and combine into summary CSV.
 
-This script supports the new ranking method structure:
-- mean_distance: baseline (average distance)
+This script supports the following ranking methods:
+- mean_distance: baseline (average distance to all subjects)
 - centroid_umap: UMAP centroid-based (cluster-aware)
 - lof: Local Outlier Factor (density-based)
+- knn: K-Nearest Neighbors (average distance to k closest subjects)
+- median_distance: Median distance (robust to outliers)
+- isolation_forest: Isolation Forest anomaly score (tree-based)
 
 Output:
 - summary_ranked_test.csv: Combined metrics for all ranking methods
@@ -29,32 +32,39 @@ OUT_DIR = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "summary" / "csv"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Ranking methods to collect
-RANKING_METHODS = ["mean_distance", "centroid_umap", "lof"]
+RANKING_METHODS = [
+    "mean_distance",
+    "centroid_umap",
+    "lof",
+    "knn",
+    "median_distance",
+    "isolation_forest",
+]
 
 
 def parse_filename_for_metadata(filename: str) -> dict:
     """Parse filename to extract distance metric and level.
     
-    New format: eval_results_RF_{mode}_rank_{method}_{distance_metric}_{level}_mean_test.json
-    Example: eval_results_RF_source_only_rank_mean_distance_mmd_high_mean_test.json
+    Format: eval_results_RF_{mode}_rank_{method}_{distance_metric}_{level}_mean_test.json
+    Example: eval_results_RF_source_only_rank_knn_mmd_out_domain_mean_test.json
     
     Returns
     -------
     dict
-        Contains 'distance_metric' (mmd/dtw/wasserstein) and 'level' (high/middle/low)
+        Contains 'distance_metric' (mmd/dtw/wasserstein) and 'level' (out_domain/mid_domain/in_domain)
     """
     result = {"distance_metric": None, "level": None}
     
     # Pattern: rank_{method}_{distance}_{level}
-    # Methods: mean_distance, centroid_umap, lof
+    # Methods: mean_distance, centroid_umap, lof, knn, median_distance, isolation_forest
     # Distance: mmd, dtw, wasserstein
-    # Level: high, middle, low
-    pattern = r'rank_(mean_distance|centroid_umap|lof)_(mmd|dtw|wasserstein)_(high|middle|low)'
+    # Level: out_domain, mid_domain, in_domain
+    pattern = r'rank_(mean_distance|centroid_umap|lof|knn|median_distance|isolation_forest)_(mmd|dtw|wasserstein)_(out_domain|mid_domain|in_domain)'
     match = re.search(pattern, filename)
     
     if match:
         result["distance_metric"] = match.group(2)  # mmd, dtw, wasserstein
-        result["level"] = match.group(3)  # high, middle, low
+        result["level"] = match.group(3)  # out_domain, mid_domain, in_domain
     
     return result
 
@@ -158,7 +168,7 @@ def main():
     
     # Ensure categorical level order
     if "level" in test_df.columns:
-        cat = pd.CategoricalDtype(categories=["high", "middle", "low"], ordered=True)
+        cat = pd.CategoricalDtype(categories=["out_domain", "mid_domain", "in_domain"], ordered=True)
         test_df["level"] = test_df["level"].astype(cat)
     
     # Sort by ranking_method, distance, level, mode

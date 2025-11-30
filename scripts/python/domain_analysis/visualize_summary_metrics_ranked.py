@@ -55,16 +55,19 @@ METRICS_THR = ["recall_thr", "precision_thr", "f1_thr", "f2_thr"]
 
 # Colors for ranking methods
 METHOD_COLORS = {
-    "mean_distance": "#1f77b4",    # blue
-    "centroid_umap": "#ff7f0e",    # orange
-    "lof": "#2ca02c",              # green
+    "mean_distance": "#1f77b4",      # blue
+    "centroid_umap": "#ff7f0e",      # orange
+    "lof": "#2ca02c",                # green
+    "knn": "#d62728",                # red
+    "median_distance": "#9467bd",    # purple
+    "isolation_forest": "#8c564b",   # brown
 }
 
 # Colors for levels
 LEVEL_COLORS = {
-    "high": "#e41a1c",    # red (outliers)
-    "middle": "#999999",  # gray
-    "low": "#377eb8",     # blue (central)
+    "out_domain": "#e41a1c",    # red (outliers)
+    "mid_domain": "#999999",  # gray
+    "in_domain": "#377eb8",     # blue (central)
 }
 
 
@@ -94,7 +97,7 @@ def plot_method_comparison_bar(df: pd.DataFrame, metric: str, mode: str = "sourc
     
     # Get unique methods and levels
     methods = plot_df["ranking_method"].unique() if "ranking_method" in plot_df.columns else ["unknown"]
-    levels = ["high", "middle", "low"]
+    levels = ["out_domain", "mid_domain", "in_domain"]
     
     fig, ax = plt.subplots(figsize=(12, 6))
     
@@ -121,7 +124,7 @@ def plot_method_comparison_bar(df: pd.DataFrame, metric: str, mode: str = "sourc
     ax.set_ylabel(metric.upper(), fontsize=12)
     ax.set_title(f"{metric.upper()} by Ranking Method ({mode})", fontsize=14)
     ax.set_xticks(x)
-    ax.set_xticklabels(["High\n(Outliers)", "Middle", "Low\n(Central)"])
+    ax.set_xticklabels(["High\n(Outliers)", "mid_domain", "Low\n(Central)"])
     ax.legend(title="Ranking Method")
     ax.grid(axis="y", alpha=0.3)
     
@@ -169,7 +172,7 @@ def plot_multi_metric_comparison(df: pd.DataFrame, mode: str = "source_only") ->
     axes = axes.flatten() if n_metrics > 1 else [axes]
     
     methods = plot_df["ranking_method"].unique() if "ranking_method" in plot_df.columns else ["unknown"]
-    levels = ["high", "middle", "low"]
+    levels = ["out_domain", "mid_domain", "in_domain"]
     
     for idx, metric in enumerate(metrics):
         ax = axes[idx]
@@ -196,7 +199,7 @@ def plot_multi_metric_comparison(df: pd.DataFrame, mode: str = "source_only") ->
         
         ax.set_title(metric.upper(), fontsize=11, fontweight="bold")
         ax.set_xticks(x)
-        ax.set_xticklabels(["High", "Middle", "Low"], fontsize=9)
+        ax.set_xticklabels(["out_domain", "mid_domain", "in_domain"], fontsize=9)
         ax.grid(axis="y", alpha=0.3)
         ax.set_ylim(0, 1.0)
         
@@ -248,7 +251,7 @@ def plot_heatmap_comparison(df: pd.DataFrame, metric: str = "f1") -> plt.Figure:
     )
     
     # Reorder columns
-    col_order = [c for c in ["low", "middle", "high"] if c in pivot.columns]
+    col_order = [c for c in ["in_domain", "mid_domain", "out_domain"] if c in pivot.columns]
     pivot = pivot[col_order]
     
     fig, ax = plt.subplots(figsize=(8, 5))
@@ -292,7 +295,7 @@ def plot_single_method_bar(df: pd.DataFrame, metric: str, method_name: str) -> p
     if metric not in df.columns:
         return None
     
-    levels = ["high", "middle", "low"]
+    levels = ["out_domain", "mid_domain", "in_domain"]
     modes = df["mode"].unique().tolist() if "mode" in df.columns else ["unknown"]
     
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -327,7 +330,7 @@ def plot_single_method_bar(df: pd.DataFrame, metric: str, method_name: str) -> p
     ax.set_ylabel(metric.upper(), fontsize=12)
     ax.set_title(f"{method_name}: {metric.upper()} by Level", fontsize=14)
     ax.set_xticks(x)
-    ax.set_xticklabels(["High\n(Outliers)", "Middle", "Low\n(Central)"])
+    ax.set_xticklabels(["High\n(Outliers)", "mid_domain", "Low\n(Central)"])
     ax.legend(title="Training Mode")
     ax.grid(axis="y", alpha=0.3)
     ax.set_ylim(0, 1.0)
@@ -368,7 +371,7 @@ def plot_single_method_multi_metric(df: pd.DataFrame, method_name: str) -> plt.F
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 4 * n_rows))
     axes = axes.flatten() if n_metrics > 1 else [axes]
     
-    levels = ["high", "middle", "low"]
+    levels = ["out_domain", "mid_domain", "in_domain"]
     modes = df["mode"].unique().tolist() if "mode" in df.columns else ["source_only"]
     
     mode_colors = {
@@ -402,7 +405,7 @@ def plot_single_method_multi_metric(df: pd.DataFrame, method_name: str) -> plt.F
         
         ax.set_title(metric.upper(), fontsize=11, fontweight="bold")
         ax.set_xticks(x)
-        ax.set_xticklabels(["High", "Middle", "Low"], fontsize=9)
+        ax.set_xticklabels(["out_domain", "mid_domain", "in_domain"], fontsize=9)
         ax.grid(axis="y", alpha=0.3)
         ax.set_ylim(0, 1.0)
         
@@ -453,9 +456,9 @@ def main():
         df_all_40 = load_csv(str(POOLED_CSV))
         if "mode" in df_all_40.columns:
             df_pooled = df_all_40[df_all_40["mode"] == "pooled"].copy()
-            # Normalize pooled distance (e.g., "dtw_mean" -> "dtw")
+            # Normalize pooled distance (e.g., "lof_dtw" -> "dtw", matching ranked data normalization)
             if "distance" in df_pooled.columns:
-                 df_pooled["distance"] = df_pooled["distance"].apply(lambda x: x.split("_")[0] if isinstance(x, str) else x)
+                 df_pooled["distance"] = df_pooled["distance"].apply(lambda x: x.split("_")[-1] if isinstance(x, str) else x)
             print(f"[INFO] Loaded {len(df_pooled)} pooled records from {POOLED_CSV}")
     else:
         print(f"[WARN] Pooled data file not found: {POOLED_CSV}")
