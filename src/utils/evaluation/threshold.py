@@ -103,7 +103,7 @@ def load_or_optimize_threshold(
     """
     # Parse distance metric and level from tag
     if tag and tag.startswith("rank_"):
-        parts = tag.split("_")  # ["rank", "dtw", "mean", "high"]
+        parts = tag.split("_")  # ["rank", "dtw", "mean", "out_domain"]
         distance_key = "_".join(parts[1:-1]) if len(parts) >= 3 else "unknown"
         level = parts[-1] if len(parts) >= 2 else "unknown"
     else:
