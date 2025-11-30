@@ -4,7 +4,7 @@
 make_ranked_groups.py
 =====================
 
-Generate ranked 10-subject group files (high / middle / low)
+Generate ranked 10-subject group files (out_domain / mid_domain / in_domain)
 based on domain distance matrices (MMD, Wasserstein, DTW).
 
 Outputs are saved under:
@@ -116,9 +116,9 @@ def main() -> int:
         low = [subjects[i] for i in ranked_idx[-group_size:]]
 
         # --- Save outputs ---
-        save_group(metric, "high", high)
-        save_group(metric, "middle", middle)
-        save_group(metric, "low", low)
+        save_group(metric, "out_domain", high)
+        save_group(metric, "mid_domain", middle)
+        save_group(metric, "in_domain", low)
 
     logging.info("All ranked groups generated successfully.")
     return 0
