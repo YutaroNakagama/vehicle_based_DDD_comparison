@@ -16,7 +16,7 @@ from src import config as cfg
 from src.utils.io.loaders import read_subject_list, load_subject_csvs
 from src.utils.io.target_resolution import (
     resolve_target_subjects_from_tag,
-    resolve_middle_group_subjects,
+    resolve_mid_domain_group_subjects,
 )
 
 
@@ -33,7 +33,7 @@ def prepare_suffix_with_jobid(mode: Optional[str], tag: Optional[str]) -> str:
     Returns
     -------
     str
-        Suffix string including mode, tag, and job ID (e.g., "_target_only_rank_dtw_mean_high_14209090[1]").
+        Suffix string including mode, tag, and job ID (e.g., "_target_only_rank_dtw_mean_out_domain_14209090[1]").
     """
     suffix = f"_{mode}" if mode else ""
     if tag:
@@ -177,7 +177,7 @@ def prepare_source_only_splits(
 
     In source_only mode:
     - Training: Use MIDDLE group (source domain)
-    - Evaluation: Use target group (high/middle/low) specified by tag
+    - Evaluation: Use target group (out_domain/mid_domain/in_domain) specified by tag
 
     For middle-level experiments, this ensures identical data splits as target_only mode,
     since both use the same subject group.
@@ -207,9 +207,9 @@ def prepare_source_only_splits(
     from src.utils.io.split_helpers import split_data
     
     # Resolve MIDDLE group subjects for training
-    middle_subjects = resolve_middle_group_subjects(tag)
+    middle_subjects = resolve_mid_domain_group_subjects(tag)
     
-    # Resolve evaluation subjects (high/middle/low groups based on tag)
+    # Resolve evaluation subjects (out_domain/mid_domain/in_domain groups based on tag)
     eval_subjects = resolve_target_subjects_from_tag(
         tag=tag,
         mode="source_only",
@@ -223,9 +223,9 @@ def prepare_source_only_splits(
         )
     
     # Check if training and evaluation groups are identical (middle-level case)
-    is_middle_case = set(middle_subjects) == set(eval_subjects)
+    is_mid_domain_case = set(middle_subjects) == set(eval_subjects)
     
-    if is_middle_case:
+    if is_mid_domain_case:
         # For middle-level: use single split to ensure consistency with target_only
         logging.info(
             f"[SOURCE_ONLY] Middle-level case detected: training and evaluation use same {len(middle_subjects)} subjects"
