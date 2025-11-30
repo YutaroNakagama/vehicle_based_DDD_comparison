@@ -304,7 +304,7 @@ def plot_grouped_bar_chart(
     """Create multi-panel bar chart for domain analysis metrics.
     
     Generates a grid of subplots showing metrics across different distances and levels
-    (e.g., high/middle/low) for source-only vs target-only comparisons.
+    (e.g., out_domain/mid_domain/in_domain) for source-only vs target-only comparisons.
     
     Parameters
     ----------
@@ -317,7 +317,7 @@ def plot_grouped_bar_chart(
     distance_col : str, default="distance"
         Column name containing distance type (e.g., 'mmd', 'wasserstein', 'dtw').
     level_col : str, default="level"
-        Column name containing level type (e.g., 'high', 'middle', 'low').
+        Column name containing level type (e.g., 'out_domain', 'mid_domain', 'in_domain').
     figsize : tuple, optional
         Figure size (width, height). If None, auto-calculated based on layout.
     baseline_rates : dict, optional
@@ -343,7 +343,7 @@ def plot_grouped_bar_chart(
     import pandas as pd
     
     distances = sorted(data[distance_col].unique())
-    ordered_levels = ["high", "middle", "low"]
+    ordered_levels = ["out_domain", "mid_domain", "in_domain"]
     
     if figsize is None:
         figsize = (5 * len(metrics), 3 * len(distances))
@@ -472,7 +472,7 @@ def plot_grouped_bar_chart_raw(
     """Create multi-panel bar chart from raw (unpivoted) data.
     
     Layout: 3 distance metrics (columns 1-3) + 1 pooled column (column 4)
-    - Columns 1-3: source_only vs target_only comparison for high/middle/low
+    - Columns 1-3: source_only vs target_only comparison for out_domain/mid_domain/in_domain
     - Column 4: pooled mode only (all 3 modes: pooled/source_only/target_only)
     
     Parameters
@@ -504,7 +504,7 @@ def plot_grouped_bar_chart_raw(
     import pandas as pd
     
     distances = sorted(data[data[distance_col].notna()][distance_col].unique())
-    ordered_levels = ["high", "middle", "low"]
+    ordered_levels = ["out_domain", "mid_domain", "in_domain"]
     
     # 4 columns: 3 distances + 1 pooled
     n_cols = len(metrics)

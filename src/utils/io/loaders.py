@@ -191,7 +191,7 @@ def load_subject_csvs(
             file_path = os.path.join(base_path, file_name)
         elif model_name is not None:
             # RF and other tree-based models use common directory
-            if model_name in ["RF", "BalancedRF", "DecisionTree", "AdaBoost", 
+            if model_name in ["RF", "BalancedRF", "EasyEnsemble", "DecisionTree", "AdaBoost", 
                              "GradientBoosting", "XGBoost", "LightGBM", "CatBoost",
                              "LogisticRegression", "SVM", "K-Nearest Neighbors", "MLP"]:
                 file_path = os.path.join(PROCESS_CSV_PATH, "common", file_name)
@@ -361,7 +361,7 @@ def load_model_and_scaler(model_name: str, mode: str, tag: str, fold: int, jobid
 
     # --- Search patterns (recursive) ---
     # --- Search patterns (mode-aware) ---
-    # Prefer exact mode match (e.g., RF_target_only_rank_dtw_mean_high_*.pkl)
+    # Prefer exact mode match (e.g., RF_target_only_rank_dtw_mean_out_domain_*.pkl)
     tag_key = tag.replace("rank_", "") if tag else ""
 
     # For pooled mode without tag, search for mode-only pattern

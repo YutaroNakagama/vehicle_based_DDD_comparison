@@ -158,7 +158,7 @@ def save_artifacts(
 
     # === NEW FIX ===
     # Remove square brackets from suffix to prevent misplacement and globbing issues
-    # Example: "joint_train_rank_mmd_mean_high_14060610[4]" → "joint_train_rank_mmd_mean_high_14060610_4"
+    # Example: "joint_train_rank_mmd_mean_out_domain_14060610[4]" → "joint_train_rank_mmd_mean_out_domain_14060610_4"
     suffix = re.sub(r"\[(\d+)\]", r"_\1", suffix)
 
     # Also sanitize any double underscores created accidentally
