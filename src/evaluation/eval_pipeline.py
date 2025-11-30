@@ -59,6 +59,7 @@ def eval_pipeline(
     subject_wise_split: bool = False,
     jobid: Optional[str] = None,
     target_file: str = None,
+    threshold: Optional[float] = None,
     **kwargs,
 ) -> None:
     """Evaluate a trained DDD model and save metrics.
@@ -83,13 +84,15 @@ def eval_pipeline(
         Job ID for loading model artifacts (auto-resolved if None).
     target_file : str, optional
         Path to target subjects file.
+    threshold : float, optional
+        Custom prediction threshold (0.0-1.0). If None, uses default or optimized threshold.
 
     Returns
     -------
     None
         Evaluation metrics are saved to results/evaluation/<model>/ directory.
     """
-    logging.info(f"[EVAL] Start {model} ({mode}) | tag={tag}")
+    logging.info(f"[EVAL] Start {model} ({mode}) | tag={tag} | threshold={threshold}")
 
     # Stage 1: Load subjects and dataset
     subjects, model_name, data = load_subjects_and_data(
@@ -165,22 +168,27 @@ def eval_pipeline(
     else:
         result = common_eval(X_test_prepared, y_test, model_name, clf)
 
-    # Stage 8: Load or optimize threshold
+    # Stage 8: Load or optimize threshold (use CLI threshold if provided)
     try:
         base_jobid, run_idx = extract_jobid_components(jobid, model_path=model_path)
         fold_idx = int(fold) if isinstance(fold, int) else 0
         
-        thr = load_or_optimize_threshold(
-            model=model,
-            mode=mode,
-            tag=tag,
-            base_jobid=base_jobid,
-            run_idx=run_idx,
-            fold_idx=fold_idx,
-            clf=clf,
-            X_val=X_val_prepared if 'X_val_prepared' in locals() else None,
-            y_val=y_val if 'y_val' in locals() else None,
-        )
+        # Use CLI threshold if provided, otherwise load/optimize
+        if threshold is not None:
+            thr = threshold
+            logging.info(f"[EVAL] Using CLI-specified threshold={thr:.3f}")
+        else:
+            thr = load_or_optimize_threshold(
+                model=model,
+                mode=mode,
+                tag=tag,
+                base_jobid=base_jobid,
+                run_idx=run_idx,
+                fold_idx=fold_idx,
+                clf=clf,
+                X_val=X_val_prepared if 'X_val_prepared' in locals() else None,
+                y_val=y_val if 'y_val' in locals() else None,
+            )
 
         # Apply threshold to test set
         if thr is not None:

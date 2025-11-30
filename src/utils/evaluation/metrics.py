@@ -502,13 +502,13 @@ def extract_metrics_from_eval_json(
         pos_rate = data.get("pos_rate") or data.get("positive_rate")
     
     # Extract distance and level from filename if not in data
-    # Example: eval_results_RF_pooled_rank_dtw_mean_high_mean_test.json
-    # New format: eval_results_RF_pooled_rank_mean_distance_dtw_high_test.json
+    # Example: eval_results_RF_pooled_rank_dtw_mean_out_domain_mean_test.json
+    # New format: eval_results_RF_pooled_rank_mean_distance_dtw_out_domain_test.json
     distance = data.get("distance")
     level = data.get("level")
     ranking_method = data.get("ranking_method")
     
-    # If level is a split name (test/val/train) instead of high/middle/low, extract from filename
+    # If level is a split name (test/val/train) instead of out_domain/mid_domain/in_domain, extract from filename
     if level in ("test", "val", "train", "validation"):
         level = None
     
@@ -519,7 +519,7 @@ def extract_metrics_from_eval_json(
         # New pattern: rank_{method}_{metric}_{level}
         # Methods: mean_distance, centroid_umap, lof
         match_new = re.search(
-            r'rank_(mean_distance|centroid_umap|lof|centroid_mds|medoid)_(dtw|mmd|wasserstein)_(high|middle|low)',
+            r'rank_(mean_distance|centroid_umap|lof|centroid_mds|medoid)_(dtw|mmd|wasserstein)_(out_domain|mid_domain|in_domain)',
             filename
         )
         if match_new:
@@ -534,7 +534,7 @@ def extract_metrics_from_eval_json(
                 level = level_extracted
         else:
             # Legacy pattern: rank_{metric}_mean_{level}
-            match = re.search(r'rank_(dtw|mmd|wasserstein)_mean_(high|middle|low)', filename)
+            match = re.search(r'rank_(dtw|mmd|wasserstein)_mean_(out_domain|mid_domain|in_domain)', filename)
             if match:
                 metric = match.group(1)
                 level_extracted = match.group(2)

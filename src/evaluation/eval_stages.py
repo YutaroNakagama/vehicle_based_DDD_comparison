@@ -102,16 +102,16 @@ def extract_metadata_from_tag(tag: Optional[str]) -> Tuple[str, str]:
     -------
     tuple of (str, str)
         - distance : Distance metric (e.g., "dtw_mean")
-        - level : Group level (e.g., "high", "low", "middle")
+        - level : Group level (e.g., "out_domain", "in_domain", "mid_domain")
     """
     if not tag or not tag.startswith("rank_"):
         return "unknown", "unknown"
     
-    parts = tag.split("_")  # ["rank", "dtw", "mean", "high"]
+    parts = tag.split("_")  # ["rank", "dtw", "mean", "out_domain"]
     if len(parts) < 3:
         return "unknown", "unknown"
     
     distance_key = "_".join(parts[1:-1])  # "dtw_mean"
-    level = parts[-1]  # "high"
+    level = parts[-1]  # "out_domain"
     
     return distance_key, level
