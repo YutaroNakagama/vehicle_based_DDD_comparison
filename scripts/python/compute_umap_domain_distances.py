@@ -30,7 +30,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 METRICS = ["dtw_mean", "mmd_mean", "wasserstein_mean"]
 METRIC_DIRS = {"dtw_mean": "dtw", "mmd_mean": "mmd", "wasserstein_mean": "wasserstein"}
-LEVELS = ["high", "middle", "low"]
+LEVELS = ["out_domain", "mid_domain", "in_domain"]
 
 
 def load_distance_matrix(metric: str) -> np.ndarray:
@@ -48,7 +48,7 @@ def load_group_subjects(metric: str, level: str, ranking_method: str = "mean_dis
     metric : str
         距離指標 (dtw_mean, mmd_mean, wasserstein_mean)
     level : str
-        グループレベル (high, middle, low)
+        グループレベル (out_domain, mid_domain, in_domain)
     ranking_method : str
         ランキング手法 (mean_distance, centroid_mds, centroid_umap, medoid, lof)
     """
@@ -177,8 +177,8 @@ def compute_projection_with_domain_distances(dist_matrix: np.ndarray,
             "distances": distances.tolist()
         }
     
-    # 2. グループ間距離: 各グループのドメイン中心から、Middleグループのドメイン中心までの距離
-    middle_centroid = group_centroids["middle"]["coordinates"]
+    # 2. グループ間距離: 各グループのドメイン中心から、mid_domainグループのドメイン中心までの距離
+    middle_centroid = group_centroids["mid_domain"]["coordinates"]
     
     inter_domain_distances = {}
     for level in LEVELS:
@@ -220,8 +220,8 @@ def visualize_projection_with_distances(metric: str,
     # === 上段: 投影プロット ===
     ax_proj = fig.add_subplot(gs[0, :])
     
-    colors = {"high": "red", "middle": "gray", "low": "blue"}
-    markers = {"high": "^", "middle": "s", "low": "v"}
+    colors = {"out_domain": "red", "mid_domain": "gray", "in_domain": "blue"}
+    markers = {"out_domain": "^", "mid_domain": "s", "in_domain": "v"}
     
     # 各グループの被験者をプロット
     for level, indices in group_indices_dict.items():
@@ -252,9 +252,9 @@ def visualize_projection_with_distances(metric: str,
             color=colors[level]
         )
     
-    # Middle重心から他の重心への線を描画
-    middle_centroid = np.array(group_centroids["middle"]["coordinates"])
-    for level in ["high", "low"]:
+    # mid_domain重心から他の重心への線を描画
+    middle_centroid = np.array(group_centroids["mid_domain"]["coordinates"])
+    for level in ["out_domain", "in_domain"]:
         level_centroid = np.array(group_centroids[level]["coordinates"])
         ax_proj.plot(
             [middle_centroid[0], level_centroid[0]],
@@ -400,7 +400,7 @@ def visualize_comparison_across_metrics(all_results: dict, method: str):
     fig.suptitle(f"Domain Distance Comparison Across Metrics ({method_upper})", 
                  fontsize=18, fontweight='bold')
     
-    colors = {"high": "red", "middle": "gray", "low": "blue"}
+    colors = {"out_domain": "red", "mid_domain": "gray", "in_domain": "blue"}
     
     for col_idx, metric in enumerate(METRICS):
         results = all_results[metric]

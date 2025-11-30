@@ -98,6 +98,7 @@ def main():
             subject_wise_split=args.subject_wise_split,
             jobid=args.jobid,
             target_file=args.target_file,
+            threshold=args.threshold,
         )
     except Exception as e:
         import logging
