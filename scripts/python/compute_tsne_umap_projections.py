@@ -24,7 +24,7 @@ OUTPUT_DIR = DISTANCE_DIR / "group-wise" / "intergroup_analysis"
 
 METRICS = ["dtw_mean", "mmd_mean", "wasserstein_mean"]
 METRIC_DIRS = {"dtw_mean": "dtw", "mmd_mean": "mmd", "wasserstein_mean": "wasserstein"}
-LEVELS = ["high", "middle", "low"]
+LEVELS = ["out_domain", "mid_domain", "in_domain"]
 
 
 def load_distance_matrix(metric: str) -> np.ndarray:
@@ -42,7 +42,7 @@ def load_group_subjects(metric: str, level: str, ranking_method: str = "mean_dis
     metric : str
         距離指標 (dtw_mean, mmd_mean, wasserstein_mean)
     level : str
-        グループレベル (high, middle, low)
+        グループレベル (out_domain, mid_domain, in_domain)
     ranking_method : str
         ランキング手法 (mean_distance, centroid_mds, centroid_umap, medoid, lof)
     """
@@ -168,8 +168,8 @@ def visualize_projection_with_centroids(metric: str,
     fig, ax = plt.subplots(figsize=(14, 11))
     
     # 各グループをプロット
-    colors = {"high": "red", "middle": "gray", "low": "blue"}
-    markers = {"high": "^", "middle": "s", "low": "v"}
+    colors = {"out_domain": "red", "mid_domain": "gray", "in_domain": "blue"}
+    markers = {"out_domain": "^", "mid_domain": "s", "in_domain": "v"}
     
     for level, indices in group_indices_dict.items():
         group_coords = coords[indices]

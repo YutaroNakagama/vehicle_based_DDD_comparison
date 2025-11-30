@@ -128,7 +128,7 @@ def main():
     
     # Plot for each distance metric
     distances = ['dtw', 'mmd', 'wasserstein']
-    levels = ['high', 'middle', 'low']
+    levels = ['out_domain', 'mid_domain', 'in_domain']
     modes = ['pooled', 'source_only', 'target_only']
     
     for distance in distances:
