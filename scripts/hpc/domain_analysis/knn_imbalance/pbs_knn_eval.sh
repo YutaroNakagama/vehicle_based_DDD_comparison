@@ -24,12 +24,12 @@
 
 set -eu
 
-source /etc/profile.d/modules.sh
-module load miniconda/py310_24.7.1
-source ~/.bashrc
+# Load conda
+source ~/conda/etc/profile.d/conda.sh
 conda activate python310
 
 cd /home/s2240011/git/ddd/vehicle_based_DDD_comparison
+export PYTHONPATH="${PWD}:${PYTHONPATH:-}"
 
 # ============================================================
 # Configuration
