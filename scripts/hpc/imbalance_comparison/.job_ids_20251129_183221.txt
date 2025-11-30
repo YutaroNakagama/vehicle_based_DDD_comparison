@@ -1,0 +1,9 @@
+# Imbalance Comparison Job IDs
+# Generated: Sat 29 Nov 2025 06:32:21 PM JST
+# ============================================================
+BASELINE_TRAIN=14465486
+TOMEK_TRAIN=14465487
+ENN_TRAIN=14465488
+BASELINE_EVAL=14465489
+TOMEK_EVAL=14465490
+ENN_EVAL=14465491
