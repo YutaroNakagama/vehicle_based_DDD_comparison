@@ -4,7 +4,7 @@
 # 軽量テスト版：ロジック検証用
 # ==============================================================================
 # テスト範囲:
-#   - Array Job 1-2のみ (mmd_high, mmd_middle)
+#   - Array Job 1-2のみ (mmd_out_domain, mmd_mid_domain)
 #   - source_onlyモードのみ
 #   - N_TRIALS=3
 #   - 3手法すべてをテスト (mean_distance, centroid_umap, lof)
