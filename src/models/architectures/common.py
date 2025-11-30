@@ -73,8 +73,11 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
-from imblearn.ensemble import BalancedRandomForestClassifier
+from imblearn.ensemble import BalancedRandomForestClassifier, EasyEnsembleClassifier
 from imblearn.over_sampling import SMOTE, ADASYN, BorderlineSMOTE
+from imblearn.under_sampling import RandomUnderSampler
+from imblearn.combine import SMOTETomek, SMOTEENN
+from imblearn.pipeline import Pipeline as ImbPipeline
 
 from src.config import (
     MODEL_PKL_PATH,
@@ -227,26 +230,69 @@ def common_train(
         # Instead of 1:1 balance, aim for minority:majority = 1:3 ratio
         minority_count = np.bincount(y_train).min()
         majority_count = np.bincount(y_train).max()
-        target_minority = int(majority_count * 0.33)  # 1:3 ratio
+        target_ratio = 0.33  # 1:3 ratio (minority:majority)
         
         if oversample_method == "smote":
             sampler = SMOTE(
-                sampling_strategy=target_minority,
+                sampling_strategy=target_ratio,
                 random_state=42,
                 k_neighbors=min(5, minority_count - 1)
             )
         elif oversample_method == "adasyn":
             sampler = ADASYN(
-                sampling_strategy=target_minority,
+                sampling_strategy=target_ratio,
                 random_state=42,
                 n_neighbors=min(5, minority_count - 1)
             )
         elif oversample_method == "borderline":
             sampler = BorderlineSMOTE(
-                sampling_strategy=target_minority,
+                sampling_strategy=target_ratio,
                 random_state=42,
                 k_neighbors=min(5, minority_count - 1)
             )
+        elif oversample_method == "smote_tomek":
+            # SMOTE + Tomek Links: oversample then clean boundary pairs
+            # Note: SMOTETomek requires sampling_strategy as ratio (0-1) or dict, not count
+            sampler = SMOTETomek(
+                sampling_strategy=target_ratio,
+                random_state=42,
+                n_jobs=1,
+                smote=SMOTE(
+                    random_state=42,
+                    k_neighbors=min(5, minority_count - 1)
+                )
+            )
+            logging.info("Using SMOTE + Tomek Links (boundary cleaning)")
+        elif oversample_method == "smote_enn":
+            # SMOTE + ENN: oversample then clean noisy samples
+            # Note: SMOTEENN requires sampling_strategy as ratio (0-1) or dict, not count
+            sampler = SMOTEENN(
+                sampling_strategy=target_ratio,
+                random_state=42,
+                n_jobs=1,
+                smote=SMOTE(
+                    random_state=42,
+                    k_neighbors=min(5, minority_count - 1)
+                )
+            )
+            logging.info("Using SMOTE + ENN (aggressive noise cleaning)")
+        elif oversample_method == "smote_rus":
+            # SMOTE + RandomUnderSampler: hybrid approach
+            # First oversample minority to 50%, then undersample majority to balance
+            smote = SMOTE(
+                sampling_strategy=0.5,  # Minority becomes 50% of majority
+                random_state=42,
+                k_neighbors=min(5, minority_count - 1)
+            )
+            rus = RandomUnderSampler(
+                sampling_strategy=0.8,  # Final ratio: minority = 80% of majority
+                random_state=42
+            )
+            sampler = ImbPipeline([
+                ('smote', smote),
+                ('rus', rus)
+            ])
+            logging.info("Using SMOTE + RandomUnderSampler (hybrid sampling)")
         else:
             raise ValueError(f"Unknown oversample_method: {oversample_method}")
         
@@ -331,6 +377,19 @@ def common_train(
                 # NOTE: class_weight is not needed; B-RF handles balancing internally
             }
             clf = BalancedRandomForestClassifier(**params)
+
+        elif model == "EasyEnsemble":
+            # EasyEnsemble: ensemble of balanced subsets with AdaBoost
+            params = {
+                "n_estimators": trial.suggest_int("n_estimators", 10, 50),
+                "sampling_strategy": trial.suggest_categorical(
+                    "sampling_strategy", ["auto", "majority", "not majority", "all"]
+                ),
+                "replacement": trial.suggest_categorical("replacement", [False, True]),
+                "random_state": 42,
+                "n_jobs": 1,
+            }
+            clf = EasyEnsembleClassifier(**params)
 
         elif model == "CatBoost":
             params = {
@@ -443,7 +502,7 @@ def common_train(
             else:
                 # Use pre-trained scaler even inside the objective function
                 X_train_scaled = scaler.transform(X_train[selected_features])
-                # Lighter CV: 3-fold is usually enough for model ranking here
+                # Use 3-fold CV for faster training while maintaining reasonable evaluation
                 cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
 
                 # ---- Manual CV with sample_weight & AP scoring ----
@@ -469,11 +528,12 @@ def common_train(
                         p = clf.predict_proba(X_train_scaled[va_idx])[:, 1]
                     else:
                         p = clf.decision_function(X_train_scaled[va_idx])
-                    # Use Precision@Recall≥70% for Precision-focused optimization
-                    prec_at_rec = precision_at_min_recall(y_va, p, min_recall=0.70)
+                    # Use F2 score for Recall-focused optimization (better for imbalanced data)
+                    y_pred = (p >= 0.5).astype(int)
+                    f2 = fbeta_score(y_va, y_pred, beta=2, zero_division=0)
                     # Avoid flooding stdout; keep detailed per-fold in debug only
-                    logging.debug(f"[CV] Fold {i}: Prec@Rec≥0.7 = {prec_at_rec:.6f}")
-                    scores.append(prec_at_rec)
+                    logging.debug(f"[CV] Fold {i}: F2 = {f2:.6f}")
+                    scores.append(f2)
                 if not scores or np.any(np.isnan(scores)):
                     return 0.0
                 score = float(np.nanmean(scores))
@@ -492,7 +552,7 @@ def common_train(
     # Run Optuna only for supported models
     optuna_supported = [
         "LightGBM", "XGBoost", "CatBoost",
-        "RF", "BalancedRF",
+        "RF", "BalancedRF", "EasyEnsemble",
         "LogisticRegression", "SVM",
         "DecisionTree", "AdaBoost", "GradientBoosting",
         "K-Nearest Neighbors", "MLP"
@@ -612,6 +672,9 @@ def common_train(
 
     elif model == "BalancedRF":
         best_clf = BalancedRandomForestClassifier(**best_params)
+
+    elif model == "EasyEnsemble":
+        best_clf = EasyEnsembleClassifier(**best_params)
 
     elif model == "LogisticRegression":
         if "class_weight" in best_params:
