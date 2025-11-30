@@ -139,11 +139,11 @@ For each distance metric (MMD, Wasserstein, DTW):
 
 ```
 results/ranks10/
-├── mmd_mean_low.txt
-├── mmd_mean_middle.txt
-├── mmd_mean_high.txt
-├── wasserstein_mean_high.txt
-├── dtw_mean_low.txt
+├── mmd_mean_in_domain.txt
+├── mmd_mean_mid_domain.txt
+├── mmd_mean_out_domain.txt
+├── wasserstein_mean_out_domain.txt
+├── dtw_mean_in_domain.txt
 └── ...
 ```
 
@@ -153,9 +153,9 @@ Each file contains subject IDs separated by spaces (one line per list).
 
 | Category        | Meaning                                    | Typical Usage                      |
 | --------------- | ------------------------------------------ | ---------------------------------- |
-| `*_mean_low`    | Most *general* (domain-invariant) subjects | Used for “only general” training   |
-| `*_mean_middle` | Neutral group                              | Optional                           |
-| `*_mean_high`   | Most *target-specific* subjects            | Used for “only target” fine-tuning |
+| `*_mean_in_domain`    | Most *typical* (domain-similar) subjects   | Used for "only general" training   |
+| `*_mean_mid_domain`   | Intermediate group                         | Optional                           |
+| `*_mean_out_domain`   | Most *atypical* (domain-dissimilar) subjects | Used for "only target" fine-tuning |
 
 ---
 
@@ -192,7 +192,7 @@ Each job array (`-J 1-9`) reads a line from rank list files and executes:
 python bin/train.py \
     --mode finetune \
     --group <group_name> \
-    --tag rank10_wasserstein_mean_high
+    --tag rank10_wasserstein_mean_out_domain
 ```
 
 ### Output Artifacts
