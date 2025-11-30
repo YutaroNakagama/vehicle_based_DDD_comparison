@@ -5,7 +5,7 @@ clustering_projection_ranked.py
 ===============================
 
 Generate projection plots with clustering methods, labeling clusters as
-High/Middle/Low based on their distance from the center (like the original
+out_domain/mid_domain/in_domain based on their distance from the center (like the original
 mean-distance ranking approach).
 
 Clustering methods:
@@ -43,11 +43,11 @@ except ImportError:
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-# Fixed colors for High/Middle/Low (consistent with original)
+# Fixed colors for out_domain/mid_domain/in_domain (consistent with original)
 RANK_COLORS = {
-    "High": "#e41a1c",    # red - outliers
-    "Middle": "#999999",  # gray - intermediate
-    "Low": "#377eb8",     # blue - typical/central
+    "out_domain": "#e41a1c",    # red - outliers
+    "mid_domain": "#999999",  # gray - intermediate
+    "in_domain": "#377eb8",     # blue - typical/central
     "Noise": "#000000",   # black - DBSCAN noise
 }
 
@@ -57,15 +57,18 @@ GROUP_SIZE = 29
 
 # Available ranking methods
 RANKING_METHODS = [
-    "mean_distance",        # 現在の方法: 他被験者との平均距離 (baseline)
-    "centroid_umap",        # UMAP空間でのクラスタ中心からの距離 (cluster-aware)
+    "mean_distance",        # Baseline: average distance to all other subjects
+    "centroid_umap",        # Centroid distance in UMAP projection space (cluster-aware)
     "lof",                  # Local Outlier Factor (density-based outlier detection)
+    "knn",                  # K-Nearest Neighbors: average distance to k closest subjects
+    "median_distance",      # Median distance (robust to outliers)
+    "isolation_forest",     # Isolation Forest anomaly score (tree-based outlier detection)
 ]
 
 # Legacy methods (not used by default, but available)
 RANKING_METHODS_LEGACY = [
-    "centroid_mds",         # MDS空間でのクラスタ中心からの距離
-    "medoid",               # Medoid（実データ点の代表）からの距離
+    "centroid_mds",         # Centroid distance in MDS projection space
+    "medoid",               # Distance from medoid (actual data point as center)
 ]
 
 
@@ -98,7 +101,7 @@ def _rank_clusters_by_distance(
     labels: np.ndarray,
     matrix: np.ndarray
 ) -> Tuple[Dict[int, str], np.ndarray]:
-    """Rank subjects as High/Middle/Low based on mean distance, fixed 29 each.
+    """Rank subjects as out_domain/mid_domain/in_domain based on mean distance, fixed 29 each.
     
     Instead of ranking clusters, we rank individual subjects by their mean
     distance to all other subjects, then assign top 29 to High, middle 29 to
@@ -116,7 +119,7 @@ def _rank_clusters_by_distance(
     Returns
     -------
     Tuple[Dict[int, str], np.ndarray]
-        - rank_labels: array of rank names for each subject ("High", "Middle", "Low")
+        - rank_labels: array of rank names for each subject ("out_domain", "mid_domain", "in_domain")
         - subject_ranks: indices sorted by mean distance (descending)
     """
     n_subjects = matrix.shape[0]
@@ -132,19 +135,19 @@ def _rank_clusters_by_distance(
     # Assign ranks: top GROUP_SIZE -> High, middle GROUP_SIZE -> Middle, bottom GROUP_SIZE -> Low
     rank_labels = np.array(["Other"] * n_subjects, dtype=object)
     
-    # High: top GROUP_SIZE subjects (highest mean distance = outliers)
-    high_indices = sorted_indices[:GROUP_SIZE]
-    rank_labels[high_indices] = "High"
+    # out_domain: top GROUP_SIZE subjects (highest mean distance = outliers)
+    out_domain_indices = sorted_indices[:GROUP_SIZE]
+    rank_labels[out_domain_indices] = "out_domain"
     
-    # Middle: centered GROUP_SIZE subjects
+    # mid_domain: centered GROUP_SIZE subjects
     mid_start = n_subjects // 2 - GROUP_SIZE // 2
     mid_end = mid_start + GROUP_SIZE
-    middle_indices = sorted_indices[mid_start:mid_end]
-    rank_labels[middle_indices] = "Middle"
+    mid_domain_indices = sorted_indices[mid_start:mid_end]
+    rank_labels[mid_domain_indices] = "mid_domain"
     
-    # Low: bottom GROUP_SIZE subjects (lowest mean distance = central)
-    low_indices = sorted_indices[-GROUP_SIZE:]
-    rank_labels[low_indices] = "Low"
+    # in_domain: bottom GROUP_SIZE subjects (lowest mean distance = central)
+    in_domain_indices = sorted_indices[-GROUP_SIZE:]
+    rank_labels[in_domain_indices] = "in_domain"
     
     return rank_labels, sorted_indices
 
@@ -169,7 +172,7 @@ def _rank_by_centroid_distance(
     Returns
     -------
     Tuple[np.ndarray, np.ndarray, np.ndarray]
-        - rank_labels: array of rank names ("High", "Middle", "Low")
+        - rank_labels: array of rank names ("out_domain", "mid_domain", "in_domain")
         - distances: distances from centroid for each subject
         - centroid: the centroid coordinates
     """
@@ -187,19 +190,19 @@ def _rank_by_centroid_distance(
     # Assign ranks
     rank_labels = np.array(["Other"] * n_subjects, dtype=object)
     
-    # Low: closest GROUP_SIZE subjects (near centroid = typical)
-    low_indices = sorted_indices[:group_size]
-    rank_labels[low_indices] = "Low"
+    # in_domain: closest GROUP_SIZE subjects (near centroid = typical)
+    in_domain_indices = sorted_indices[:group_size]
+    rank_labels[in_domain_indices] = "in_domain"
     
-    # Middle: centered GROUP_SIZE subjects
+    # mid_domain: centered GROUP_SIZE subjects
     mid_start = n_subjects // 2 - group_size // 2
     mid_end = mid_start + group_size
-    middle_indices = sorted_indices[mid_start:mid_end]
-    rank_labels[middle_indices] = "Middle"
+    mid_domain_indices = sorted_indices[mid_start:mid_end]
+    rank_labels[mid_domain_indices] = "mid_domain"
     
-    # High: furthest GROUP_SIZE subjects (outliers)
-    high_indices = sorted_indices[-group_size:]
-    rank_labels[high_indices] = "High"
+    # out_domain: furthest GROUP_SIZE subjects (outliers)
+    out_domain_indices = sorted_indices[-group_size:]
+    rank_labels[out_domain_indices] = "out_domain"
     
     return rank_labels, distances, centroid
 
@@ -223,7 +226,7 @@ def _rank_by_medoid_distance(
     Returns
     -------
     Tuple[np.ndarray, np.ndarray, int]
-        - rank_labels: array of rank names ("High", "Middle", "Low")
+        - rank_labels: array of rank names ("out_domain", "mid_domain", "in_domain")
         - distances: distances from medoid for each subject
         - medoid_idx: index of the medoid subject
     """
@@ -242,19 +245,19 @@ def _rank_by_medoid_distance(
     # Assign ranks
     rank_labels = np.array(["Other"] * n_subjects, dtype=object)
     
-    # Low: closest to medoid (most typical)
-    low_indices = sorted_indices[:group_size]
-    rank_labels[low_indices] = "Low"
+    # in_domain: closest to medoid (most typical)
+    in_domain_indices = sorted_indices[:group_size]
+    rank_labels[in_domain_indices] = "in_domain"
     
-    # Middle: intermediate distance
+    # mid_domain: intermediate distance
     mid_start = n_subjects // 2 - group_size // 2
     mid_end = mid_start + group_size
-    middle_indices = sorted_indices[mid_start:mid_end]
-    rank_labels[middle_indices] = "Middle"
+    mid_domain_indices = sorted_indices[mid_start:mid_end]
+    rank_labels[mid_domain_indices] = "mid_domain"
     
-    # High: furthest from medoid (outliers)
-    high_indices = sorted_indices[-group_size:]
-    rank_labels[high_indices] = "High"
+    # out_domain: furthest from medoid (outliers)
+    out_domain_indices = sorted_indices[-group_size:]
+    rank_labels[out_domain_indices] = "out_domain"
     
     return rank_labels, distances, medoid_idx
 
@@ -284,7 +287,7 @@ def _rank_by_lof(
     Returns
     -------
     Tuple[np.ndarray, np.ndarray]
-        - rank_labels: array of rank names ("High", "Middle", "Low")
+        - rank_labels: array of rank names ("out_domain", "mid_domain", "in_domain")
         - lof_scores: LOF scores (negative, higher = more outlier-like)
     """
     from sklearn.neighbors import LocalOutlierFactor
@@ -305,21 +308,219 @@ def _rank_by_lof(
     # Assign ranks
     rank_labels = np.array(["Other"] * n_subjects, dtype=object)
     
-    # High: highest LOF scores (outliers)
-    high_indices = sorted_indices[:group_size]
-    rank_labels[high_indices] = "High"
+    # out_domain: highest LOF scores (outliers)
+    out_domain_indices = sorted_indices[:group_size]
+    rank_labels[out_domain_indices] = "out_domain"
     
-    # Middle: intermediate LOF scores
+    # mid_domain: intermediate LOF scores
     mid_start = n_subjects // 2 - group_size // 2
     mid_end = mid_start + group_size
-    middle_indices = sorted_indices[mid_start:mid_end]
-    rank_labels[middle_indices] = "Middle"
+    mid_domain_indices = sorted_indices[mid_start:mid_end]
+    rank_labels[mid_domain_indices] = "mid_domain"
     
-    # Low: lowest LOF scores (typical, inliers)
-    low_indices = sorted_indices[-group_size:]
-    rank_labels[low_indices] = "Low"
+    # in_domain: lowest LOF scores (typical, inliers)
+    in_domain_indices = sorted_indices[-group_size:]
+    rank_labels[in_domain_indices] = "in_domain"
     
     return rank_labels, lof_scores
+
+
+def _rank_by_knn(
+    matrix: np.ndarray,
+    group_size: int = GROUP_SIZE,
+    k: int = 5
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Rank subjects by K-Nearest Neighbors average distance.
+    
+    For each subject, compute the average distance to their k nearest neighbors.
+    Subjects with smaller average distance to their neighbors are considered
+    more "typical" (Low), while those with larger average distance are
+    considered more "outlier-like" (High).
+    
+    This method captures local similarity structure, providing a balance between
+    mean_distance (global) and LOF (density-based).
+    
+    Parameters
+    ----------
+    matrix : np.ndarray
+        Distance matrix (n x n).
+    group_size : int
+        Number of subjects per group.
+    k : int
+        Number of nearest neighbors to consider.
+    
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray]
+        - rank_labels: array of rank names ("out_domain", "mid_domain", "in_domain")
+        - knn_scores: average distance to k nearest neighbors for each subject
+    """
+    n_subjects = matrix.shape[0]
+    
+    # Compute average distance to k nearest neighbors for each subject
+    knn_scores = np.zeros(n_subjects)
+    
+    for i in range(n_subjects):
+        # Get distances from subject i to all others
+        dists = matrix[i].copy()
+        dists[i] = np.inf  # Exclude self
+        
+        # Find k smallest distances (k nearest neighbors)
+        k_actual = min(k, n_subjects - 1)
+        k_nearest_dists = np.partition(dists, k_actual - 1)[:k_actual]
+        knn_scores[i] = np.mean(k_nearest_dists)
+    
+    # Sort by KNN score (descending: highest = most outlier = High)
+    sorted_indices = np.argsort(-knn_scores)
+    
+    # Assign ranks
+    rank_labels = np.array(["Other"] * n_subjects, dtype=object)
+    
+    # out_domain: highest KNN scores (far from neighbors = outliers)
+    out_domain_indices = sorted_indices[:group_size]
+    rank_labels[out_domain_indices] = "out_domain"
+    
+    # mid_domain: intermediate KNN scores
+    mid_start = n_subjects // 2 - group_size // 2
+    mid_end = mid_start + group_size
+    mid_domain_indices = sorted_indices[mid_start:mid_end]
+    rank_labels[mid_domain_indices] = "mid_domain"
+    
+    # in_domain: lowest KNN scores (close to neighbors = typical)
+    in_domain_indices = sorted_indices[-group_size:]
+    rank_labels[in_domain_indices] = "in_domain"
+    
+    return rank_labels, knn_scores
+
+
+def _rank_by_median_distance(
+    matrix: np.ndarray,
+    group_size: int = GROUP_SIZE
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Rank subjects by median distance to all other subjects.
+    
+    Similar to mean_distance, but uses median instead of mean.
+    Median is more robust to outliers (extreme distances).
+    
+    Parameters
+    ----------
+    matrix : np.ndarray
+        Distance matrix (n x n).
+    group_size : int
+        Number of subjects per group.
+    
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray]
+        - rank_labels: array of rank names ("out_domain", "mid_domain", "in_domain")
+        - median_scores: median distance for each subject
+    """
+    n_subjects = matrix.shape[0]
+    
+    # Compute median distance for each subject (excluding diagonal)
+    matrix_masked = matrix.copy()
+    np.fill_diagonal(matrix_masked, np.nan)
+    median_scores = np.nanmedian(matrix_masked, axis=1)
+    
+    # Sort by median score (descending: highest = most outlier = High)
+    sorted_indices = np.argsort(-median_scores)
+    
+    # Assign ranks
+    rank_labels = np.array(["Other"] * n_subjects, dtype=object)
+    
+    # out_domain: highest median scores (outliers)
+    out_domain_indices = sorted_indices[:group_size]
+    rank_labels[out_domain_indices] = "out_domain"
+    
+    # mid_domain: intermediate median scores
+    mid_start = n_subjects // 2 - group_size // 2
+    mid_end = mid_start + group_size
+    mid_domain_indices = sorted_indices[mid_start:mid_end]
+    rank_labels[mid_domain_indices] = "mid_domain"
+    
+    # in_domain: lowest median scores (central/typical)
+    in_domain_indices = sorted_indices[-group_size:]
+    rank_labels[in_domain_indices] = "in_domain"
+    
+    return rank_labels, median_scores
+
+
+def _rank_by_isolation_forest(
+    matrix: np.ndarray,
+    group_size: int = GROUP_SIZE,
+    contamination: float = 0.1,
+    random_state: int = 42
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Rank subjects by Isolation Forest anomaly score.
+    
+    Isolation Forest is a tree-based anomaly detection method that identifies
+    outliers by measuring how easily a point can be isolated from others.
+    Points that are easier to isolate (fewer splits needed) are more likely
+    to be anomalies.
+    
+    This method uses the distance matrix as features (each row represents
+    one subject's distances to all others).
+    
+    Parameters
+    ----------
+    matrix : np.ndarray
+        Distance matrix (n x n). Each row is used as feature vector.
+    group_size : int
+        Number of subjects per group.
+    contamination : float
+        Expected proportion of outliers in the dataset.
+    random_state : int
+        Random seed for reproducibility.
+    
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray]
+        - rank_labels: array of rank names ("out_domain", "mid_domain", "in_domain")
+        - anomaly_scores: anomaly scores (higher = more outlier-like)
+    """
+    from sklearn.ensemble import IsolationForest
+    
+    n_subjects = matrix.shape[0]
+    
+    # Use distance matrix rows as features
+    # Each subject is represented by their distances to all other subjects
+    features = matrix.copy()
+    np.fill_diagonal(features, 0)  # Set diagonal to 0
+    
+    # Fit Isolation Forest
+    iso = IsolationForest(
+        contamination=contamination,
+        random_state=random_state,
+        n_estimators=100
+    )
+    iso.fit(features)
+    
+    # Get anomaly scores
+    # score_samples returns negative values; more negative = more anomalous
+    # We negate to get: higher value = more anomalous
+    anomaly_scores = -iso.score_samples(features)
+    
+    # Sort by anomaly score (descending: highest = most outlier = High)
+    sorted_indices = np.argsort(-anomaly_scores)
+    
+    # Assign ranks
+    rank_labels = np.array(["Other"] * n_subjects, dtype=object)
+    
+    # out_domain: highest anomaly scores (outliers)
+    out_domain_indices = sorted_indices[:group_size]
+    rank_labels[out_domain_indices] = "out_domain"
+    
+    # mid_domain: intermediate anomaly scores
+    mid_start = n_subjects // 2 - group_size // 2
+    mid_end = mid_start + group_size
+    mid_domain_indices = sorted_indices[mid_start:mid_end]
+    rank_labels[mid_domain_indices] = "mid_domain"
+    
+    # in_domain: lowest anomaly scores (normal/typical)
+    in_domain_indices = sorted_indices[-group_size:]
+    rank_labels[in_domain_indices] = "in_domain"
+    
+    return rank_labels, anomaly_scores
 
 
 def _compute_ranking(
@@ -373,6 +574,31 @@ def _compute_ranking(
         return rank_labels, {
             "method": method,
             "lof_scores": lof_scores.tolist()
+        }
+    
+    elif method == "knn":
+        # K-Nearest Neighbors ranking (k=5 by default)
+        rank_labels, knn_scores = _rank_by_knn(matrix, k=5)
+        return rank_labels, {
+            "method": method,
+            "k": 5,
+            "knn_scores": knn_scores.tolist()
+        }
+    
+    elif method == "median_distance":
+        # Median distance ranking (robust to outliers)
+        rank_labels, median_scores = _rank_by_median_distance(matrix)
+        return rank_labels, {
+            "method": method,
+            "median_scores": median_scores.tolist()
+        }
+    
+    elif method == "isolation_forest":
+        # Isolation Forest anomaly detection ranking
+        rank_labels, anomaly_scores = _rank_by_isolation_forest(matrix)
+        return rank_labels, {
+            "method": method,
+            "anomaly_scores": anomaly_scores.tolist()
         }
     
     else:
@@ -435,7 +661,7 @@ def plot_projection_ranked(
     outdir: Path,
     show_labels: bool = True
 ) -> None:
-    """Plot projection with High/Middle/Low coloring (fixed 29 each).
+    """Plot projection with out_domain/mid_domain/in_domain coloring (fixed 29 each).
     
     Parameters
     ----------
@@ -444,7 +670,7 @@ def plot_projection_ranked(
     subjects : list[str]
         Subject IDs.
     rank_labels : np.ndarray
-        Array of rank names for each subject ("High", "Middle", "Low", "Other").
+        Array of rank names for each subject ("out_domain", "mid_domain", "in_domain", "Other").
     metric : str
         Distance metric name.
     proj_method : str
@@ -459,10 +685,10 @@ def plot_projection_ranked(
     fig, ax = plt.subplots(figsize=(8, 8))
     
     # Count subjects in each rank
-    rank_counts = {"High": 0, "Middle": 0, "Low": 0, "Other": 0}
+    rank_counts = {"out_domain": 0, "mid_domain": 0, "in_domain": 0, "Other": 0}
     
     # Plot each rank group
-    for rank_name in ["High", "Middle", "Low", "Other"]:
+    for rank_name in ["out_domain", "mid_domain", "in_domain", "Other"]:
         # Find all subjects in this rank
         mask = rank_labels == rank_name
         if not mask.any():
@@ -493,7 +719,7 @@ def plot_projection_ranked(
                 )
     
     ax.set_title(f"{metric.upper()} - {proj_method} + {cluster_method}\n"
-                 f"(High={rank_counts['High']}, Middle={rank_counts['Middle']}, Low={rank_counts['Low']})")
+                 f"(High={rank_counts['out_domain']}, Middle={rank_counts['mid_domain']}, Low={rank_counts['in_domain']})")
     ax.set_xlabel(f"{proj_method} Dim 1")
     ax.set_ylabel(f"{proj_method} Dim 2")
     ax.legend(loc="best", fontsize=8)
@@ -515,7 +741,7 @@ def plot_dendrogram_ranked(
     metric: str,
     outdir: Path
 ) -> None:
-    """Plot dendrogram with High/Middle/Low color coding (fixed 29 each)."""
+    """Plot dendrogram with out_domain/mid_domain/in_domain color coding (fixed 29 each)."""
     from scipy.spatial.distance import squareform
     
     condensed = squareform(matrix)
@@ -549,16 +775,16 @@ def plot_dendrogram_ranked(
     # Add legend
     from matplotlib.lines import Line2D
     legend_elements = [
-        Line2D([0], [0], marker='o', color='w', markerfacecolor=RANK_COLORS["High"], 
+        Line2D([0], [0], marker='o', color='w', markerfacecolor=RANK_COLORS["out_domain"], 
                markersize=10, label=f'High (n={GROUP_SIZE}, outliers)'),
-        Line2D([0], [0], marker='o', color='w', markerfacecolor=RANK_COLORS["Middle"], 
+        Line2D([0], [0], marker='o', color='w', markerfacecolor=RANK_COLORS["mid_domain"], 
                markersize=10, label=f'Middle (n={GROUP_SIZE})'),
-        Line2D([0], [0], marker='o', color='w', markerfacecolor=RANK_COLORS["Low"], 
+        Line2D([0], [0], marker='o', color='w', markerfacecolor=RANK_COLORS["in_domain"], 
                markersize=10, label=f'Low (n={GROUP_SIZE}, central)'),
     ]
     ax.legend(handles=legend_elements, loc='upper right')
     
-    ax.set_title(f"{metric.upper()} - Hierarchical Clustering Dendrogram (High/Middle/Low, {GROUP_SIZE} each)")
+    ax.set_title(f"{metric.upper()} - Hierarchical Clustering Dendrogram (out_domain/mid_domain/in_domain, {GROUP_SIZE} each)")
     ax.set_xlabel("Subject")
     ax.set_ylabel("Distance")
     
@@ -584,7 +810,7 @@ def save_ranked_groups(
     Dict[str, List[str]]
         Mapping of rank name to list of subjects.
     """
-    groups = {"High": [], "Middle": [], "Low": []}
+    groups = {"out_domain": [], "mid_domain": [], "in_domain": []}
     
     for i, subj in enumerate(subjects):
         rank = rank_labels[i]
@@ -688,17 +914,17 @@ def run_ranked_clustering_analysis(
         rank_labels, rank_info = _compute_ranking(matrix, coords_for_ranking, rank_method)
         
         # Count groups
-        high_count = np.sum(rank_labels == "High")
-        mid_count = np.sum(rank_labels == "Middle")
-        low_count = np.sum(rank_labels == "Low")
+        out_domain_count = np.sum(rank_labels == "out_domain")
+        mid_domain_count = np.sum(rank_labels == "mid_domain")
+        in_domain_count = np.sum(rank_labels == "in_domain")
         
-        logger.info(f"  Groups: High={high_count}, Middle={mid_count}, Low={low_count}")
+        logger.info(f"  Groups: High={out_domain_count}, Middle={mid_domain_count}, Low={in_domain_count}")
         
         # Log sample subjects
-        high_subjects = [subjects[i] for i in range(len(subjects)) if rank_labels[i] == "High"][:5]
-        low_subjects = [subjects[i] for i in range(len(subjects)) if rank_labels[i] == "Low"][:5]
-        logger.info(f"  High (outliers, sample): {high_subjects}...")
-        logger.info(f"  Low (central, sample): {low_subjects}...")
+        out_domain_subjects = [subjects[i] for i in range(len(subjects)) if rank_labels[i] == "out_domain"][:5]
+        in_domain_subjects = [subjects[i] for i in range(len(subjects)) if rank_labels[i] == "in_domain"][:5]
+        logger.info(f"  High (outliers, sample): {out_domain_subjects}...")
+        logger.info(f"  Low (central, sample): {in_domain_subjects}...")
         
         # Save groups
         groups = save_ranked_groups(subjects, rank_labels, metric, rank_method, groups_dir)
@@ -750,7 +976,7 @@ def _plot_with_centroid(
     fig, ax = plt.subplots(figsize=(10, 10))
     
     # Plot each rank group
-    for rank_name in ["High", "Middle", "Low"]:
+    for rank_name in ["out_domain", "mid_domain", "in_domain"]:
         mask = rank_labels == rank_name
         if not mask.any():
             continue
@@ -814,7 +1040,7 @@ def main():
     """Run ranked clustering analysis for all metrics."""
     import argparse
     
-    parser = argparse.ArgumentParser(description="Clustering with High/Middle/Low ranking")
+    parser = argparse.ArgumentParser(description="Clustering with out_domain/mid_domain/in_domain ranking")
     parser.add_argument("--metric", choices=["mmd", "wasserstein", "dtw", "all"], default="all")
     parser.add_argument("--metrics", nargs="+", choices=["mmd", "wasserstein", "dtw"], 
                        help="Multiple metrics to process")
