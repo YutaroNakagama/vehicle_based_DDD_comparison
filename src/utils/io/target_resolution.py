@@ -105,28 +105,39 @@ def resolve_target_subjects_from_tag(
     return target_subjects
 
 
-def resolve_mid_domain_group_subjects(tag: Optional[str]) -> List[str]:
-    """Resolve middle group subjects for source_only mode.
+# Source group for source_only mode training
+# Options: "in_domain" (LOW - typical subjects), "mid_domain" (MIDDLE)
+SOURCE_ONLY_TRAIN_GROUP = "in_domain"  # Changed from "mid_domain" to use LOW group
+
+
+def resolve_source_group_subjects(tag: Optional[str], source_group: Optional[str] = None) -> List[str]:
+    """Resolve source group subjects for source_only mode training.
 
     Parameters
     ----------
     tag : str, optional
         Experiment tag to extract distance metric prefix (e.g., "rank_dtw_mean_high").
+    source_group : str, optional
+        Which group to use for training. Options: "in_domain" (LOW), "mid_domain" (MIDDLE).
+        If None, uses SOURCE_ONLY_TRAIN_GROUP constant.
 
     Returns
     -------
     list of str
-        Middle group subject IDs.
+        Source group subject IDs.
 
     Raises
     ------
     ValueError
         If metric prefix cannot be inferred from tag.
     FileNotFoundError
-        If middle group file does not exist.
+        If source group file does not exist.
     """
     if not tag:
-        raise ValueError("[MIDDLE] Tag is required to resolve middle group.")
+        raise ValueError("[SOURCE] Tag is required to resolve source group.")
+    
+    # Determine which group to use
+    group_level = source_group or SOURCE_ONLY_TRAIN_GROUP
     
     # Extract metric prefix (dtw, mmd, wasserstein)
     tag_key = tag.replace("rank_", "")
@@ -138,25 +149,45 @@ def resolve_mid_domain_group_subjects(tag: Optional[str]) -> List[str]:
     
     if metric_prefix is None:
         raise ValueError(
-            f"[MIDDLE] Cannot infer metric prefix from tag='{tag}'. "
+            f"[SOURCE] Cannot infer metric prefix from tag='{tag}'. "
             f"Expected one of ['dtw', 'mmd', 'wasserstein']."
         )
     
-    # Load middle group file (use mean_distance method by default)
+    # Load source group file (use mean_distance method by default)
     ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks" / "ranks29" / "mean_distance"
-    middle_file = ranks_dir / f"{metric_prefix}_mid_domain.txt"
+    source_file = ranks_dir / f"{metric_prefix}_{group_level}.txt"
     
-    if not middle_file.exists():
+    if not source_file.exists():
         raise FileNotFoundError(
-            f"[MIDDLE] Middle group file does not exist: {middle_file}"
+            f"[SOURCE] Source group file does not exist: {source_file}"
         )
     
-    with open(middle_file) as f:
-        middle_subjects = [s.strip() for s in f if s.strip()]
+    with open(source_file) as f:
+        source_subjects = [s.strip() for s in f if s.strip()]
     
-    logging.info(f"[MIDDLE] Loaded {len(middle_subjects)} middle group subjects from {middle_file}")
+    group_name = "LOW" if group_level == "in_domain" else "MIDDLE"
+    logging.info(f"[SOURCE] Loaded {len(source_subjects)} {group_name} group subjects from {source_file}")
     
-    return middle_subjects
+    return source_subjects
+
+
+def resolve_mid_domain_group_subjects(tag: Optional[str]) -> List[str]:
+    """Resolve source group subjects for source_only mode (legacy wrapper).
+
+    This function is kept for backward compatibility.
+    It now uses resolve_source_group_subjects() with the configured source group.
+
+    Parameters
+    ----------
+    tag : str, optional
+        Experiment tag to extract distance metric prefix (e.g., "rank_dtw_mean_high").
+
+    Returns
+    -------
+    list of str
+        Source group subject IDs (LOW or MIDDLE based on SOURCE_ONLY_TRAIN_GROUP).
+    """
+    return resolve_source_group_subjects(tag)
 
 
 def filter_data_by_mode(
