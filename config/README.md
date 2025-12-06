@@ -13,7 +13,7 @@ They support dataset preparation, group definition, and experiment reproducibili
 - **subjects/target_groups.txt** → Target subject groups for evaluation/finetuning  
 
 ### Experiment Configs
-- **requirements.txt** → Python dependencies for preprocessing, training, and evaluation  
+- **../requirements.txt** → Python dependencies (located at project root)  
 
 ---
 
