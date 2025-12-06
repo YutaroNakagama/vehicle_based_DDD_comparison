@@ -33,6 +33,7 @@ from sklearn.metrics import (
 from src.evaluation.eval_stages import (
     resolve_jobid_for_evaluation,
     extract_metadata_from_tag,
+    extract_full_metadata_from_tag,
 )
 from src.utils.io.loaders import load_subjects_and_data, load_model_and_scaler
 from src.utils.io.savers import save_eval_results
@@ -238,6 +239,7 @@ def eval_pipeline(
 
     # Stage 9: Add metadata and save results
     distance, level = extract_metadata_from_tag(tag)
+    full_metadata = extract_full_metadata_from_tag(tag)
     result.update({
         "subject_list": subjects,
         "mode": mode,
@@ -245,6 +247,8 @@ def eval_pipeline(
         "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "distance": distance,
         "level": level,
+        "ranking_method": full_metadata.get("ranking_method", "unknown"),
+        "distance_metric": full_metadata.get("distance_metric", "unknown"),
         "jobid_idx": f"{base_jobid}_{run_idx}_{fold_idx}",
     })
 
