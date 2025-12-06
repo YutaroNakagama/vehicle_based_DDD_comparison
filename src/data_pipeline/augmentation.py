@@ -10,6 +10,7 @@ Supported Methods
 - Jittering: Add Gaussian noise to features
 - Scaling: Multiply features by random scale factor
 - Combined: Apply both jittering and scaling
+- Adaptive: Automatically determine sigma based on data characteristics
 
 References
 ----------
@@ -26,9 +27,225 @@ not raw time-series. For raw time-series augmentation, use
 import numpy as np
 import pandas as pd
 import logging
-from typing import Tuple, Union, Optional
+from typing import Tuple, Union, Optional, Dict
 
 logger = logging.getLogger(__name__)
+
+
+def estimate_adaptive_sigma(
+    X: Union[np.ndarray, pd.DataFrame],
+    y: Optional[Union[np.ndarray, pd.Series]] = None,
+    method: str = "snr",
+) -> Dict[str, float]:
+    """Estimate optimal sigma values based on data characteristics.
+    
+    This function analyzes the input data to determine appropriate
+    noise levels for jittering and scaling augmentation.
+    
+    Parameters
+    ----------
+    X : np.ndarray or pd.DataFrame
+        Feature matrix of shape (n_samples, n_features).
+    y : np.ndarray or pd.Series, optional
+        Labels for class-aware estimation.
+    method : {'snr', 'cv', 'interclass', 'conservative'}, default='snr'
+        Method for sigma estimation:
+        - 'snr': Based on signal-to-noise ratio of features
+        - 'cv': Based on coefficient of variation
+        - 'interclass': Based on inter-class distance (requires y)
+        - 'conservative': Use conservative (small) values
+    
+    Returns
+    -------
+    dict
+        Dictionary with 'jitter_sigma' and 'scale_sigma' values.
+    
+    Examples
+    --------
+    >>> sigmas = estimate_adaptive_sigma(X_train, y_train, method='interclass')
+    >>> print(f"Jitter: {sigmas['jitter_sigma']:.4f}, Scale: {sigmas['scale_sigma']:.4f}")
+    """
+    if isinstance(X, pd.DataFrame):
+        X_arr = X.values.astype(float)
+    else:
+        X_arr = X.astype(float)
+    
+    # Handle NaN values
+    if np.any(np.isnan(X_arr)):
+        logger.warning("NaN values detected in X. Filling with column median.")
+        col_medians = np.nanmedian(X_arr, axis=0)
+        nan_mask = np.isnan(X_arr)
+        for j in range(X_arr.shape[1]):
+            X_arr[nan_mask[:, j], j] = col_medians[j] if not np.isnan(col_medians[j]) else 0.0
+    
+    if y is not None:
+        if isinstance(y, pd.Series):
+            y_arr = y.values
+        else:
+            y_arr = y.copy()
+        
+        # Handle NaN in labels
+        if np.any(pd.isna(y_arr)):
+            valid_mask = ~pd.isna(y_arr)
+            X_arr = X_arr[valid_mask]
+            y_arr = y_arr[valid_mask]
+            logger.warning(f"Removed {(~valid_mask).sum()} samples with NaN labels.")
+        
+        y_arr = y_arr.astype(int)
+    else:
+        y_arr = None
+    
+    if method == "snr":
+        # Signal-to-Noise Ratio based estimation
+        # Jitter sigma: based on feature variance ratio
+        feature_means = np.abs(np.mean(X_arr, axis=0))
+        feature_stds = np.std(X_arr, axis=0)
+        
+        # Avoid division by zero
+        feature_means = np.where(feature_means == 0, 1e-10, feature_means)
+        feature_stds = np.where(feature_stds == 0, 1e-10, feature_stds)
+        
+        # SNR = mean / std, higher SNR means less noise relative to signal
+        snr = np.median(feature_means / feature_stds)
+        
+        # Jitter should be small relative to SNR
+        # Low SNR (noisy data) -> smaller jitter to avoid adding more noise
+        # High SNR (clean data) -> can tolerate more jitter
+        jitter_sigma = np.clip(0.1 / (1 + snr), 0.005, 0.1)
+        
+        # Scale sigma based on coefficient of variation
+        cv = np.median(feature_stds / feature_means)
+        scale_sigma = np.clip(cv * 0.5, 0.02, 0.2)
+        
+    elif method == "cv":
+        # Coefficient of Variation based estimation
+        feature_means = np.abs(np.mean(X_arr, axis=0))
+        feature_stds = np.std(X_arr, axis=0)
+        
+        feature_means = np.where(feature_means == 0, 1e-10, feature_means)
+        
+        cv = np.median(feature_stds / feature_means)
+        
+        # Use fraction of CV as sigma
+        jitter_sigma = np.clip(cv * 0.1, 0.01, 0.1)
+        scale_sigma = np.clip(cv * 0.3, 0.05, 0.2)
+        
+    elif method == "interclass":
+        # Inter-class distance based estimation (requires labels)
+        if y_arr is None:
+            logger.warning("Labels required for 'interclass' method. Falling back to 'snr'.")
+            return estimate_adaptive_sigma(X_arr, None, method="snr")
+        
+        # Calculate class centroids
+        X_minority = X_arr[y_arr == 1]
+        X_majority = X_arr[y_arr == 0]
+        
+        if len(X_minority) == 0 or len(X_majority) == 0:
+            logger.warning("Empty class. Falling back to 'snr' method.")
+            return estimate_adaptive_sigma(X_arr, None, method="snr")
+        
+        centroid_minority = np.mean(X_minority, axis=0)
+        centroid_majority = np.mean(X_majority, axis=0)
+        
+        # Inter-class distance
+        interclass_dist = np.linalg.norm(centroid_minority - centroid_majority)
+        
+        # Intra-class std of minority
+        intraclass_std = np.mean(np.std(X_minority, axis=0))
+        
+        # Augmented samples should stay within minority distribution
+        # but not overlap too much with majority
+        # Sigma should be fraction of intra-class variation
+        jitter_sigma = np.clip(intraclass_std / interclass_dist * 0.5, 0.005, 0.1)
+        
+        # Scale sigma based on minority class variation
+        minority_cv = np.median(np.std(X_minority, axis=0) / (np.abs(np.mean(X_minority, axis=0)) + 1e-10))
+        scale_sigma = np.clip(minority_cv * 0.3, 0.02, 0.15)
+        
+    elif method == "conservative":
+        # Conservative values that are unlikely to cause issues
+        jitter_sigma = 0.01
+        scale_sigma = 0.05
+        
+    else:
+        raise ValueError(f"Unknown method: {method}. Use 'snr', 'cv', 'interclass', or 'conservative'.")
+    
+    result = {
+        "jitter_sigma": float(jitter_sigma),
+        "scale_sigma": float(scale_sigma),
+        "method": method,
+    }
+    
+    logger.info(f"[Adaptive Sigma] method={method}, jitter_sigma={jitter_sigma:.4f}, scale_sigma={scale_sigma:.4f}")
+    
+    return result
+
+
+def analyze_augmentation_quality(
+    X_original: np.ndarray,
+    X_augmented: np.ndarray,
+    y_original: np.ndarray,
+    y_augmented: np.ndarray,
+) -> Dict[str, float]:
+    """Analyze the quality of augmented samples.
+    
+    Checks if augmented samples maintain the distribution characteristics
+    of the original minority class.
+    
+    Parameters
+    ----------
+    X_original : np.ndarray
+        Original feature matrix.
+    X_augmented : np.ndarray
+        Augmented feature matrix.
+    y_original : np.ndarray
+        Original labels.
+    y_augmented : np.ndarray
+        Augmented labels (includes original + new).
+    
+    Returns
+    -------
+    dict
+        Quality metrics including:
+        - mean_shift: How much the minority centroid moved
+        - std_change: Change in minority class standard deviation
+        - overlap_score: Estimated overlap with majority class
+    """
+    # Original minority
+    X_orig_minority = X_original[y_original == 1]
+    
+    # Find new augmented samples (those in augmented but not in original)
+    n_orig = len(X_original)
+    X_new = X_augmented[n_orig:]  # New samples are appended
+    
+    if len(X_new) == 0:
+        return {"mean_shift": 0.0, "std_change": 0.0, "overlap_score": 0.0}
+    
+    # Mean shift
+    orig_centroid = np.mean(X_orig_minority, axis=0)
+    new_centroid = np.mean(X_new, axis=0)
+    mean_shift = np.linalg.norm(new_centroid - orig_centroid) / (np.linalg.norm(orig_centroid) + 1e-10)
+    
+    # Std change
+    orig_std = np.mean(np.std(X_orig_minority, axis=0))
+    new_std = np.mean(np.std(X_new, axis=0))
+    std_change = (new_std - orig_std) / (orig_std + 1e-10)
+    
+    # Overlap with majority (using simple distance heuristic)
+    X_orig_majority = X_original[y_original == 0]
+    majority_centroid = np.mean(X_orig_majority, axis=0)
+    
+    dist_to_minority = np.mean([np.linalg.norm(x - orig_centroid) for x in X_new])
+    dist_to_majority = np.mean([np.linalg.norm(x - majority_centroid) for x in X_new])
+    
+    # Overlap score: closer to 1 means more overlap with majority (bad)
+    overlap_score = dist_to_minority / (dist_to_majority + 1e-10)
+    
+    return {
+        "mean_shift": float(mean_shift),
+        "std_change": float(std_change),
+        "overlap_score": float(overlap_score),
+    }
 
 
 def jitter_features(
@@ -163,8 +380,9 @@ def augment_minority_class(
     y: Union[np.ndarray, pd.Series],
     method: str = "jitter_scale",
     target_ratio: float = 0.33,
-    jitter_sigma: float = 0.03,
-    scale_sigma: float = 0.1,
+    jitter_sigma: Optional[float] = None,
+    scale_sigma: Optional[float] = None,
+    adaptive_sigma: str = "none",
     random_state: int = 42,
 ) -> Tuple[Union[np.ndarray, pd.DataFrame], Union[np.ndarray, pd.Series]]:
     """Augment minority class samples to reduce class imbalance.
@@ -182,10 +400,17 @@ def augment_minority_class(
         Augmentation method to apply.
     target_ratio : float, default=0.33
         Target ratio of minority to majority class (e.g., 0.33 = 1:3).
-    jitter_sigma : float, default=0.03
-        Jittering noise level.
-    scale_sigma : float, default=0.1
-        Scaling variation level.
+    jitter_sigma : float, optional
+        Jittering noise level. If None and adaptive_sigma='none', uses 0.03.
+    scale_sigma : float, optional
+        Scaling variation level. If None and adaptive_sigma='none', uses 0.1.
+    adaptive_sigma : {'none', 'snr', 'cv', 'interclass', 'conservative'}, default='none'
+        Method for automatic sigma estimation:
+        - 'none': Use provided or default sigma values
+        - 'snr': Signal-to-noise ratio based
+        - 'cv': Coefficient of variation based
+        - 'interclass': Inter-class distance based (recommended)
+        - 'conservative': Small, safe values
     random_state : int, default=42
         Random seed for reproducibility.
     
@@ -196,8 +421,11 @@ def augment_minority_class(
     
     Examples
     --------
-    >>> X, y = augment_minority_class(X_train, y_train, method='jitter_scale')
-    >>> print(f"Before: {np.bincount(y_train)}, After: {np.bincount(y)}")
+    >>> # Using adaptive sigma (recommended)
+    >>> X, y = augment_minority_class(X_train, y_train, adaptive_sigma='interclass')
+    
+    >>> # Using fixed sigma
+    >>> X, y = augment_minority_class(X_train, y_train, jitter_sigma=0.05, scale_sigma=0.1)
     """
     np.random.seed(random_state)
     
@@ -214,6 +442,19 @@ def augment_minority_class(
         y_arr = y.values.astype(int)
     else:
         y_arr = y.astype(int)
+    
+    # Determine sigma values
+    if adaptive_sigma != "none":
+        # Use adaptive sigma estimation
+        sigma_dict = estimate_adaptive_sigma(X_arr, y_arr, method=adaptive_sigma)
+        _jitter_sigma = sigma_dict["jitter_sigma"]
+        _scale_sigma = sigma_dict["scale_sigma"]
+        logger.info(f"[Adaptive] Using estimated sigmas: jitter={_jitter_sigma:.4f}, scale={_scale_sigma:.4f}")
+    else:
+        # Use provided or default values
+        _jitter_sigma = jitter_sigma if jitter_sigma is not None else 0.03
+        _scale_sigma = scale_sigma if scale_sigma is not None else 0.1
+        logger.info(f"[Fixed] Using sigmas: jitter={_jitter_sigma:.4f}, scale={_scale_sigma:.4f}")
     
     # Identify minority and majority
     n_minority = (y_arr == 1).sum()
@@ -248,14 +489,14 @@ def augment_minority_class(
         
         # Apply augmentation
         if method == "jitter":
-            x_aug = jitter_features(x_sample, sigma=jitter_sigma)
+            x_aug = jitter_features(x_sample, sigma=_jitter_sigma)
         elif method == "scale":
-            x_aug = scale_features(x_sample, sigma=scale_sigma)
+            x_aug = scale_features(x_sample, sigma=_scale_sigma)
         elif method == "jitter_scale":
             x_aug = jitter_scale_features(
                 x_sample, 
-                jitter_sigma=jitter_sigma,
-                scale_sigma=scale_sigma
+                jitter_sigma=_jitter_sigma,
+                scale_sigma=_scale_sigma
             )
         else:
             raise ValueError(f"Unknown augmentation method: {method}")
@@ -266,6 +507,16 @@ def augment_minority_class(
     # Combine original and augmented
     X_combined = np.vstack([X_arr, np.array(augmented_X)])
     y_combined = np.concatenate([y_arr, np.array(augmented_y)])
+    
+    # Analyze augmentation quality
+    quality = analyze_augmentation_quality(X_arr, X_combined, y_arr, y_combined)
+    logger.info(f"[Augmentation Quality] mean_shift={quality['mean_shift']:.4f}, "
+                f"std_change={quality['std_change']:.4f}, overlap_score={quality['overlap_score']:.4f}")
+    
+    # Warn if quality is poor
+    if quality['overlap_score'] > 0.8:
+        logger.warning("Augmented samples may overlap significantly with majority class. "
+                       "Consider using smaller sigma or 'conservative' adaptive method.")
     
     # Shuffle to mix original and augmented
     shuffle_idx = np.random.permutation(len(y_combined))
