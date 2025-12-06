@@ -13,7 +13,7 @@ vehicle dynamics-based driver drowsiness detection (DDD).
    guide/models
    guide/evaluation
    guide/analysis
-   guide/domain_generalization_pipline
+   guide/domain_generalization_pipeline
 
 .. toctree::
    :maxdepth: 2

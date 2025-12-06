@@ -21,7 +21,7 @@ docs/
         ├── models.rst                      # Model architectures
         ├── evaluation.rst                  # Evaluation framework
         ├── analysis.rst                    # Analysis tools
-        └── domain_generalization_pipline.md # Domain generalization workflow
+        └── domain_generalization_pipeline.md # Domain generalization workflow
 ```
 
 ## Building Documentation
