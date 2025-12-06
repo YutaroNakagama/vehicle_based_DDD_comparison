@@ -75,7 +75,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from imblearn.ensemble import BalancedRandomForestClassifier, EasyEnsembleClassifier
 from imblearn.over_sampling import SMOTE, ADASYN, BorderlineSMOTE
-from imblearn.under_sampling import RandomUnderSampler, TomekLinks
+from imblearn.under_sampling import RandomUnderSampler, TomekLinks, EditedNearestNeighbours
 from imblearn.combine import SMOTETomek, SMOTEENN
 from imblearn.pipeline import Pipeline as ImbPipeline
 
@@ -311,6 +311,16 @@ def common_train(
                 n_jobs=1
             )
             logging.info("Using Tomek Links only (boundary cleaning)")
+        elif oversample_method == "undersample_enn":
+            # ENN only (Edited Nearest Neighbors)
+            # Removes majority samples misclassified by k-NN
+            sampler = EditedNearestNeighbours(
+                sampling_strategy='majority',  # Only remove majority class samples
+                n_neighbors=3,
+                kind_sel='all',
+                n_jobs=1
+            )
+            logging.info("Using Edited Nearest Neighbors only (boundary cleaning)")
         elif oversample_method in ["jitter", "scale", "jitter_scale"]:
             # Time-series inspired augmentation (does not use imblearn sampler)
             logging.info(f"Using time-series augmentation: {oversample_method}")
@@ -318,8 +328,7 @@ def common_train(
                 X_train, y_train,
                 method=oversample_method,
                 target_ratio=target_ratio,
-                jitter_sigma=0.03,
-                scale_sigma=0.1,
+                adaptive_sigma="interclass",  # Use data-driven sigma estimation
                 random_state=42,
             )
             # Skip the fit_resample step below
