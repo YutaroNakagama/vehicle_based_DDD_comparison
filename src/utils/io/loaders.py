@@ -361,16 +361,23 @@ def load_model_and_scaler(model_name: str, mode: str, tag: str, fold: int, jobid
 
     # --- Search patterns (recursive) ---
     # --- Search patterns (mode-aware) ---
-    # Prefer exact mode match (e.g., RF_target_only_rank_dtw_mean_out_domain_*.pkl)
+    # Prefer exact mode match (e.g., RF_target_only_full_mean_distance_mmd_out_domain_*.pkl)
     tag_key = tag.replace("rank_", "") if tag else ""
 
     # For pooled mode without tag, search for mode-only pattern
     if mode == "pooled" and not tag_key:
         exact_pattern = os.path.join(base_dir, "**", f"{model_name}_{mode}_*.pkl")
     else:
-        exact_pattern = os.path.join(base_dir, "**", f"{model_name}_{mode}_rank_*{tag_key}*.pkl")
+        # Try multiple patterns to match both old (rank_) and new (full_) naming conventions
+        exact_pattern = os.path.join(base_dir, "**", f"{model_name}_{mode}_*{tag_key}*.pkl")
     
     model_matches = glob.glob(exact_pattern, recursive=True)
+    
+    # Filter matches by tag_key to ensure we get the right model
+    if tag_key and model_matches:
+        filtered_matches = [m for m in model_matches if tag_key in os.path.basename(m)]
+        if filtered_matches:
+            model_matches = filtered_matches
 
     # If no exact match found, fallback to any file that includes the same mode
     if not model_matches:
