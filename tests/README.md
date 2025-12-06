@@ -43,12 +43,12 @@ pytest tests/ -m "not slow"
 
 ## テストの構成
 
+- `conftest.py`: pytest共通fixtures（サンプルデータ生成、モック環境設定など）
 - `test_config.py`: 設定ファイルとパスのテスト
-- `test_data_pipeline/`: データパイプライン関連のテスト
-  - `test_smoke_pipeline.py`: データ処理の軽量なエンドツーエンドテスト
-- `test_models/`: モデルトレーニング関連のテスト
-  - `test_smoke_training.py`: モデル学習の軽量なエンドツーエンドテスト
-- `test_utils/`: ユーティリティ関数のテスト
+- `test_imbalance_methods.py`: 不均衡データ処理手法のテスト（SMOTE、アンダーサンプリング等）
+- `test_smoke_pipeline.py`: データ処理の軽量なエンドツーエンドテスト
+- `test_smoke_training.py`: モデル学習の軽量なエンドツーエンドテスト
+- `fixtures/`: テスト用ダミーデータ
 
 ## テストマーカーの説明
 
