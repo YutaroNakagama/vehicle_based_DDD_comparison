@@ -1047,11 +1047,14 @@ def main():
     parser.add_argument("--n_clusters", type=int, default=3)
     parser.add_argument("--output_subdir", default="clustering_ranked")
     parser.add_argument("--ranking", nargs="+", 
-                       choices=["mean_distance", "centroid_mds", "centroid_umap", "medoid", "lof", "all"],
+                       choices=["mean_distance", "centroid_mds", "centroid_umap", "medoid", "lof", 
+                                "knn", "median_distance", "isolation_forest", "all"],
                        default=["all"],
                        help="Ranking methods to use. Options: mean_distance (平均距離), "
                             "centroid_mds (MDS空間のcentroid), centroid_umap (UMAP空間のcentroid), "
-                            "medoid (medoidからの距離), lof (Local Outlier Factor)")
+                            "medoid (medoidからの距離), lof (Local Outlier Factor), "
+                            "knn (K近傍平均距離), median_distance (中央値距離), "
+                            "isolation_forest (Isolation Forest異常スコア)")
     args = parser.parse_args()
     
     # Determine metrics to process
