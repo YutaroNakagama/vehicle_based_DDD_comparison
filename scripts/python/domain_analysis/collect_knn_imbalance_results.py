@@ -40,12 +40,12 @@ def find_evaluation_results(model: str = "RF") -> List[Dict]:
         return results
     
     # Pattern for KNN imbalance tags
-    # rank_mmd_knn_{level}_{method}
+    # rank_{distance}_knn_{level}_{method}
     pattern = re.compile(
         r"rank_(?P<distance>mmd|wasserstein|dtw)_"
         r"knn_"
         r"(?P<level>out_domain|mid_domain|in_domain)_"
-        r"(?P<method>baseline|undersample_rus|undersample_tomek|smote_rus|smote_tomek)"
+        r"(?P<method>baseline|undersample_rus|undersample_tomek|smote_rus|smote_tomek|smote_enn)"
     )
     
     for jobid_dir in eval_base.iterdir():
