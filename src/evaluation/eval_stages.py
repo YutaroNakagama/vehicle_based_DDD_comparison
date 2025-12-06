@@ -96,22 +96,120 @@ def extract_metadata_from_tag(tag: Optional[str]) -> Tuple[str, str]:
     Parameters
     ----------
     tag : str, optional
-        Experiment tag (e.g., "rank_dtw_mean_high").
+        Experiment tag. Supports multiple formats:
+        - Legacy: "rank_dtw_mean_high"
+        - New full format: "full_mean_distance_mmd_out_domain"
+        - New format: "rank_mean_distance_mmd_out_domain"
 
     Returns
     -------
     tuple of (str, str)
-        - distance : Distance metric (e.g., "dtw_mean")
+        - distance : Distance metric (e.g., "mmd", "dtw", "wasserstein")
         - level : Group level (e.g., "out_domain", "in_domain", "mid_domain")
     """
-    if not tag or not tag.startswith("rank_"):
+    import re
+    
+    if not tag:
         return "unknown", "unknown"
     
-    parts = tag.split("_")  # ["rank", "dtw", "mean", "out_domain"]
-    if len(parts) < 3:
-        return "unknown", "unknown"
+    # New full format: full_{method}_{metric}_{level}
+    # Example: full_mean_distance_mmd_out_domain
+    full_match = re.search(
+        r'full_(mean_distance|centroid_umap|lof|knn|median_distance|isolation_forest)_(mmd|dtw|wasserstein)_(out_domain|mid_domain|in_domain)',
+        tag
+    )
+    if full_match:
+        method = full_match.group(1)
+        metric = full_match.group(2)
+        level = full_match.group(3)
+        # Return distance as "{method}_{metric}" for file naming
+        return f"{method}_{metric}", level
     
-    distance_key = "_".join(parts[1:-1])  # "dtw_mean"
-    level = parts[-1]  # "out_domain"
+    # New rank format: rank_{method}_{metric}_{level}
+    # Example: rank_mean_distance_mmd_out_domain
+    rank_new_match = re.search(
+        r'rank_(mean_distance|centroid_umap|lof|knn|median_distance|isolation_forest)_(mmd|dtw|wasserstein)_(out_domain|mid_domain|in_domain)',
+        tag
+    )
+    if rank_new_match:
+        method = rank_new_match.group(1)
+        metric = rank_new_match.group(2)
+        level = rank_new_match.group(3)
+        return f"{method}_{metric}", level
     
-    return distance_key, level
+    # Legacy format: rank_{metric}_mean_{level}
+    # Example: rank_dtw_mean_high, rank_mmd_mean_out_domain
+    if tag.startswith("rank_"):
+        parts = tag.split("_")  # ["rank", "dtw", "mean", "out_domain"]
+        if len(parts) >= 4:
+            distance_key = "_".join(parts[1:-1])  # "dtw_mean"
+            level = parts[-1]  # "out_domain" or "high"
+            return distance_key, level
+    
+    return "unknown", "unknown"
+
+
+def extract_full_metadata_from_tag(tag: Optional[str]) -> dict:
+    """Extract all metadata components from experiment tag.
+
+    Parameters
+    ----------
+    tag : str, optional
+        Experiment tag. Supports multiple formats:
+        - Legacy: "rank_dtw_mean_high"
+        - New full format: "full_mean_distance_mmd_out_domain"
+        - New format: "rank_mean_distance_mmd_out_domain"
+
+    Returns
+    -------
+    dict
+        Dictionary containing:
+        - ranking_method : Ranking method (e.g., "mean_distance", "lof", "knn")
+        - distance_metric : Distance metric (e.g., "mmd", "dtw", "wasserstein")
+        - level : Group level (e.g., "out_domain", "in_domain", "mid_domain")
+    """
+    import re
+    
+    result = {
+        "ranking_method": "unknown",
+        "distance_metric": "unknown",
+        "level": "unknown",
+    }
+    
+    if not tag:
+        return result
+    
+    # New full format: full_{method}_{metric}_{level}
+    # Example: full_mean_distance_mmd_out_domain
+    full_match = re.search(
+        r'full_(mean_distance|centroid_umap|lof|knn|median_distance|isolation_forest)_(mmd|dtw|wasserstein)_(out_domain|mid_domain|in_domain)',
+        tag
+    )
+    if full_match:
+        result["ranking_method"] = full_match.group(1)
+        result["distance_metric"] = full_match.group(2)
+        result["level"] = full_match.group(3)
+        return result
+    
+    # New rank format: rank_{method}_{metric}_{level}
+    # Example: rank_mean_distance_mmd_out_domain
+    rank_new_match = re.search(
+        r'rank_(mean_distance|centroid_umap|lof|knn|median_distance|isolation_forest)_(mmd|dtw|wasserstein)_(out_domain|mid_domain|in_domain)',
+        tag
+    )
+    if rank_new_match:
+        result["ranking_method"] = rank_new_match.group(1)
+        result["distance_metric"] = rank_new_match.group(2)
+        result["level"] = rank_new_match.group(3)
+        return result
+    
+    # Legacy format: rank_{metric}_mean_{level}
+    # Example: rank_dtw_mean_high, rank_mmd_mean_out_domain
+    if tag.startswith("rank_"):
+        parts = tag.split("_")
+        if len(parts) >= 4:
+            result["ranking_method"] = "mean_distance"  # legacy default
+            result["distance_metric"] = parts[1]  # "dtw", "mmd", etc.
+            result["level"] = parts[-1]  # "out_domain" or "high"
+    
+    return result
