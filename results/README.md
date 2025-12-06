@@ -7,44 +7,47 @@ The structure follows a consistent policy to ensure reproducibility, clarity, an
 
 ```
 results/
-├── domain_analysis/       # ドメイン分析結果
-│   ├── distance/          # 距離行列 (group-wise/, subject-wise/)
-│   ├── rankings/          # ランキング結果 (centroid_umap/, lof/, mean_distance/)
-│   ├── summary/           # 要約テーブル・可視化 (csv/, png/)
-│   └── knn_imbalance/     # [archive] 旧KNN不均衡実験
-├── evaluation/            # モデル評価結果
-│   ├── RF/                # Random Forest評価
-│   ├── BalancedRF/        # Balanced Random Forest評価
-│   ├── EasyEnsemble/      # EasyEnsemble評価
-│   └── ensemble/          # アンサンブル評価
-└── imbalance_analysis/    # 不均衡データ分析
-    ├── *.png              # 可視化結果
-    ├── *.csv              # 数値結果
-    └── v2/                # v2実験結果
+├── domain_analysis/           # ドメイン分析結果
+│   ├── distance/              # 距離行列・可視化
+│   │   ├── subject-wise/      # 被験者間距離
+│   │   │   ├── mmd/           # MMD距離
+│   │   │   └── wasserstein/   # Wasserstein距離
+│   │   └── group-wise/        # グループ間距離
+│   ├── rankings/              # ランキング結果
+│   │   ├── centroid_umap/
+│   │   ├── lof/
+│   │   └── mean_distance/
+│   ├── summary/               # 要約テーブル・可視化
+│   │   ├── csv/
+│   │   └── png/
+│   └── archive/               # 古い実験結果
+│       └── knn_imbalance/
+├── evaluation/                # モデル評価結果（Job IDベース）
+│   ├── RF/                    # Random Forest
+│   ├── BalancedRF/            # Balanced Random Forest
+│   ├── EasyEnsemble/          # EasyEnsemble
+│   └── ensemble/              # アンサンブル評価
+└── imbalance_analysis/        # 不均衡データ分析
+    ├── v1/                    # 初期分析結果
+    └── v2/                    # 改良版分析結果
 ```
 
 ## Naming Conventions
 
-### Per-job Results (evaluation/, domain_analysis/)
+### Per-job Results (evaluation/)
 
-- **Single-job summary:**  
-  `summary_<target>_<jobID>.csv / .png`
+各Job IDディレクトリに評価結果を保存:
+- `<jobID>/<jobID>[<idx>]/` - Array job index別
 
-- **Multi-job comparison:**  
-  `compare_<target>_<analysisType>_<date>.csv / .png`
+### Summary Files
 
-- **Global summary:**  
-  `summary_all_<target>_<date>.csv / .png`
-
-### Files in Each Subdirectory
-
-- `metrics/` → Per-job raw performance metrics (CSV/JSON)
-- `predictions/` → Per-job prediction outputs (ROC, PR, CM; CSV + PNG)
-- `distances/` → Per-job distance matrices (DTW, MMD, Wasserstein)
-- `ranks/` → Per-job ranking results (mean, std, top10, top20)
+- **Single-job summary:** `summary_<target>_<jobID>.csv`
+- **Multi-job comparison:** `compare_<target>_<analysisType>_<date>.csv`
+- **Global summary:** `summary_all_<target>_<date>.csv`
 
 ## Policy
 
 - **CSV** for numerical data, **PNG** for visualizations
 - Job results are never overwritten: each run is placed in its own job ID folder
 - No PDF/SVG — PNG is the single standard format
+- Old experiments are moved to `archive/` subdirectory
