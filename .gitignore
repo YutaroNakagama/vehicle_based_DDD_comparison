@@ -36,6 +36,11 @@ continue_output*.log
 resume_output*.log
 launch_output*.log
 nohup.out
+logs/
+
+# ===== Temporary job tracking files =====
+.job_ids_*.txt
+**/.job_ids_*.txt
 
 # ===== Documentation build (Sphinx) =====
 docs/_build/
