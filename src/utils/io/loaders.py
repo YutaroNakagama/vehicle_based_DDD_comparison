@@ -361,28 +361,44 @@ def load_model_and_scaler(model_name: str, mode: str, tag: str, fold: int, jobid
 
     # --- Search patterns (recursive) ---
     # --- Search patterns (mode-aware) ---
-    # Prefer exact mode match (e.g., RF_target_only_full_mean_distance_mmd_out_domain_*.pkl)
-    tag_key = tag.replace("rank_", "") if tag else ""
+    # Prefer exact mode match (e.g., RF_target_only_rank_dtw_mean_out_domain_*.pkl)
+    # Handle both legacy (rank_*) and new (full_*) tag formats
+    tag_key = tag if tag else ""
+    
+    # Remove common prefixes for matching
+    if tag_key.startswith("rank_"):
+        tag_key = tag_key[5:]  # Remove "rank_" prefix
+    elif tag_key.startswith("full_"):
+        tag_key = tag_key[5:]  # Remove "full_" prefix
 
     # For pooled mode without tag, search for mode-only pattern
     if mode == "pooled" and not tag_key:
         exact_pattern = os.path.join(base_dir, "**", f"{model_name}_{mode}_*.pkl")
     else:
-        # Try multiple patterns to match both old (rank_) and new (full_) naming conventions
+        # Try multiple patterns to match both legacy and new formats
+        # New format: RF_source_only_full_mean_distance_mmd_out_domain_*.pkl
+        # Legacy format: RF_source_only_rank_dtw_mean_out_domain_*.pkl
         exact_pattern = os.path.join(base_dir, "**", f"{model_name}_{mode}_*{tag_key}*.pkl")
     
     model_matches = glob.glob(exact_pattern, recursive=True)
     
-    # Filter matches by tag_key to ensure we get the right model
-    if tag_key and model_matches:
-        filtered_matches = [m for m in model_matches if tag_key in os.path.basename(m)]
-        if filtered_matches:
-            model_matches = filtered_matches
+    # Filter matches to ensure exact tag match (avoid partial matches like knn matching knn_*)
+    if model_matches and tag_key:
+        # Create a more strict filter: tag_key should appear as a complete segment
+        strict_matches = []
+        for m in model_matches:
+            basename = os.path.basename(m)
+            # Check if the full original tag (without prefix) is in the filename
+            if tag_key in basename:
+                strict_matches.append(m)
+        if strict_matches:
+            model_matches = strict_matches
 
     # If no exact match found, fallback to any file that includes the same mode
     if not model_matches:
         fallback_pattern = os.path.join(base_dir, "**", f"{model_name}_{mode}_*.pkl")
         model_matches = glob.glob(fallback_pattern, recursive=True)
+        logging.warning(f"[EVAL] No exact tag match found, using fallback pattern for mode={mode}")
 
     if not model_matches:
         logging.error(f"[EVAL] No model file found for mode={mode}, tag={tag} in {base_dir}")

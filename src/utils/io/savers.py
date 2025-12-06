@@ -297,9 +297,17 @@ def save_eval_results(
     # --- extract distance & level info if available ---
     dist = results.get("distance") or results.get("metric") or "unknown"
     level = results.get("level") or "unknown"
+    tag = results.get("tag") or ""
 
     # --- construct file name including distance and level ---
-    base_name = f"eval_results_{model_name}_{mode}_rank_{dist}_mean_{level}"
+    # New format: eval_results_{model}_{mode}_rank_{dist}_{level}
+    # dist should already include method and metric (e.g., "mean_distance_mmd")
+    if dist != "unknown" and "_" in dist:
+        # New format: dist = "mean_distance_mmd", level = "out_domain"
+        base_name = f"eval_results_{model_name}_{mode}_rank_{dist}_{level}"
+    else:
+        # Legacy format fallback
+        base_name = f"eval_results_{model_name}_{mode}_rank_{dist}_mean_{level}"
 
     out_path_json = os.path.join(save_dir, f"{base_name}.json")
     out_path_csv  = os.path.join(save_dir, f"{base_name}.csv")
