@@ -4,15 +4,16 @@
 
 This experiment compares different imbalance handling methods on KNN-ranked subject groups.
 
-### Experiment Design
+### Full Experiment Design (135 jobs)
 
-| Factor | Values |
-|--------|--------|
-| Ranking Method | KNN (best performing) |
-| Distance Metric | MMD |
-| Domain Levels | out_domain, mid_domain, in_domain |
-| Training Modes | target_only, source_only |
-| Imbalance Methods | 5 methods (see below) |
+| Factor | Values | Count |
+|--------|--------|-------|
+| Distance Metrics | mmd, wasserstein, dtw | 3 |
+| Training Modes | pooled, source_only, target_only | 3 |
+| Domain Levels | out_domain, mid_domain, in_domain | 3 |
+| Imbalance Methods | 5 methods (see below) | 5 |
+
+**Total: 3 × 3 × 3 × 5 = 135 jobs**
 
 ### Imbalance Methods (Ordered by Complexity)
 
@@ -22,26 +23,17 @@ This experiment compares different imbalance handling methods on KNN-ranked subj
 4. **smote_rus** - SMOTE + Random Under-Sampling
 5. **smote_tomek** - SMOTE + Tomek Links cleaning
 
-### Total Jobs
-
-- Baseline: 2 modes × 3 levels = **6 jobs**
-- Imbalance: 2 modes × 3 levels × 4 methods = **24 jobs**
-- Evaluation: **30 jobs**
-
 ## Usage
 
-### 1. Submit Training Jobs
+### 1. Submit Full Training (Recommended)
 
 ```bash
-# Submit all jobs
-./launch_knn_imbalance.sh all
-
-# Or submit separately
-./launch_knn_imbalance.sh baseline  # Baseline only (6 jobs)
-./launch_knn_imbalance.sh imbal     # Imbalance methods (24 jobs)
+./launch_knn_imbalance.sh full
 ```
 
-### 2. Submit Evaluation Jobs (after training completes)
+This submits 135 jobs covering all combinations.
+
+### 2. Submit Evaluation (after training completes)
 
 ```bash
 ./launch_knn_imbalance.sh eval
@@ -57,30 +49,36 @@ python scripts/python/domain_analysis/collect_knn_imbalance_results.py
 python scripts/python/domain_analysis/collect_knn_imbalance_results.py --plot
 ```
 
-## Expected Output
+## Output Structure
 
 Results will be saved to:
 - `results/domain_analysis/summary/knn_imbalance/knn_imbalance_results.csv`
-- `results/domain_analysis/summary/knn_imbalance/png/knn_imbalance_comparison_*.png`
+- `results/domain_analysis/summary/knn_imbalance/png/`
 
 ## Research Questions
 
-1. **Does imbalance handling improve performance on KNN-ranked groups?**
-   - Compare baseline vs resampling methods
+1. **Distance metric effect**: Does the choice of distance metric (MMD/Wasserstein/DTW) affect imbalance handling?
 
-2. **Which imbalance method works best for each domain level?**
-   - out_domain (outliers) may need different handling than in_domain (typical)
+2. **Mode effect**: How does training mode interact with imbalance handling?
+   - pooled: Train on all subjects
+   - source_only: Train on non-target, eval on target
+   - target_only: Train and eval on target subjects
 
-3. **Is simple under-sampling sufficient, or is SMOTE needed?**
-   - Compare RUS vs SMOTE+RUS
+3. **Domain level effect**: Do outlier subjects (out_domain) need different handling than typical subjects (in_domain)?
 
-4. **Does Tomek cleaning improve over random under-sampling?**
-   - Compare RUS vs Tomek
+4. **Method comparison**: 
+   - Is simple RUS sufficient, or is SMOTE needed?
+   - Does Tomek cleaning improve over random under-sampling?
 
-## Interpretation Guide
+## Expected Results
 
-| Level | Subjects | Expected Behavior |
-|-------|----------|-------------------|
-| out_domain | Atypical drivers | High variability, may benefit from oversampling |
-| mid_domain | Intermediate | Moderate performance |
-| in_domain | Typical drivers | Most stable, baseline may be sufficient |
+Based on previous experiments:
+- **KNN + MMD + target_only** was the best ranking configuration
+- **SMOTE+RUS** showed best AUPRC in general imbalance experiments
+- **BalancedRF** showed best F2 at default threshold
+
+## Legacy Scripts
+
+For backward compatibility, the old scripts are still available:
+- `pbs_knn_baseline.sh` - Baseline only (6 jobs, MMD only)
+- `pbs_knn_imbalance.sh` - Imbalance only (24 jobs, MMD only)

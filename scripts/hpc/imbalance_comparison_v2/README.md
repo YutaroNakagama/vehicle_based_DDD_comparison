@@ -16,11 +16,12 @@
 | # | 手法 | モデル | サンプリング | 特徴 |
 |---|------|-------|-------------|------|
 | 1 | Baseline | RF | なし | ベースライン |
-| 2 | SMOTE+Tomek | RF | SMOTE → Tomek Links | 境界クリーニング |
-| 3 | SMOTE+ENN | RF | SMOTE → ENN | ノイズ除去 |
-| 4 | BalancedRF | BalancedRF | 内部処理 | 各木でバランシング |
+| 2 | SMOTE | RF | SMOTE | オーバーサンプリングのみ |
+| 3 | SMOTE+Tomek | RF | SMOTE → Tomek Links | 境界クリーニング |
+| 4 | SMOTE+ENN | RF | SMOTE → ENN | ノイズ除去 |
 | 5 | SMOTE+RUS | RF | SMOTE → RandomUnderSampler | ハイブリッド |
-| 6 | EasyEnsemble | EasyEnsemble | 内部処理 | アンサンブル |
+| 6 | BalancedRF | BalancedRF | 内部処理 | 各木でバランシング |
+| 7 | EasyEnsemble | EasyEnsemble | 内部処理 | アンサンブル |
 
 ## 使用方法
 
@@ -77,10 +78,11 @@ EOF
 imbalance_comparison_v2/
 ├── launch_all.sh              # 一括投入スクリプト
 ├── pbs_train_baseline.sh      # Baseline訓練
+├── pbs_train_smote.sh         # SMOTE単体訓練
 ├── pbs_train_smote_tomek.sh   # SMOTE+Tomek訓練
 ├── pbs_train_smote_enn.sh     # SMOTE+ENN訓練
-├── pbs_train_balanced_rf.sh   # BalancedRF訓練
 ├── pbs_train_smote_rus.sh     # SMOTE+RUS訓練
+├── pbs_train_balanced_rf.sh   # BalancedRF訓練
 ├── pbs_train_easy_ensemble.sh # EasyEnsemble訓練
 ├── pbs_evaluate.sh            # 評価スクリプト
 ├── job_ids_v2.txt             # ジョブID記録（自動生成）
