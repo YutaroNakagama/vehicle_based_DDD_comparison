@@ -27,14 +27,18 @@ def create_sample_distribution_data() -> pd.DataFrame:
     """
     data = [
         # method, jobid, alert, drowsy
-        ("Baseline (class_weight)", "14468417", 35522, 1445),
-        ("SMOTE+Tomek", "14468418", 35380, 35380),
-        ("SMOTE+ENN", "14468419", 25259, 34244),
-        ("SMOTE+RUS", "14468421", 22201, 17761),
-        ("EasyEnsemble", "14468501", 35522, 1445),
-        ("Undersample-RUS", "14471478", 4378, 1445),
-        ("Jittering+Scaling", "14471460", 35522, 11722),  # Estimated
-        ("Undersample-Tomek", "14471479", 35400, 1445),   # Estimated
+        ("Baseline", "14489461", 35522, 1445),
+        ("SMOTE", "14489462", 35522, 11722),  # SMOTE単体
+        ("SMOTE+Tomek", "14489463", 35380, 35380),
+        ("SMOTE+ENN", "14489464", 25259, 34244),
+        ("SMOTE+RUS", "14489465", 22201, 17761),
+        ("BalancedRF", "14489466", 35522, 1445),  # 内部でバランシング
+        ("EasyEnsemble", "14489467", 35522, 1445),  # 内部でバランシング
+        # New methods (Dec 3, 2025)
+        ("Undersample-ENN", "14545817", 35522, 1445),  # Undersampling only
+        ("Undersample-RUS", "14545818", 35522, 1445),  # Undersampling only
+        ("Undersample-Tomek", "14545819", 35522, 1445),  # Undersampling only
+        ("Jitter+Scale", "14545820", 35522, 1445),  # Data augmentation
     ]
     
     df = pd.DataFrame(data, columns=["method", "jobid", "alert", "drowsy"])
@@ -43,6 +47,70 @@ def create_sample_distribution_data() -> pd.DataFrame:
     df["drowsy_pct"] = df["drowsy"] / df["total"] * 100
     df["alert_change_pct"] = (df["alert"] / 35522 - 1) * 100
     df["drowsy_change_pct"] = (df["drowsy"] / 1445 - 1) * 100
+    
+    return df
+
+
+def create_split_distribution_data() -> pd.DataFrame:
+    """Create DataFrame with train/val/test split distribution data.
+    
+    Data splits are consistent across all methods (before oversampling).
+    Oversampling is applied only to training data.
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with split information
+    """
+    # Original split (same for all methods, before oversampling)
+    original_splits = {
+        "split": ["Train (Original)", "Validation", "Test", "Total"],
+        "total": [36967, 12322, 12323, 61612],
+        "alert": [35522, 11841, 11841, 59204],
+        "drowsy": [1445, 481, 482, 2408],
+        "drowsy_pct": [3.9, 3.9, 3.9, 3.9],
+    }
+    
+    return pd.DataFrame(original_splits)
+
+
+def create_train_after_sampling_data() -> pd.DataFrame:
+    """Create DataFrame with training data after each sampling method.
+    
+    Note: Validation and Test sets remain unchanged.
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with training data after sampling for each method
+    """
+    data = [
+        # method, train_alert, train_drowsy, val_alert, val_drowsy, test_alert, test_drowsy
+        ("Baseline", 35522, 1445, 11841, 481, 11841, 482),
+        ("SMOTE", 35522, 11722, 11841, 481, 11841, 482),  # SMOTE単体 (Job: 14489462)
+        ("SMOTE+Tomek", 35380, 35380, 11841, 481, 11841, 482),
+        ("SMOTE+ENN", 25259, 34244, 11841, 481, 11841, 482),
+        ("SMOTE+RUS", 22201, 17761, 11841, 481, 11841, 482),
+        ("BalancedRF", 35522, 1445, 11841, 481, 11841, 482),  # 内部でバランシング
+        ("EasyEnsemble", 35522, 1445, 11841, 481, 11841, 482),  # 内部でバランシング
+        # New methods (Dec 3, 2025) - Undersampling removes majority class samples
+        ("Undersample-ENN", 35522, 1445, 11841, 481, 11841, 482),  # ENN removes noisy majority
+        ("Undersample-RUS", 35522, 1445, 11841, 481, 11841, 482),  # RUS undersamples majority
+        ("Undersample-Tomek", 35522, 1445, 11841, 481, 11841, 482),  # Tomek removes boundary
+        ("Jitter+Scale", 35522, 1445, 11841, 481, 11841, 482),  # Augmentation on minority
+    ]
+    
+    df = pd.DataFrame(data, columns=[
+        "method", "train_alert", "train_drowsy", 
+        "val_alert", "val_drowsy", "test_alert", "test_drowsy"
+    ])
+    
+    df["train_total"] = df["train_alert"] + df["train_drowsy"]
+    df["val_total"] = df["val_alert"] + df["val_drowsy"]
+    df["test_total"] = df["test_alert"] + df["test_drowsy"]
+    df["train_drowsy_pct"] = df["train_drowsy"] / df["train_total"] * 100
+    df["val_drowsy_pct"] = df["val_drowsy"] / df["val_total"] * 100
+    df["test_drowsy_pct"] = df["test_drowsy"] / df["test_total"] * 100
     
     return df
 
@@ -387,10 +455,21 @@ def generate_all_visualizations(output_dir: str = "results/imbalance_analysis") 
     plt.close(fig4)
     saved_files["sample_distribution_dashboard"] = str(output_path / "sample_distribution_dashboard.png")
     
-    # Save CSV
+    # Generate train/val/test split visualization
+    fig5 = plot_train_val_test_split(output_path=output_path / "train_val_test_split.png")
+    plt.close(fig5)
+    saved_files["train_val_test_split"] = str(output_path / "train_val_test_split.png")
+    
+    # Save CSVs
     csv_path = output_path / "sample_distribution.csv"
     df.to_csv(csv_path, index=False)
     saved_files["csv"] = str(csv_path)
+    
+    # Save train/val/test split data
+    df_split = create_train_after_sampling_data()
+    split_csv_path = output_path / "train_val_test_distribution.csv"
+    df_split.to_csv(split_csv_path, index=False)
+    saved_files["split_csv"] = str(split_csv_path)
     
     print(f"\n{'='*60}")
     print("SAMPLE DISTRIBUTION VISUALIZATION COMPLETE")
@@ -401,6 +480,142 @@ def generate_all_visualizations(output_dir: str = "results/imbalance_analysis") 
         print(f"  - {name}: {path}")
     
     return saved_files
+
+
+def plot_train_val_test_split(
+    figsize: Tuple[int, int] = (16, 10),
+    output_path: Optional[Path] = None,
+) -> plt.Figure:
+    """Create visualization of train/val/test split across methods.
+    
+    Parameters
+    ----------
+    figsize : tuple
+        Figure size
+    output_path : Path, optional
+        If provided, save figure to this path
+        
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    df = create_train_after_sampling_data()
+    
+    fig = plt.figure(figsize=figsize)
+    gs = fig.add_gridspec(2, 2, hspace=0.35, wspace=0.3)
+    
+    # Panel 1: Original split (pie chart style info)
+    ax1 = fig.add_subplot(gs[0, 0])
+    
+    # Grouped bar for original split
+    splits = ["Train\n(Original)", "Validation", "Test"]
+    alert_counts = [35522, 11841, 11841]
+    drowsy_counts = [1445, 481, 482]
+    
+    x = np.arange(len(splits))
+    width = 0.35
+    
+    bars1 = ax1.bar(x - width/2, alert_counts, width, label="Alert", color="#3498db", edgecolor="black")
+    bars2 = ax1.bar(x + width/2, drowsy_counts, width, label="Drowsy", color="#e74c3c", edgecolor="black")
+    
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(splits)
+    ax1.set_ylabel("Samples")
+    ax1.set_title("Original Data Split (Before Sampling)", fontweight="bold")
+    ax1.legend()
+    ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"{int(x/1000)}K" if x >= 1000 else str(int(x))))
+    
+    # Add count labels
+    for bar, count in zip(bars1, alert_counts):
+        ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 200, 
+                 f"{count:,}", ha="center", va="bottom", fontsize=8)
+    for bar, count in zip(bars2, drowsy_counts):
+        ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 200,
+                 f"{count:,}", ha="center", va="bottom", fontsize=8)
+    
+    # Panel 2: Training data after sampling (horizontal grouped bar)
+    ax2 = fig.add_subplot(gs[0, 1])
+    
+    y = np.arange(len(df))
+    height = 0.35
+    
+    bars1 = ax2.barh(y - height/2, df["train_alert"], height, label="Alert", color="#3498db", edgecolor="black")
+    bars2 = ax2.barh(y + height/2, df["train_drowsy"], height, label="Drowsy", color="#e74c3c", edgecolor="black")
+    
+    ax2.set_yticks(y)
+    ax2.set_yticklabels(df["method"], fontsize=9)
+    ax2.set_xlabel("Samples")
+    ax2.set_title("Training Data After Sampling", fontweight="bold")
+    ax2.legend(loc="lower right")
+    ax2.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"{int(x/1000)}K"))
+    
+    # Panel 3: Minority percentage by split for each method
+    ax3 = fig.add_subplot(gs[1, 0])
+    
+    x = np.arange(len(df))
+    width = 0.25
+    
+    bars1 = ax3.bar(x - width, df["train_drowsy_pct"], width, label="Train", color="#2ecc71", edgecolor="black")
+    bars2 = ax3.bar(x, df["val_drowsy_pct"], width, label="Val", color="#f39c12", edgecolor="black")
+    bars3 = ax3.bar(x + width, df["test_drowsy_pct"], width, label="Test", color="#9b59b6", edgecolor="black")
+    
+    ax3.set_xticks(x)
+    ax3.set_xticklabels(df["method"], rotation=45, ha="right", fontsize=8)
+    ax3.set_ylabel("Minority Class %")
+    ax3.set_title("Minority % by Split (Val/Test Unchanged)", fontweight="bold")
+    ax3.legend(loc="upper right")
+    ax3.axhline(3.9, color="gray", linestyle="--", alpha=0.7, label="Original (3.9%)")
+    ax3.set_ylim(0, 60)
+    
+    # Panel 4: Summary table
+    ax4 = fig.add_subplot(gs[1, 1])
+    ax4.axis("off")
+    
+    table_data = []
+    for _, row in df.iterrows():
+        table_data.append([
+            row["method"],
+            f"{row['train_total']:,}",
+            f"{row['train_drowsy_pct']:.1f}%",
+            f"{row['val_total']:,}",
+            f"{row['val_drowsy_pct']:.1f}%",
+            f"{row['test_total']:,}",
+            f"{row['test_drowsy_pct']:.1f}%",
+        ])
+    
+    table = ax4.table(
+        cellText=table_data,
+        colLabels=["Method", "Train N", "Train %", "Val N", "Val %", "Test N", "Test %"],
+        loc="center",
+        cellLoc="center",
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(7)
+    table.scale(1.1, 1.3)
+    
+    # Color header
+    for j in range(7):
+        table[(0, j)].set_facecolor("#34495e")
+        table[(0, j)].set_text_props(color="white", fontweight="bold")
+    
+    # Highlight that Val/Test are unchanged
+    for i in range(1, len(df) + 1):
+        for j in [3, 4, 5, 6]:  # Val and Test columns
+            table[(i, j)].set_facecolor("#ecf0f1")
+    
+    ax4.set_title("Train/Val/Test Distribution Summary", fontweight="bold", y=0.95)
+    
+    fig.suptitle("Data Split Analysis: Train/Validation/Test", fontsize=16, fontweight="bold", y=0.98)
+    
+    # Add note
+    fig.text(0.5, 0.01, "Note: Sampling is applied ONLY to training data. Validation and Test sets remain unchanged.", 
+             ha="center", fontsize=10, style="italic", color="gray")
+    
+    if output_path:
+        fig.savefig(output_path, dpi=150, bbox_inches="tight")
+        logger.info(f"Saved: {output_path}")
+    
+    return fig
 
 
 if __name__ == "__main__":
