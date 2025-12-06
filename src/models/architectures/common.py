@@ -75,7 +75,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from imblearn.ensemble import BalancedRandomForestClassifier, EasyEnsembleClassifier
 from imblearn.over_sampling import SMOTE, ADASYN, BorderlineSMOTE
-from imblearn.under_sampling import RandomUnderSampler, TomekLinks, EditedNearestNeighbours
+from imblearn.under_sampling import RandomUnderSampler, TomekLinks
 from imblearn.combine import SMOTETomek, SMOTEENN
 from imblearn.pipeline import Pipeline as ImbPipeline
 
@@ -311,16 +311,6 @@ def common_train(
                 n_jobs=1
             )
             logging.info("Using Tomek Links only (boundary cleaning)")
-        elif oversample_method == "undersample_enn":
-            # ENN only (Edited Nearest Neighbors)
-            # Removes majority samples misclassified by k-NN
-            sampler = EditedNearestNeighbours(
-                sampling_strategy='majority',  # Only remove majority class samples
-                n_neighbors=3,
-                kind_sel='all',
-                n_jobs=1
-            )
-            logging.info("Using Edited Nearest Neighbors only (boundary cleaning)")
         elif oversample_method in ["jitter", "scale", "jitter_scale"]:
             # Time-series inspired augmentation (does not use imblearn sampler)
             logging.info(f"Using time-series augmentation: {oversample_method}")
@@ -603,6 +593,7 @@ def common_train(
     if model in optuna_supported:
         study = optuna.create_study(
             direction="maximize",
+            sampler=optuna.samplers.TPESampler(seed=42),
             pruner=optuna.pruners.MedianPruner(
                 n_startup_trials=OPTUNA_N_STARTUP_TRIALS,
                 n_warmup_steps=OPTUNA_N_WARMUP_STEPS,
@@ -668,7 +659,13 @@ def common_train(
         if "class_weight" in best_params:
             best_params.pop("class_weight")
         # Precision-focused: reduced minority weight from 10.0 to 3.0
-        best_clf = RandomForestClassifier(**best_params, class_weight={0:1.0, 1:3.0}, n_jobs=1)
+        # Ensure random_state=42 for reproducibility (not included in Optuna best_params)
+        best_clf = RandomForestClassifier(
+            **best_params,
+            class_weight={0:1.0, 1:3.0},
+            n_jobs=1,
+            random_state=42
+        )
 
         # --- Simplified calibration using train+val together (more stable) ---
         from sklearn.calibration import CalibratedClassifierCV
@@ -683,8 +680,9 @@ def common_train(
         # Train the base RF
         best_clf.fit(X_combined, y_combined, sample_weight=sw_combined)
 
-        # Apply sigmoid calibration over 5-fold CV
-        calib = CalibratedClassifierCV(best_clf, cv=5, method='sigmoid')
+        # Apply sigmoid calibration over 5-fold CV with fixed seed for reproducibility
+        cv_calib = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+        calib = CalibratedClassifierCV(best_clf, cv=cv_calib, method='sigmoid')
         try:
             calib.fit(X_combined, y_combined, sample_weight=sw_combined)
         except TypeError:
@@ -713,15 +711,15 @@ def common_train(
             logging.debug(f"[CALIBRATION] Could not read n_trees: {_e}")
 
     elif model == "BalancedRF":
-        best_clf = BalancedRandomForestClassifier(**best_params)
+        best_clf = BalancedRandomForestClassifier(**best_params, random_state=42)
 
     elif model == "EasyEnsemble":
-        best_clf = EasyEnsembleClassifier(**best_params)
+        best_clf = EasyEnsembleClassifier(**best_params, random_state=42)
 
     elif model == "LogisticRegression":
         if "class_weight" in best_params:
                 best_params.pop("class_weight")
-        best_clf = LogisticRegression(**best_params, class_weight="balanced")
+        best_clf = LogisticRegression(**best_params, class_weight="balanced", random_state=42)
 
     elif model in ["SVM", "SvmW"]:
         best_clf = SVC(**best_params, probability=True, class_weight="balanced", random_state=42)
@@ -729,19 +727,19 @@ def common_train(
     elif model == "DecisionTree":
         if "class_weight" in best_params:
             best_params.pop("class_weight")
-        best_clf = DecisionTreeClassifier(**best_params, class_weight="balanced")
+        best_clf = DecisionTreeClassifier(**best_params, class_weight="balanced", random_state=42)
 
     elif model == "AdaBoost":
-        best_clf = AdaBoostClassifier(**best_params)
+        best_clf = AdaBoostClassifier(**best_params, random_state=42)
 
     elif model == "GradientBoosting":
-        best_clf = GradientBoostingClassifier(**best_params)
+        best_clf = GradientBoostingClassifier(**best_params, random_state=42)
 
     elif model == "K-Nearest Neighbors":
         best_clf = KNeighborsClassifier(**best_params)
 
     elif model == "MLP":
-        best_clf = MLPClassifier(**best_params)
+        best_clf = MLPClassifier(**best_params, random_state=42)
 
     else:
         raise ValueError(f"Unknown model: {model}")
