@@ -17,6 +17,8 @@ from src.utils.io.loaders import read_subject_list, load_subject_csvs
 from src.utils.io.target_resolution import (
     resolve_target_subjects_from_tag,
     resolve_mid_domain_group_subjects,
+    resolve_source_group_subjects,
+    SOURCE_ONLY_TRAIN_GROUP,
 )
 
 
@@ -206,8 +208,9 @@ def prepare_source_only_splits(
     """
     from src.utils.io.split_helpers import split_data
     
-    # Resolve MIDDLE group subjects for training
-    middle_subjects = resolve_mid_domain_group_subjects(tag)
+    # Resolve source group subjects for training (LOW or MIDDLE based on config)
+    source_subjects = resolve_source_group_subjects(tag)
+    source_group_name = "LOW" if SOURCE_ONLY_TRAIN_GROUP == "in_domain" else "MIDDLE"
     
     # Resolve evaluation subjects (out_domain/mid_domain/in_domain groups based on tag)
     eval_subjects = resolve_target_subjects_from_tag(
@@ -222,18 +225,17 @@ def prepare_source_only_splits(
             "Cannot proceed without target group."
         )
     
-    # Check if training and evaluation groups are identical (middle-level case)
-    is_mid_domain_case = set(middle_subjects) == set(eval_subjects)
+    # Check if training and evaluation groups are identical
+    is_same_group_case = set(source_subjects) == set(eval_subjects)
     
-    if is_mid_domain_case:
-        # For middle-level: use single split to ensure consistency with target_only
+    if is_same_group_case:
+        # When source and target are the same group: use single split to ensure consistency with target_only
         logging.info(
-            f"[SOURCE_ONLY] Middle-level case detected: training and evaluation use same {len(middle_subjects)} subjects"
-        )
+            f"[SOURCE_ONLY] Same-group case detected: training and evaluation use same {len(source_subjects)} subjects ({source_group_name})")
         X_train, X_val, X_test, y_train, y_val, y_test = split_data(
             subject_split_strategy="subject_time_split",
-            subject_list=middle_subjects,
-            target_subjects=middle_subjects,
+            subject_list=source_subjects,
+            target_subjects=source_subjects,
             model_name=model_name,
             seed=seed,
             time_stratify_labels=time_stratify_labels,
@@ -242,20 +244,20 @@ def prepare_source_only_splits(
             time_stratify_min_chunk=time_stratify_min_chunk,
         )
         logging.info(
-            f"[SOURCE_ONLY] Middle case: train={len(y_train)}, val={len(y_val)}, test={len(y_test)} samples"
+            f"[SOURCE_ONLY] Same-group case: train={len(y_train)}, val={len(y_val)}, test={len(y_test)} samples"
         )
     else:
-        # For high/low-level: train on middle, evaluate on target group
+        # Cross-domain case: train on source group (LOW/MIDDLE), evaluate on target group
         logging.info(
-            f"[SOURCE_ONLY] Cross-domain case: training on MIDDLE ({len(middle_subjects)} subjects), "
+            f"[SOURCE_ONLY] Cross-domain case: training on {source_group_name} ({len(source_subjects)} subjects), "
             f"evaluating on target group ({len(eval_subjects)} subjects)"
         )
         
-        # Split MIDDLE group (use only train partition)
-        mid_train, _, _, y_mid_train, _, _ = split_data(
+        # Split source group (use only train partition)
+        src_train, _, _, y_src_train, _, _ = split_data(
             subject_split_strategy="subject_time_split",
-            subject_list=middle_subjects,
-            target_subjects=middle_subjects,
+            subject_list=source_subjects,
+            target_subjects=source_subjects,
             model_name=model_name,
             seed=seed,
             time_stratify_labels=time_stratify_labels,
@@ -264,9 +266,9 @@ def prepare_source_only_splits(
             time_stratify_min_chunk=time_stratify_min_chunk,
         )
         
-        X_train = mid_train
-        y_train = y_mid_train.astype(int)
-        logging.info(f"[SOURCE_ONLY] Training: {len(X_train)} samples from MIDDLE group")
+        X_train = src_train
+        y_train = y_src_train.astype(int)
+        logging.info(f"[SOURCE_ONLY] Training: {len(X_train)} samples from {source_group_name} group")
         
         # Split target group (use val/test partitions)
         _, X_val, X_test, _, y_val, y_test = split_data(
