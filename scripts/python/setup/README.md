@@ -52,6 +52,18 @@ Compares evaluation metrics between different training modes.
 python scripts/python/setup/check_only_modes.py
 ```
 
+### `make_ranked_groups.py`
+Generates ranked subject groups based on domain distance matrices.
+- **Purpose**: Creates out_domain/mid_domain/in_domain subject groups using MMD, Wasserstein, DTW distances
+- **Input**: Distance matrices in `results/domain_analysis/distance/subject-wise/`
+- **Output**: Group files in `results/domain_analysis/distance/subject-wise/ranks/`
+
+**Usage**:
+```bash
+python scripts/python/setup/make_ranked_groups.py --target_size 29
+python scripts/python/setup/make_ranked_groups.py --target_size 10  # smaller groups
+```
+
 ## Notes
 
 - These scripts are typically run once during initial setup or after data preprocessing
