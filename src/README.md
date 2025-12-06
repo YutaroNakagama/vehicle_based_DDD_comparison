@@ -21,12 +21,6 @@ src/
 │   ├── subject_group_generator.py  # Subject group generation
 │   └── subject_ranking.py          # Subject ranking by domain distance
 │
-├── data_preparation/      # Data-related utilities (checks, subject grouping)
-│   ├── check_feature_columns.py
-│   ├── make_pretrain_group.py
-│   ├── make_ranked_groups.py
-│   └── make_target_groups.py
-│
 ├── data_pipeline/         # Data preprocessing & feature extraction
 │   ├── features/          # Feature definitions
 │   │   ├── eeg.py         # EEG feature extraction
@@ -75,11 +69,12 @@ src/
 
 ## Notes
 - **analysis/**: post-training evaluations, domain distance calculations, and imbalance analysis
-- **data_preparation/**: helper scripts for subject grouping and dataset checks
 - **data_pipeline/**: converts raw data (EEG, vehicle, physio) into processed features  
 - **evaluation/**: evaluation framework using trained models  
 - **models/**: classical and neural architectures + training pipelines  
-- **utils/**: shared helpers for CLI, domain generalization, evaluation, I/O, and visualization  
+- **utils/**: shared helpers for CLI, domain generalization, evaluation, I/O, and visualization
+
+> **Note**: Data preparation scripts (subject grouping, feature checks) are located in `scripts/python/setup/`.  
 
 ---
 
