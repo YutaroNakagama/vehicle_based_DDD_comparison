@@ -8,21 +8,23 @@ It is organized into modular components to handle data preprocessing, feature ex
 ## Structure
 
 ```
-
 src/
-├── analysis/              # Correlation & distance analysis
-│   ├── correlation.py     # Correlation between domain metrics and model performance
-│   ├── distances.py       # Distance computation (MMD, Wasserstein, DTW)
-│   ├── metrics_tables.py  # Table generation for metrics
-│   ├── pretrain_groups_report.py # Report generation for pretrain/target groups
-│   ├── radar.py           # Radar chart visualization
-│   ├── rank_export.py     # Export ranked feature/model results
-│   └── summary_groups.py  # Group-based summaries
+├── analysis/              # Domain distance & correlation analysis
+│   ├── imbalance/         # Imbalance analysis utilities
+│   ├── clustering_projection.py    # Clustering and projection analysis
+│   ├── distance_computation.py     # Distance computation (MMD, Wasserstein, DTW)
+│   ├── distance_correlation.py     # Correlation between distances and performance
+│   ├── group_comparison.py         # Group-wise comparison utilities
+│   ├── group_distance_report.py    # Distance report generation
+│   ├── imbalance_analysis.py       # Imbalance metrics analysis
+│   ├── metrics_tables.py           # Table generation for metrics
+│   ├── subject_group_generator.py  # Subject group generation
+│   └── subject_ranking.py          # Subject ranking by domain distance
 │
-├── data/                  # Data-related utilities (checks, subject grouping)
+├── data_preparation/      # Data-related utilities (checks, subject grouping)
 │   ├── check_feature_columns.py
-│   ├── check_only_modes.py
 │   ├── make_pretrain_group.py
+│   ├── make_ranked_groups.py
 │   └── make_target_groups.py
 │
 ├── data_pipeline/         # Data preprocessing & feature extraction
@@ -32,43 +34,52 @@ src/
 │   │   ├── physio.py      # Physiological features (GSR, HR, etc.)
 │   │   ├── simlsl.py      # Vehicle-based simulator features
 │   │   └── wavelet.py     # Wavelet decomposition features
+│   ├── augmentation.py            # Data augmentation utilities
 │   ├── processing_pipeline.py     # Single-process preprocessing pipeline
 │   └── processing_pipeline_mp.py  # Multi-process preprocessing pipeline
 │
 ├── evaluation/            # Evaluation pipelines
 │   ├── eval_pipeline.py   # Unified evaluation entry point
-│   └── models/            # Evaluation models
+│   ├── eval_stages.py     # Evaluation stage utilities
+│   └── models/            # Evaluation model wrappers
 │       ├── common.py
 │       ├── lstm.py
 │       └── SvmA.py
 │
 ├── models/                # Model definitions & training pipelines
 │   ├── architectures/     # Classical & neural model architectures
-│   │   ├── common.py
-│   │   ├── lstm.py
-│   │   └── SvmA.py
+│   │   ├── common.py      # RF, BalancedRF, EasyEnsemble, etc.
+│   │   ├── helpers.py     # Training helper functions
+│   │   ├── lstm.py        # LSTM architecture
+│   │   ├── SvmA.py        # SVM architecture
+│   │   └── train_helpers.py # Training utilities
 │   ├── feature_selection/ # Feature selection methods
-│   │   ├── anfis.py
-│   │   ├── rf_importance.py
-│   │   └── index.py
-│   └── model_pipeline.py  # End-to-end training pipeline
+│   │   ├── anfis.py       # ANFIS-based selection
+│   │   ├── feature_helpers.py
+│   │   ├── index.py       # Feature selection index
+│   │   └── rf_importance.py # Random Forest importance
+│   ├── model_pipeline.py  # End-to-end training pipeline
+│   └── train_stages.py    # Training stage utilities
 │
-└── utils/                 # Utility functions
-├── domain_generalization/ # Domain generalization methods (CORAL, Mixup, VAE, etc.)
-├── io/                   # Data loading/saving utilities
-└── visualization/        # Visualization tools
-
+├── utils/                 # Utility functions
+│   ├── cli/               # CLI helper utilities
+│   ├── domain_generalization/  # Domain generalization (CORAL, Mixup, VAE, Jitter)
+│   ├── evaluation/        # Evaluation metrics and threshold optimization
+│   ├── io/                # Data loading/saving utilities
+│   └── visualization/     # Visualization tools (ROC, radar charts)
+│
+└── config.py              # Centralized configuration settings
 ```
 
 ---
 
 ## Notes
-- **analysis/**: post-training evaluations and domain distance calculations  
-- **data/**: helper scripts for subject grouping and dataset checks  
+- **analysis/**: post-training evaluations, domain distance calculations, and imbalance analysis
+- **data_preparation/**: helper scripts for subject grouping and dataset checks
 - **data_pipeline/**: converts raw data (EEG, vehicle, physio) into processed features  
 - **evaluation/**: evaluation framework using trained models  
 - **models/**: classical and neural architectures + training pipelines  
-- **utils/**: shared helpers for domain generalization, I/O, and visualization  
+- **utils/**: shared helpers for CLI, domain generalization, evaluation, I/O, and visualization  
 
 ---
 
