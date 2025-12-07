@@ -842,23 +842,24 @@ def common_train(
     best_threshold = None
     if m_val["_proba"] is not None:
 
-        # Use unified threshold optimization (F0.5 emphasizes precision)
-        best_threshold, best_f05 = find_optimal_threshold(y_val, m_val["_proba"], beta=0.5)
-        logging.info(f"Optimal threshold for F0.5 (β=0.5): {best_threshold:.3f} (F0.5={best_f05:.3f})")
+        # Use unified threshold optimization (F2 emphasizes recall for DDD safety)
+        # F2 gives 4x weight to Recall over Precision, consistent with Optuna objective
+        best_threshold, best_f2 = find_optimal_threshold(y_val, m_val["_proba"], beta=2.0)
+        logging.info(f"Optimal threshold for F2 (β=2.0): {best_threshold:.3f} (F2={best_f2:.3f})")
         
         def _apply_thr(proba, y_true):
             yhat = apply_threshold(proba, best_threshold)
             metrics = calculate_extended_metrics(y_true, yhat, proba, zero_division=0, include_roc=False, include_pr=False)
-            # Add F0.5 score (Precision-focused)
-            metrics["f05"] = float(fbeta_score(y_true, yhat, beta=0.5, zero_division=0))
+            # Add F2 score (Recall-focused for DDD)
+            metrics["f2"] = float(fbeta_score(y_true, yhat, beta=2.0, zero_division=0))
             return metrics
 
         thr_val  = _apply_thr(m_val["_proba"],  y_val)
         thr_test = _apply_thr(m_test["_proba"], y_test) if m_test["_proba"] is not None else None
 
-        logging.info("Validation (F0.5-opt threshold) metrics: " + json.dumps(thr_val))
+        logging.info("Validation (F2-opt threshold) metrics: " + json.dumps(thr_val))
         if thr_test:
-            logging.info("Test (F0.5-opt threshold from Val) metrics: " + json.dumps(thr_test))
+            logging.info("Test (F2-opt threshold from Val) metrics: " + json.dumps(thr_test))
 
         # NOTE: Actual threshold saving is unified in savers.save_artifacts()
         # via train_pipeline finally-block. We just return the value here.
