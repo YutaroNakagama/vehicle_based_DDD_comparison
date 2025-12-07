@@ -604,10 +604,8 @@ def plot_grouped_bar_chart_raw(
             ax.set_xticks(x)
             ax.set_xticklabels([lvl.capitalize() for lvl in levels_present])
             
-            # Set y-axis limits: force 0:0.4 for precision/f1/f2, 0:1 for auc_pr, otherwise dynamic
-            if metric in ["precision", "f1", "f2"]:
-                ax.set_ylim(0, 0.4)
-            elif metric == "auc_pr":
+            # Set y-axis limits: 0:1 for all metrics
+            if metric in ["precision", "f1", "f2", "auc_pr", "accuracy", "recall"]:
                 ax.set_ylim(0, 1.0)
             elif baseline_rates and metric in baseline_rates:
                 baseline = baseline_rates[metric]
@@ -687,10 +685,8 @@ def plot_grouped_bar_chart_raw(
         ax.set_xticklabels(["Pooled\nBaseline"])
         ax.set_xlim(-0.5, 0.5)
         
-        # Set y-axis limits: force 0:0.4 for precision/f1/f2, 0:1 for auc_pr, otherwise dynamic
-        if metric in ["precision", "f1", "f2"]:
-            ax.set_ylim(0, 0.4)
-        elif metric == "auc_pr":
+        # Set y-axis limits: 0:1 for all metrics
+        if metric in ["precision", "f1", "f2", "auc_pr", "accuracy", "recall"]:
             ax.set_ylim(0, 1.0)
         elif baseline_rates and metric in baseline_rates:
             baseline = baseline_rates[metric]
