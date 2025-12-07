@@ -201,6 +201,20 @@ def main():
     # Create DataFrame
     df = pd.DataFrame(all_records)
     
+    # Remove duplicates: keep the first occurrence based on unique experiment key
+    # Duplicates can occur when the same experiment is run in multiple job batches
+    initial_count = len(df)
+    dedup_keys = ["imbalance_method", "ranking_method", "distance_metric", "level", "mode"]
+    
+    # Check if all dedup keys exist
+    if all(k in df.columns for k in dedup_keys):
+        # Sort by jobid descending so we keep the earlier (original) job
+        df = df.sort_values("jobid", ascending=True)
+        df = df.drop_duplicates(subset=dedup_keys, keep="first")
+        removed_count = initial_count - len(df)
+        if removed_count > 0:
+            print(f"\n[INFO] Removed {removed_count} duplicate experiments")
+    
     print("\n" + "-" * 50)
     print("[INFO] Summary")
     print("-" * 50)

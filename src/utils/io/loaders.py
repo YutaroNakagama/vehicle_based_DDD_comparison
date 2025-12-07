@@ -33,7 +33,62 @@ import os
 import scipy.io
 import logging
 import pandas as pd
+import re
 from typing import Tuple
+
+
+def _is_exact_tag_match(filename: str, tag_key: str) -> bool:
+    """Check if filename contains an exact match for the tag key.
+    
+    This is critical to prevent partial matches like 'smote' matching
+    'smote_tomek' or 'smote_rus'.
+    
+    Parameters
+    ----------
+    filename : str
+        Model filename to check (e.g., 'RF_source_only_imbalance_knn_mmd_in_domain_smote_14572963_3_3.pkl')
+    tag_key : str
+        Tag key to match (e.g., 'imbalance_knn_mmd_in_domain_smote')
+    
+    Returns
+    -------
+    bool
+        True if exact match found, False otherwise.
+    """
+    # Extract the imbalance method from the tag (last segment before any jobid)
+    # Tag format: imbalance_{ranking}_{metric}_{level}_{imbalance_method}
+    # Also handle pooled format: imbalance_pooled_{imbalance_method}
+    
+    # Known imbalance methods (order matters - check longer ones first)
+    imbalance_methods = ['smote_tomek', 'smote_rus', 'smote_enn', 'smote', 'baseline']
+    
+    # Find which imbalance method is in the tag
+    tag_imbalance = None
+    for method in imbalance_methods:
+        if tag_key.endswith(f"_{method}") or tag_key == f"imbalance_pooled_{method}":
+            tag_imbalance = method
+            break
+    
+    if not tag_imbalance:
+        # Fallback: simple substring match
+        return tag_key in filename
+    
+    # Find which imbalance method is in the filename
+    file_imbalance = None
+    for method in imbalance_methods:
+        # Match pattern: _{method}_ or _{method}_{jobid}
+        pattern = rf"_{re.escape(method)}_(\d+|$)"
+        if re.search(pattern, filename):
+            file_imbalance = method
+            break
+    
+    if not file_imbalance:
+        # Fallback: simple substring match
+        return tag_key in filename
+    
+    # Strict comparison: imbalance methods must match exactly
+    return tag_imbalance == file_imbalance and tag_key in filename
+
 
 def safe_load_mat(file_path: str):
     """
@@ -382,17 +437,22 @@ def load_model_and_scaler(model_name: str, mode: str, tag: str, fold: int, jobid
     
     model_matches = glob.glob(exact_pattern, recursive=True)
     
-    # Filter matches to ensure exact tag match (avoid partial matches like knn matching knn_*)
+    # Filter matches to ensure exact tag match (avoid partial matches)
+    # CRITICAL: Prevent partial matches like 'smote' matching 'smote_tomek' or 'smote_rus'
     if model_matches and tag_key:
-        # Create a more strict filter: tag_key should appear as a complete segment
         strict_matches = []
         for m in model_matches:
             basename = os.path.basename(m)
-            # Check if the full original tag (without prefix) is in the filename
-            if tag_key in basename:
+            # Extract the imbalance method from the tag for strict matching
+            # Tag format: imbalance_{ranking}_{metric}_{level}_{imbalance_method}
+            # We need to ensure exact match for the imbalance method part
+            if _is_exact_tag_match(basename, tag_key):
                 strict_matches.append(m)
         if strict_matches:
             model_matches = strict_matches
+        else:
+            logging.warning(f"[EVAL] Strict tag matching found no matches for tag_key='{tag_key}'. "
+                          f"Candidates: {[os.path.basename(m) for m in model_matches[:3]]}")
 
     # If no exact match found, fallback to any file that includes the same mode
     if not model_matches:
