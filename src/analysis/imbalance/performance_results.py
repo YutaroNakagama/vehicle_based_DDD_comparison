@@ -20,42 +20,39 @@ logger = logging.getLogger(__name__)
 def create_performance_results_data() -> pd.DataFrame:
     """Create DataFrame with performance results from experiments.
     
-    Data extracted from HPC job logs (imbalance_comparison_v2).
+    Data extracted from HPC job logs.
     
     Returns
     -------
     pd.DataFrame
         DataFrame with performance metrics for each method
     """
-    # Results from job logs (imbalance_comparison_v2, Dec 2024)
-    # Metrics extracted from eval_results JSON files
-    # Updated with all 11 methods (Dec 3, 2025)
+    # Results from job logs (Test metrics with threshold=0.5 and optimized threshold)
+    # Updated with latest pooled results from Job 14573166 and related jobs
     data = [
-        # method, jobid, test_recall, test_precision, test_f1, test_accuracy, auprc, auroc, f2_thr
-        ("Baseline", "14489461", 0.4481, 0.0389, 0.0716, 0.5452, 0.0389, 0.5027, 0.0543),
-        ("SMOTE", "14489462", 0.3278, 0.0441, 0.0777, 0.6956, 0.0465, 0.5374, 0.1433),
-        ("SMOTE+Tomek", "14489463", 0.5083, 0.0433, 0.0799, 0.5418, 0.0425, 0.5379, 0.1739),
-        ("SMOTE+ENN", "14489464", 0.2490, 0.0484, 0.0810, 0.7791, 0.0456, 0.5415, 0.1358),
-        ("SMOTE+RUS", "14489465", 0.2905, 0.0465, 0.0801, 0.7391, 0.0476, 0.5389, 0.1419),
-        ("BalancedRF", "14489466", 0.9834, 0.0393, 0.0756, 0.0592, 0.0415, 0.5205, 0.1703),
-        ("EasyEnsemble", "14489467", 0.5187, 0.0405, 0.0751, 0.5004, 0.0397, 0.5065, 0.1687),
-        # New methods (Dec 3, 2025)
-        ("Undersample-ENN", "14545817", 0.4212, 0.0376, 0.0691, 0.5488, 0.0402, 0.5088, 0.1386),
-        ("Undersample-RUS", "14545818", 0.0000, 0.0000, 0.0000, 0.9609, 0.0416, 0.5127, 0.1057),
-        ("Undersample-Tomek", "14545819", 0.4066, 0.0350, 0.0645, 0.5320, 0.0414, 0.5225, 0.1175),
-        ("Jitter+Scale", "14545820", 0.0021, 0.0769, 0.0041, 0.9604, 0.0406, 0.5135, 0.0000),
+        # method, jobid, test_recall, test_precision, test_f1, test_f2, test_accuracy, 
+        # test_recall_thr, test_precision_thr, test_f1_thr, auprc, auroc
+        # Pooled results from Job 14573166 (imbalance_pooled_*)
+        ("Baseline", "14573166[7]", 0.50, 0.04, 0.07, 0.14, 0.51, 0.39, 0.040, 0.072, 0.041, 0.51),
+        ("SMOTE", "14573166[8]", 0.53, 0.04, 0.08, 0.17, 0.53, 0.72, 0.043, 0.081, 0.043, 0.53),
+        ("SMOTE+Tomek", "14573166[9]", 0.53, 0.04, 0.08, 0.17, 0.53, 0.72, 0.043, 0.081, 0.043, 0.53),
+        ("SMOTE+ENN", "imbal_v2", 0.36, 0.05, 0.08, 0.17, 0.68, 0.76, 0.043, 0.081, 0.046, 0.54),
+        ("SMOTE+RUS", "14573166[10]", 0.53, 0.04, 0.08, 0.17, 0.54, 0.66, 0.043, 0.080, 0.044, 0.53),
+        # BalancedRF and EasyEnsemble from their respective model folders
+        ("BalancedRF", "14489466", 0.98, 0.04, 0.08, 0.17, 0.06, 0.98, 0.040, 0.076, 0.042, 0.52),
+        ("EasyEnsemble", "imbal_v2", 0.53, 0.04, 0.08, 0.17, 0.49, 1.00, 0.039, 0.076, 0.039, 0.52),
+        # Undersample variants from imbal_v2
+        ("Undersample-RUS", "imbal_v2", 0.00, 0.00, 0.00, 0.00, 0.96, 0.23, 0.037, 0.065, 0.042, 0.51),
+        ("Undersample-ENN", "imbal_v2", 0.42, 0.04, 0.07, 0.14, 0.56, 0.42, 0.038, 0.069, 0.040, 0.52),
+        ("Undersample-Tomek", "imbal_v2", 0.41, 0.04, 0.06, 0.12, 0.54, 0.29, 0.036, 0.063, 0.041, 0.51),
     ]
     
     df = pd.DataFrame(data, columns=[
         "method", "jobid", 
-        "test_recall", "test_precision", "test_f1", "test_accuracy",
-        "auprc", "auroc", "f2_thr"
+        "test_recall", "test_precision", "test_f1", "test_f2", "test_accuracy",
+        "test_recall_thr", "test_precision_thr", "test_f1_thr",
+        "auprc", "auroc"
     ])
-    
-    # Calculate F2 score (beta=2, recall-weighted)
-    # F2 = (1 + 2^2) * (precision * recall) / (2^2 * precision + recall)
-    df["test_f2"] = (5 * df["test_precision"] * df["test_recall"]) / (4 * df["test_precision"] + df["test_recall"])
-    df["test_f2"] = df["test_f2"].fillna(0)
     
     return df
 
@@ -104,7 +101,7 @@ def plot_recall_comparison(
     
     ax.set_xlabel("Test Recall (%)", fontsize=12)
     ax.set_title("Recall Comparison: Drowsy Detection Rate", fontsize=14, fontweight="bold")
-    ax.set_xlim(0, 110)
+    ax.set_xlim(0, 60)
     ax.axvline(50, color="gray", linestyle="--", alpha=0.5, label="50% target")
     ax.legend(loc="lower right")
     
@@ -155,11 +152,16 @@ def plot_precision_recall_scatter(
     
     ax.set_xlabel("Recall (%)", fontsize=12)
     ax.set_ylabel("Precision (%)", fontsize=12)
-    ax.set_title("Precision vs Recall Trade-off (Test Set)", fontsize=14, fontweight="bold")
-    ax.set_xlim(-5, 105)
-    ax.set_ylim(-0.5, 6)
+    ax.set_title("Precision vs Recall Trade-off (Test Set, thr=0.5)", fontsize=14, fontweight="bold")
+    ax.set_xlim(-5, 60)
+    ax.set_ylim(-0.5, 10)
     ax.grid(True, alpha=0.3)
-    ax.legend(loc="upper right", fontsize=8)
+    
+    # Add annotation for baseline (recall=0)
+    ax.annotate("Baseline & RUS:\nRecall=0%\n(No detection)", 
+                xy=(0, 0), xytext=(5, 5),
+                fontsize=9, style="italic", color="red",
+                arrowprops=dict(arrowstyle="->", color="red", alpha=0.5))
     
     plt.tight_layout()
     
@@ -197,7 +199,6 @@ def plot_metrics_radar(
         logger.warning("No valid methods for radar chart")
         return None
     
-    # Normalize metrics to 0-1 scale for radar chart
     metrics = ["test_recall", "test_precision", "test_f1", "auprc"]
     metric_labels = ["Recall", "Precision", "F1", "AUPRC"]
     
@@ -219,7 +220,7 @@ def plot_metrics_radar(
     
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(metric_labels, fontsize=11)
-    ax.set_ylim(0, 1.0)
+    ax.set_ylim(0, 0.6)
     ax.set_title("Performance Metrics Comparison (Radar)", fontsize=14, fontweight="bold", y=1.08)
     ax.legend(loc="upper right", bbox_to_anchor=(1.3, 1.0), fontsize=9)
     
@@ -234,7 +235,7 @@ def plot_metrics_radar(
 
 def plot_performance_summary_dashboard(
     df: pd.DataFrame,
-    figsize: Tuple[int, int] = (16, 12),
+    figsize: Tuple[int, int] = (20, 12),
     output_path: Optional[Path] = None,
 ) -> plt.Figure:
     """Create comprehensive performance dashboard.
@@ -255,50 +256,51 @@ def plot_performance_summary_dashboard(
     fig = plt.figure(figsize=figsize)
     gs = fig.add_gridspec(2, 3, hspace=0.35, wspace=0.3)
     
+    # Color scheme: Baseline = red, others = blue
+    def get_colors(df_sorted):
+        return ["#e74c3c" if m == "Baseline" else "#3498db" for m in df_sorted["method"]]
+    
     # Panel 1: Recall comparison (top-left)
     ax1 = fig.add_subplot(gs[0, 0])
     df_sorted = df.sort_values("test_recall", ascending=True)
-    colors = ["#2ecc71" if r >= 0.4 else "#f39c12" if r >= 0.1 else "#e74c3c" 
-              for r in df_sorted["test_recall"]]
+    colors = get_colors(df_sorted)
     bars = ax1.barh(df_sorted["method"], df_sorted["test_recall"] * 100, color=colors, edgecolor="black")
     ax1.set_xlabel("Recall (%)")
     ax1.set_title("Recall (Drowsy Detection Rate)", fontweight="bold")
-    ax1.set_xlim(0, 110)
+    ax1.set_xlim(0, 100)
     for bar, val in zip(bars, df_sorted["test_recall"]):
-        ax1.text(bar.get_width() + 1, bar.get_y() + bar.get_height()/2, f"{val*100:.1f}%", va="center", fontsize=9)
+        ax1.text(bar.get_width() + 1, bar.get_y() + bar.get_height()/2, f"{val*100:.0f}%", va="center", fontsize=9)
     
     # Panel 2: Precision comparison (top-middle)
     ax2 = fig.add_subplot(gs[0, 1])
     df_sorted = df.sort_values("test_precision", ascending=True)
-    colors = ["#2ecc71" if p >= 0.05 else "#f39c12" if p >= 0.03 else "#e74c3c"
-              for p in df_sorted["test_precision"]]
+    colors = get_colors(df_sorted)
     bars = ax2.barh(df_sorted["method"], df_sorted["test_precision"] * 100, color=colors, edgecolor="black")
     ax2.set_xlabel("Precision (%)")
-    ax2.set_title("Precision (Positive Predictive Value)", fontweight="bold")
-    ax2.set_xlim(0, 7)
+    ax2.set_title("Precision (False Alarm Rate)", fontweight="bold")
+    ax2.set_xlim(0, 10)
     for bar, val in zip(bars, df_sorted["test_precision"]):
-        ax2.text(bar.get_width() + 0.1, bar.get_y() + bar.get_height()/2, f"{val*100:.2f}%", va="center", fontsize=9)
+        ax2.text(bar.get_width() + 0.2, bar.get_y() + bar.get_height()/2, f"{val*100:.1f}%", va="center", fontsize=9)
     
-    # Panel 3: AUPRC comparison (top-right)
+    # Panel 3: AUPRC comparison (top-right) - key metric for imbalanced anomaly detection
     ax3 = fig.add_subplot(gs[0, 2])
     df_sorted = df.sort_values("auprc", ascending=True)
-    random_baseline = 0.039  # positive rate
-    colors = ["#2ecc71" if a >= 0.045 else "#f39c12" if a >= random_baseline else "#e74c3c"
-              for a in df_sorted["auprc"]]
+    colors = get_colors(df_sorted)
+    # Random classifier baseline = positive rate (~0.039)
+    random_baseline = 0.039
     bars = ax3.barh(df_sorted["method"], df_sorted["auprc"], color=colors, edgecolor="black")
     ax3.axvline(random_baseline, color="gray", linestyle="--", linewidth=2, label=f"Random ({random_baseline:.1%})")
     ax3.set_xlabel("AUPRC")
-    ax3.set_title("AUPRC (Area Under PR Curve)", fontweight="bold")
-    ax3.set_xlim(0, 0.06)
+    ax3.set_title("AUPRC (Primary Metric)", fontweight="bold")
+    ax3.set_xlim(0, 0.10)
     ax3.legend(loc="lower right", fontsize=8)
     for bar, val in zip(bars, df_sorted["auprc"]):
-        ax3.text(bar.get_width() + 0.001, bar.get_y() + bar.get_height()/2, f"{val:.4f}", va="center", fontsize=9)
+        ax3.text(bar.get_width() + 0.002, bar.get_y() + bar.get_height()/2, f"{val:.3f}", va="center", fontsize=9)
     
     # Panel 4: F2 Score comparison (bottom-left)
     ax4 = fig.add_subplot(gs[1, 0])
     df_sorted = df.sort_values("test_f2", ascending=True)
-    colors = ["#2ecc71" if f >= 0.15 else "#f39c12" if f >= 0.05 else "#e74c3c"
-              for f in df_sorted["test_f2"]]
+    colors = get_colors(df_sorted)
     bars = ax4.barh(df_sorted["method"], df_sorted["test_f2"], color=colors, edgecolor="black")
     ax4.set_xlabel("F2 Score")
     ax4.set_title("F2 Score (Recall-weighted)", fontweight="bold")
@@ -317,17 +319,16 @@ def plot_performance_summary_dashboard(
     for _, row in df_table.iterrows():
         table_data.append([
             row["method"],
-            f"{row['test_recall']*100:.1f}%",
-            f"{row['test_precision']*100:.2f}%",
+            f"{row['test_recall']*100:.0f}%",
+            f"{row['test_precision']*100:.1f}%",
             f"{row['test_f1']:.3f}",
             f"{row['test_f2']:.3f}",
-            f"{row['auprc']:.4f}",
-            f"{row['auroc']:.4f}",
+            f"{row['auprc']:.3f}",
         ])
     
     table = ax5.table(
         cellText=table_data,
-        colLabels=["Method", "Recall", "Precision", "F1", "F2", "AUPRC", "AUROC"],
+        colLabels=["Method", "Recall", "Precision", "F1", "F2", "AUPRC"],
         loc="center",
         cellLoc="center",
     )
@@ -336,7 +337,7 @@ def plot_performance_summary_dashboard(
     table.scale(1.2, 1.4)
     
     # Color header
-    for j in range(7):
+    for j in range(6):
         table[(0, j)].set_facecolor("#34495e")
         table[(0, j)].set_text_props(color="white", fontweight="bold")
     
