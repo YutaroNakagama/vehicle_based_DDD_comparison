@@ -100,6 +100,7 @@ def extract_metadata_from_tag(tag: Optional[str]) -> Tuple[str, str]:
         - Legacy: "rank_dtw_mean_high"
         - New full format: "full_mean_distance_mmd_out_domain"
         - New format: "rank_mean_distance_mmd_out_domain"
+        - Imbalance V2 format: "imbalv2_knn_mmd_out_domain_smote"
 
     Returns
     -------
@@ -111,6 +112,20 @@ def extract_metadata_from_tag(tag: Optional[str]) -> Tuple[str, str]:
     
     if not tag:
         return "unknown", "unknown"
+    
+    # Imbalance V2 format: imbalv2_{ranking_method}_{metric}_{level}_{imbalance_method}
+    # Example: imbalv2_knn_mmd_out_domain_smote
+    imbalv2_match = re.search(
+        r'imbalv2_(knn|lof|median_distance)_(mmd|dtw|wasserstein)_(out_domain|mid_domain|in_domain)_(baseline|smote|smote_enn|balanced_rf)',
+        tag
+    )
+    if imbalv2_match:
+        method = imbalv2_match.group(1)
+        metric = imbalv2_match.group(2)
+        level = imbalv2_match.group(3)
+        imbalance = imbalv2_match.group(4)
+        # Return distance as "{method}_{metric}_{imbalance}" for file naming
+        return f"{method}_{metric}_{imbalance}", level
     
     # New full format: full_{method}_{metric}_{level}
     # Example: full_mean_distance_mmd_out_domain
@@ -159,6 +174,7 @@ def extract_full_metadata_from_tag(tag: Optional[str]) -> dict:
         - Legacy: "rank_dtw_mean_high"
         - New full format: "full_mean_distance_mmd_out_domain"
         - New format: "rank_mean_distance_mmd_out_domain"
+        - Imbalance V2 format: "imbalv2_knn_mmd_out_domain_smote"
 
     Returns
     -------
@@ -167,6 +183,7 @@ def extract_full_metadata_from_tag(tag: Optional[str]) -> dict:
         - ranking_method : Ranking method (e.g., "mean_distance", "lof", "knn")
         - distance_metric : Distance metric (e.g., "mmd", "dtw", "wasserstein")
         - level : Group level (e.g., "out_domain", "in_domain", "mid_domain")
+        - imbalance_method : Imbalance method (e.g., "smote", "baseline") [V2 only]
     """
     import re
     
@@ -174,9 +191,23 @@ def extract_full_metadata_from_tag(tag: Optional[str]) -> dict:
         "ranking_method": "unknown",
         "distance_metric": "unknown",
         "level": "unknown",
+        "imbalance_method": "unknown",
     }
     
     if not tag:
+        return result
+    
+    # Imbalance V2 format: imbalv2_{ranking_method}_{metric}_{level}_{imbalance_method}
+    # Example: imbalv2_knn_mmd_out_domain_smote
+    imbalv2_match = re.search(
+        r'imbalv2_(knn|lof|median_distance)_(mmd|dtw|wasserstein)_(out_domain|mid_domain|in_domain)_(baseline|smote|smote_enn|balanced_rf)',
+        tag
+    )
+    if imbalv2_match:
+        result["ranking_method"] = imbalv2_match.group(1)
+        result["distance_metric"] = imbalv2_match.group(2)
+        result["level"] = imbalv2_match.group(3)
+        result["imbalance_method"] = imbalv2_match.group(4)
         return result
     
     # New full format: full_{method}_{metric}_{level}
