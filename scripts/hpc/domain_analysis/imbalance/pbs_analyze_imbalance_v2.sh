@@ -39,6 +39,7 @@ cd "$PROJECT_ROOT"
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 OUTPUT_DIR="results/imbalance_analysis/v2_${TIMESTAMP}"
+export OUTPUT_DIR  # Export for Python scripts
 mkdir -p "$OUTPUT_DIR"
 
 echo "============================================================"
@@ -63,12 +64,17 @@ import pandas as pd
 import re
 
 PROJECT_ROOT = Path("/home/s2240011/git/ddd/vehicle_based_DDD_comparison")
-OUTPUT_DIR = Path("$OUTPUT_DIR".replace("$OUTPUT_DIR", "$OUTPUT_DIR"))
 
-# Pattern to match imbalv2 results
+# Read OUTPUT_DIR from environment or use placeholder
+import os
+OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", "results/imbalance_analysis/temp"))
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+# Pattern to match ALL json results in the training job directories
+# We'll filter by reading the 'tag' field inside each file
 patterns = [
-    "results/evaluation/RF/*/eval_results_imbalv2_*.json",
-    "results/evaluation/BalancedRF/*/eval_results_imbalv2_*.json",
+    "results/evaluation/RF/*/14578369*/eval_results_*.json",
+    "results/evaluation/BalancedRF/*/14578369*/eval_results_*.json",
 ]
 
 records = []
@@ -78,19 +84,25 @@ for pattern in patterns:
             with open(f) as fp:
                 d = json.load(fp)
             
-            fname = Path(f).name
+            # Get tag from JSON content, not filename
+            tag = d.get("tag", "")
+            if not tag or not tag.startswith("imbalv2"):
+                continue
+            
             # Parse tag: imbalv2_{ranking}_{metric}_{level}_{imbalance}
             # or: imbalv2_pooled_{imbalance}
             
-            if "pooled" in fname:
-                match = re.search(r"imbalv2_pooled_(\w+)", fname)
+            if "pooled" in tag:
+                match = re.search(r"imbalv2_pooled_(\w+)", tag)
                 if match:
                     ranking = "pooled"
                     metric = "pooled"
                     level = "pooled"
                     imbalance = match.group(1)
+                else:
+                    continue
             else:
-                match = re.search(r"imbalv2_(\w+)_(\w+)_(\w+_domain)_(\w+)", fname)
+                match = re.search(r"imbalv2_(\w+)_(mmd|dtw|wasserstein)_(out_domain|mid_domain|in_domain)_(\w+)", tag)
                 if match:
                     ranking = match.group(1)
                     metric = match.group(2)
@@ -115,6 +127,7 @@ for pattern in patterns:
                 "auc": d.get("auc", 0),
                 "specificity": d.get("specificity", 0),
                 "file": f,
+                "tag": tag,
             })
         except Exception as e:
             print(f"[WARN] Failed to parse {f}: {e}")
@@ -126,9 +139,6 @@ if records:
 else:
     print("[WARN] No results found!")
 COLLECT_EOF
-
-# Update OUTPUT_DIR in the heredoc
-sed -i "s|\$OUTPUT_DIR|$OUTPUT_DIR|g" /dev/stdin 2>/dev/null || true
 
 # ==============================================================================
 # Step 2: Generate summary tables

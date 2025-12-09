@@ -299,10 +299,12 @@ def save_eval_results(
     level = results.get("level") or "unknown"
     tag = results.get("tag") or ""
 
-    # --- construct file name including distance and level ---
-    # New format: eval_results_{model}_{mode}_rank_{dist}_{level}
-    # dist should already include method and metric (e.g., "mean_distance_mmd")
-    if dist != "unknown" and "_" in dist:
+    # --- construct file name including tag for unique identification ---
+    # If tag exists and starts with known prefixes, use tag directly for filename
+    if tag and (tag.startswith("imbalv2_") or tag.startswith("full_") or tag.startswith("rank_")):
+        # Use tag directly: eval_results_{model}_{mode}_{tag}
+        base_name = f"eval_results_{model_name}_{mode}_{tag}"
+    elif dist != "unknown" and "_" in dist:
         # New format: dist = "mean_distance_mmd", level = "out_domain"
         base_name = f"eval_results_{model_name}_{mode}_rank_{dist}_{level}"
     else:
