@@ -1,6 +1,6 @@
 #!/bin/bash
 #PBS -N imbal_v2_eval
-#PBS -l select=1:ncpus=2:mem=8gb
+#PBS -l select=1:ncpus=2:mem=4gb
 #PBS -l walltime=02:00:00
 #PBS -j oe
 #PBS -q SINGLE
