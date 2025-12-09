@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -N RF_imbal_v2
 #PBS -J 1-16
-#PBS -l select=1:ncpus=8:mem=256gb
+#PBS -l select=1:ncpus=8:mem=32gb
 #PBS -l walltime=168:00:00
 #PBS -j oe
 #PBS -q SMALL

@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -N RF_imbal_v2_eval
 #PBS -J 1-16
-#PBS -l select=1:ncpus=8:mem=128gb
+#PBS -l select=1:ncpus=4:mem=4gb
 #PBS -l walltime=24:00:00
 #PBS -j oe
 #PBS -q SMALL
@@ -102,7 +102,7 @@ if [[ "$IS_POOLED" == "true" ]]; then
         --model "$MODEL" \
         --mode "pooled" \
         --tag "$TAG" \
-        --train_job_id "$TRAIN_JOB_ID"; then
+        --jobid "$TRAIN_JOB_ID"; then
         COMPLETED=$((COMPLETED + 1))
         echo "[SUCCESS] Completed: $TAG"
     else
@@ -138,7 +138,7 @@ else
                     --mode "$MODE" \
                     --target_file "$GROUP_FILE" \
                     --tag "$TAG" \
-                    --train_job_id "$TRAIN_JOB_ID"; then
+                    --jobid "$TRAIN_JOB_ID"; then
                     COMPLETED=$((COMPLETED + 1))
                     echo "[SUCCESS] Completed: $TAG ($MODE)"
                 else

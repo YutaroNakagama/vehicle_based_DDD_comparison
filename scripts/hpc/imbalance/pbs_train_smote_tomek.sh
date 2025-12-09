@@ -1,6 +1,6 @@
 #!/bin/bash
 #PBS -N imbal_v2_smote_tomek
-#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l select=1:ncpus=4:mem=8gb
 #PBS -l walltime=12:00:00
 #PBS -j oe
 #PBS -q SINGLE
