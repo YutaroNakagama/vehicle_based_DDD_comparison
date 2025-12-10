@@ -75,7 +75,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from imblearn.ensemble import BalancedRandomForestClassifier, EasyEnsembleClassifier
 from imblearn.over_sampling import SMOTE, ADASYN, BorderlineSMOTE
-from imblearn.under_sampling import RandomUnderSampler, TomekLinks
+from imblearn.under_sampling import RandomUnderSampler, TomekLinks, EditedNearestNeighbours
 from imblearn.combine import SMOTETomek, SMOTEENN
 from imblearn.pipeline import Pipeline as ImbPipeline
 
@@ -122,6 +122,7 @@ def common_train(
     train_only: bool = False,
     use_oversampling: bool = False,
     oversample_method: str = "smote",
+    target_ratio: float = 0.33,
 ):
     """
     Train a classical ML model using Optuna and ANFIS-based feature selection.
@@ -311,6 +312,16 @@ def common_train(
                 n_jobs=1
             )
             logging.info("Using Tomek Links only (boundary cleaning)")
+        elif oversample_method == "undersample_enn":
+            # Edited Nearest Neighbours (ENN) - removes samples misclassified by KNN
+            # More aggressive cleaning than Tomek Links
+            sampler = EditedNearestNeighbours(
+                sampling_strategy='majority',  # Only remove majority class samples
+                n_neighbors=3,
+                kind_sel='all',  # Remove if all neighbors are different class
+                n_jobs=1
+            )
+            logging.info("Using Edited Nearest Neighbours (aggressive noise cleaning)")
         elif oversample_method in ["jitter", "scale", "jitter_scale"]:
             # Time-series inspired augmentation (does not use imblearn sampler)
             logging.info(f"Using time-series augmentation: {oversample_method}")
@@ -561,10 +572,10 @@ def common_train(
                     else:
                         p = clf.decision_function(X_train_scaled[va_idx])
                     # Use F2 score for Recall-focused optimization (better for imbalanced data)
-                    y_pred = (p >= 0.5).astype(int)
-                    f2 = fbeta_score(y_va, y_pred, beta=2, zero_division=0)
+                    # Apply dynamic threshold optimization (consistent with validation)
+                    opt_thr, f2 = find_optimal_threshold(y_va, p, beta=2.0)
                     # Avoid flooding stdout; keep detailed per-fold in debug only
-                    logging.debug(f"[CV] Fold {i}: F2 = {f2:.6f}")
+                    logging.debug(f"[CV] Fold {i}: F2 = {f2:.6f} (thr={opt_thr:.3f})")
                     scores.append(f2)
                 if not scores or np.any(np.isnan(scores)):
                     return 0.0
