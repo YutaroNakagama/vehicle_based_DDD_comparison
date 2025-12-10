@@ -63,9 +63,14 @@ python scripts/python/train.py \
     --subject_wise_split \
     --seed "$SEED" \
     --time_stratify_labels \
-    --use_oversampling \
-    --oversample_method "$METHOD" \
-    --target_ratio "$RATIO" \
+    $(if [[ "$METHOD" != "baseline" && "$METHOD" != "balanced_rf" && "$METHOD" != "easy_ensemble" ]]; then
+        # Use oversampling for actual oversampling methods
+        if [[ "$METHOD" == "smote_balanced_rf" ]]; then
+            echo "--use_oversampling --oversample_method smote --target_ratio $RATIO"
+        else
+            echo "--use_oversampling --oversample_method $METHOD --target_ratio $RATIO"
+        fi
+    fi) \
     --tag "$TAG"
 
 echo "=== RATIO TRAINING DONE ==="
