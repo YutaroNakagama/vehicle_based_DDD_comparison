@@ -37,6 +37,7 @@ def train_model(
     mode: str = "pooled",
     use_oversampling: bool = False,
     oversample_method: str = "smote",
+    target_ratio: float = 0.33,
 ) -> Tuple[Optional[object], Optional[StandardScaler], Optional[float], Dict, Dict]:
     """Dispatch to the appropriate training routine and return artifacts.
 
@@ -67,5 +68,6 @@ def train_model(
         data_leak=False,
         use_oversampling=use_oversampling,
         oversample_method=oversample_method,
+        target_ratio=target_ratio,
     )
     return best_clf, scaler, best_threshold, feature_meta, results

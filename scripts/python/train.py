@@ -94,6 +94,7 @@ def main():
         time_stratify_min_chunk=cfg.TIME_STRATIFY_MIN_CHUNK,
         use_oversampling=args.use_oversampling,
         oversample_method=args.oversample_method,
+        target_ratio=args.target_ratio,
     )
 
 
