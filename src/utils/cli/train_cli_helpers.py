@@ -229,6 +229,12 @@ def add_train_arguments(parser: argparse.ArgumentParser) -> None:
         default="smote",
         help="Sampling method: SMOTE, ADASYN, BorderlineSMOTE, SMOTE+Tomek, SMOTE+ENN, SMOTE+RUS, Jitter, Scale, Jitter+Scale, Undersample-RUS, Undersample-Tomek, or Undersample-ENN (default: smote).",
     )
+    parser.add_argument(
+        "--target_ratio",
+        type=float,
+        default=0.33,
+        help="Target ratio for oversampling (minority/majority). Default: 0.33 (1:3 ratio).",
+    )
 
 
 def add_eval_arguments(parser: argparse.ArgumentParser) -> None:

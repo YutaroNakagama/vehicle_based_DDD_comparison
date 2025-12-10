@@ -49,6 +49,7 @@ def train_pipeline(
     time_stratify_min_chunk: int = 100,
     use_oversampling: bool = False,
     oversample_method: str = "smote",
+    target_ratio: float = 0.33,
     *,
     feature_selection_method: str = "rf",
     data_leak: bool = False,
@@ -217,6 +218,7 @@ def train_pipeline(
             mode=mode,
             use_oversampling=use_oversampling,
             oversample_method=oversample_method,
+            target_ratio=target_ratio,
         )
     except KeyboardInterrupt:
         logging.error("[TRAIN] Interrupted (KeyboardInterrupt). Will persist current checkpoint.")
