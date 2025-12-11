@@ -1,0 +1,13 @@
+# All pooled experiments: Wed 10 Dec 2025 07:46:57 AM JST
+# Method Train_ID Eval_ID
+baseline 14580239 14580240
+smote 14580241 14580242
+smote_tomek 14580243 14580244
+smote_enn 14580245 14580246
+smote_rus 14580247 14580248
+balanced_rf 14580249 14580250
+easy_ensemble 14580251 14580252
+smote_balanced_rf 14580253 14580254
+undersample_rus 14580255 14580256
+undersample_enn 14580257 14580258
+undersample_tomek 14580259 14580260

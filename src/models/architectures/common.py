@@ -228,12 +228,11 @@ def common_train(
     if use_oversampling:
         logging.info(f"Applying oversampling method: {oversample_method}")
         logging.info(f"Class distribution before oversampling: {np.bincount(y_train)}")
+        logging.info(f"Target ratio (minority/majority): {target_ratio}")
         
-        # Use conservative sampling_strategy to avoid extreme oversampling
-        # Instead of 1:1 balance, aim for minority:majority = 1:3 ratio
+        # Use target_ratio from function parameter for sampling_strategy
         minority_count = np.bincount(y_train).min()
         majority_count = np.bincount(y_train).max()
-        target_ratio = 0.33  # 1:3 ratio (minority:majority)
         
         if oversample_method == "smote":
             sampler = SMOTE(
