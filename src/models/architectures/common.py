@@ -260,6 +260,7 @@ def common_train(
                 random_state=42,
                 n_jobs=1,
                 smote=SMOTE(
+                    sampling_strategy=target_ratio,
                     random_state=42,
                     k_neighbors=min(5, minority_count - 1)
                 )
@@ -273,6 +274,7 @@ def common_train(
                 random_state=42,
                 n_jobs=1,
                 smote=SMOTE(
+                    sampling_strategy=target_ratio,
                     random_state=42,
                     k_neighbors=min(5, minority_count - 1)
                 )
@@ -280,21 +282,23 @@ def common_train(
             logging.info("Using SMOTE + ENN (aggressive noise cleaning)")
         elif oversample_method == "smote_rus":
             # SMOTE + RandomUnderSampler: hybrid approach
-            # First oversample minority to 50%, then undersample majority to balance
+            # First oversample minority, then undersample majority to achieve target_ratio
+            # Strategy: SMOTE to intermediate ratio, then RUS to final target_ratio
+            intermediate_ratio = min(0.5, target_ratio * 1.2)  # Slightly above target for SMOTE
             smote = SMOTE(
-                sampling_strategy=0.5,  # Minority becomes 50% of majority
+                sampling_strategy=intermediate_ratio,
                 random_state=42,
                 k_neighbors=min(5, minority_count - 1)
             )
             rus = RandomUnderSampler(
-                sampling_strategy=0.8,  # Final ratio: minority = 80% of majority
+                sampling_strategy=target_ratio,  # Final target ratio
                 random_state=42
             )
             sampler = ImbPipeline([
                 ('smote', smote),
                 ('rus', rus)
             ])
-            logging.info("Using SMOTE + RandomUnderSampler (hybrid sampling)")
+            logging.info(f"Using SMOTE + RandomUnderSampler (target ratio: {target_ratio})")
         elif oversample_method == "undersample_rus":
             # Random Under-Sampling only (no oversampling)
             # Reduces majority class to achieve target_ratio
