@@ -20,25 +20,60 @@ logger = logging.getLogger(__name__)
 def create_sample_distribution_data() -> pd.DataFrame:
     """Create DataFrame with sample distribution data from experiments.
     
+    Data extracted from training logs: "Class distribution after oversampling/undersampling"
+    
     Returns
     -------
     pd.DataFrame
         DataFrame with columns: method, jobid, alert, drowsy, total, ratio
     """
+    # Data extracted from actual training logs (scripts/hpc/log/14593*.OU)
+    # Original train data: alert=35522, drowsy=1445
     data = [
-        # method, jobid, alert, drowsy
-        ("Baseline", "14489461", 35522, 1445),
-        ("SMOTE", "14489462", 35522, 11722),  # SMOTE単体
-        ("SMOTE+Tomek", "14489463", 35380, 35380),
-        ("SMOTE+ENN", "14489464", 25259, 34244),
-        ("SMOTE+RUS", "14489465", 22201, 17761),
-        ("BalancedRF", "14489466", 35522, 1445),  # 内部でバランシング
-        ("EasyEnsemble", "14489467", 35522, 1445),  # 内部でバランシング
-        # New methods (Dec 3, 2025)
-        ("Undersample-ENN", "14545817", 35522, 1445),  # Undersampling only
-        ("Undersample-RUS", "14545818", 35522, 1445),  # Undersampling only
-        ("Undersample-Tomek", "14545819", 35522, 1445),  # Undersampling only
-        ("Jitter+Scale", "14545820", 35522, 1445),  # Data augmentation
+        # Baseline × 3 ratios (no sampling, class_weight only)
+        ("Baseline (0.1)", "14592990", 35522, 1445),
+        ("Baseline (0.5)", "14593013", 35522, 1445),
+        ("Baseline (1.0)", "14593038", 35522, 1445),
+        # SMOTE × 3 ratios (from logs)
+        ("SMOTE (0.1)", "14593005", 35522, 3552),
+        ("SMOTE (0.5)", "14593030", 35522, 17761),
+        ("SMOTE (1.0)", "14593052", 35522, 35522),
+        # SMOTE+Tomek × 3 ratios (all same: 35380, 35380)
+        ("SMOTE+Tomek (0.1)", "14592998", 35380, 35380),
+        ("SMOTE+Tomek (0.5)", "14593021", 35380, 35380),
+        ("SMOTE+Tomek (1.0)", "14593046", 35380, 35380),
+        # SMOTE+ENN × 3 ratios (all same: 25259, 34244)
+        ("SMOTE+ENN (0.1)", "14592987", 25259, 34244),
+        ("SMOTE+ENN (0.5)", "14593011", 25259, 34244),
+        ("SMOTE+ENN (1.0)", "14593036", 25259, 34244),
+        # SMOTE+RUS × 3 ratios (all same: 22201, 17761)
+        ("SMOTE+RUS (0.1)", "14592984", 22201, 17761),
+        ("SMOTE+RUS (0.5)", "14593009", 22201, 17761),
+        ("SMOTE+RUS (1.0)", "14593034", 22201, 17761),
+        # SMOTE+BalancedRF × 3 ratios (SMOTE applied before BalancedRF)
+        ("SMOTE+BalancedRF (0.1)", "14592992", 35522, 3552),
+        ("SMOTE+BalancedRF (0.5)", "14593015", 35522, 17761),
+        ("SMOTE+BalancedRF (1.0)", "14593040", 35522, 35522),
+        # BalancedRF × 3 ratios (internal balancing, no external sampling)
+        ("BalancedRF (0.1)", "14593000", 35522, 1445),
+        ("BalancedRF (0.5)", "14593023", 35522, 1445),
+        ("BalancedRF (1.0)", "14593048", 35522, 1445),
+        # EasyEnsemble × 3 ratios (internal balancing)
+        ("EasyEnsemble (0.1)", "14592996", 35522, 1445),
+        ("EasyEnsemble (0.5)", "14593019", 35522, 1445),
+        ("EasyEnsemble (1.0)", "14593044", 35522, 1445),
+        # Undersample-ENN × 3 ratios (all same: 31518, 1445)
+        ("Undersample-ENN (0.1)", "14593003", 31518, 1445),
+        ("Undersample-ENN (0.5)", "14593028", 31518, 1445),
+        ("Undersample-ENN (1.0)", "14593050", 31518, 1445),
+        # Undersample-RUS × 3 ratios (different per ratio)
+        ("Undersample-RUS (0.1)", "14592994", 14450, 1445),
+        ("Undersample-RUS (0.5)", "14593017", 2890, 1445),
+        ("Undersample-RUS (1.0)", "14593042", 1445, 1445),
+        # Undersample-Tomek × 3 ratios (all same: 34807, 1445)
+        ("Undersample-Tomek (0.1)", "14592982", 34807, 1445),
+        ("Undersample-Tomek (0.5)", "14593007", 34807, 1445),
+        ("Undersample-Tomek (1.0)", "14593032", 34807, 1445),
     ]
     
     df = pd.DataFrame(data, columns=["method", "jobid", "alert", "drowsy"])
@@ -77,6 +112,7 @@ def create_split_distribution_data() -> pd.DataFrame:
 def create_train_after_sampling_data() -> pd.DataFrame:
     """Create DataFrame with training data after each sampling method.
     
+    Data extracted from actual training logs: "Class distribution after oversampling/undersampling"
     Note: Validation and Test sets remain unchanged.
     
     Returns
@@ -84,20 +120,54 @@ def create_train_after_sampling_data() -> pd.DataFrame:
     pd.DataFrame
         DataFrame with training data after sampling for each method
     """
+    # Data from actual training logs (scripts/hpc/log/14593*.OU)
+    # Val: alert=11841, drowsy=481, Test: alert=11841, drowsy=482
     data = [
         # method, train_alert, train_drowsy, val_alert, val_drowsy, test_alert, test_drowsy
-        ("Baseline", 35522, 1445, 11841, 481, 11841, 482),
-        ("SMOTE", 35522, 11722, 11841, 481, 11841, 482),  # SMOTE単体 (Job: 14489462)
-        ("SMOTE+Tomek", 35380, 35380, 11841, 481, 11841, 482),
-        ("SMOTE+ENN", 25259, 34244, 11841, 481, 11841, 482),
-        ("SMOTE+RUS", 22201, 17761, 11841, 481, 11841, 482),
-        ("BalancedRF", 35522, 1445, 11841, 481, 11841, 482),  # 内部でバランシング
-        ("EasyEnsemble", 35522, 1445, 11841, 481, 11841, 482),  # 内部でバランシング
-        # New methods (Dec 3, 2025) - Undersampling removes majority class samples
-        ("Undersample-ENN", 35522, 1445, 11841, 481, 11841, 482),  # ENN removes noisy majority
-        ("Undersample-RUS", 35522, 1445, 11841, 481, 11841, 482),  # RUS undersamples majority
-        ("Undersample-Tomek", 35522, 1445, 11841, 481, 11841, 482),  # Tomek removes boundary
-        ("Jitter+Scale", 35522, 1445, 11841, 481, 11841, 482),  # Augmentation on minority
+        # Baseline × 3 ratios
+        ("Baseline (0.1)", 35522, 1445, 11841, 481, 11841, 482),
+        ("Baseline (0.5)", 35522, 1445, 11841, 481, 11841, 482),
+        ("Baseline (1.0)", 35522, 1445, 11841, 481, 11841, 482),
+        # SMOTE × 3 ratios
+        ("SMOTE (0.1)", 35522, 3552, 11841, 481, 11841, 482),
+        ("SMOTE (0.5)", 35522, 17761, 11841, 481, 11841, 482),
+        ("SMOTE (1.0)", 35522, 35522, 11841, 481, 11841, 482),
+        # SMOTE+Tomek × 3 ratios (all same: 35380, 35380)
+        ("SMOTE+Tomek (0.1)", 35380, 35380, 11841, 481, 11841, 482),
+        ("SMOTE+Tomek (0.5)", 35380, 35380, 11841, 481, 11841, 482),
+        ("SMOTE+Tomek (1.0)", 35380, 35380, 11841, 481, 11841, 482),
+        # SMOTE+ENN × 3 ratios (all same: 25259, 34244)
+        ("SMOTE+ENN (0.1)", 25259, 34244, 11841, 481, 11841, 482),
+        ("SMOTE+ENN (0.5)", 25259, 34244, 11841, 481, 11841, 482),
+        ("SMOTE+ENN (1.0)", 25259, 34244, 11841, 481, 11841, 482),
+        # SMOTE+RUS × 3 ratios (all same: 22201, 17761)
+        ("SMOTE+RUS (0.1)", 22201, 17761, 11841, 481, 11841, 482),
+        ("SMOTE+RUS (0.5)", 22201, 17761, 11841, 481, 11841, 482),
+        ("SMOTE+RUS (1.0)", 22201, 17761, 11841, 481, 11841, 482),
+        # SMOTE+BalancedRF × 3 ratios
+        ("SMOTE+BalancedRF (0.1)", 35522, 3552, 11841, 481, 11841, 482),
+        ("SMOTE+BalancedRF (0.5)", 35522, 17761, 11841, 481, 11841, 482),
+        ("SMOTE+BalancedRF (1.0)", 35522, 35522, 11841, 481, 11841, 482),
+        # BalancedRF × 3 ratios (internal balancing, no external sampling)
+        ("BalancedRF (0.1)", 35522, 1445, 11841, 481, 11841, 482),
+        ("BalancedRF (0.5)", 35522, 1445, 11841, 481, 11841, 482),
+        ("BalancedRF (1.0)", 35522, 1445, 11841, 481, 11841, 482),
+        # EasyEnsemble × 3 ratios (internal balancing)
+        ("EasyEnsemble (0.1)", 35522, 1445, 11841, 481, 11841, 482),
+        ("EasyEnsemble (0.5)", 35522, 1445, 11841, 481, 11841, 482),
+        ("EasyEnsemble (1.0)", 35522, 1445, 11841, 481, 11841, 482),
+        # Undersample-ENN × 3 ratios (all same: 31518, 1445)
+        ("Undersample-ENN (0.1)", 31518, 1445, 11841, 481, 11841, 482),
+        ("Undersample-ENN (0.5)", 31518, 1445, 11841, 481, 11841, 482),
+        ("Undersample-ENN (1.0)", 31518, 1445, 11841, 481, 11841, 482),
+        # Undersample-RUS × 3 ratios (different per ratio)
+        ("Undersample-RUS (0.1)", 14450, 1445, 11841, 481, 11841, 482),
+        ("Undersample-RUS (0.5)", 2890, 1445, 11841, 481, 11841, 482),
+        ("Undersample-RUS (1.0)", 1445, 1445, 11841, 481, 11841, 482),
+        # Undersample-Tomek × 3 ratios (all same: 34807, 1445)
+        ("Undersample-Tomek (0.1)", 34807, 1445, 11841, 481, 11841, 482),
+        ("Undersample-Tomek (0.5)", 34807, 1445, 11841, 481, 11841, 482),
+        ("Undersample-Tomek (1.0)", 34807, 1445, 11841, 481, 11841, 482),
     ]
     
     df = pd.DataFrame(data, columns=[
@@ -417,6 +487,89 @@ def plot_method_summary_dashboard(
     return fig
 
 
+def plot_training_data_after_sampling(
+    figsize: Tuple[int, int] = (16, 20),
+    output_path: Optional[Path] = None,
+    dpi: int = 150,
+) -> plt.Figure:
+    """Create standalone visualization of training data after sampling.
+    
+    This is a larger, more readable version of the "Training Data After Sampling"
+    panel from plot_train_val_test_split.
+    
+    Parameters
+    ----------
+    figsize : tuple
+        Figure size (default: 16x20 for better readability)
+    output_path : Path, optional
+        If provided, save figure to this path
+    dpi : int
+        Resolution for saved figure
+        
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    df = create_train_after_sampling_data()
+    
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    y = np.arange(len(df))
+    height = 0.4
+    
+    # Horizontal grouped bar chart
+    bars1 = ax.barh(y - height/2, df["train_alert"], height, 
+                    label="Alert (Majority)", color="#3498db", edgecolor="black", linewidth=0.5)
+    bars2 = ax.barh(y + height/2, df["train_drowsy"], height, 
+                    label="Drowsy (Minority)", color="#e74c3c", edgecolor="black", linewidth=0.5)
+    
+    ax.set_yticks(y)
+    ax.set_yticklabels(df["method"], fontsize=11)
+    ax.set_xlabel("Number of Samples", fontsize=12)
+    ax.set_title("Training Data After Sampling\n(11 Methods × 3 Ratios)", 
+                 fontsize=14, fontweight="bold", pad=15)
+    ax.legend(loc="lower right", fontsize=11)
+    
+    # Format x-axis
+    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"{int(x/1000):,}K" if x >= 1000 else str(int(x))))
+    
+    # Add value labels on bars
+    for bar in bars1:
+        width = bar.get_width()
+        if width > 5000:
+            ax.text(width + 500, bar.get_y() + bar.get_height()/2,
+                   f'{int(width):,}', va='center', ha='left', fontsize=9)
+    
+    for bar in bars2:
+        width = bar.get_width()
+        if width > 1000:
+            ax.text(width + 500, bar.get_y() + bar.get_height()/2,
+                   f'{int(width):,}', va='center', ha='left', fontsize=9)
+    
+    # Add grid for readability
+    ax.xaxis.grid(True, linestyle='--', alpha=0.3)
+    ax.set_axisbelow(True)
+    
+    # Add vertical line for original counts
+    ax.axvline(35522, color='#3498db', linestyle='--', alpha=0.5, linewidth=1.5, 
+               label='Original Alert (35,522)')
+    ax.axvline(1445, color='#e74c3c', linestyle='--', alpha=0.5, linewidth=1.5,
+               label='Original Drowsy (1,445)')
+    
+    # Add method category separators
+    # Group by method base (every 3 rows)
+    for i in range(3, len(df), 3):
+        ax.axhline(i - 0.5, color='gray', linestyle='-', alpha=0.3, linewidth=0.5)
+    
+    plt.tight_layout()
+    
+    if output_path:
+        fig.savefig(output_path, dpi=dpi, bbox_inches="tight", facecolor='white')
+        logger.info(f"Saved: {output_path}")
+    
+    return fig
+
+
 def generate_all_visualizations(output_dir: str = "results/imbalance_analysis") -> Dict[str, str]:
     """Generate all sample distribution visualizations.
     
@@ -459,6 +612,11 @@ def generate_all_visualizations(output_dir: str = "results/imbalance_analysis") 
     fig5 = plot_train_val_test_split(output_path=output_path / "train_val_test_split.png")
     plt.close(fig5)
     saved_files["train_val_test_split"] = str(output_path / "train_val_test_split.png")
+    
+    # Generate standalone training data after sampling (larger, more readable)
+    fig6 = plot_training_data_after_sampling(output_path=output_path / "training_data_after_sampling.png")
+    plt.close(fig6)
+    saved_files["training_data_after_sampling"] = str(output_path / "training_data_after_sampling.png")
     
     # Save CSVs
     csv_path = output_path / "sample_distribution.csv"
