@@ -96,6 +96,8 @@ def plot_summary_bar_for_imbalance_ratio(
 ) -> bool:
     """Generate summary_metrics_bar plot for one ranking × imbalance × ratio combination.
     
+    Uses plot_grouped_bar_chart_raw for consistent 4-row × 6-column format.
+    
     Parameters
     ----------
     df : pd.DataFrame
@@ -117,112 +119,70 @@ def plot_summary_bar_for_imbalance_ratio(
         True if successful
     """
     # Filter data for this ranking method, imbalance method, and ratio
-    df_rank = df[
+    method_df = df[
         (df["ranking_method"] == ranking_method) &
         (df["imbalance_method"] == imbalance_method) &
         (df["ratio"] == ratio)
     ].copy()
     
     # Get pooled data for this imbalance method and ratio
-    df_pool = df_pooled[
+    pooled_for_imbalance = df_pooled[
         (df_pooled["imbalance_method"] == imbalance_method) &
         (df_pooled["ratio"] == ratio)
     ].copy()
     
-    if df_rank.empty:
+    if method_df.empty:
         logger.warning(f"No data for {ranking_method}/{imbalance_method}/{ratio}")
         return False
     
+    # Rename distance_metric -> distance for plot_grouped_bar_chart_raw compatibility
+    if "distance_metric" in method_df.columns:
+        method_df = method_df.rename(columns={"distance_metric": "distance"})
+    
+    # Add pooled data (if available)
+    if len(pooled_for_imbalance) > 0:
+        # For pooled, set distance column to match the current ranking method pattern
+        pooled_for_imbalance = pooled_for_imbalance.copy()
+        pooled_for_imbalance["distance"] = f"{ranking_method}_pooled"
+        pooled_for_imbalance["level"] = "pooled"
+        method_df = pd.concat([method_df, pooled_for_imbalance], ignore_index=True)
+        logger.info(f"    Added {len(pooled_for_imbalance)} pooled record(s)")
+    
+    # Create output directory
+    method_dir = output_path / ranking_method
+    method_dir.mkdir(parents=True, exist_ok=True)
+    
     # Create output filename with ratio
     ratio_str = str(ratio).replace(".", "_")
-    out_file = output_path / ranking_method / f"summary_metrics_bar_{imbalance_method}_ratio{ratio_str}.png"
-    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file = method_dir / f"summary_metrics_bar_{imbalance_method}_ratio{ratio_str}.png"
     
-    # Prepare data for grouped bar chart
-    # X-axis: distance_metric × level (9 combinations)
-    # Groups: source_only vs target_only
-    
-    fig, axes = plt.subplots(2, 3, figsize=(18, 12))
-    axes = axes.flatten()
-    
-    metrics_to_plot = ["recall", "precision", "f1", "f2", "auc_pr", "accuracy"]
-    
-    for idx, metric in enumerate(metrics_to_plot):
-        ax = axes[idx]
+    try:
+        # Determine baseline pos_rate for auc_pr reference line
+        baseline_rate = method_df["pos_rate"].mean() if "pos_rate" in method_df.columns else 0.033
         
-        # Prepare data matrix
-        x_labels = []
-        source_values = []
-        target_values = []
+        fig = plot_grouped_bar_chart_raw(
+            data=method_df,
+            metrics=METRICS,
+            modes=["pooled", "source_only", "target_only"],
+            distance_col="distance",
+            level_col="level",
+            baseline_rates={"auc_pr": baseline_rate}
+        )
         
-        for dist_metric in DISTANCE_METRICS:
-            for level in LEVELS:
-                x_labels.append(f"{dist_metric}\n{level.replace('_domain', '')}")
-                
-                # Get source_only value
-                src_row = df_rank[
-                    (df_rank["distance_metric"] == dist_metric) &
-                    (df_rank["level"] == level) &
-                    (df_rank["mode"] == "source_only")
-                ]
-                source_values.append(src_row[metric].values[0] if len(src_row) > 0 else 0)
-                
-                # Get target_only value
-                tgt_row = df_rank[
-                    (df_rank["distance_metric"] == dist_metric) &
-                    (df_rank["level"] == level) &
-                    (df_rank["mode"] == "target_only")
-                ]
-                target_values.append(tgt_row[metric].values[0] if len(tgt_row) > 0 else 0)
-        
-        # Add pooled if available
-        if not df_pool.empty:
-            x_labels.append("Pooled")
-            pool_row = df_pool[df_pool["mode"] == "pooled"]
-            if not pool_row.empty:
-                pool_val = pool_row[metric].values[0]
-                source_values.append(pool_val)
-                target_values.append(pool_val)
-            else:
-                source_values.append(0)
-                target_values.append(0)
-        
-        # Plot grouped bars
-        x = np.arange(len(x_labels))
-        width = 0.35
-        
-        bars1 = ax.bar(x - width/2, source_values, width, label='Source Only', color='#3498db', edgecolor='black')
-        bars2 = ax.bar(x + width/2, target_values, width, label='Target Only', color='#e74c3c', edgecolor='black')
-        
-        ax.set_xlabel('Distance Metric / Level')
-        ax.set_ylabel(metric.upper())
-        ax.set_title(f'{metric.upper()}')
-        ax.set_xticks(x)
-        ax.set_xticklabels(x_labels, rotation=45, ha='right', fontsize=8)
-        ax.legend(loc='upper right', fontsize=8)
-        ax.grid(axis='y', alpha=0.3)
-        
-        # Set y-axis limits based on metric
-        if metric in ["accuracy", "recall"]:
-            ax.set_ylim(0, 1.0)
-        elif metric in ["precision", "f1", "f2", "auc_pr"]:
-            ax.set_ylim(0, max(max(source_values + target_values) * 1.2, 0.1))
-    
-    # Title
-    ratio_display = ratio if ratio != "none" else "default"
-    fig.suptitle(
-        f"Domain Analysis: {ranking_method.upper()} | {imbalance_method.upper()} | Ratio={ratio_display}",
-        fontsize=14, fontweight='bold', y=1.02
-    )
-    
-    plt.tight_layout()
-    
-    # Save
-    fig.savefig(out_file, dpi=150, bbox_inches='tight')
-    plt.close(fig)
-    
-    logger.info(f"Saved: {out_file}")
-    return True
+        if fig:
+            save_figure(fig, str(out_file), dpi=200)
+            logger.info(f"  Saved: {out_file}")
+            plt.close(fig)
+            return True
+        else:
+            logger.warning(f"  Failed to create figure for {ranking_method}/{imbalance_method}/{ratio}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Failed to generate plot for {ranking_method}/{imbalance_method}/{ratio}: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 
 def print_summary_stats(df: pd.DataFrame):
