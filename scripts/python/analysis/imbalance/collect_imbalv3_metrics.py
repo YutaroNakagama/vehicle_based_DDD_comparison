@@ -33,10 +33,20 @@ from src.utils.io.data_io import load_json_glob
 
 # Default imbalv3 training job IDs
 DEFAULT_JOBIDS = [
-    # Batch 1-3 (original imbalv3 experiments)
+    # imbalv3 experiment jobs
+    "14596401",
+    "14596402",
+    "14596403",
+    "14598153",
+    "14598156",
+    "14598157",
+    "14598158",
+    "14598159",
     "14600726",
-    "14600728", 
-    # Add more job IDs as needed
+    "14600765",
+    "14600766",
+    "14600806",
+    "14608454",
 ]
 
 # Output paths
