@@ -301,7 +301,7 @@ def save_eval_results(
 
     # --- construct file name including tag for unique identification ---
     # If tag exists and starts with known prefixes, use tag directly for filename
-    if tag and (tag.startswith("imbalv2_") or tag.startswith("full_") or tag.startswith("rank_")):
+    if tag and (tag.startswith("imbalv2_") or tag.startswith("imbalv3_") or tag.startswith("full_") or tag.startswith("rank_")):
         # Use tag directly: eval_results_{model}_{mode}_{tag}
         base_name = f"eval_results_{model_name}_{mode}_{tag}"
     elif dist != "unknown" and "_" in dist:
