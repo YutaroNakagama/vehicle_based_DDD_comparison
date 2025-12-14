@@ -65,3 +65,8 @@ docs/build/
 
 # commit automation script
 *.sh
+
+# HPC temporary files
+scripts/hpc/domain_analysis/imbalance/missing_eval_list*.csv
+scripts/hpc/domain_analysis/imbalance/submit_state.txt
+scripts/hpc/domain_analysis/imbalance/indexes_to_resubmit.txt
