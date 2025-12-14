@@ -44,6 +44,51 @@ EVAL_DIR = Path(cfg.RESULTS_EVALUATION_PATH)
 OUT_DIR = Path(cfg.RESULTS_PATH) / "imbalance_analysis" / "domain_v3"
 
 
+def extract_metadata_from_imbal_v2_tag(tag: str) -> dict:
+    """Extract metadata from imbal_v2 tag for pooled experiments.
+    
+    Tag formats:
+    - imbal_v2_{method}_ratio{X_Y}  (e.g., imbal_v2_smote_tomek_ratio1_0)
+    - imbal_v2_{method}             (e.g., imbal_v2_smote_tomek)
+    
+    Parameters
+    ----------
+    tag : str
+        Tag string from evaluation JSON
+    
+    Returns
+    -------
+    dict or None
+        Dictionary with extracted metadata, or None if not a valid imbal_v2 tag
+    """
+    if not tag or not tag.startswith("imbal_v2_"):
+        return None
+    
+    result = {
+        "ranking_method": "pooled",
+        "distance_metric": "pooled",
+        "level": "pooled",
+        "imbalance_method": "unknown",
+        "ratio": "none"
+    }
+    
+    # Pattern: imbal_v2_{method}_ratio{X_Y} or imbal_v2_{method}
+    # Methods: smote, smote_tomek, smote_rus, smote_balanced_rf, undersample_rus, etc.
+    pattern = r"imbal_v2_(.+?)(?:_ratio(\d+_\d+))?$"
+    match = re.match(pattern, tag)
+    
+    if match:
+        method = match.group(1)
+        # Filter out seed variants
+        if "seed" in method:
+            return None
+        result["imbalance_method"] = method
+        result["ratio"] = match.group(2).replace("_", ".") if match.group(2) else "none"
+        return result
+    
+    return None
+
+
 def extract_metadata_from_tag(tag: str) -> dict:
     """Extract metadata from imbalv3 tag.
     
@@ -244,6 +289,82 @@ def main():
     if not all_records:
         print("\n[ERROR] No imbalv3 evaluation files found!")
         return 1
+    
+    # Also collect pooled results from imbal_v2 experiments
+    print("\n[INFO] Collecting pooled results from imbal_v2 experiments...")
+    pooled_count = 0
+    
+    for model_type in ["RF", "BalancedRF", "EasyEnsemble"]:
+        model_eval_dir = EVAL_DIR / model_type
+        if not model_eval_dir.exists():
+            continue
+        
+        # Search for pooled evaluation files
+        pattern = str(model_eval_dir / "*" / "*" / "eval_results_*pooled*.json")
+        import glob
+        pooled_files = glob.glob(pattern)
+        
+        for fpath in pooled_files:
+            try:
+                import json
+                with open(fpath) as f:
+                    data = json.load(f)
+                
+                tag = data.get("tag", "")
+                
+                # Check if it's an imbal_v2 tag with ratio
+                meta = extract_metadata_from_imbal_v2_tag(tag)
+                if meta is None:
+                    continue
+                
+                # Extract metrics
+                precision = data.get("precision") or data.get("precision_pos", 0)
+                recall = data.get("recall") or data.get("recall_pos", 0)
+                
+                cm = data.get("confusion_matrix")
+                if cm and len(cm) == 2:
+                    total = sum(sum(row) for row in cm)
+                    positives = cm[1][0] + cm[1][1] if len(cm[1]) >= 2 else 0
+                    pos_rate = positives / total if total > 0 else 0.033
+                else:
+                    pos_rate = data.get("pos_rate", 0.033)
+                
+                f2 = data.get("f2_thr") or data.get("f2")
+                if f2 is None:
+                    if precision and recall and (4 * precision + recall) > 0:
+                        f2 = 5 * precision * recall / (4 * precision + recall)
+                    else:
+                        f2 = 0.0
+                
+                record = {
+                    "file": Path(fpath).name,
+                    "tag": tag,
+                    "mode": "pooled",
+                    "imbalance_method": meta["imbalance_method"],
+                    "ratio": meta["ratio"],
+                    "ranking_method": "pooled",
+                    "distance_metric": "pooled",
+                    "level": "pooled",
+                    "accuracy": data.get("accuracy"),
+                    "precision": precision,
+                    "recall": recall,
+                    "f1": data.get("f1"),
+                    "auc": data.get("roc_auc") or data.get("auc"),
+                    "auc_pr": data.get("auc_pr"),
+                    "pos_rate": pos_rate,
+                    "f2": f2,
+                    "jobid": "imbal_v2",
+                    "array_index": "",
+                    "model_type": model_type,
+                }
+                all_records.append(record)
+                pooled_count += 1
+                
+            except Exception as e:
+                continue
+    
+    if pooled_count > 0:
+        print(f"  Added {pooled_count} pooled records from imbal_v2")
     
     # Create DataFrame
     df = pd.DataFrame(all_records)
