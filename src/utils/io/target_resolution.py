@@ -113,15 +113,11 @@ SOURCE_ONLY_TRAIN_GROUP = "in_domain"  # Changed from "mid_domain" to use LOW gr
 def resolve_source_group_subjects(tag: Optional[str], source_group: Optional[str] = None) -> List[str]:
     """Resolve source group subjects for source_only mode training.
 
-    This function extracts the ranking method and distance metric from the tag
-    to locate the correct group file. For in_domain experiments with source_only,
-    this ensures the same group is used as target_only mode.
-
     Parameters
     ----------
     tag : str, optional
-        Experiment tag to extract ranking method and distance metric 
-        (e.g., "rank_knn_mmd_in_domain", "full_mean_distance_dtw_in_domain").
+        Experiment tag to extract distance metric prefix (e.g., "rank_dtw_mean_high").
+        For imbalv3 tags: "imbalv3_knn_mmd_in_domain_smote_tomek_ratio0_1"
     source_group : str, optional
         Which group to use for training. Options: "in_domain" (LOW), "mid_domain" (MIDDLE).
         If None, uses SOURCE_ONLY_TRAIN_GROUP constant.
@@ -144,10 +140,24 @@ def resolve_source_group_subjects(tag: Optional[str], source_group: Optional[str
     # Determine which group to use
     group_level = source_group or SOURCE_ONLY_TRAIN_GROUP
     
-    # Extract tag key (remove "rank_" or "full_" prefix)
-    tag_key = tag.replace("rank_", "").replace("full_", "")
+    # Extract ranking method (knn, lof, median_distance) from imbalv3 tags
+    # Format: imbalv3_{ranking}_{metric}_{level}_{method}_ratio{X_Y}
+    ranking_method = None
+    if tag.startswith("imbalv3_"):
+        parts = tag.split("_")
+        if len(parts) >= 2:
+            candidate = parts[1]
+            if candidate in ["knn", "lof"]:
+                ranking_method = candidate
+            elif candidate == "median" and len(parts) >= 3 and parts[2] == "distance":
+                ranking_method = "median_distance"
     
-    # Extract distance metric (dtw, mmd, wasserstein)
+    # Fallback to mean_distance for non-imbalv3 tags
+    if ranking_method is None:
+        ranking_method = "mean_distance"
+    
+    # Extract metric prefix (dtw, mmd, wasserstein)
+    tag_key = tag.replace("rank_", "")
     metric_prefix = None
     for prefix in ["dtw", "mmd", "wasserstein"]:
         if prefix in tag_key:
@@ -160,43 +170,21 @@ def resolve_source_group_subjects(tag: Optional[str], source_group: Optional[str
             f"Expected one of ['dtw', 'mmd', 'wasserstein']."
         )
     
-    # Extract ranking method from tag (knn, lof, mean_distance, median_distance, etc.)
-    ranking_methods = ["mean_distance", "median_distance", "centroid_umap", "isolation_forest", "knn", "lof", "medoid", "centroid_mds"]
-    ranking_method = None
-    for method in ranking_methods:
-        if method in tag_key:
-            ranking_method = method
-            break
-    
-    # Default to mean_distance if not found (for backward compatibility)
-    if ranking_method is None:
-        ranking_method = "mean_distance"
-        logging.info(f"[SOURCE] No ranking method found in tag='{tag}', defaulting to 'mean_distance'")
-    
-    # Build path to source group file
+    # Load source group file using the correct ranking method directory
     ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks" / "ranks29" / ranking_method
     source_file = ranks_dir / f"{metric_prefix}_{group_level}.txt"
     
     if not source_file.exists():
-        # Fallback to mean_distance if ranking method directory doesn't exist
-        fallback_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks" / "ranks29" / "mean_distance"
-        fallback_file = fallback_dir / f"{metric_prefix}_{group_level}.txt"
-        
-        if fallback_file.exists():
-            logging.warning(
-                f"[SOURCE] Group file not found at {source_file}, falling back to {fallback_file}"
-            )
-            source_file = fallback_file
-        else:
-            raise FileNotFoundError(
-                f"[SOURCE] Source group file does not exist: {source_file}"
-            )
+        raise FileNotFoundError(
+            f"[SOURCE] Source group file does not exist: {source_file}"
+        )
     
     with open(source_file) as f:
         source_subjects = [s.strip() for s in f if s.strip()]
     
     group_name = "LOW" if group_level == "in_domain" else "MIDDLE"
     logging.info(f"[SOURCE] Loaded {len(source_subjects)} {group_name} group subjects from {source_file}")
+
     
     return source_subjects
 
