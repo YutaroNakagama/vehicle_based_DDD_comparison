@@ -4,6 +4,7 @@ This module provides visualization functions to compare performance metrics
 across different imbalanced data handling methods.
 """
 
+import json
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -17,43 +18,173 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def create_performance_results_data() -> pd.DataFrame:
-    """Create DataFrame with performance results from experiments.
+# Full V2 model configurations: 11 methods × 3 ratios (0.1, 0.5, 1.0)
+# Using latest job IDs from 14593xxx series - synchronized with imbalance_visualize.py
+DEFAULT_V2_MODELS = [
+    # Baseline (RF without sampling) × 3 ratios
+    ("RF", "14592990", "Baseline (0.1)", "imbal_v2_baseline_ratio0_1"),
+    ("RF", "14593013", "Baseline (0.5)", "imbal_v2_baseline_ratio0_5"),
+    ("RF", "14593038", "Baseline (1.0)", "imbal_v2_baseline_ratio1_0"),
+    # SMOTE × 3 ratios
+    ("RF", "14593005", "SMOTE (0.1)", "imbal_v2_smote_ratio0_1"),
+    ("RF", "14593030", "SMOTE (0.5)", "imbal_v2_smote_ratio0_5"),
+    ("RF", "14593052", "SMOTE (1.0)", "imbal_v2_smote_ratio1_0"),
+    # SMOTE+Tomek × 3 ratios
+    ("RF", "14592998", "SMOTE+Tomek (0.1)", "imbal_v2_smote_tomek_ratio0_1"),
+    ("RF", "14593021", "SMOTE+Tomek (0.5)", "imbal_v2_smote_tomek_ratio0_5"),
+    ("RF", "14593046", "SMOTE+Tomek (1.0)", "imbal_v2_smote_tomek_ratio1_0"),
+    # SMOTE+ENN × 3 ratios
+    ("RF", "14592987", "SMOTE+ENN (0.1)", "imbal_v2_smote_enn_ratio0_1"),
+    ("RF", "14593011", "SMOTE+ENN (0.5)", "imbal_v2_smote_enn_ratio0_5"),
+    ("RF", "14593036", "SMOTE+ENN (1.0)", "imbal_v2_smote_enn_ratio1_0"),
+    # SMOTE+RUS × 3 ratios
+    ("RF", "14592984", "SMOTE+RUS (0.1)", "imbal_v2_smote_rus_ratio0_1"),
+    ("RF", "14593009", "SMOTE+RUS (0.5)", "imbal_v2_smote_rus_ratio0_5"),
+    ("RF", "14593034", "SMOTE+RUS (1.0)", "imbal_v2_smote_rus_ratio1_0"),
+    # SMOTE+BalancedRF × 3 ratios
+    ("BalancedRF", "14592992", "SMOTE+BalancedRF (0.1)", "imbal_v2_smote_balanced_rf_ratio0_1"),
+    ("BalancedRF", "14593015", "SMOTE+BalancedRF (0.5)", "imbal_v2_smote_balanced_rf_ratio0_5"),
+    ("BalancedRF", "14593040", "SMOTE+BalancedRF (1.0)", "imbal_v2_smote_balanced_rf_ratio1_0"),
+    # BalancedRF × 3 ratios
+    ("BalancedRF", "14593000", "BalancedRF (0.1)", "imbal_v2_balanced_rf_ratio0_1"),
+    ("BalancedRF", "14593023", "BalancedRF (0.5)", "imbal_v2_balanced_rf_ratio0_5"),
+    ("BalancedRF", "14593048", "BalancedRF (1.0)", "imbal_v2_balanced_rf_ratio1_0"),
+    # EasyEnsemble × 3 ratios
+    ("EasyEnsemble", "14592996", "EasyEnsemble (0.1)", "imbal_v2_easy_ensemble_ratio0_1"),
+    ("EasyEnsemble", "14593019", "EasyEnsemble (0.5)", "imbal_v2_easy_ensemble_ratio0_5"),
+    ("EasyEnsemble", "14593044", "EasyEnsemble (1.0)", "imbal_v2_easy_ensemble_ratio1_0"),
+    # Undersample-ENN × 3 ratios
+    ("RF", "14593003", "Undersample-ENN (0.1)", "imbal_v2_undersample_enn_ratio0_1"),
+    ("RF", "14593027", "Undersample-ENN (0.5)", "imbal_v2_undersample_enn_ratio0_5"),
+    ("RF", "14593050", "Undersample-ENN (1.0)", "imbal_v2_undersample_enn_ratio1_0"),
+    # Undersample-RUS × 3 ratios
+    ("RF", "14592994", "Undersample-RUS (0.1)", "imbal_v2_undersample_rus_ratio0_1"),
+    ("RF", "14593017", "Undersample-RUS (0.5)", "imbal_v2_undersample_rus_ratio0_5"),
+    ("RF", "14593042", "Undersample-RUS (1.0)", "imbal_v2_undersample_rus_ratio1_0"),
+    # Undersample-Tomek × 3 ratios
+    ("RF", "14592982", "Undersample-Tomek (0.1)", "imbal_v2_undersample_tomek_ratio0_1"),
+    ("RF", "14593007", "Undersample-Tomek (0.5)", "imbal_v2_undersample_tomek_ratio0_5"),
+    ("RF", "14593032", "Undersample-Tomek (1.0)", "imbal_v2_undersample_tomek_ratio1_0"),
+]
+
+
+def load_evaluation_results_from_json(
+    model_type: str, 
+    jobid: str, 
+    tag: str,
+    base_path: str = "results/evaluation"
+) -> Optional[Dict]:
+    """Load evaluation results from JSON file.
     
-    Data extracted from HPC job logs.
+    Parameters
+    ----------
+    model_type : str
+        Model type (RF, BalancedRF, EasyEnsemble)
+    jobid : str
+        Job ID
+    tag : str
+        Model tag (not used in current path structure)
+    base_path : str
+        Base path for evaluation results
+        
+    Returns
+    -------
+    dict or None
+        Evaluation results or None if not found
+    """
+    base = Path(base_path)
+    
+    # Try different path patterns
+    # Pattern 1: {base}/{model_type}/{jobid}/{jobid}[1]/*.json
+    eval_dir = base / model_type / jobid / f"{jobid}[1]"
+    
+    if eval_dir.exists():
+        json_files = list(eval_dir.glob("eval_results_*.json"))
+        if json_files:
+            eval_file = json_files[0]
+            try:
+                with open(eval_file, 'r') as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.error(f"Error loading {eval_file}: {e}")
+                return None
+    
+    # Pattern 2: {base}/{model_type}/pooled_{tag}_{jobid}/evaluation_results.json
+    eval_dir = base / model_type / f"pooled_{tag}_{jobid}"
+    eval_file = eval_dir / "evaluation_results.json"
+    
+    if eval_file.exists():
+        try:
+            with open(eval_file, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Error loading {eval_file}: {e}")
+            return None
+    
+    logger.warning(f"Evaluation file not found for {model_type}/{jobid}")
+    return None
+
+
+def create_performance_results_data(models: Optional[List[Tuple]] = None) -> pd.DataFrame:
+    """Create DataFrame with performance results from evaluation JSON files.
+    
+    Automatically loads results from evaluation JSON files for all 33 cases
+    (11 methods × 3 ratios).
+    
+    Parameters
+    ----------
+    models : list of tuples, optional
+        List of (model_type, jobid, display_name, tag) tuples.
+        If None, uses DEFAULT_V2_MODELS.
     
     Returns
     -------
     pd.DataFrame
         DataFrame with performance metrics for each method
     """
-    # Results from job logs (Test metrics with threshold=0.5 and optimized threshold)
-    # Updated with latest pooled results from Job 14573166 and related jobs
-    data = [
-        # method, jobid, test_recall, test_precision, test_f1, test_f2, test_accuracy, 
-        # test_recall_thr, test_precision_thr, test_f1_thr, auprc, auroc
-        # Pooled results from Job 14573166 (imbalance_pooled_*)
-        ("Baseline", "14573166[7]", 0.50, 0.04, 0.07, 0.14, 0.51, 0.39, 0.040, 0.072, 0.041, 0.51),
-        ("SMOTE", "14573166[8]", 0.53, 0.04, 0.08, 0.17, 0.53, 0.72, 0.043, 0.081, 0.043, 0.53),
-        ("SMOTE+Tomek", "14573166[9]", 0.53, 0.04, 0.08, 0.17, 0.53, 0.72, 0.043, 0.081, 0.043, 0.53),
-        ("SMOTE+ENN", "imbal_v2", 0.36, 0.05, 0.08, 0.17, 0.68, 0.76, 0.043, 0.081, 0.046, 0.54),
-        ("SMOTE+RUS", "14573166[10]", 0.53, 0.04, 0.08, 0.17, 0.54, 0.66, 0.043, 0.080, 0.044, 0.53),
-        # BalancedRF and EasyEnsemble from their respective model folders
-        ("BalancedRF", "14489466", 0.98, 0.04, 0.08, 0.17, 0.06, 0.98, 0.040, 0.076, 0.042, 0.52),
-        ("EasyEnsemble", "imbal_v2", 0.53, 0.04, 0.08, 0.17, 0.49, 1.00, 0.039, 0.076, 0.039, 0.52),
-        # Undersample variants from imbal_v2
-        ("Undersample-RUS", "imbal_v2", 0.00, 0.00, 0.00, 0.00, 0.96, 0.23, 0.037, 0.065, 0.042, 0.51),
-        ("Undersample-ENN", "imbal_v2", 0.42, 0.04, 0.07, 0.14, 0.56, 0.42, 0.038, 0.069, 0.040, 0.52),
-        ("Undersample-Tomek", "imbal_v2", 0.41, 0.04, 0.06, 0.12, 0.54, 0.29, 0.036, 0.063, 0.041, 0.51),
-    ]
+    if models is None:
+        models = DEFAULT_V2_MODELS
     
-    df = pd.DataFrame(data, columns=[
-        "method", "jobid", 
-        "test_recall", "test_precision", "test_f1", "test_f2", "test_accuracy",
-        "test_recall_thr", "test_precision_thr", "test_f1_thr",
-        "auprc", "auroc"
-    ])
+    data = []
+    for model_type, jobid, display_name, tag in models:
+        results = load_evaluation_results_from_json(model_type, jobid, tag)
+        
+        if results is None:
+            logger.warning(f"Skipping {display_name} ({jobid}): no results found")
+            continue
+        
+        # Extract metrics from JSON - metrics are at top level
+        # F2 is stored as f2_thr (threshold-optimized)
+        row = {
+            "method": display_name,
+            "jobid": jobid,
+            "model_type": model_type,
+            "tag": tag,
+            "test_recall": results.get("recall", 0.0),
+            "test_precision": results.get("precision", 0.0),
+            "test_f1": results.get("f1", 0.0),
+            "test_f2": results.get("f2_thr", results.get("f2", 0.0)),
+            "test_accuracy": results.get("accuracy", 0.0),
+            "auprc": results.get("auc_pr", results.get("auprc", 0.0)),
+            "auroc": results.get("roc_auc", results.get("auc_roc", 0.0)),
+            # Threshold-based metrics
+            "test_recall_thr": results.get("recall_thr", results.get("recall", 0.0)),
+            "test_precision_thr": results.get("prec_thr", results.get("precision", 0.0)),
+            "test_f1_thr": results.get("f1_thr", results.get("f1", 0.0)),
+        }
+        data.append(row)
     
+    if not data:
+        logger.error("No data loaded! Check evaluation results paths.")
+        # Return empty DataFrame with expected columns
+        return pd.DataFrame(columns=[
+            "method", "jobid", "model_type", "tag",
+            "test_recall", "test_precision", "test_f1", "test_f2", "test_accuracy",
+            "auprc", "auroc", "test_recall_thr", "test_precision_thr", "test_f1_thr"
+        ])
+    
+    df = pd.DataFrame(data)
+    logger.info(f"Loaded {len(df)} evaluation results")
     return df
 
 
@@ -258,7 +389,7 @@ def plot_performance_summary_dashboard(
     
     # Color scheme: Baseline = red, others = blue
     def get_colors(df_sorted):
-        return ["#e74c3c" if m == "Baseline" else "#3498db" for m in df_sorted["method"]]
+        return ["#e74c3c" if m.startswith("Baseline") else "#3498db" for m in df_sorted["method"]]
     
     # Panel 1: Recall comparison (top-left)
     ax1 = fig.add_subplot(gs[0, 0])
@@ -354,6 +485,177 @@ def plot_performance_summary_dashboard(
         logger.info(f"Saved: {output_path}")
     
     return fig
+
+
+def plot_single_metric(
+    df: pd.DataFrame,
+    metric: str,
+    title: str,
+    xlabel: str,
+    figsize: Tuple[int, int] = (12, 10),
+    xlim: Optional[Tuple[float, float]] = None,
+    percentage: bool = False,
+    reference_line: Optional[float] = None,
+    reference_label: Optional[str] = None,
+    output_path: Optional[Path] = None,
+) -> plt.Figure:
+    """Create a single metric bar chart with large, readable format.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame with performance data
+    metric : str
+        Column name of the metric to plot
+    title : str
+        Chart title
+    xlabel : str
+        X-axis label
+    figsize : tuple
+        Figure size (default: 12x10 for readability)
+    xlim : tuple, optional
+        X-axis limits
+    percentage : bool
+        If True, multiply values by 100 and show as percentage
+    reference_line : float, optional
+        If provided, draw a vertical reference line
+    reference_label : str, optional
+        Label for reference line
+    output_path : Path, optional
+        If provided, save figure to this path
+        
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    # Sort by metric value
+    df_sorted = df.sort_values(metric, ascending=True)
+    
+    # Color scheme: Baseline = red, others = blue
+    colors = ["#e74c3c" if m.startswith("Baseline") else "#3498db" for m in df_sorted["method"]]
+    
+    # Get values
+    values = df_sorted[metric]
+    if percentage:
+        values = values * 100
+    
+    # Create horizontal bar chart
+    bars = ax.barh(df_sorted["method"], values, color=colors, edgecolor="black", height=0.7)
+    
+    # Add reference line if specified
+    if reference_line is not None:
+        ref_val = reference_line * 100 if percentage else reference_line
+        label = reference_label or f"Reference ({ref_val:.1f})"
+        ax.axvline(ref_val, color="gray", linestyle="--", linewidth=2, label=label)
+        ax.legend(loc="lower right", fontsize=12)
+    
+    # Add value labels
+    for bar, val in zip(bars, values):
+        if percentage:
+            label = f"{val:.1f}%"
+        else:
+            label = f"{val:.3f}"
+        ax.text(bar.get_width() + (xlim[1] - xlim[0]) * 0.02 if xlim else bar.get_width() * 0.02, 
+                bar.get_y() + bar.get_height()/2, 
+                label, va="center", fontsize=11, fontweight="bold")
+    
+    ax.set_xlabel(xlabel, fontsize=14)
+    ax.set_title(title, fontsize=16, fontweight="bold", pad=15)
+    ax.tick_params(axis='y', labelsize=11)
+    ax.tick_params(axis='x', labelsize=11)
+    
+    if xlim:
+        ax.set_xlim(xlim)
+    
+    # Add grid for readability
+    ax.xaxis.grid(True, linestyle='--', alpha=0.7)
+    ax.set_axisbelow(True)
+    
+    plt.tight_layout()
+    
+    if output_path:
+        fig.savefig(output_path, dpi=150, bbox_inches="tight")
+        logger.info(f"Saved: {output_path}")
+    
+    return fig
+
+
+def plot_recall_standalone(
+    df: pd.DataFrame,
+    figsize: Tuple[int, int] = (12, 10),
+    output_path: Optional[Path] = None,
+) -> plt.Figure:
+    """Create standalone Recall chart."""
+    return plot_single_metric(
+        df=df,
+        metric="test_recall",
+        title="Recall (Drowsy Detection Rate)",
+        xlabel="Recall (%)",
+        figsize=figsize,
+        xlim=(0, 100),
+        percentage=True,
+        output_path=output_path,
+    )
+
+
+def plot_precision_standalone(
+    df: pd.DataFrame,
+    figsize: Tuple[int, int] = (12, 10),
+    output_path: Optional[Path] = None,
+) -> plt.Figure:
+    """Create standalone Precision chart."""
+    return plot_single_metric(
+        df=df,
+        metric="test_precision",
+        title="Precision (Positive Predictive Value)",
+        xlabel="Precision (%)",
+        figsize=figsize,
+        xlim=(0, 15),
+        percentage=True,
+        output_path=output_path,
+    )
+
+
+def plot_f2_standalone(
+    df: pd.DataFrame,
+    figsize: Tuple[int, int] = (12, 10),
+    output_path: Optional[Path] = None,
+) -> plt.Figure:
+    """Create standalone F2 Score chart."""
+    return plot_single_metric(
+        df=df,
+        metric="test_f2",
+        title="F2 Score (Recall-weighted Harmonic Mean)",
+        xlabel="F2 Score",
+        figsize=figsize,
+        xlim=(0, 0.30),
+        percentage=False,
+        output_path=output_path,
+    )
+
+
+def plot_auprc_standalone(
+    df: pd.DataFrame,
+    figsize: Tuple[int, int] = (12, 10),
+    output_path: Optional[Path] = None,
+) -> plt.Figure:
+    """Create standalone AUPRC chart."""
+    # Random classifier baseline = positive rate (~0.039)
+    random_baseline = 0.039
+    return plot_single_metric(
+        df=df,
+        metric="auprc",
+        title="AUPRC (Area Under Precision-Recall Curve)",
+        xlabel="AUPRC",
+        figsize=figsize,
+        xlim=(0, 0.12),
+        percentage=False,
+        reference_line=random_baseline,
+        reference_label=f"Random Baseline ({random_baseline:.1%})",
+        output_path=output_path,
+    )
 
 
 def plot_method_ranking(
@@ -460,6 +762,23 @@ def generate_performance_visualizations(output_dir: str = "results/imbalance_ana
     fig4 = plot_performance_summary_dashboard(df, output_path=output_path / "performance_dashboard.png")
     plt.close(fig4)
     saved_files["performance_dashboard"] = str(output_path / "performance_dashboard.png")
+    
+    # Individual metric plots (larger, more readable)
+    fig_recall = plot_recall_standalone(df, output_path=output_path / "metric_recall.png")
+    plt.close(fig_recall)
+    saved_files["metric_recall"] = str(output_path / "metric_recall.png")
+    
+    fig_precision = plot_precision_standalone(df, output_path=output_path / "metric_precision.png")
+    plt.close(fig_precision)
+    saved_files["metric_precision"] = str(output_path / "metric_precision.png")
+    
+    fig_f2 = plot_f2_standalone(df, output_path=output_path / "metric_f2.png")
+    plt.close(fig_f2)
+    saved_files["metric_f2"] = str(output_path / "metric_f2.png")
+    
+    fig_auprc = plot_auprc_standalone(df, output_path=output_path / "metric_auprc.png")
+    plt.close(fig_auprc)
+    saved_files["metric_auprc"] = str(output_path / "metric_auprc.png")
     
     fig5 = plot_method_ranking(df, output_path=output_path / "method_ranking.png")
     plt.close(fig5)

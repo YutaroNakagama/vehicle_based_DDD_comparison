@@ -63,14 +63,63 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-# Default V2 model configurations
-DEFAULT_V2_MODELS = [
+# Default V2 model configurations (original 6 methods, no ratio)
+DEFAULT_V2_MODELS_ORIGINAL = [
     ("RF", "14468417", "Baseline RF", "imbal_v2_baseline"),
     ("RF", "14468418", "SMOTE+Tomek", "imbal_v2_smote_tomek"),
     ("RF", "14468419", "SMOTE+ENN", "imbal_v2_smote_enn"),
     ("RF", "14468420", "BalancedRF", "imbal_v2_balanced_rf"),
     ("RF", "14468421", "SMOTE+RUS", "imbal_v2_smote_rus"),
     ("RF", "14468501", "EasyEnsemble", "imbal_v2_easyensemble"),
+]
+
+# Full V2 model configurations: 11 methods × 3 ratios (0.1, 0.5, 1.0)
+# Using latest job IDs from 14593xxx series
+DEFAULT_V2_MODELS = [
+    # Baseline (RF without sampling) × 3 ratios
+    ("RF", "14592990", "Baseline (0.1)", "imbal_v2_baseline_ratio0_1"),
+    ("RF", "14593013", "Baseline (0.5)", "imbal_v2_baseline_ratio0_5"),
+    ("RF", "14593038", "Baseline (1.0)", "imbal_v2_baseline_ratio1_0"),
+    # SMOTE × 3 ratios
+    ("RF", "14593005", "SMOTE (0.1)", "imbal_v2_smote_ratio0_1"),
+    ("RF", "14593030", "SMOTE (0.5)", "imbal_v2_smote_ratio0_5"),
+    ("RF", "14593052", "SMOTE (1.0)", "imbal_v2_smote_ratio1_0"),
+    # SMOTE+Tomek × 3 ratios
+    ("RF", "14592998", "SMOTE+Tomek (0.1)", "imbal_v2_smote_tomek_ratio0_1"),
+    ("RF", "14593021", "SMOTE+Tomek (0.5)", "imbal_v2_smote_tomek_ratio0_5"),
+    ("RF", "14593046", "SMOTE+Tomek (1.0)", "imbal_v2_smote_tomek_ratio1_0"),
+    # SMOTE+ENN × 3 ratios
+    ("RF", "14592987", "SMOTE+ENN (0.1)", "imbal_v2_smote_enn_ratio0_1"),
+    ("RF", "14593011", "SMOTE+ENN (0.5)", "imbal_v2_smote_enn_ratio0_5"),
+    ("RF", "14593036", "SMOTE+ENN (1.0)", "imbal_v2_smote_enn_ratio1_0"),
+    # SMOTE+RUS × 3 ratios
+    ("RF", "14592984", "SMOTE+RUS (0.1)", "imbal_v2_smote_rus_ratio0_1"),
+    ("RF", "14593009", "SMOTE+RUS (0.5)", "imbal_v2_smote_rus_ratio0_5"),
+    ("RF", "14593034", "SMOTE+RUS (1.0)", "imbal_v2_smote_rus_ratio1_0"),
+    # SMOTE+BalancedRF × 3 ratios
+    ("BalancedRF", "14592992", "SMOTE+BalancedRF (0.1)", "imbal_v2_smote_balanced_rf_ratio0_1"),
+    ("BalancedRF", "14593015", "SMOTE+BalancedRF (0.5)", "imbal_v2_smote_balanced_rf_ratio0_5"),
+    ("BalancedRF", "14593040", "SMOTE+BalancedRF (1.0)", "imbal_v2_smote_balanced_rf_ratio1_0"),
+    # BalancedRF × 3 ratios
+    ("BalancedRF", "14593000", "BalancedRF (0.1)", "imbal_v2_balanced_rf_ratio0_1"),
+    ("BalancedRF", "14593023", "BalancedRF (0.5)", "imbal_v2_balanced_rf_ratio0_5"),
+    ("BalancedRF", "14593048", "BalancedRF (1.0)", "imbal_v2_balanced_rf_ratio1_0"),
+    # EasyEnsemble × 3 ratios
+    ("EasyEnsemble", "14592996", "EasyEnsemble (0.1)", "imbal_v2_easy_ensemble_ratio0_1"),
+    ("EasyEnsemble", "14593019", "EasyEnsemble (0.5)", "imbal_v2_easy_ensemble_ratio0_5"),
+    ("EasyEnsemble", "14593044", "EasyEnsemble (1.0)", "imbal_v2_easy_ensemble_ratio1_0"),
+    # Undersample-ENN × 3 ratios
+    ("RF", "14593003", "Undersample-ENN (0.1)", "imbal_v2_undersample_enn_ratio0_1"),
+    ("RF", "14593027", "Undersample-ENN (0.5)", "imbal_v2_undersample_enn_ratio0_5"),
+    ("RF", "14593050", "Undersample-ENN (1.0)", "imbal_v2_undersample_enn_ratio1_0"),
+    # Undersample-RUS × 3 ratios
+    ("RF", "14592994", "Undersample-RUS (0.1)", "imbal_v2_undersample_rus_ratio0_1"),
+    ("RF", "14593017", "Undersample-RUS (0.5)", "imbal_v2_undersample_rus_ratio0_5"),
+    ("RF", "14593042", "Undersample-RUS (1.0)", "imbal_v2_undersample_rus_ratio1_0"),
+    # Undersample-Tomek × 3 ratios
+    ("RF", "14592982", "Undersample-Tomek (0.1)", "imbal_v2_undersample_tomek_ratio0_1"),
+    ("RF", "14593007", "Undersample-Tomek (0.5)", "imbal_v2_undersample_tomek_ratio0_5"),
+    ("RF", "14593032", "Undersample-Tomek (1.0)", "imbal_v2_undersample_tomek_ratio1_0"),
 ]
 
 
