@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 # Full V2 model configurations: 11 methods × 3 ratios (0.1, 0.5, 1.0)
-# Using latest job IDs from 14593xxx series - synchronized with imbalance_visualize.py
+# Updated with bug-fixed job IDs (14608xxx series) for SMOTE+Tomek, SMOTE+ENN, SMOTE+RUS
 DEFAULT_V2_MODELS = [
     # Baseline (RF without sampling) × 3 ratios
     ("RF", "14592990", "Baseline (0.1)", "imbal_v2_baseline_ratio0_1"),
@@ -29,18 +29,17 @@ DEFAULT_V2_MODELS = [
     ("RF", "14593005", "SMOTE (0.1)", "imbal_v2_smote_ratio0_1"),
     ("RF", "14593030", "SMOTE (0.5)", "imbal_v2_smote_ratio0_5"),
     ("RF", "14593052", "SMOTE (1.0)", "imbal_v2_smote_ratio1_0"),
-    # SMOTE+Tomek × 3 ratios
-    ("RF", "14592998", "SMOTE+Tomek (0.1)", "imbal_v2_smote_tomek_ratio0_1"),
-    ("RF", "14593021", "SMOTE+Tomek (0.5)", "imbal_v2_smote_tomek_ratio0_5"),
-    ("RF", "14593046", "SMOTE+Tomek (1.0)", "imbal_v2_smote_tomek_ratio1_0"),
-    # SMOTE+ENN × 3 ratios
-    ("RF", "14592987", "SMOTE+ENN (0.1)", "imbal_v2_smote_enn_ratio0_1"),
-    ("RF", "14593011", "SMOTE+ENN (0.5)", "imbal_v2_smote_enn_ratio0_5"),
-    ("RF", "14593036", "SMOTE+ENN (1.0)", "imbal_v2_smote_enn_ratio1_0"),
-    # SMOTE+RUS × 3 ratios
-    ("RF", "14592984", "SMOTE+RUS (0.1)", "imbal_v2_smote_rus_ratio0_1"),
-    ("RF", "14593009", "SMOTE+RUS (0.5)", "imbal_v2_smote_rus_ratio0_5"),
-    ("RF", "14593034", "SMOTE+RUS (1.0)", "imbal_v2_smote_rus_ratio1_0"),
+    # SMOTE+Tomek × 3 ratios (FIXED: 14608427-14608429)
+    ("RF", "14608427", "SMOTE+Tomek (0.1)", "imbal_v2_smote_tomek_ratio0_1_fixed"),
+    ("RF", "14608428", "SMOTE+Tomek (0.5)", "imbal_v2_smote_tomek_ratio0_5_fixed"),
+    ("RF", "14608429", "SMOTE+Tomek (1.0)", "imbal_v2_smote_tomek_ratio1_0_fixed"),
+    # SMOTE+ENN × 3 ratios (FIXED: 14608430-14608432)
+    ("RF", "14608430", "SMOTE+ENN (0.1)", "imbal_v2_smote_enn_ratio0_1_fixed"),
+    ("RF", "14608431", "SMOTE+ENN (0.5)", "imbal_v2_smote_enn_ratio0_5_fixed"),
+    ("RF", "14608432", "SMOTE+ENN (1.0)", "imbal_v2_smote_enn_ratio1_0_fixed"),
+    # SMOTE+RUS × 3 ratios (FIXED: 14608305-14608306, 0.1 has error)
+    ("RF", "14608305", "SMOTE+RUS (0.5)", "imbal_v2_smote_rus_ratio0_5_fix"),
+    ("RF", "14608306", "SMOTE+RUS (1.0)", "imbal_v2_smote_rus_ratio1_0_fix"),
     # SMOTE+BalancedRF × 3 ratios
     ("BalancedRF", "14592992", "SMOTE+BalancedRF (0.1)", "imbal_v2_smote_balanced_rf_ratio0_1"),
     ("BalancedRF", "14593015", "SMOTE+BalancedRF (0.5)", "imbal_v2_smote_balanced_rf_ratio0_5"),
