@@ -123,6 +123,7 @@ def common_train(
     use_oversampling: bool = False,
     oversample_method: str = "smote",
     target_ratio: float = 0.33,
+    seed: int = 42,
 ):
     """
     Train a classical ML model using Optuna and ANFIS-based feature selection.
@@ -260,7 +261,6 @@ def common_train(
                 random_state=42,
                 n_jobs=1,
                 smote=SMOTE(
-                    sampling_strategy=target_ratio,
                     random_state=42,
                     k_neighbors=min(5, minority_count - 1)
                 )
@@ -274,7 +274,6 @@ def common_train(
                 random_state=42,
                 n_jobs=1,
                 smote=SMOTE(
-                    sampling_strategy=target_ratio,
                     random_state=42,
                     k_neighbors=min(5, minority_count - 1)
                 )
@@ -282,23 +281,21 @@ def common_train(
             logging.info("Using SMOTE + ENN (aggressive noise cleaning)")
         elif oversample_method == "smote_rus":
             # SMOTE + RandomUnderSampler: hybrid approach
-            # First oversample minority, then undersample majority to achieve target_ratio
-            # Strategy: SMOTE to intermediate ratio, then RUS to final target_ratio
-            intermediate_ratio = min(0.5, target_ratio * 1.2)  # Slightly above target for SMOTE
+            # First oversample minority to 50%, then undersample majority to balance
             smote = SMOTE(
-                sampling_strategy=intermediate_ratio,
+                sampling_strategy=0.5,  # Minority becomes 50% of majority
                 random_state=42,
                 k_neighbors=min(5, minority_count - 1)
             )
             rus = RandomUnderSampler(
-                sampling_strategy=target_ratio,  # Final target ratio
+                sampling_strategy=0.8,  # Final ratio: minority = 80% of majority
                 random_state=42
             )
             sampler = ImbPipeline([
                 ('smote', smote),
                 ('rus', rus)
             ])
-            logging.info(f"Using SMOTE + RandomUnderSampler (target ratio: {target_ratio})")
+            logging.info("Using SMOTE + RandomUnderSampler (hybrid sampling)")
         elif oversample_method == "undersample_rus":
             # Random Under-Sampling only (no oversampling)
             # Reduces majority class to achieve target_ratio
@@ -391,17 +388,19 @@ def common_train(
             clf = XGBClassifier(**params)
 
         elif model == "RF":
+            # Expanded search space for better optimization
+            max_depth_choice = trial.suggest_categorical("max_depth", [None, 10, 20, 30, 50, 100])
             params = {
-                "n_estimators": trial.suggest_int("n_estimators", 200, 500),
-                "max_depth": trial.suggest_int("max_depth", 6, 30),
-                "min_samples_split": trial.suggest_int("min_samples_split", 2, 20),
-                "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 10),
-                "max_features": trial.suggest_categorical("max_features", ["sqrt", "log2", 0.3, 0.5, 0.7]),
-                "min_weight_fraction_leaf": trial.suggest_float("min_weight_fraction_leaf", 0.0, 0.1),
+                "n_estimators": trial.suggest_int("n_estimators", 50, 1000),
+                "max_depth": max_depth_choice,
+                "min_samples_split": trial.suggest_int("min_samples_split", 2, 100),
+                "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 50),
+                "max_features": trial.suggest_categorical("max_features", ["sqrt", "log2", 0.1, 0.3, 0.5, 0.7, 1.0]),
+                "min_weight_fraction_leaf": trial.suggest_float("min_weight_fraction_leaf", 0.0, 0.3),
+                "class_weight": trial.suggest_categorical("class_weight", ["balanced", "balanced_subsample", None]),
                 "random_state": 42,
-                "class_weight": "balanced_subsample",
                 "n_jobs": 1,  
-                "max_samples": None,
+                "max_samples": trial.suggest_categorical("max_samples", [None, 0.5, 0.7, 0.9]),
                 "warm_start": False,
                 "bootstrap": True,
                 "oob_score": False,
@@ -409,14 +408,17 @@ def common_train(
             clf = RandomForestClassifier(**params)
 
         elif model == "BalancedRF":
+            # Expanded search space for BalancedRF
             sampling_strategy = trial.suggest_categorical(
                 "sampling_strategy", ["auto", "majority", "not majority", "not minority", "all", 1.0]
             )
+            max_depth_choice = trial.suggest_categorical("max_depth", [None, 10, 20, 30, 50, 100])
             params = {
-                "n_estimators": trial.suggest_int("n_estimators", 100, 300),
-                "max_depth": trial.suggest_int("max_depth", 5, 30),
-                "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
-                "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 5),
+                "n_estimators": trial.suggest_int("n_estimators", 50, 500),
+                "max_depth": max_depth_choice,
+                "min_samples_split": trial.suggest_int("min_samples_split", 2, 50),
+                "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 20),
+                "max_features": trial.suggest_categorical("max_features", ["sqrt", "log2", 0.3, 0.5, 0.7]),
                 "sampling_strategy": sampling_strategy,  
                 "replacement": trial.suggest_categorical("replacement", [True, False]),
                 "random_state": 42,
@@ -426,10 +428,11 @@ def common_train(
 
         elif model == "EasyEnsemble":
             # EasyEnsemble: ensemble of balanced subsets with AdaBoost
+            # Expanded search space for better exploration
             params = {
-                "n_estimators": trial.suggest_int("n_estimators", 10, 50),
+                "n_estimators": trial.suggest_int("n_estimators", 5, 100),
                 "sampling_strategy": trial.suggest_categorical(
-                    "sampling_strategy", ["auto", "majority", "not majority", "all"]
+                    "sampling_strategy", ["auto", "majority", "not majority", "all", 0.5, 0.8, 1.0]
                 ),
                 "replacement": trial.suggest_categorical("replacement", [False, True]),
                 "random_state": 42,
@@ -605,26 +608,132 @@ def common_train(
     ]
 
     if model in optuna_supported:
+        logging.info(f"[Optuna] Creating study with TPESampler(seed={seed}), N_TRIALS={N_TRIALS}")
         study = optuna.create_study(
             direction="maximize",
-            sampler=optuna.samplers.TPESampler(seed=42),
+            sampler=optuna.samplers.TPESampler(seed=seed),
             pruner=optuna.pruners.MedianPruner(
                 n_startup_trials=OPTUNA_N_STARTUP_TRIALS,
                 n_warmup_steps=OPTUNA_N_WARMUP_STEPS,
                 interval_steps=OPTUNA_INTERVAL_STEPS
             )
         )
+        
+        # === Callback for logging trial progress (convergence monitoring) ===
+        def _optuna_logging_callback(study: optuna.Study, trial: optuna.trial.FrozenTrial):
+            """Log each trial's result for convergence monitoring."""
+            if trial.state == optuna.trial.TrialState.COMPLETE:
+                best_value = study.best_value
+                logging.info(
+                    f"[Optuna] Trial {trial.number:3d}: "
+                    f"value={trial.value:.4f}, best={best_value:.4f}"
+                )
+        
         # === Safe Optuna execution (no parallel trials, forced GC after each) ===
         optimize_kwargs = dict(
             n_trials=N_TRIALS,
             n_jobs=1,
             gc_after_trial=True,
+            callbacks=[_optuna_logging_callback],
         )
         if OPTUNA_TIMEOUT_SEC > 0:
             optimize_kwargs["timeout"] = OPTUNA_TIMEOUT_SEC
         study.optimize(objective, **optimize_kwargs)
         best_params = study.best_params
+        
+        # === Log convergence summary ===
+        trials = study.trials
+        values = [t.value for t in trials if t.state == optuna.trial.TrialState.COMPLETE]
+        if len(values) >= 10:
+            last_10_best = max(values[-10:])
+            overall_best = max(values)
+            improvement = overall_best - last_10_best
+            logging.info(
+                f"[Optuna Convergence] Total trials: {len(trials)}, "
+                f"Best: {overall_best:.4f}, Last 10 best: {last_10_best:.4f}, "
+                f"Improvement in last 10: {improvement:.4f}"
+            )
         logging.info(f"Best hyperparameters: {best_params}")
+        
+        # === Save Optuna study (pickle, CSV, JSON) for convergence analysis ===
+        try:
+            # Determine save path
+            pbs_jobid = os.getenv('PBS_JOBID', os.getenv('PBS_ARRAY_INDEX', 'local'))
+            if '.' in str(pbs_jobid):
+                pbs_jobid = str(pbs_jobid).split('.')[0]
+            if '[' in str(pbs_jobid):
+                pbs_jobid = str(pbs_jobid).split('[')[0]
+            
+            optuna_dir = Path(f"models/{model}/{pbs_jobid}")
+            optuna_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Build filename with experiment info
+            safe_suffix = suffix.replace('/', '_').replace(' ', '_') if suffix else 'default'
+            safe_mode = mode if isinstance(mode, str) else 'unknown'
+            base_name = f"optuna_{model}_{safe_mode}_{safe_suffix}_s{seed}"
+            
+            # 1. Save trials dataframe to CSV
+            trials_df = study.trials_dataframe()
+            trials_df['model'] = model if isinstance(model, str) else str(model)
+            trials_df['mode'] = mode if isinstance(mode, str) else 'unknown'
+            trials_df['seed'] = seed
+            trials_df['suffix'] = suffix if suffix else ''
+            optuna_csv_path = optuna_dir / f"{base_name}_trials.csv"
+            trials_df.to_csv(optuna_csv_path, index=False)
+            logging.info(f"[Optuna] Study trials saved to: {optuna_csv_path}")
+            
+            # 2. Save Optuna study object as pickle (for later reload/analysis)
+            optuna_pkl_path = optuna_dir / f"{base_name}_study.pkl"
+            with open(optuna_pkl_path, 'wb') as f:
+                pickle.dump(study, f)
+            logging.info(f"[Optuna] Study object saved to: {optuna_pkl_path}")
+            
+            # 3. Save detailed hyperparameter convergence history as JSON
+            convergence_history = []
+            best_so_far = float('-inf')
+            for t in study.trials:
+                if t.state != optuna.trial.TrialState.COMPLETE:
+                    continue
+                if t.value is not None and t.value > best_so_far:
+                    best_so_far = t.value
+                convergence_history.append({
+                    'trial_number': t.number,
+                    'value': t.value,
+                    'best_so_far': best_so_far,
+                    'params': t.params,
+                    'datetime_start': t.datetime_start.isoformat() if t.datetime_start else None,
+                    'datetime_complete': t.datetime_complete.isoformat() if t.datetime_complete else None,
+                    'duration_seconds': (t.datetime_complete - t.datetime_start).total_seconds() 
+                        if t.datetime_start and t.datetime_complete else None,
+                })
+            
+            optuna_json_path = optuna_dir / f"{base_name}_convergence.json"
+            with open(optuna_json_path, 'w') as f:
+                json.dump({
+                    'metadata': {
+                        'model': model if isinstance(model, str) else str(model),
+                        'mode': safe_mode,
+                        'suffix': suffix if suffix else '',
+                        'seed': seed,
+                        'n_trials': N_TRIALS,
+                        'best_value': study.best_value,
+                        'best_params': study.best_params,
+                    },
+                    'trials': convergence_history,
+                }, f, indent=2, default=str)
+            logging.info(f"[Optuna] Convergence history saved to: {optuna_json_path}")
+            
+            # 4. Log per-trial hyperparameters for PBS log analysis
+            logging.info(f"[Optuna] === Per-trial Hyperparameter History ===")
+            for entry in convergence_history:
+                logging.info(
+                    f"[Optuna] Trial {entry['trial_number']:3d}: "
+                    f"F2={entry['value']:.4f}, best_so_far={entry['best_so_far']:.4f}, "
+                    f"params={entry['params']}"
+                )
+            
+        except Exception as e:
+            logging.warning(f"[Optuna] Failed to save study data: {e}")
     else:
         logging.warning(f"Optuna tuning skipped: not implemented for model={model}")
         best_params = {}

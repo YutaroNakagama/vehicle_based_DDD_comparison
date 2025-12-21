@@ -38,6 +38,7 @@ def train_model(
     use_oversampling: bool = False,
     oversample_method: str = "smote",
     target_ratio: float = 0.33,
+    seed: int = 42,
 ) -> Tuple[Optional[object], Optional[StandardScaler], Optional[float], Dict, Dict]:
     """Dispatch to the appropriate training routine and return artifacts.
 
@@ -69,5 +70,6 @@ def train_model(
         use_oversampling=use_oversampling,
         oversample_method=oversample_method,
         target_ratio=target_ratio,
+        seed=seed,
     )
     return best_clf, scaler, best_threshold, feature_meta, results
