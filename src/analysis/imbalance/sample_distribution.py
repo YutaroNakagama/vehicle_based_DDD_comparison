@@ -120,34 +120,52 @@ def create_train_after_sampling_data() -> pd.DataFrame:
     pd.DataFrame
         DataFrame with training data after sampling for each method
     """
-    # Data from actual training logs (scripts/hpc/log/14593*.OU)
+    # Data from actual training logs (scripts/hpc/log/14593*.OU, 14608*.OU for fixed versions)
     # Val: alert=11841, drowsy=481, Test: alert=11841, drowsy=482
+    # Ordered by category: Baseline → Oversampling → Hybrid → Undersampling → Ensemble
     data = [
         # method, train_alert, train_drowsy, val_alert, val_drowsy, test_alert, test_drowsy
-        # Baseline × 3 ratios
+        
+        # ========== [1] Baseline (no sampling) ==========
         ("Baseline (0.1)", 35522, 1445, 11841, 481, 11841, 482),
         ("Baseline (0.5)", 35522, 1445, 11841, 481, 11841, 482),
         ("Baseline (1.0)", 35522, 1445, 11841, 481, 11841, 482),
+        
+        # ========== [2] Oversampling ==========
         # SMOTE × 3 ratios
         ("SMOTE (0.1)", 35522, 3552, 11841, 481, 11841, 482),
         ("SMOTE (0.5)", 35522, 17761, 11841, 481, 11841, 482),
         ("SMOTE (1.0)", 35522, 35522, 11841, 481, 11841, 482),
-        # SMOTE+Tomek × 3 ratios (all same: 35380, 35380)
-        ("SMOTE+Tomek (0.1)", 35380, 35380, 11841, 481, 11841, 482),
-        ("SMOTE+Tomek (0.5)", 35380, 35380, 11841, 481, 11841, 482),
+        # SMOTE+Tomek × 3 ratios (fixed: ratio now works correctly)
+        ("SMOTE+Tomek (0.1)", 35104, 3134, 11841, 481, 11841, 482),
+        ("SMOTE+Tomek (0.5)", 35286, 17525, 11841, 481, 11841, 482),
         ("SMOTE+Tomek (1.0)", 35380, 35380, 11841, 481, 11841, 482),
-        # SMOTE+ENN × 3 ratios (all same: 25259, 34244)
-        ("SMOTE+ENN (0.1)", 25259, 34244, 11841, 481, 11841, 482),
-        ("SMOTE+ENN (0.5)", 25259, 34244, 11841, 481, 11841, 482),
+        # SMOTE+ENN × 3 ratios (fixed: ratio now works correctly)
+        ("SMOTE+ENN (0.1)", 29850, 1038, 11841, 481, 11841, 482),
+        ("SMOTE+ENN (0.5)", 26247, 16167, 11841, 481, 11841, 482),
         ("SMOTE+ENN (1.0)", 25259, 34244, 11841, 481, 11841, 482),
-        # SMOTE+RUS × 3 ratios (all same: 22201, 17761)
-        ("SMOTE+RUS (0.1)", 22201, 17761, 11841, 481, 11841, 482),
-        ("SMOTE+RUS (0.5)", 22201, 17761, 11841, 481, 11841, 482),
-        ("SMOTE+RUS (1.0)", 22201, 17761, 11841, 481, 11841, 482),
-        # SMOTE+BalancedRF × 3 ratios
-        ("SMOTE+BalancedRF (0.1)", 35522, 3552, 11841, 481, 11841, 482),
-        ("SMOTE+BalancedRF (0.5)", 35522, 17761, 11841, 481, 11841, 482),
-        ("SMOTE+BalancedRF (1.0)", 35522, 35522, 11841, 481, 11841, 482),
+        
+        # ========== [3] Hybrid (Oversampling + Undersampling) ==========
+        # SMOTE+RUS × 3 ratios (0.1 causes error due to implementation constraint)
+        ("SMOTE+RUS (0.1) ⚠", 0, 0, 11841, 481, 11841, 482),  # Error: ratio too low
+        ("SMOTE+RUS (0.5)", 35522, 17761, 11841, 481, 11841, 482),
+        ("SMOTE+RUS (1.0)", 17761, 17761, 11841, 481, 11841, 482),
+        
+        # ========== [4] Undersampling ==========
+        # Undersample-RUS × 3 ratios (different per ratio)
+        ("Undersample-RUS (0.1)", 14450, 1445, 11841, 481, 11841, 482),
+        ("Undersample-RUS (0.5)", 2890, 1445, 11841, 481, 11841, 482),
+        ("Undersample-RUS (1.0)", 1445, 1445, 11841, 481, 11841, 482),
+        # Undersample-ENN × 3 ratios (all same: 31518, 1445)
+        ("Undersample-ENN (0.1)", 31518, 1445, 11841, 481, 11841, 482),
+        ("Undersample-ENN (0.5)", 31518, 1445, 11841, 481, 11841, 482),
+        ("Undersample-ENN (1.0)", 31518, 1445, 11841, 481, 11841, 482),
+        # Undersample-Tomek × 3 ratios (all same: 34807, 1445)
+        ("Undersample-Tomek (0.1)", 34807, 1445, 11841, 481, 11841, 482),
+        ("Undersample-Tomek (0.5)", 34807, 1445, 11841, 481, 11841, 482),
+        ("Undersample-Tomek (1.0)", 34807, 1445, 11841, 481, 11841, 482),
+        
+        # ========== [5] Ensemble (internal balancing) ==========
         # BalancedRF × 3 ratios (internal balancing, no external sampling)
         ("BalancedRF (0.1)", 35522, 1445, 11841, 481, 11841, 482),
         ("BalancedRF (0.5)", 35522, 1445, 11841, 481, 11841, 482),
@@ -156,18 +174,10 @@ def create_train_after_sampling_data() -> pd.DataFrame:
         ("EasyEnsemble (0.1)", 35522, 1445, 11841, 481, 11841, 482),
         ("EasyEnsemble (0.5)", 35522, 1445, 11841, 481, 11841, 482),
         ("EasyEnsemble (1.0)", 35522, 1445, 11841, 481, 11841, 482),
-        # Undersample-ENN × 3 ratios (all same: 31518, 1445)
-        ("Undersample-ENN (0.1)", 31518, 1445, 11841, 481, 11841, 482),
-        ("Undersample-ENN (0.5)", 31518, 1445, 11841, 481, 11841, 482),
-        ("Undersample-ENN (1.0)", 31518, 1445, 11841, 481, 11841, 482),
-        # Undersample-RUS × 3 ratios (different per ratio)
-        ("Undersample-RUS (0.1)", 14450, 1445, 11841, 481, 11841, 482),
-        ("Undersample-RUS (0.5)", 2890, 1445, 11841, 481, 11841, 482),
-        ("Undersample-RUS (1.0)", 1445, 1445, 11841, 481, 11841, 482),
-        # Undersample-Tomek × 3 ratios (all same: 34807, 1445)
-        ("Undersample-Tomek (0.1)", 34807, 1445, 11841, 481, 11841, 482),
-        ("Undersample-Tomek (0.5)", 34807, 1445, 11841, 481, 11841, 482),
-        ("Undersample-Tomek (1.0)", 34807, 1445, 11841, 481, 11841, 482),
+        # SMOTE+BalancedRF × 3 ratios (SMOTE + internal balancing)
+        ("SMOTE+BalancedRF (0.1)", 35522, 3552, 11841, 481, 11841, 482),
+        ("SMOTE+BalancedRF (0.5)", 35522, 17761, 11841, 481, 11841, 482),
+        ("SMOTE+BalancedRF (1.0)", 35522, 35522, 11841, 481, 11841, 482),
     ]
     
     df = pd.DataFrame(data, columns=[
@@ -514,6 +524,9 @@ def plot_training_data_after_sampling(
     
     fig, ax = plt.subplots(figsize=figsize)
     
+    # Reverse the order so Baseline appears at the top
+    df = df.iloc[::-1].reset_index(drop=True)
+    
     y = np.arange(len(df))
     height = 0.4
     
@@ -534,14 +547,20 @@ def plot_training_data_after_sampling(
     ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"{int(x/1000):,}K" if x >= 1000 else str(int(x))))
     
     # Add value labels on bars
-    for bar in bars1:
+    for i, bar in enumerate(bars1):
         width = bar.get_width()
-        if width > 5000:
+        if width == 0:
+            # Error case - show "Error" label
+            ax.text(1000, bar.get_y() + bar.get_height()/2,
+                   'Error (ratio too low)', va='center', ha='left', fontsize=9, 
+                   color='#c0392b', fontweight='bold', fontstyle='italic')
+        elif width > 5000:
             ax.text(width + 500, bar.get_y() + bar.get_height()/2,
                    f'{int(width):,}', va='center', ha='left', fontsize=9)
     
-    for bar in bars2:
+    for i, bar in enumerate(bars2):
         width = bar.get_width()
+        # Skip error cases (width=0) - already handled above
         if width > 1000:
             ax.text(width + 500, bar.get_y() + bar.get_height()/2,
                    f'{int(width):,}', va='center', ha='left', fontsize=9)
@@ -556,10 +575,19 @@ def plot_training_data_after_sampling(
     ax.axvline(1445, color='#e74c3c', linestyle='--', alpha=0.5, linewidth=1.5,
                label='Original Drowsy (1,445)')
     
-    # Add method category separators
-    # Group by method base (every 3 rows)
-    for i in range(3, len(df), 3):
-        ax.axhline(i - 0.5, color='gray', linestyle='-', alpha=0.3, linewidth=0.5)
+    # Add method category separators and labels (reversed order: top to bottom)
+    # After reversal: Ensemble(0-8), Undersampling(9-17), Hybrid(18-20), Oversampling(21-29), Baseline(30-32)
+    category_boundaries = [9, 18, 21, 30]  # Row indices where new categories start (reversed)
+    category_labels = ["Ensemble", "Undersampling", "Hybrid", "Oversampling", "Baseline"]
+    category_positions = [4.5, 13.5, 19.5, 25.5, 31.5]  # Center positions for labels (reversed)
+    
+    for boundary in category_boundaries:
+        ax.axhline(boundary - 0.5, color='#2c3e50', linestyle='-', alpha=0.7, linewidth=1.5)
+    
+    # Add category labels on the right side
+    for label, pos in zip(category_labels, category_positions):
+        ax.text(ax.get_xlim()[1] * 1.02, pos, label, fontsize=10, fontweight='bold',
+                va='center', ha='left', color='#2c3e50', rotation=0)
     
     plt.tight_layout()
     
