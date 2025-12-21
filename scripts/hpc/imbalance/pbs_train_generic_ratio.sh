@@ -1,13 +1,11 @@
 #!/bin/bash
 #PBS -N imbal_v2_ratio
-#PBS -l select=1:ncpus=8:mem=8gb
-#PBS -l walltime=12:00:00
 #PBS -j oe
-#PBS -q DEFAULT
 #PBS -o /home/s2240011/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/log/
 #PBS -e /home/s2240011/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/log/
 #PBS -M yutaro.nakagama@bosch.com
 #PBS -m abe
+# Note: -l select, -l walltime, -q are passed dynamically via qsub options
 
 # ============================================================
 # Imbalance Comparison V2: Generic Training with Target Ratio
