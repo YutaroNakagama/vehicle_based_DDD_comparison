@@ -39,7 +39,7 @@ def select_top_features_by_importance(X: pd.DataFrame, y: pd.Series, top_k: int 
         n_estimators=200,
         random_state=42,
         class_weight="balanced",
-        n_jobs=-1,
+        n_jobs=1,
     )
     clf.fit(X, y)
 
