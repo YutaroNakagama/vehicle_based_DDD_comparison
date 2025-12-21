@@ -219,6 +219,7 @@ def train_pipeline(
             use_oversampling=use_oversampling,
             oversample_method=oversample_method,
             target_ratio=target_ratio,
+            seed=seed,
         )
     except KeyboardInterrupt:
         logging.error("[TRAIN] Interrupted (KeyboardInterrupt). Will persist current checkpoint.")
