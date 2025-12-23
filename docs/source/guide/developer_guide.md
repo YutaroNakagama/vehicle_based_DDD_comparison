@@ -1,19 +1,10 @@
 # Developer Guide: Repository Architecture and Data Flow
 
-## Table of Contents
+```{contents}
+:local:
+:depth: 2
+```
 
-- [Overview](#overview)
-- [Repository Structure](#repository-structure)
-- [Core Pipelines](#core-pipelines)
-  - [1. Preprocessing Pipeline](#preprocessing-pipeline)
-  - [2. Training Pipeline](#training-pipeline)
-  - [3. Evaluation Pipeline](#evaluation-pipeline)
-- [Domain Analysis](#domain-analysis)
-  - [1. Compute Distances](#compute-distances)
-  - [2. Fine-tuning and Ranking](#fine-tuning-and-ranking)
-  - [3. Correlation and Reporting](#correlation-and-reporting)
-- [Utility Modules](#utility-modules)
-- [HPC Integration](#hpc-integration)
 ---
 
 ## Overview
