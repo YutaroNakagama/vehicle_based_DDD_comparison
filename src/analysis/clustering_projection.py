@@ -21,114 +21,21 @@ from pathlib import Path
 
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.manifold import MDS, TSNE
-from sklearn.cluster import KMeans, AgglomerativeClustering, DBSCAN, SpectralClustering
 from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
 
 from src import config as cfg
 from src.utils.io.data_io import load_numpy, load_json, save_json
-
-try:
-    import umap
-except ImportError:
-    umap = None
+from src.utils.analysis.projection_utils import (
+    get_projection_coords as _get_projection_coords,
+    cluster_kmeans,
+    cluster_hierarchical,
+    cluster_dbscan as _cluster_dbscan_impl,
+    cluster_spectral as _cluster_spectral_impl,
+    CLUSTER_COLORS,
+)
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
-
-# Color palettes for different number of clusters
-CLUSTER_COLORS = [
-    "#e41a1c",  # red
-    "#377eb8",  # blue
-    "#4daf4a",  # green
-    "#984ea3",  # purple
-    "#ff7f00",  # orange
-    "#ffff33",  # yellow
-    "#a65628",  # brown
-    "#f781bf",  # pink
-    "#999999",  # gray
-    "#00ced1",  # dark cyan
-]
-
-
-def _get_projection_coords(matrix: np.ndarray, method: str = "MDS") -> np.ndarray:
-    """Compute 2D projection coordinates from distance matrix.
-    
-    Parameters
-    ----------
-    matrix : np.ndarray
-        Pairwise distance matrix (n x n).
-    method : str
-        Projection method: "MDS", "tSNE", or "UMAP".
-    
-    Returns
-    -------
-    np.ndarray
-        2D coordinates (n x 2).
-    """
-    matrix_filled = np.nan_to_num(matrix)
-    
-    if method == "MDS":
-        projector = MDS(n_components=2, dissimilarity="precomputed", random_state=42)
-    elif method == "tSNE":
-        projector = TSNE(
-            n_components=2,
-            metric="precomputed",
-            init="random",
-            random_state=42,
-            perplexity=min(5, len(matrix) - 1)
-        )
-    elif method == "UMAP":
-        if umap is None:
-            raise ImportError("UMAP not installed. Use: pip install umap-learn")
-        projector = umap.UMAP(n_components=2, metric="precomputed", random_state=42)
-    else:
-        raise ValueError(f"Unknown projection method: {method}")
-    
-    return projector.fit_transform(matrix_filled)
-
-
-def cluster_kmeans(coords: np.ndarray, n_clusters: int = 3) -> np.ndarray:
-    """K-Means clustering on projection coordinates.
-    
-    Parameters
-    ----------
-    coords : np.ndarray
-        2D coordinates (n x 2).
-    n_clusters : int
-        Number of clusters.
-    
-    Returns
-    -------
-    np.ndarray
-        Cluster labels (n,).
-    """
-    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
-    return kmeans.fit_predict(coords)
-
-
-def cluster_hierarchical(matrix: np.ndarray, n_clusters: int = 3) -> np.ndarray:
-    """Hierarchical (Agglomerative) clustering on distance matrix.
-    
-    Parameters
-    ----------
-    matrix : np.ndarray
-        Pairwise distance matrix (n x n).
-    n_clusters : int
-        Number of clusters.
-    
-    Returns
-    -------
-    np.ndarray
-        Cluster labels (n,).
-    """
-    # Use precomputed distance matrix
-    clustering = AgglomerativeClustering(
-        n_clusters=n_clusters,
-        metric="precomputed",
-        linkage="average"
-    )
-    return clustering.fit_predict(matrix)
 
 
 def cluster_dbscan(coords: np.ndarray, eps: float = None, min_samples: int = 3) -> np.ndarray:

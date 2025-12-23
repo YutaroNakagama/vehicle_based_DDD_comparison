@@ -28,17 +28,17 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.manifold import MDS, TSNE
-from sklearn.cluster import KMeans, AgglomerativeClustering, DBSCAN, SpectralClustering
 from scipy.cluster.hierarchy import dendrogram, linkage
 
 from src import config as cfg
 from src.utils.io.data_io import load_numpy, load_json, save_json
-
-try:
-    import umap
-except ImportError:
-    umap = None
+from src.utils.analysis.projection_utils import (
+    get_projection_coords as _get_projection_coords,
+    cluster_kmeans,
+    cluster_hierarchical,
+    cluster_dbscan,
+    cluster_spectral,
+)
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -71,29 +71,6 @@ RANKING_METHODS_LEGACY = [
     "medoid",               # Distance from medoid (actual data point as center)
 ]
 
-
-def _get_projection_coords(matrix: np.ndarray, method: str = "MDS") -> np.ndarray:
-    """Compute 2D projection coordinates from distance matrix."""
-    matrix_filled = np.nan_to_num(matrix)
-    
-    if method == "MDS":
-        projector = MDS(n_components=2, dissimilarity="precomputed", random_state=42)
-    elif method == "tSNE":
-        projector = TSNE(
-            n_components=2,
-            metric="precomputed",
-            init="random",
-            random_state=42,
-            perplexity=min(5, len(matrix) - 1)
-        )
-    elif method == "UMAP":
-        if umap is None:
-            raise ImportError("UMAP not installed")
-        projector = umap.UMAP(n_components=2, metric="precomputed", random_state=42)
-    else:
-        raise ValueError(f"Unknown projection method: {method}")
-    
-    return projector.fit_transform(matrix_filled)
 
 
 def _rank_clusters_by_distance(
@@ -605,50 +582,8 @@ def _compute_ranking(
         raise ValueError(f"Unknown ranking method: {method}")
 
 
-def cluster_kmeans(coords: np.ndarray, n_clusters: int = 3) -> np.ndarray:
-    """K-Means clustering on projection coordinates."""
-    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
-    return kmeans.fit_predict(coords)
-
-
-def cluster_hierarchical(matrix: np.ndarray, n_clusters: int = 3) -> np.ndarray:
-    """Hierarchical clustering on distance matrix."""
-    clustering = AgglomerativeClustering(
-        n_clusters=n_clusters,
-        metric="precomputed",
-        linkage="average"
-    )
-    return clustering.fit_predict(matrix)
-
-
-def cluster_dbscan(coords: np.ndarray, eps: float = None, min_samples: int = 3) -> np.ndarray:
-    """DBSCAN clustering on projection coordinates."""
-    if eps is None:
-        from sklearn.neighbors import NearestNeighbors
-        k = min_samples
-        neigh = NearestNeighbors(n_neighbors=k)
-        neigh.fit(coords)
-        distances, _ = neigh.kneighbors(coords)
-        k_distances = np.sort(distances[:, k-1])
-        eps = np.percentile(k_distances, 85)  # Slightly lower for more clusters
-        logger.info(f"DBSCAN auto eps: {eps:.4f}")
-    
-    dbscan = DBSCAN(eps=eps, min_samples=min_samples)
-    return dbscan.fit_predict(coords)
-
-
-def cluster_spectral(matrix: np.ndarray, n_clusters: int = 3) -> np.ndarray:
-    """Spectral clustering on distance matrix."""
-    gamma = 1.0 / (2.0 * np.median(matrix[matrix > 0]) ** 2)
-    affinity = np.exp(-gamma * matrix ** 2)
-    np.fill_diagonal(affinity, 1.0)
-    
-    spectral = SpectralClustering(
-        n_clusters=n_clusters,
-        affinity="precomputed",
-        random_state=42
-    )
-    return spectral.fit_predict(affinity)
+# Clustering functions are now imported from projection_utils
+# (cluster_kmeans, cluster_hierarchical, cluster_dbscan, cluster_spectral)
 
 
 def plot_projection_ranked(
