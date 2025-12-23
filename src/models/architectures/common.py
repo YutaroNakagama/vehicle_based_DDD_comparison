@@ -28,6 +28,8 @@ from sklearn.metrics import (
 from src.config import (
     MODEL_PKL_PATH,
     configure_blas_threads,
+    MIN_RECALL_THRESHOLD,
+    FBETA_SCORE_BETA,
 )
 from src.utils.io.savers import save_artifacts
 from src.utils.evaluation.metrics import (
@@ -64,9 +66,6 @@ import joblib
 joblib.parallel_backend("sequential")
 
 import gc
-
-# Minimum recall threshold for precision_at_min_recall metric
-MIN_RECALL_THRESHOLD = 0.70
 
 
 def precision_at_min_recall(y_true, y_proba, min_recall=MIN_RECALL_THRESHOLD):
@@ -295,7 +294,7 @@ def common_train(
     best_threshold = optimize_threshold(
         y_val, m_val.get("_proba"),
         y_test, m_test.get("_proba"),
-        beta=2.0,
+        beta=FBETA_SCORE_BETA,
     )
 
     return best_clf, scaler, best_threshold, feature_meta, results

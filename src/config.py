@@ -253,6 +253,51 @@ LOGGING_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 """str : Standard logging format string for all pipeline modules."""
 
 # ---------------------------------------------------------------------
+# Model training hyperparameters and thresholds
+# ---------------------------------------------------------------------
+# Precision at minimum recall threshold
+MIN_RECALL_THRESHOLD = 0.70
+"""float : Minimum recall threshold for precision_at_min_recall metric."""
+
+# Random Forest class weights (Precision-focused: reduced minority weight)
+RF_CLASS_WEIGHT = {0: 1.0, 1: 3.0}
+"""dict : Class weights for Random Forest (0=Alert, 1=Drowsy)."""
+
+# LightGBM hyperparameter ranges
+LIGHTGBM_N_ESTIMATORS_RANGE = (100, 300)
+"""tuple : (min, max) for LightGBM n_estimators."""
+
+LIGHTGBM_LEARNING_RATE_RANGE = (1e-3, 0.3)
+"""tuple : (min, max) for LightGBM learning_rate (log scale)."""
+
+# Cross-validation folds
+CV_FOLDS_OPTUNA = 3
+"""int : Number of cross-validation folds in Optuna optimization."""
+
+CV_FOLDS_OPTUNA_DATA_LEAK = 2
+"""int : Number of cross-validation folds for data leak mode in Optuna."""
+
+CV_FOLDS_CALIBRATION = 5
+"""int : Number of cross-validation folds for RF calibration."""
+
+# F-beta score parameter (Recall-focused for DDD safety)
+FBETA_SCORE_BETA = 2.0
+"""float : Beta parameter for F-beta score (emphasizes Recall)."""
+
+# ---------------------------------------------------------------------
+# Baseline performance metrics (for reference/comparison)
+# ---------------------------------------------------------------------
+BASELINE_AUPRC = 0.039
+"""float : Baseline AUPRC (expected for random classifier on imbalanced data)."""
+
+# Sample counts from actual experiments (for documentation/validation)
+SAMPLE_COUNT_ALERT = 35522
+"""int : Typical Alert class sample count (for reference)."""
+
+SAMPLE_COUNT_DROWSY = 1445
+"""int : Typical Drowsy class sample count (for reference)."""
+
+# ---------------------------------------------------------------------
 # Environment setup utilities
 # ---------------------------------------------------------------------
 def configure_blas_threads(n_threads: int = 1) -> None:

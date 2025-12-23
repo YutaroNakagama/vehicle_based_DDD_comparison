@@ -22,8 +22,7 @@ from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
 from imblearn.ensemble import BalancedRandomForestClassifier, EasyEnsembleClassifier
 
-# Default class weight for RF (Precision-focused: reduced minority weight)
-RF_CLASS_WEIGHT = {0: 1.0, 1: 3.0}
+from src.config import RF_CLASS_WEIGHT, CV_FOLDS_CALIBRATION
 
 
 def create_classifier(
@@ -143,7 +142,7 @@ def apply_rf_calibration(
     clf.fit(X_combined, y_combined, sample_weight=sw_combined)
 
     # Apply sigmoid calibration
-    cv_calib = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    cv_calib = StratifiedKFold(n_splits=CV_FOLDS_CALIBRATION, shuffle=True, random_state=42)
     calib = CalibratedClassifierCV(clf, cv=cv_calib, method='sigmoid')
 
     try:
