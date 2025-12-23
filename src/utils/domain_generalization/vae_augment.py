@@ -12,9 +12,10 @@ from tensorflow.keras.losses import mse
 from tensorflow.keras.optimizers import Adam
 import tensorflow.keras.backend as K
 import tensorflow as tf
+from typing import Tuple
 
 
-def sampling(args):
+def sampling(args: Tuple[tf.Tensor, tf.Tensor]) -> tf.Tensor:
     """
     Reparameterization trick for sampling from a Gaussian distribution.
 

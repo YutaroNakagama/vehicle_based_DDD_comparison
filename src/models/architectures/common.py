@@ -67,8 +67,15 @@ joblib.parallel_backend("sequential")
 
 import gc
 
+from typing import Union
+import numpy.typing as npt
 
-def precision_at_min_recall(y_true, y_proba, min_recall=MIN_RECALL_THRESHOLD):
+
+def precision_at_min_recall(
+    y_true: Union[npt.NDArray, list],
+    y_proba: Union[npt.NDArray, list],
+    min_recall: float = MIN_RECALL_THRESHOLD
+) -> float:
     """Calculate maximum precision at or above minimum recall.
     
     This metric is useful for Precision-focused optimization while
@@ -108,11 +115,19 @@ def precision_at_min_recall(y_true, y_proba, min_recall=MIN_RECALL_THRESHOLD):
 
 
 def common_train(
-    X_train, X_val, X_test, y_train, y_val, y_test,
-    selected_features,
-    model: str, model_name: str,
+    X_train: "pd.DataFrame",
+    X_val: "pd.DataFrame",
+    X_test: "pd.DataFrame",
+    y_train: "pd.Series",
+    y_val: "pd.Series",
+    y_test: "pd.Series",
+    selected_features: list,
+    model: str,
+    model_name: str,
     mode: str,
-    clf=None, scaler=None, suffix: str = "",
+    clf: object = None,
+    scaler: object = None,
+    suffix: str = "",
     data_leak: bool = False,
     eval_only: bool = False,
     train_only: bool = False,
@@ -120,7 +135,7 @@ def common_train(
     oversample_method: str = "smote",
     target_ratio: float = 0.33,
     seed: int = 42,
-):
+) -> dict:
     """Train a classical ML model using Optuna and ANFIS-based feature selection.
 
     This function:

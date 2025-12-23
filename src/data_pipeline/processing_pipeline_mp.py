@@ -33,7 +33,8 @@ from src.data_pipeline.features.kss import kss_process
 from src.utils.io.loaders import read_subject_list
 from src.utils.io.merge import merge_process
 
-def process_one_subject(args):
+
+def process_one_subject(args: tuple) -> None:
     """Process one subject’s features and save results.
 
     Parameters
