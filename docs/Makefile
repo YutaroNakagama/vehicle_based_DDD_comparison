@@ -2,12 +2,12 @@
 #
 
 # You can set these variables from the command line.
-SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
+SPHINXOPTS    ?=
+SPHINXBUILD   ?= sphinx-build
 SOURCEDIR     = .
 BUILDDIR      = _build
-APIDOCDIR     = $(SOURCEDIR)
-PROJECTDIR    = ../project/src
+APIDOCDIR     = source/api
+PROJECTDIR    = ../src
 
 .PHONY: help clean html apidoc
 
@@ -19,8 +19,7 @@ clean:
 
 # Run sphinx-apidoc automatically before html build
 apidoc:
-	sphinx-apidoc -o $(APIDOCDIR) $(PROJECTDIR)
+	sphinx-apidoc -f -o $(APIDOCDIR) $(PROJECTDIR) --separate -M
 
 html: apidoc
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
-
