@@ -32,6 +32,11 @@ from src.config import (
     OPTUNA_N_STARTUP_TRIALS,
     OPTUNA_N_WARMUP_STEPS,
     OPTUNA_INTERVAL_STEPS,
+    CV_FOLDS_OPTUNA,
+    CV_FOLDS_OPTUNA_DATA_LEAK,
+    LIGHTGBM_N_ESTIMATORS_RANGE,
+    LIGHTGBM_LEARNING_RATE_RANGE,
+    FBETA_SCORE_BETA,
 )
 from src.utils.evaluation.metrics import find_optimal_threshold
 
@@ -124,9 +129,9 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
     """
     if model == "LightGBM":
         params = {
-            "n_estimators": trial.suggest_int("n_estimators", 100, 300),
+            "n_estimators": trial.suggest_int("n_estimators", *LIGHTGBM_N_ESTIMATORS_RANGE),
             "max_depth": trial.suggest_int("max_depth", 3, 20),
-            "learning_rate": trial.suggest_float("learning_rate", 1e-3, 0.3, log=True),
+            "learning_rate": trial.suggest_float("learning_rate", *LIGHTGBM_LEARNING_RATE_RANGE, log=True),
             "num_leaves": trial.suggest_int("num_leaves", 20, 150),
             "min_child_samples": trial.suggest_int("min_child_samples", 5, 50),
             "subsample": trial.suggest_float("subsample", 0.5, 1.0),
@@ -139,9 +144,9 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
 
     elif model == "XGBoost":
         params = {
-            "n_estimators": trial.suggest_int("n_estimators", 100, 300),
+            "n_estimators": trial.suggest_int("n_estimators", *LIGHTGBM_N_ESTIMATORS_RANGE),
             "max_depth": trial.suggest_int("max_depth", 3, 20),
-            "learning_rate": trial.suggest_float("learning_rate", 1e-3, 0.3, log=True),
+            "learning_rate": trial.suggest_float("learning_rate", *LIGHTGBM_LEARNING_RATE_RANGE, log=True),
             "subsample": trial.suggest_float("subsample", 0.5, 1.0),
             "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
             "gamma": trial.suggest_float("gamma", 0, 5),
@@ -343,7 +348,7 @@ def _evaluate_with_cv(
     if data_leak and X_test_scaled is not None and y_test is not None:
         X_all = np.vstack([X_train_scaled, X_test_scaled])
         y_all = np.concatenate([y_train, y_test])
-        cv = StratifiedKFold(n_splits=2, shuffle=True, random_state=42)
+        cv = StratifiedKFold(n_splits=CV_FOLDS_OPTUNA_DATA_LEAK, shuffle=True, random_state=42)
 
         # Check for single-class folds
         for i, (_, va_idx) in enumerate(cv.split(X_all, y_all)):
@@ -366,7 +371,7 @@ def _evaluate_with_cv(
         return float(np.nanmean(scores)) if scores else 0.0
 
     # Normal mode: 3-fold CV on training data
-    cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+    cv = StratifiedKFold(n_splits=CV_FOLDS_OPTUNA, shuffle=True, random_state=42)
     scores = []
 
     for i, (tr_idx, va_idx) in enumerate(cv.split(X_train_scaled, y_train)):
