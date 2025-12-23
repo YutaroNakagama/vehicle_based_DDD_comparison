@@ -43,7 +43,8 @@ def _read_test_metrics(csv_path: Path, split: Optional[str]) -> Optional[Dict[st
     row = df.iloc[0]
     return {m: float(row.get(m, np.nan)) for m in METRICS}
 
-def _fmt(v):
+
+def _fmt(v: object) -> str:
     return f"{v:.6f}" if isinstance(v, float) else str(v)
 
 def run_summarize_only10_vs_finetune(

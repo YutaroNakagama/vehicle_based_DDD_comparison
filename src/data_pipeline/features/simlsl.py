@@ -33,8 +33,13 @@ from src.config import (
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
+from typing import Optional
+
+
 @njit
-def _count_similar_templates(signal, m, r):
+def _count_similar_templates(
+    signal: np.ndarray, m: int, r: float
+) -> int:
     """Count similar template pairs for Sample Entropy.
 
     Parameters
@@ -59,7 +64,10 @@ def _count_similar_templates(signal, m, r):
                 count += 1
     return count
 
-def sample_entropy(signal, m=2, r=None):
+
+def sample_entropy(
+    signal: np.ndarray, m: int = 2, r: Optional[float] = None
+) -> float:
     """Calculate Sample Entropy of a signal.
 
     Sample Entropy is a measure of complexity and predictability of time-series data.

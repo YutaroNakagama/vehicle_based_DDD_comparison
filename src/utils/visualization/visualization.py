@@ -122,7 +122,7 @@ def remove_outliers(data: list, threshold: float = 3) -> list:
     return [x for x in data if abs(x - mean) <= threshold * std]
 
 
-def colorize_histogram(patches):
+def colorize_histogram(patches: list) -> None:
     """
     Apply custom colors to histogram bins.
 
