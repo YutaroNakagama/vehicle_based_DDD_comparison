@@ -2,23 +2,18 @@
 
 ## Table of Contents
 
-* [Overview](#overview)
-* [Repository Structure](#repository-structure)
-* [Core Pipelines](#core-pipeline)
-  * [1. Preprocessing Pipeline](#1-preprocessing-pipeline-srcdatapipelineprocessing_pipelinepy)
-  * [2. Training Pipeline](#2-training-pipeline-srcmodelsmodel_pipelinepy)
-  * [3. Evaluation Pipeline](#3-evaluation-pipeline-srcevaluationeval_pipelinepy)
-* [Domain Analysis](#domain-analysis)
-  * [1. Compute Distances](#1-compute-distances)
-  * [2. Fine-tuning and Ranking Experiments](#2-fine-tuning-and-ranking-experiments)
-  * [3. Correlation and Reporting](#3-correlation-and-reporting)
-* [Utility Modules](#utility-modules-srcutils)
-<!--
-* [Data Flow Summary](#data-flow-summary)
-* [HPC Integration](#hpc-integration)
-* [Extensibility & Maintenance](#extensibility--maintenance)
-* [References](#references)
--->
+- [Overview](#overview)
+- [Repository Structure](#repository-structure)
+- [Core Pipelines](#core-pipelines)
+  - [1. Preprocessing Pipeline](#preprocessing-pipeline)
+  - [2. Training Pipeline](#training-pipeline)
+  - [3. Evaluation Pipeline](#evaluation-pipeline)
+- [Domain Analysis](#domain-analysis)
+  - [1. Compute Distances](#compute-distances)
+  - [2. Fine-tuning and Ranking](#fine-tuning-and-ranking)
+  - [3. Correlation and Reporting](#correlation-and-reporting)
+- [Utility Modules](#utility-modules)
+- [HPC Integration](#hpc-integration)
 ---
 
 ## Overview
@@ -79,7 +74,7 @@ spanning preprocessing, model training, evaluation, and domain generalisation an
 
 ````
 
-```mermaid
+```{mermaid}
 graph TB
   scripts_hpc["scripts/hpc (job scripts)"] -.-> scripts_python["scripts/python (CLI)"]
   scripts_python --> src_core["src/ (core logic)"]
@@ -91,18 +86,20 @@ graph TB
   evaluation --> results
   src_core --> analysis["src/analysis (domain analysis)"]
   analysis --> results
-
-````
+```
 
 ---
 
 ## Core Pipelines
 
-### 1. Preprocessing Pipeline (src/data_pipeline/processing_pipeline.py)
+(preprocessing-pipeline)=
+### 1. Preprocessing Pipeline
+
+**Source:** `src/data_pipeline/processing_pipeline.py`
 
 The preprocessing pipeline prepares per-subject datasets from raw physiological and EEG signals.
 
-```mermaid
+```{mermaid}
 graph LR
   main_pipeline --> read_subject_list["(1) read_subject_list"]
   main_pipeline --> time_freq_domain_process["(2) time_freq_domain_process"]
@@ -125,11 +122,14 @@ graph LR
 
 ---
 
-### 2. Training Pipeline (`src/models/model_pipeline.py`) 
+(training-pipeline)=
+### 2. Training Pipeline
+
+**Source:** `src/models/model_pipeline.py`
 
 Handles data loading, splitting, feature selection, model fitting, and artifact saving.
 
-```mermaid
+```{mermaid}
 graph LR
   train_pipeline --> load_data["(1) load_data"]
   train_pipeline --> split_data["(2) split_data"]
@@ -150,9 +150,12 @@ graph LR
 
 ---
 
-### 3. Evaluation Pipeline (`src/evaluation/eval_pipeline.py`) 
+(evaluation-pipeline)=
+### 3. Evaluation Pipeline
 
-```mermaid
+**Source:** `src/evaluation/eval_pipeline.py`
+
+```{mermaid}
 graph LR
   eval_pipeline --> load_subject_list["(1) load_subject_list"]
   eval_pipeline --> load_test_data["(2) load_test_data"]
@@ -179,6 +182,7 @@ The **domain generalisation analysis** quantifies the difference between subject
 
 ---
 
+(compute-distances)=
 ### 1. Compute Distances
 
 **Job script:** `scripts/hpc/domain_analysis/pbs_compute_distance.sh`
@@ -238,7 +242,7 @@ to generate ranked subject groups for downstream fine-tuning experiments.
 
 ### **Data Flow Diagram**
 
-```mermaid
+```{mermaid}
 flowchart TB
 
 subgraph PBS["PBS Array Job (1–3)"]
@@ -264,17 +268,31 @@ subgraph Stage1["Subject-level Distance Computation"]
 end
 
 subgraph Stage2["Group-level Analysis (within run_comp_dist)"]
-  E2["Compute group distances,<br/>centroids, intra/inter stats"]
+  E2["Compute group distances, centroids, intra/inter stats"]
   E3["Save and visualize group results"]
 end
 
 subgraph Stage3["src/analysis/subject_group_generator.py"]
-  F2["Load subject-level results<br/>(matrix.npy, subjects.json)"]
-  F3["Compute mean distance per subject &<br/>save 10-subject groups"]
+  F2["Load subject-level results (matrix.npy, subjects.json)"]
+  F3["Compute mean distance per subject & save 10-subject groups"]
 end
 
 subgraph Output["Results"]
-  G1["distance/{metric}/ → subject-level"]
+  G1["distance/metric/ → subject-level"]
+  G2["distance/metric/ → group-level"]
+  G3["distance/ranks10/ → ranked groups"]
+end
+
+A1 & A2 & A3 --> B1 --> B2
+B2 --> D1 & E2
+C1 & C2 --> D1 --> D2
+C1 & C2 & C3 --> E2 --> E3
+D2 --> F2
+F2 --> F3
+D2 --> G1
+E3 --> G2
+F3 --> G3
+```
   G2["distance/{metric}/ → group-level"]
   G3["distance/ranks10/ → ranked groups"]
 end
@@ -290,6 +308,7 @@ E3 --> G2
 F3 --> G3
 
 ```
+(fine-tuning-and-ranking)=
 ### 2. Rank-Based Domain Generalization Experiments
 
 **Job script:**  
@@ -331,11 +350,11 @@ python scripts/python/train.py \
 
 #### Data Flow
 
-```mermaid
+```{mermaid}
 flowchart TB
 
 subgraph PBS["PBS Array Job (1–9)"]
-  A1["#1–9: ranked 10-subject groups<br/>(MMD / WAS / DTW × High / Mid / Low)"]
+  A1["#1–9: ranked 10-subject groups (MMD / WAS / DTW × High / Mid / Low)"]
 end
 
 subgraph CLI["scripts/python/train.py"]
@@ -344,34 +363,29 @@ subgraph CLI["scripts/python/train.py"]
 end
 
 subgraph Input["Input Files"]
-  C1["data/processed/common/<br/>(feature CSVs)"]
-  C2["ranks10/{metric}_mean_{level}.txt<br/>(10 target subjects)"]
-  C3["subject_list.txt<br/>(all subjects)"]
+  C1["data/processed/common/ (feature CSVs)"]
+  C2["ranks10/metric_mean_level.txt (10 target subjects)"]
+  C3["subject_list.txt (all subjects)"]
 end
 
 subgraph Stage2["Training Pipeline"]
   direction TB
   E1{"Mode?"}
-  E2a["only_general:<br/>Use all non-target subjects<br/>(subject_list − target_group)"]
-  E2b["only_target:<br/>Use only target 10 subjects<br/>(within-domain split)"]
+  E2a["only_general: Use all non-target subjects"]
+  E2b["only_target: Use only target 10 subjects"]
   E3["Feature selection (RF / MI / ANOVA)"]
   E4["Train model & save artifacts"]
 end
 
 subgraph Output["Results"]
-  F1["models/{model}/rank_*/"]
-  F2["results/train/{model}/"]
+  F1["models/model/rank_*/"]
+  F2["results/train/model/"]
 end
 
 A1 --> B1 --> B2 --> E1
 E1 -->|only_general| E2a
 E1 -->|only_target| E2b
 E2a & E2b --> E3 --> E4 --> F1 & F2
-
-%% Subject relationships (explicit)
-C1 & C2 & C3 -. "All subjects" .-> E2a
-C1 & C2 -. "Target group (10 subjects)" .-> E2b
-
 ```
 
 ---
@@ -386,6 +400,7 @@ C1 & C2 -. "Target group (10 subjects)" .-> E2b
 
 ---
 
+(correlation-and-reporting)=
 ### 3. Performance Aggregation and Visualization
 
 **Job scripts:**
@@ -454,24 +469,24 @@ domain-level and metric-level performance trends.
 
 #### Data Flow
 
-```mermaid
+```{mermaid}
 flowchart TB
 
 subgraph Step1["aggregate_evaluation_results.py"]
   B1["Parse filenames → infer distance/rank/mode"]
   B2["Merge all test metrics into one table"]
   B3["Pivot per metric (AUC, Precision, Recall, Accuracy, F1)"]
-  B4["Compute Δ(fin. vs general / fin. vs target)"]
+  B4["Compute delta values"]
 end
 
 subgraph Step2["plot_summary_results.py"]
   C1["Load summary_40cases_test_mode_compare.csv"]
   C2["Generate tri-bar plots (per distance × level)"]
-  C3["Generate Δ heatmaps (General–Target / Finetune–Target / General–Finetune)"]
+  C3["Generate delta heatmaps"]
 end
 
 subgraph Output["Results/"]
-  A1["results/evaluation/common/metrics_*.csv<br/>(per-group test metrics)"]
+  A1["results/evaluation/common/metrics_*.csv (per-group test metrics)"]
   D1["results/analysis/summary_40cases_*.csv"]
   D2["results/analysis/summary_metrics_40_mean_tri_bar.png"]
   D3["results/analysis/diff_heatmap_all5_40.png"]
@@ -483,7 +498,7 @@ C1 --> C2 & C3
 B4 --> D1
 C2 --> D2
 C3 --> D3
-````
+```
 
 ---
 
@@ -507,7 +522,10 @@ C3 --> D3
 ---
 
 
-## Utility Modules (`src/utils/`) 
+(utility-modules)=
+## Utility Modules
+
+**Location:** `src/utils/` 
 
 ### `io/loaders.py`
 
@@ -526,6 +544,51 @@ Implements reproducible data splits:
 * Random or stratified
 * Subject-wise
 * Time-stratified (`time_stratified_three_way_split`)
+
+---
+
+(hpc-integration)=
+## HPC Integration
+
+The project supports PBS-based HPC clusters for large-scale experiments.
+
+### Job Script Structure
+
+Job scripts are located in `scripts/hpc/` and follow this pattern:
+
+```bash
+#!/bin/bash
+#PBS -N job_name
+#PBS -l select=1:ncpus=4
+#PBS -l walltime=24:00:00
+#PBS -q SINGLE
+
+cd $PBS_O_WORKDIR
+source activate ddd
+
+python scripts/python/train.py --model RF --mode only10
+```
+
+### Array Jobs
+
+For parallel execution across multiple configurations:
+
+```bash
+#PBS -J 1-10  # Array indices
+
+# Use array index to select configuration
+MODEL=$(sed -n "${PBS_ARRAY_INDEX}p" config/models.txt)
+python scripts/python/train.py --model $MODEL
+```
+
+### Common HPC Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `pbs_compute_distance.sh` | Compute domain distances (MMD, Wasserstein, DTW) |
+| `pbs_rank.sh` | Train models on ranked subject groups |
+| `pbs_train.sh` | Standard model training |
+| `pbs_evaluate.sh` | Model evaluation |
 
 
 

@@ -145,7 +145,7 @@ qsub scripts/hpc/train_rf.pbs
 qstat -u $USER
 ```
 
-See [HPC Guide](developer_guide.md#hpc-integration) for details.
+See the Developer Guide for HPC details.
 
 ## Common Issues
 
