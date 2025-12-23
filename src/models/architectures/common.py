@@ -56,6 +56,7 @@ from src.models.architectures.common_evaluation import (
     evaluate_classifier,
     optimize_threshold,
     prepare_results_dict,
+    _eval_single_split,
 )
 
 # --- Limit CPU threads globally (important for PBS environments) ---
@@ -361,13 +362,9 @@ def _run_eval_only_mode(
     X_val_scaled = scaler.transform(X_val[selected_features])
     X_test_scaled = scaler.transform(X_test[selected_features])
 
-    def _eval_split(Xs, ys):
-        yhat = best_clf.predict(Xs)
-        proba = best_clf.predict_proba(Xs)[:, 1] if hasattr(best_clf, "predict_proba") else None
-        return calculate_extended_metrics(ys, yhat, proba, zero_division=0)
-
-    m_val = _eval_split(X_val_scaled, y_val)
-    m_test = _eval_split(X_test_scaled, y_test)
+    # Use shared evaluation function from common_evaluation
+    m_val = _eval_single_split(best_clf, X_val_scaled, y_val)
+    m_test = _eval_single_split(best_clf, X_test_scaled, y_test)
 
     logging.info(f"[EVAL_ONLY] Validation metrics: {json.dumps(m_val, indent=2)}")
     logging.info(f"[EVAL_ONLY] Test metrics: {json.dumps(m_test, indent=2)}")
