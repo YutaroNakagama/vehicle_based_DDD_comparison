@@ -24,7 +24,7 @@ The DG pipeline consists of three sequential stages:
 
 ## Pipeline Summary (High-Level)
 
-```mermaid
+```{mermaid}
 graph TD
   A["pbs_compute_distances.sh"] --> B["domain_analysis/run_analysis.py comp-dist"]
   B --> C["distance matrices (.npy)"]
@@ -32,7 +32,7 @@ graph TD
   D --> E["ranked subject lists (.txt)"]
   E --> F["pbs_rank_only_general.sh / pbs_rank_only_target.sh"]
   F --> G["train.py (fine-tune or evaluate)"]
-````
+```
 
 ---
 
