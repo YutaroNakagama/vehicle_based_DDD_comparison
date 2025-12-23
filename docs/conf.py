@@ -26,9 +26,20 @@ extensions = [
     "sphinx.ext.autodoc",         # docstringを拾う
     "sphinx.ext.napoleon",        # Google/Numpyスタイルdocstring対応
     "sphinx.ext.viewcode",        # ソースコードリンク
+    "sphinx.ext.intersphinx",     # Cross-referencing external docs
     "sphinx_autodoc_typehints",   # 型ヒントを自動表示
     "myst_parser",                # Markdown support
+    "sphinx_copybutton",          # Copy button for code blocks
+    "sphinxcontrib.mermaid",      # Mermaid diagrams
 ]
+
+# MyST-Parser configuration
+myst_enable_extensions = [
+    "colon_fence",
+    "deflist",
+    "tasklist",
+]
+myst_heading_anchors = 3
 
 # conf.py
 napoleon_google_docstring = False
@@ -56,7 +67,25 @@ master_doc = 'source/index'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "sphinx_rtd_theme"
+html_theme_options = {
+    'navigation_depth': 4,
+    'collapse_navigation': False,
+    'sticky_navigation': True,
+    'includehidden': True,
+    'titles_only': False,
+    'logo_only': False,
+    'prev_next_buttons_location': 'bottom',
+    'style_external_links': True,
+}
 #html_static_path = ['_static']
+
+# Intersphinx mapping
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
+    'pandas': ('https://pandas.pydata.org/docs/', None),
+    'sklearn': ('https://scikit-learn.org/stable/', None),
+}
 
 autodoc_mock_imports = [
     "tensorflow", "tensorflow.keras",

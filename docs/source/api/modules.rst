@@ -1,13 +1,7 @@
-API Reference
-=============
+src
+===
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
 
-   src.analysis
-   src.config
-   src.data_pipeline
-   src.evaluation
-   src.models
-   src.utils
-
+   src
