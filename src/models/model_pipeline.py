@@ -50,6 +50,7 @@ def train_pipeline(
     use_oversampling: bool = False,
     oversample_method: str = "smote",
     target_ratio: float = 0.33,
+    subject_wise_oversampling: bool = False,
     *,
     feature_selection_method: str = "rf",
     data_leak: bool = False,
@@ -84,6 +85,9 @@ def train_pipeline(
         Apply oversampling to minority class in training data.
     oversample_method : {"smote", "adasyn", "borderline"}, default="smote"
         Oversampling method to use.
+    subject_wise_oversampling : bool, default=False
+        If True, apply oversampling separately for each subject to avoid
+        generating synthetic samples across different subjects' data.
     feature_selection_method : {"rf", "mi", "anova"}, default="rf"
         Feature selection method.
     data_leak : bool, default=False
@@ -117,6 +121,7 @@ def train_pipeline(
             time_stratify_tolerance=time_stratify_tolerance,
             time_stratify_window=time_stratify_window,
             time_stratify_min_chunk=time_stratify_min_chunk,
+            keep_subject_id=(use_oversampling and subject_wise_oversampling),
         )
     elif mode == "target_only":
         X_train, X_val, X_test, y_train, y_val, y_test = split_data(
@@ -129,6 +134,7 @@ def train_pipeline(
             time_stratify_tolerance=time_stratify_tolerance,
             time_stratify_window=time_stratify_window,
             time_stratify_min_chunk=time_stratify_min_chunk,
+            keep_subject_id=(use_oversampling and subject_wise_oversampling),
         )
     else:
         X_train, X_val, X_test, y_train, y_val, y_test = split_data(
@@ -141,6 +147,7 @@ def train_pipeline(
             time_stratify_tolerance=time_stratify_tolerance,
             time_stratify_window=time_stratify_window,
             time_stratify_min_chunk=time_stratify_min_chunk,
+            keep_subject_id=(use_oversampling and subject_wise_oversampling),
         )
 
     log_split_ratios(y_train, y_val, y_test, tag=f"{subject_split_strategy}|time_stratify={time_stratify_labels}")
@@ -158,6 +165,32 @@ def train_pipeline(
     X_val.columns = normalize_feature_names(X_val.columns)
     if X_test is not None:
         X_test.columns = normalize_feature_names(X_test.columns)
+
+    # Stage 4.5: Subject-wise oversampling (before dropping subject_id)
+    if use_oversampling and subject_wise_oversampling:
+        from src.models.architectures.common_oversampling import apply_oversampling
+        subject_ids = X_train.get("subject_id", None)
+        if subject_ids is None:
+            logging.warning("[OVERSAMPLE] subject_id not found, falling back to pooled oversampling")
+        else:
+            logging.info("[OVERSAMPLE] Applying subject-wise oversampling")
+            # Extract subject_ids before cleaning (since clean drops non-numeric)
+            subject_ids_for_sampling = X_train["subject_id"].copy()
+            # Clean for numeric features only
+            X_train_numeric = clean_feature_dataframe(
+                X_train.copy(), drop_subject_id=True, drop_eeg=True, numeric_only=True
+            )
+            X_train_numeric, y_train = apply_oversampling(
+                X_train_numeric, y_train,
+                method=oversample_method,
+                target_ratio=target_ratio,
+                random_state=seed,
+                subject_wise=True,
+                subject_ids=subject_ids_for_sampling,
+            )
+            X_train = X_train_numeric
+            # Skip oversampling in common.py since we've already done it
+            use_oversampling = False
 
     X_train = clean_feature_dataframe(X_train, drop_subject_id=True, drop_eeg=True, numeric_only=True)
     X_val = clean_feature_dataframe(X_val, drop_subject_id=True, drop_eeg=True, numeric_only=True)

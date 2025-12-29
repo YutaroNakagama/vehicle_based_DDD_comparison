@@ -95,6 +95,7 @@ def main():
         use_oversampling=args.use_oversampling,
         oversample_method=args.oversample_method,
         target_ratio=args.target_ratio,
+        subject_wise_oversampling=getattr(args, 'subject_wise_oversampling', False),
     )
 
 

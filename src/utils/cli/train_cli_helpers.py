@@ -225,15 +225,20 @@ def add_train_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--oversample_method",
-        choices=["smote", "adasyn", "borderline", "smote_tomek", "smote_enn", "smote_rus", "jitter", "scale", "jitter_scale", "undersample_rus", "undersample_tomek", "undersample_enn"],
+        choices=["smote", "adasyn", "borderline", "smote_tomek", "smote_enn", "smote_rus", "jitter", "scale", "jitter_scale", "undersample_rus", "undersample_tomek"],
         default="smote",
-        help="Sampling method: SMOTE, ADASYN, BorderlineSMOTE, SMOTE+Tomek, SMOTE+ENN, SMOTE+RUS, Jitter, Scale, Jitter+Scale, Undersample-RUS, Undersample-Tomek, or Undersample-ENN (default: smote).",
+        help="Sampling method: SMOTE, ADASYN, BorderlineSMOTE, SMOTE+Tomek, SMOTE+ENN, SMOTE+RUS, Jitter, Scale, Jitter+Scale, Undersample-RUS, or Undersample-Tomek (default: smote).",
     )
     parser.add_argument(
         "--target_ratio",
         type=float,
         default=0.33,
-        help="Target ratio for oversampling (minority/majority). Default: 0.33 (1:3 ratio).",
+        help="Target minority/majority ratio for oversampling (default: 0.33).",
+    )
+    parser.add_argument(
+        "--subject_wise_oversampling",
+        action="store_true",
+        help="Apply oversampling separately for each subject to avoid mixing subject characteristics.",
     )
 
 

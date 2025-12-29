@@ -23,6 +23,8 @@ def apply_oversampling(
     method: str = "smote",
     target_ratio: float = 0.33,
     random_state: int = 42,
+    subject_wise: bool = False,
+    subject_ids: Optional[pd.Series] = None,
 ) -> Tuple[pd.DataFrame, pd.Series]:
     """Apply oversampling or undersampling to training data.
 
@@ -40,6 +42,11 @@ def apply_oversampling(
         Target minority/majority ratio after sampling.
     random_state : int, default=42
         Random seed for reproducibility.
+    subject_wise : bool, default=False
+        If True, apply oversampling separately for each subject to avoid
+        generating synthetic samples across different subjects' data.
+    subject_ids : pd.Series, optional
+        Subject IDs for each sample. Required if subject_wise=True.
 
     Returns
     -------
@@ -49,6 +56,18 @@ def apply_oversampling(
     logging.info(f"Applying oversampling method: {method}")
     logging.info(f"Class distribution before oversampling: {np.bincount(y_train)}")
     logging.info(f"Target ratio (minority/majority): {target_ratio}")
+    logging.info(f"Subject-wise oversampling: {subject_wise}")
+
+    # Use subject-wise oversampling if requested
+    if subject_wise:
+        if subject_ids is None:
+            raise ValueError("subject_ids must be provided when subject_wise=True")
+        return _apply_subjectwise_oversampling(
+            X_train, y_train, subject_ids,
+            method=method,
+            target_ratio=target_ratio,
+            random_state=random_state,
+        )
 
     minority_count = np.bincount(y_train).min()
     
@@ -171,3 +190,113 @@ def _get_sampler(
         return None
     else:
         raise ValueError(f"Unknown oversample_method: {method}")
+
+
+def _apply_subjectwise_oversampling(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    subject_ids: pd.Series,
+    method: str = "smote",
+    target_ratio: float = 0.33,
+    random_state: int = 42,
+) -> Tuple[pd.DataFrame, pd.Series]:
+    """Apply oversampling separately for each subject.
+
+    This prevents generating synthetic samples that mix characteristics
+    from different subjects, which could introduce noise.
+
+    Parameters
+    ----------
+    X_train : pd.DataFrame
+        Training features.
+    y_train : pd.Series
+        Training labels.
+    subject_ids : pd.Series
+        Subject ID for each sample.
+    method : str, default="smote"
+        Sampling method to apply.
+    target_ratio : float, default=0.33
+        Target minority/majority ratio after sampling.
+    random_state : int, default=42
+        Random seed for reproducibility.
+
+    Returns
+    -------
+    Tuple[pd.DataFrame, pd.Series]
+        Resampled (X_train, y_train).
+    """
+    unique_subjects = subject_ids.unique()
+    logging.info(f"[Subject-wise Oversampling] Processing {len(unique_subjects)} subjects")
+
+    resampled_X_list = []
+    resampled_y_list = []
+    skipped_subjects = []
+
+    for i, subject in enumerate(unique_subjects):
+        mask = subject_ids == subject
+        X_subj = X_train.loc[mask].copy()
+        y_subj = y_train.loc[mask].copy()
+
+        # Check class distribution for this subject
+        class_counts = np.bincount(y_subj, minlength=2)
+        minority_count = class_counts.min()
+        majority_count = class_counts.max()
+
+        # Skip if subject has no minority samples or insufficient samples for SMOTE
+        if minority_count == 0:
+            logging.debug(f"  Subject {subject}: No minority samples, keeping original data")
+            resampled_X_list.append(X_subj)
+            resampled_y_list.append(y_subj)
+            skipped_subjects.append(subject)
+            continue
+
+        # For SMOTE-based methods, need at least k_neighbors + 1 minority samples
+        min_samples_needed = 2  # At least 2 samples needed for k_neighbors=1
+        if minority_count < min_samples_needed:
+            logging.debug(f"  Subject {subject}: Only {minority_count} minority samples, keeping original")
+            resampled_X_list.append(X_subj)
+            resampled_y_list.append(y_subj)
+            skipped_subjects.append(subject)
+            continue
+
+        # Get sampler for this subject (with adjusted k_neighbors)
+        sampler = _get_sampler(method, minority_count, target_ratio, random_state + i)
+
+        if sampler is None:
+            # jitter/scale methods
+            X_subj_resampled, y_subj_resampled = augment_minority_class(
+                X_subj, y_subj,
+                method=method,
+                target_ratio=target_ratio,
+                adaptive_sigma="interclass",
+                random_state=random_state + i,
+            )
+        else:
+            try:
+                X_subj_resampled, y_subj_resampled = sampler.fit_resample(X_subj, y_subj)
+            except ValueError as e:
+                # Handle edge cases (e.g., not enough neighbors)
+                logging.warning(f"  Subject {subject}: Oversampling failed ({e}), keeping original")
+                resampled_X_list.append(X_subj)
+                resampled_y_list.append(y_subj)
+                skipped_subjects.append(subject)
+                continue
+
+        resampled_X_list.append(pd.DataFrame(X_subj_resampled, columns=X_subj.columns))
+        resampled_y_list.append(pd.Series(y_subj_resampled))
+
+        new_minority = np.bincount(y_subj_resampled, minlength=2).min()
+        logging.debug(f"  Subject {subject}: {minority_count} -> {new_minority} minority samples")
+
+    # Concatenate all resampled data
+    X_resampled = pd.concat(resampled_X_list, ignore_index=True)
+    y_resampled = pd.concat(resampled_y_list, ignore_index=True)
+
+    final_counts = np.bincount(y_resampled)
+    logging.info(f"[Subject-wise Oversampling] Complete:")
+    logging.info(f"  Subjects processed: {len(unique_subjects) - len(skipped_subjects)}/{len(unique_subjects)}")
+    logging.info(f"  Subjects skipped (insufficient samples): {len(skipped_subjects)}")
+    logging.info(f"  Class distribution after: {final_counts}")
+    logging.info(f"  Total samples: {len(X_train)} -> {len(X_resampled)}")
+
+    return X_resampled, y_resampled
