@@ -71,6 +71,7 @@ def split_data(
     time_stratify_tolerance: float,
     time_stratify_window: float,
     time_stratify_min_chunk: int,
+    keep_subject_id: bool = False,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
     """Create train/val/test splits according to the selected strategy.
 
@@ -94,6 +95,8 @@ def split_data(
         Window proportion for time stratification.
     time_stratify_min_chunk : int
         Minimum chunk size for time stratification.
+    keep_subject_id : bool, default=False
+        If True, keep subject_id column in X_train for subject-wise oversampling.
 
     Returns
     -------
@@ -138,7 +141,8 @@ def split_data(
                 window_prop=time_stratify_window,
                 min_chunk=time_stratify_min_chunk,
             )
-            X_train = df_lab.loc[idx_tr, feature_columns].drop(columns=["subject_id"], errors="ignore")
+            drop_cols = [] if keep_subject_id else ["subject_id"]
+            X_train = df_lab.loc[idx_tr, feature_columns].drop(columns=drop_cols, errors="ignore")
             X_val   = df_lab.loc[idx_va, feature_columns].drop(columns=["subject_id"], errors="ignore")
             X_test  = df_lab.loc[idx_te, feature_columns].drop(columns=["subject_id"], errors="ignore")
             y_train = df_lab.loc[idx_tr, "label"]

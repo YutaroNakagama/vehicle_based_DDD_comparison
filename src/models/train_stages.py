@@ -174,6 +174,7 @@ def prepare_source_only_splits(
     time_stratify_tolerance: float,
     time_stratify_window: float,
     time_stratify_min_chunk: int,
+    keep_subject_id: bool = False,
 ) -> Tuple:
     """Prepare train/val/test splits for source_only mode.
 
@@ -242,6 +243,7 @@ def prepare_source_only_splits(
             time_stratify_tolerance=time_stratify_tolerance,
             time_stratify_window=time_stratify_window,
             time_stratify_min_chunk=time_stratify_min_chunk,
+            keep_subject_id=keep_subject_id,
         )
         logging.info(
             f"[SOURCE_ONLY] Same-group case: train={len(y_train)}, val={len(y_val)}, test={len(y_test)} samples"
@@ -264,6 +266,7 @@ def prepare_source_only_splits(
             time_stratify_tolerance=time_stratify_tolerance,
             time_stratify_window=time_stratify_window,
             time_stratify_min_chunk=time_stratify_min_chunk,
+            keep_subject_id=keep_subject_id,
         )
         
         X_train = src_train
