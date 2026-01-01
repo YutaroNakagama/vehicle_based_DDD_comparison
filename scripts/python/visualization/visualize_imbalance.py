@@ -247,12 +247,13 @@ def cmd_baseline(args) -> int:
     """Create baseline metrics visualization."""
     logger.info("Creating baseline metrics visualization...")
     
-    # Try to delegate to existing script
+    # Import from archive location (preserved for backwards compatibility)
     try:
-        from visualization.visualize_baseline_metrics import main as baseline_main
+        sys.path.insert(0, str(PROJECT_ROOT / "scripts/python/archive/consolidated/visualization/imbalance"))
+        from visualize_baseline_metrics import main as baseline_main
         return baseline_main()
-    except ImportError:
-        logger.warning("Baseline visualization not available")
+    except ImportError as e:
+        logger.warning(f"Baseline visualization not available: {e}")
         return 0
 
 
@@ -261,10 +262,11 @@ def cmd_domain(args) -> int:
     logger.info("Creating imbalance × domain visualization...")
     
     try:
-        from visualization.imbalance.visualize_imbalance_v3_domain import main as domain_main
+        sys.path.insert(0, str(PROJECT_ROOT / "scripts/python/archive/consolidated/visualization/imbalance"))
+        from visualize_imbalance_v3_domain import main as domain_main
         return domain_main()
-    except ImportError:
-        logger.warning("Domain visualization not available")
+    except ImportError as e:
+        logger.warning(f"Domain visualization not available: {e}")
         return 0
 
 

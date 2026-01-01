@@ -42,7 +42,7 @@ echo "OVERSAMPLE: ${OVERSAMPLE_FLAG}"
 echo "============================================================"
 
 if [[ "$OVERSAMPLE_FLAG" == "yes" ]]; then
-    python scripts/python/train.py \
+    python scripts/python/train/train.py \
         --model "$MODEL" \
         --mode pooled \
         --tag "$TAG" \
@@ -52,7 +52,7 @@ if [[ "$OVERSAMPLE_FLAG" == "yes" ]]; then
         --oversample_method "$OVERSAMPLE_METHOD" \
         --target_ratio "$RATIO"
 else
-    python scripts/python/train.py \
+    python scripts/python/train/train.py \
         --model "$MODEL" \
         --mode pooled \
         --tag "$TAG" \

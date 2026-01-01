@@ -50,7 +50,7 @@ echo "JOBID: $PBS_JOBID"
 echo "============================================================"
 
 # Build command
-CMD="python scripts/python/train.py \
+CMD="python scripts/python/train/train.py \
     --model RF \
     --mode $MODE \
     --seed $SEED \

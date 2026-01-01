@@ -60,7 +60,7 @@ echo "[INFO] Tag: $TAG"
 
 # Run evaluation with --mode pooled for proper cross-domain evaluation
 echo "[INFO] Starting evaluation..."
-python scripts/python/evaluate.py \
+python scripts/python/evaluation/evaluate.py \
     --model RF \
     --mode pooled \
     --tag "$TAG" \

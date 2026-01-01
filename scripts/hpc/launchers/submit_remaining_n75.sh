@@ -49,7 +49,7 @@ EOF
     
     if [[ "$METHOD" == "balanced_rf" ]]; then
         cat >> $JOB_SCRIPT << EOF
-python scripts/python/train.py \\
+python scripts/python/train/train.py \\
     --model BalancedRF \\
     --mode pooled \\
     --tag ${TAG} \\
@@ -58,7 +58,7 @@ python scripts/python/train.py \\
 EOF
     elif [[ "$METHOD" == "easy_ensemble" ]]; then
         cat >> $JOB_SCRIPT << EOF
-python scripts/python/train.py \\
+python scripts/python/train/train.py \\
     --model EasyEnsemble \\
     --mode pooled \\
     --tag ${TAG} \\
@@ -67,7 +67,7 @@ python scripts/python/train.py \\
 EOF
     elif [[ "$METHOD" == undersample* ]]; then
         cat >> $JOB_SCRIPT << EOF
-python scripts/python/train.py \\
+python scripts/python/train/train.py \\
     --model ${MODEL_TYPE} \\
     --mode pooled \\
     --tag ${TAG} \\
@@ -112,7 +112,7 @@ source /home/s2240011/conda/etc/profile.d/conda.sh
 conda activate python310
 export PYTHONPATH=${PROJECT_DIR}:\$PYTHONPATH
 
-python scripts/python/evaluate.py --model ${MODEL_TYPE} --mode pooled --tag ${TAG}
+python scripts/python/evaluation/evaluate.py --model ${MODEL_TYPE} --mode pooled --tag ${TAG}
 echo "[DONE] Evaluation: ${TAG}"
 EOF
     

@@ -27,7 +27,8 @@ MODE="${MODE:-pooled}"
 
 echo "[INFO] Visualizing baseline metrics for MODEL=$MODEL, MODE=$MODE"
 
-python3 scripts/python/visualization/visualize_baseline_metrics.py \
+# Updated to use unified visualize_imbalance.py with 'baseline' subcommand
+python3 scripts/python/visualization/visualize_imbalance.py baseline \
     --model "$MODEL" \
     --mode "$MODE"
 

@@ -27,4 +27,4 @@ export NUMBA_NUM_THREADS=1
 
 cd $PBS_O_WORKDIR
 
-python scripts/python/preprocess.py --model ${MODEL:-common} --multi_process
+python scripts/python/preprocess/preprocess.py --model ${MODEL:-common} --multi_process

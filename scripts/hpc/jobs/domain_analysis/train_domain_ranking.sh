@@ -69,7 +69,7 @@ echo "[INFO] Tag: $TAG"
 
 # Run training
 echo "[INFO] Starting training..."
-python scripts/python/train.py \
+python scripts/python/train/train.py \
     --model RF \
     --mode "$MODE" \
     --tag "$TAG" \

@@ -117,7 +117,7 @@ CURRENT_JOBID="${PBS_JOBID:-local}"
 echo "[INFO] Current Job ID: $CURRENT_JOBID"
 
 # Build train command
-TRAIN_CMD="python scripts/python/train.py --model RF --mode $MODE --tag $TAG --target_file $SUBJECT_LIST"
+TRAIN_CMD="python scripts/python/train/train.py --model RF --mode $MODE --tag $TAG --target_file $SUBJECT_LIST"
 if [[ "$IMBALANCE_METHOD" != "none" ]]; then
     TRAIN_CMD="$TRAIN_CMD --oversample_method $IMBALANCE_METHOD"
 fi
@@ -133,7 +133,7 @@ echo "============================================================"
 
 # Run evaluation with explicit jobid
 echo "[INFO] Starting evaluation..."
-python scripts/python/evaluate.py \
+python scripts/python/evaluation/evaluate.py \
     --model RF \
     --mode "$MODE" \
     --tag "$TAG" \

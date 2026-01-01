@@ -64,7 +64,7 @@ fi
 
 # Run evaluation
 echo "[INFO] Starting evaluation..."
-python scripts/python/evaluate.py \
+python scripts/python/evaluation/evaluate.py \
     --model RF \
     --mode pooled \
     --tag "$TAG" \
