@@ -59,7 +59,7 @@ echo "[INFO] Using training jobid: $TRAIN_JOBID"
 
 # Run evaluation with CORRECT MODE (same as training)
 echo "[INFO] Starting evaluation..."
-python scripts/python/evaluate.py \
+python scripts/python/evaluation/evaluate.py \
     --model RF \
     --mode "$MODE" \
     --tag "$TAG" \

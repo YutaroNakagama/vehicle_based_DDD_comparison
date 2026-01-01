@@ -48,7 +48,7 @@ echo "METHOD: SMOTE"
 echo "JOBID: $PBS_JOBID"
 echo "============================================================"
 
-python scripts/python/train.py \
+python scripts/python/train/train.py \
     --model RF \
     --mode pooled \
     --subject_wise_split \

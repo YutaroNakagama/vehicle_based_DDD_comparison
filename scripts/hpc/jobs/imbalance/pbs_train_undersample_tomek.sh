@@ -52,7 +52,7 @@ echo "SPLIT: Time-stratified"
 echo "JOBID: $PBS_JOBID"
 echo "============================================================"
 
-python scripts/python/train.py \
+python scripts/python/train/train.py \
     --model "$MODEL" \
     --mode pooled \
     --subject_wise_split \

@@ -60,7 +60,7 @@ echo "[TEST] N_TRIALS reduced to 5"
 echo "[TEST] KSS labels: 1-3=0, 8-9=1"
 echo "[TEST] Data split: train=0.4, val=0.3, test=0.3"
 
-python scripts/python/train.py \
+python scripts/python/train/train.py \
     --model "$MODEL" \
     --mode pooled \
     --subject_wise_split \

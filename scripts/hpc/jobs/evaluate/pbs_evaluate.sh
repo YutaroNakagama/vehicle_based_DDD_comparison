@@ -49,7 +49,7 @@ echo "FOLD=$FOLD"
 echo "MODE=$MODE"
 
 # ===== run evaluation =====
-CMD=(python scripts/python/evaluate.py --model "$MODEL" --tag "$TAG")
+CMD=(python scripts/python/evaluation/evaluate.py --model "$MODEL" --tag "$TAG")
 
 [[ -n "$FOLD" ]] && CMD+=(--fold "$FOLD")
 CMD+=(--mode "$MODE")  # always pass mode explicitly (even if pooled)

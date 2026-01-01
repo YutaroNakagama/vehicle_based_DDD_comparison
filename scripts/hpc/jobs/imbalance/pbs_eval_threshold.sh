@@ -48,7 +48,7 @@ echo "THRESHOLD: $THRESHOLD"
 echo "EVAL_JOBID: $PBS_JOBID"
 echo "============================================================"
 
-python scripts/python/evaluate.py \
+python scripts/python/evaluation/evaluate.py \
     --model "$MODEL" \
     --mode pooled \
     --seed "$SEED" \

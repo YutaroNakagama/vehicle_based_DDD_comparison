@@ -49,7 +49,7 @@ SEED="${SEED:-42}"
 
 echo "=== JOB START (MODEL=$MODEL, SEED=$SEED, JOBID=$PBS_JOBID) ==="
 
-python scripts/python/train.py \
+python scripts/python/train/train.py \
     --model "$MODEL" \
     --mode pooled \
     --subject_wise_split \

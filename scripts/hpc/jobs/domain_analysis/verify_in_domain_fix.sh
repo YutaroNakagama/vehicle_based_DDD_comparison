@@ -77,7 +77,7 @@ echo "[INFO] Current Job ID: $CURRENT_JOBID"
 
 # Run training
 echo "[INFO] Starting training..."
-python scripts/python/train.py \
+python scripts/python/train/train.py \
     --model RF \
     --mode "$MODE" \
     --tag "$TAG" \
@@ -89,7 +89,7 @@ echo "============================================================"
 
 # Run evaluation with explicit jobid
 echo "[INFO] Starting evaluation..."
-python scripts/python/evaluate.py \
+python scripts/python/evaluation/evaluate.py \
     --model RF \
     --mode "$MODE" \
     --tag "$TAG" \

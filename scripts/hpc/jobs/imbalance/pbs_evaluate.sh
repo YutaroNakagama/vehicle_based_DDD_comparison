@@ -50,7 +50,7 @@ echo "TRAIN_JOBID: $TRAIN_JOBID"
 echo "EVAL_JOBID: $PBS_JOBID"
 echo "============================================================"
 
-python scripts/python/evaluate.py \
+python scripts/python/evaluation/evaluate.py \
     --model "$MODEL" \
     --mode pooled \
     --seed "$SEED" \

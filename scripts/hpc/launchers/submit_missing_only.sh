@@ -95,11 +95,11 @@ EOF
 
     if [[ "$OVERSAMPLE_FLAG" == "yes" ]]; then
         cat >> "$TRAIN_SCRIPT" << EOF
-python scripts/python/train.py --model ${MODEL} --mode pooled --tag ${TAG} --seed ${SEED} --time_stratify_labels --use_oversampling --oversample_method ${OVERSAMPLE_METHOD} --target_ratio ${RATIO}
+python scripts/python/train/train.py --model ${MODEL} --mode pooled --tag ${TAG} --seed ${SEED} --time_stratify_labels --use_oversampling --oversample_method ${OVERSAMPLE_METHOD} --target_ratio ${RATIO}
 EOF
     else
         cat >> "$TRAIN_SCRIPT" << EOF
-python scripts/python/train.py --model ${MODEL} --mode pooled --tag ${TAG} --seed ${SEED} --time_stratify_labels
+python scripts/python/train/train.py --model ${MODEL} --mode pooled --tag ${TAG} --seed ${SEED} --time_stratify_labels
 EOF
     fi
     
@@ -138,7 +138,7 @@ export PYTHONPATH="${PROJECT_DIR}:\${PYTHONPATH:-}"
 
 echo "[IMBALANCE V2] Evaluation: ${TAG}"
 
-python scripts/python/evaluate.py --model ${MODEL} --mode pooled --tag ${TAG}
+python scripts/python/evaluation/evaluate.py --model ${MODEL} --mode pooled --tag ${TAG}
 
 echo "[DONE] Evaluation complete: ${TAG}"
 EOF

@@ -52,7 +52,7 @@ echo "TAG: $TAG"
 echo "JOBID: $PBS_JOBID"
 echo "============================================================"
 
-python scripts/python/train.py \
+python scripts/python/train/train.py \
     --model BalancedRF \
     --mode pooled \
     --subject_wise_split \

@@ -19,7 +19,7 @@ echo "=== Test Improved RF with SMOTE ==="
 echo "Job ID: $PBS_JOBID"
 echo "Date: $(date)"
 
-python scripts/python/train.py \
+python scripts/python/train/train.py \
   --model RF \
   --mode pooled \
   --seed 42 \
