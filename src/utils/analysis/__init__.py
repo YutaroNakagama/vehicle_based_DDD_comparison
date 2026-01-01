@@ -25,6 +25,22 @@ from src.utils.analysis.statistical_utils import (
     format_p_value,
 )
 
+from src.utils.analysis.distance_utils import (
+    load_distance_matrix,
+    load_group_subjects,
+    load_all_subjects,
+    get_group_indices,
+    load_all_group_indices,
+    compute_intergroup_distances,
+    compute_intragroup_distances,
+    compute_embedding,
+    compute_centroids,
+    METRICS,
+    METRIC_DIRS,
+    LEVELS,
+    DISTANCE_DIR,
+)
+
 __all__ = [
     # Projection utilities
     "get_projection_coords",
@@ -44,4 +60,18 @@ __all__ = [
     "paired_ttest",
     "bootstrap_ci",
     "format_p_value",
+    # Distance utilities
+    "load_distance_matrix",
+    "load_group_subjects",
+    "load_all_subjects",
+    "get_group_indices",
+    "load_all_group_indices",
+    "compute_intergroup_distances",
+    "compute_intragroup_distances",
+    "compute_embedding",
+    "compute_centroids",
+    "METRICS",
+    "METRIC_DIRS",
+    "LEVELS",
+    "DISTANCE_DIR",
 ]
