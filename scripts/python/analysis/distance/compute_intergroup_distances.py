@@ -25,68 +25,27 @@ except ImportError:
     UMAP_AVAILABLE = False
     print("Warning: UMAP not available. Install with: pip install umap-learn")
 
+# Import shared utilities
+from distance_utils import (
+    load_distance_matrix,
+    load_group_subjects,
+    load_all_subjects,
+    get_group_indices,
+    METRICS,
+    METRIC_DIRS,
+    LEVELS,
+    DISTANCE_DIR,
+)
+
+# Add project root for src imports
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
+from src.utils.visualization.color_palettes import DOMAIN_LEVEL_COLORS
+
 # パス設定
 BASE_DIR = Path(__file__).resolve().parents[2]
-DISTANCE_DIR = BASE_DIR / "results" / "domain_analysis" / "distance"
 OUTPUT_DIR = DISTANCE_DIR / "group-wise" / "intergroup_analysis"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
-METRICS = ["dtw_mean", "mmd_mean", "wasserstein_mean"]
-METRIC_DIRS = {"dtw_mean": "dtw", "mmd_mean": "mmd", "wasserstein_mean": "wasserstein"}
-LEVELS = ["out_domain", "mid_domain", "in_domain"]
-
-
-def load_distance_matrix(metric: str) -> np.ndarray:
-    """距離行列を読み込む"""
-    metric_dir = METRIC_DIRS[metric]
-    matrix_path = DISTANCE_DIR / "subject-wise" / metric_dir / f"{metric_dir}_matrix.npy"
-    return np.load(matrix_path)
-
-
-def load_group_subjects(metric: str, level: str, ranking_method: str = "mean_distance") -> list:
-    """グループの被験者リストを読み込む
-    
-    Parameters
-    ----------
-    metric : str
-        距離指標 (dtw_mean, mmd_mean, wasserstein_mean)
-    level : str
-        グループレベル (out_domain, mid_domain, in_domain)
-    ranking_method : str
-        ランキング手法 (mean_distance, centroid_mds, centroid_umap, medoid, lof)
-    """
-    # 新しいフォルダ構造: ranks29/{ranking_method}/{metric}_{level}.txt
-    # metric から "_mean" サフィックスを除去
-    metric_base = metric.replace("_mean", "")
-    group_path = DISTANCE_DIR / "subject-wise" / "ranks" / "ranks29" / ranking_method / f"{metric_base}_{level}.txt"
-    
-    # フォールバック: 古い形式 (mean_distance_legacy)
-    if not group_path.exists():
-        group_path = DISTANCE_DIR / "subject-wise" / "ranks" / "ranks29" / "mean_distance_legacy" / f"{metric}_{level}.txt"
-    
-    with open(group_path, "r") as f:
-        return [line.strip() for line in f if line.strip()]
-
-
-def load_all_subjects(metric: str) -> list:
-    """全被験者のリストを読み込む"""
-    metric_dir = METRIC_DIRS[metric]
-    # subjects.jsonから読み込む
-    subject_path = DISTANCE_DIR / "subject-wise" / metric_dir / f"{metric_dir}_subjects.json"
-    with open(subject_path, "r") as f:
-        return json.load(f)
-
-
-def get_group_indices(all_subjects: list, group_subjects: list) -> np.ndarray:
-    """グループに属する被験者のインデックスを取得"""
-    indices = []
-    for subj in group_subjects:
-        try:
-            idx = all_subjects.index(subj)
-            indices.append(idx)
-        except ValueError:
-            print(f"Warning: Subject {subj} not found in all_subjects")
-    return np.array(indices)
 
 
 def compute_intergroup_distances(dist_matrix: np.ndarray, 
@@ -289,7 +248,7 @@ def visualize_projection_with_centroids(metric: str,
     fig, ax = plt.subplots(figsize=(14, 11))
     
     # 各グループをプロット
-    colors = {"out_domain": "red", "mid_domain": "gray", "in_domain": "blue"}
+    colors = DOMAIN_LEVEL_COLORS
     markers = {"out_domain": "^", "mid_domain": "s", "in_domain": "v"}
     
     for level, indices in group_indices_dict.items():
