@@ -17,14 +17,12 @@ Output:
 - summary_metrics_ranked_heatmap.png: Heatmap comparison
 """
 
-import os
 import logging
 from pathlib import Path
 
-import matplotlib as mpl
-mpl.use('Agg')  # Non-interactive backend
-mpl.set_loglevel("warning")
-logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
+# Setup matplotlib before importing pyplot
+from src.utils.visualization.setup import setup_matplotlib_headless
+setup_matplotlib_headless()
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -34,6 +32,10 @@ import seaborn as sns
 from src import config as cfg
 from src.utils.io.data_io import load_csv
 from src.utils.visualization.visualization import save_figure, plot_grouped_bar_chart_raw
+from src.utils.visualization.color_palettes import (
+    RANKING_METHOD_COLORS as METHOD_COLORS,
+    DOMAIN_LEVEL_COLORS as LEVEL_COLORS,
+)
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:
@@ -52,23 +54,6 @@ OUT_DIR_COMPARISON.mkdir(parents=True, exist_ok=True)
 # Metrics to plot
 METRICS = ["accuracy", "recall", "precision", "f1", "f2", "auc", "auc_pr"]
 METRICS_THR = ["recall_thr", "precision_thr", "f1_thr", "f2_thr"]
-
-# Colors for ranking methods
-METHOD_COLORS = {
-    "mean_distance": "#1f77b4",      # blue
-    "centroid_umap": "#ff7f0e",      # orange
-    "lof": "#2ca02c",                # green
-    "knn": "#d62728",                # red
-    "median_distance": "#9467bd",    # purple
-    "isolation_forest": "#8c564b",   # brown
-}
-
-# Colors for levels
-LEVEL_COLORS = {
-    "out_domain": "#e41a1c",    # red (outliers)
-    "mid_domain": "#999999",  # gray
-    "in_domain": "#377eb8",     # blue (central)
-}
 
 
 def plot_method_comparison_bar(df: pd.DataFrame, metric: str, mode: str = "source_only") -> plt.Figure:

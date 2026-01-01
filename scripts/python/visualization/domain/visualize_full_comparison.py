@@ -15,69 +15,29 @@ Output:
 - full_comparison_dashboard.png: Combined dashboard
 """
 
-import os
 import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-import matplotlib as mpl
-mpl.use('Agg')
-mpl.set_loglevel("warning")
-logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
+# Setup matplotlib before importing pyplot
+from src.utils.visualization.setup import setup_matplotlib_headless
+setup_matplotlib_headless()
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
 from src import config as cfg
+from src.utils.visualization.color_palettes import (
+    IMBALANCE_METHOD_COLORS as IMBALANCE_COLORS,
+    RANKING_METHOD_COLORS as RANKING_COLORS,
+    TRAINING_MODE_COLORS as MODE_COLORS,
+    DOMAIN_LEVEL_COLORS as LEVEL_COLORS,
+)
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:
     logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
-
-
-# =============================================================================
-# Color Palettes
-# =============================================================================
-
-# Imbalance methods colors
-IMBALANCE_COLORS = {
-    "Baseline": "#7f7f7f",           # gray
-    "SMOTE": "#1f77b4",              # blue
-    "SMOTE+Tomek": "#2ca02c",        # green (best performer)
-    "SMOTE+ENN": "#ff7f0e",          # orange
-    "SMOTE+RUS": "#9467bd",          # purple
-    "BalancedRF": "#8c564b",         # brown
-    "EasyEnsemble": "#e377c2",       # pink
-    "Undersample-ENN": "#17becf",    # cyan
-    "Undersample-RUS": "#bcbd22",    # olive
-    "Undersample-Tomek": "#d62728",  # red
-    "Jitter+Scale": "#ff9896",       # light red
-}
-
-# Ranking methods colors
-RANKING_COLORS = {
-    "mean_distance": "#1f77b4",      # blue
-    "centroid_umap": "#ff7f0e",      # orange
-    "lof": "#2ca02c",                # green
-    "knn": "#d62728",                # red
-    "median_distance": "#9467bd",    # purple
-    "isolation_forest": "#8c564b",   # brown
-}
-
-# Training mode colors
-MODE_COLORS = {
-    "pooled": "#2ca02c",
-    "source_only": "#1f77b4",
-    "target_only": "#ff7f0e",
-}
-
-# Domain level colors
-LEVEL_COLORS = {
-    "out_domain": "#e41a1c",
-    "mid_domain": "#999999",
-    "in_domain": "#377eb8",
-}
 
 
 # =============================================================================
