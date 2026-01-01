@@ -1,0 +1,72 @@
+#!/bin/bash
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -j oe
+#PBS -M yutaro.nakagama@bosch.com
+#PBS -m ae
+
+# ==============================================================================
+# eval_domain_ranking.sh - Domain Analysis Ranking Comparison Evaluation Job
+# ==============================================================================
+# Environment variables expected:
+#   RANKING_METHOD: mean_distance, median_distance, knn, lof, isolation_forest, centroid_umap
+#   DISTANCE_METRIC: dtw, mmd, wasserstein
+#   DOMAIN_LEVEL: out_domain, in_domain, cross_domain
+#   MODE: source_only, target_only, pooled
+#   SEED: random seed (42, 123, 456, etc.)
+# ==============================================================================
+
+set -euo pipefail
+
+PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
+cd "$PROJECT_ROOT"
+
+# Environment setup
+export PATH=~/conda/bin:$PATH
+source ~/conda/etc/profile.d/conda.sh
+conda activate python310
+export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
+
+# Get parameters from environment or use defaults
+RANKING_METHOD="${RANKING_METHOD:-knn}"
+DISTANCE_METRIC="${DISTANCE_METRIC:-dtw}"
+DOMAIN_LEVEL="${DOMAIN_LEVEL:-out_domain}"
+MODE="${MODE:-source_only}"
+SEED="${SEED:-42}"
+
+echo "============================================================"
+echo "[INFO] Domain Ranking Comparison - Evaluation Started at $(date)"
+echo "============================================================"
+echo "Ranking Method: ${RANKING_METHOD}"
+echo "Distance Metric: ${DISTANCE_METRIC}"
+echo "Domain Level: ${DOMAIN_LEVEL}"
+echo "Mode: ${MODE}"
+echo "Seed: ${SEED}"
+echo "PBS_JOBID: ${PBS_JOBID:-local}"
+echo "============================================================"
+
+# Build subject list path
+SUBJECT_LIST="results/domain_analysis/distance/subject-wise/ranks/ranks29/${RANKING_METHOD}/${DISTANCE_METRIC}_${DOMAIN_LEVEL}.txt"
+
+if [[ ! -f "$SUBJECT_LIST" ]]; then
+    echo "[ERROR] Subject list not found: $SUBJECT_LIST"
+    exit 1
+fi
+
+echo "[INFO] Using subject list: $SUBJECT_LIST"
+
+# Build tag (must match training tag)
+TAG="rank_cmp_${RANKING_METHOD}_${DISTANCE_METRIC}_${DOMAIN_LEVEL}_s${SEED}"
+echo "[INFO] Tag: $TAG"
+
+# Run evaluation with --mode pooled for proper cross-domain evaluation
+echo "[INFO] Starting evaluation..."
+python scripts/python/evaluate.py \
+    --model RF \
+    --mode pooled \
+    --tag "$TAG" \
+    --target_file "$SUBJECT_LIST" \
+    --jobid "${PBS_JOBID:-local}"
+
+echo "============================================================"
+echo "[INFO] Evaluation Completed Successfully at $(date)"
+echo "============================================================"
