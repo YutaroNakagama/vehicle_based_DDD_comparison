@@ -11,31 +11,29 @@ This script:
 3. Output: results/domain_analysis/summary/png/{ranking_method}/summary_metrics_bar_{imbalance_method}_{ratio}.png
 
 Usage:
-    python scripts/python/analysis/imbalance/visualize_imbalv3_domain.py
+    python scripts/python/visualization/imbalance/visualize_imbalv3_domain.py
     
     # Specify CSV file explicitly
-    python scripts/python/analysis/imbalance/visualize_imbalv3_domain.py \\
+    python scripts/python/visualization/imbalance/visualize_imbalv3_domain.py \\
         --csv results/imbalance_analysis/domain_v3/all_metrics.csv
 """
 
 import argparse
 import logging
-import os
 import sys
 from pathlib import Path
-
-import matplotlib as mpl
-mpl.use('Agg')  # Non-interactive backend
-mpl.set_loglevel("warning")
-logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
-
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(PROJECT_ROOT))
+
+# Setup matplotlib before importing pyplot
+from src.utils.visualization.setup import setup_matplotlib_headless
+setup_matplotlib_headless()
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
 
 from src import config as cfg
 from src.utils.visualization.visualization import save_figure, plot_grouped_bar_chart_raw

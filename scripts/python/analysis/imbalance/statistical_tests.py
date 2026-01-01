@@ -29,10 +29,18 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
+
+# Import shared statistical utilities
+from src.utils.analysis.statistical_utils import (
+    cohens_d,
+    interpret_cohens_d,
+    wilcoxon_test,
+    bootstrap_ci,
+    format_p_value,
+)
 
 # ============================================================
 # Configuration
@@ -48,118 +56,6 @@ METRICS = ["recall", "f1", "precision", "f2"]
 # Method pairs to compare
 BASELINE_METHOD = "baseline"
 COMPARISON_METHODS = ["smote", "smote_tomek", "smote_rus"]
-
-
-# ============================================================
-# Statistical Functions
-# ============================================================
-def cohens_d(group1: np.ndarray, group2: np.ndarray) -> float:
-    """Calculate Cohen's d effect size for paired samples.
-    
-    Cohen's d = (mean1 - mean2) / pooled_std
-    
-    Interpretation:
-        |d| < 0.2: negligible
-        |d| ≈ 0.2: small
-        |d| ≈ 0.5: medium
-        |d| ≈ 0.8: large
-        |d| > 1.0: very large
-    """
-    n1, n2 = len(group1), len(group2)
-    var1, var2 = np.var(group1, ddof=1), np.var(group2, ddof=1)
-    
-    # Pooled standard deviation
-    pooled_std = np.sqrt(((n1 - 1) * var1 + (n2 - 1) * var2) / (n1 + n2 - 2))
-    
-    if pooled_std == 0:
-        return 0.0
-    
-    return (np.mean(group1) - np.mean(group2)) / pooled_std
-
-
-def interpret_cohens_d(d: float) -> str:
-    """Interpret Cohen's d effect size."""
-    abs_d = abs(d)
-    if abs_d < 0.2:
-        return "negligible"
-    elif abs_d < 0.5:
-        return "small"
-    elif abs_d < 0.8:
-        return "medium"
-    elif abs_d < 1.0:
-        return "large"
-    else:
-        return "very large"
-
-
-def wilcoxon_test(
-    group1: np.ndarray,
-    group2: np.ndarray,
-) -> Tuple[float, float]:
-    """Perform Wilcoxon signed-rank test.
-    
-    Returns
-    -------
-    statistic : float
-        Test statistic
-    p_value : float
-        Two-sided p-value
-    """
-    # Handle identical arrays
-    if np.allclose(group1, group2):
-        return np.nan, 1.0
-    
-    try:
-        stat, p = stats.wilcoxon(group1, group2, alternative="two-sided")
-        return float(stat), float(p)
-    except Exception as e:
-        print(f"Wilcoxon test failed: {e}")
-        return np.nan, np.nan
-
-
-def bootstrap_ci(
-    data: np.ndarray,
-    confidence: float = 0.95,
-    n_bootstrap: int = 10000,
-) -> Tuple[float, float]:
-    """Compute bootstrap confidence interval for the mean.
-    
-    Returns
-    -------
-    lower : float
-        Lower bound of CI
-    upper : float
-        Upper bound of CI
-    """
-    if len(data) == 0:
-        return np.nan, np.nan
-    
-    np.random.seed(42)
-    bootstrap_means = []
-    
-    for _ in range(n_bootstrap):
-        sample = np.random.choice(data, size=len(data), replace=True)
-        bootstrap_means.append(np.mean(sample))
-    
-    alpha = 1 - confidence
-    lower = np.percentile(bootstrap_means, 100 * alpha / 2)
-    upper = np.percentile(bootstrap_means, 100 * (1 - alpha / 2))
-    
-    return lower, upper
-
-
-def format_p_value(p: float) -> str:
-    """Format p-value for reporting."""
-    if np.isnan(p):
-        return "N/A"
-    elif p < 0.001:
-        return "< 0.001***"
-    elif p < 0.01:
-        return f"{p:.4f}**"
-    elif p < 0.05:
-        return f"{p:.4f}*"
-    else:
-        return f"{p:.4f}"
 
 
 # ============================================================

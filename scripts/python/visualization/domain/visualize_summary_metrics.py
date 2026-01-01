@@ -1,10 +1,9 @@
 # misc/plot_summary_metrics_40.py
-import os
 import logging
 
-import matplotlib as mpl
-mpl.set_loglevel("warning")  # Suppress overall Matplotlib logs
-logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)  # Stop findfont spam
+# Setup matplotlib before importing pyplot
+from src.utils.visualization.setup import setup_matplotlib_headless
+setup_matplotlib_headless()
 
 from src import config as cfg
 from src.utils.io.data_io import load_csv

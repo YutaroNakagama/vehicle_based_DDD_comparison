@@ -32,7 +32,19 @@ from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
-from scipy import stats
+
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
+
+# Import shared statistical utilities
+from src.utils.analysis.statistical_utils import (
+    cohens_d,
+    interpret_cohens_d,
+    wilcoxon_test,
+    paired_ttest,
+    bootstrap_ci,
+    format_p_value,
+)
 
 # ============================================================
 # Configuration
@@ -48,79 +60,6 @@ METRICS = ["recall", "f1", "precision", "f2", "auc_pr"]
 # Method pairs to compare
 BASELINE_METHOD = "baseline"
 COMPARISON_METHODS = ["smote", "smote_tomek", "smote_rus"]
-
-
-# ============================================================
-# Statistical Functions
-# ============================================================
-def cohens_d(group1: np.ndarray, group2: np.ndarray) -> float:
-    """Calculate Cohen's d effect size for paired samples."""
-    n1, n2 = len(group1), len(group2)
-    var1, var2 = np.var(group1, ddof=1), np.var(group2, ddof=1)
-    pooled_std = np.sqrt(((n1 - 1) * var1 + (n2 - 1) * var2) / (n1 + n2 - 2))
-    
-    if pooled_std == 0:
-        return 0.0
-    return (np.mean(group1) - np.mean(group2)) / pooled_std
-
-
-def interpret_effect(d: float) -> str:
-    """Interpret Cohen's d effect size."""
-    abs_d = abs(d)
-    if abs_d < 0.2:
-        return "negligible"
-    elif abs_d < 0.5:
-        return "small"
-    elif abs_d < 0.8:
-        return "medium"
-    elif abs_d < 1.0:
-        return "large"
-    else:
-        return "very large"
-
-
-def wilcoxon_test(g1: np.ndarray, g2: np.ndarray) -> Tuple[float, float]:
-    """Perform Wilcoxon signed-rank test."""
-    if np.allclose(g1, g2):
-        return np.nan, 1.0
-    try:
-        stat, p = stats.wilcoxon(g1, g2, alternative="two-sided")
-        return float(stat), float(p)
-    except Exception:
-        return np.nan, np.nan
-
-
-def paired_ttest(g1: np.ndarray, g2: np.ndarray) -> Tuple[float, float]:
-    """Perform paired t-test."""
-    try:
-        stat, p = stats.ttest_rel(g1, g2)
-        return float(stat), float(p)
-    except Exception:
-        return np.nan, np.nan
-
-
-def bootstrap_ci(data: np.ndarray, confidence: float = 0.95, n_boot: int = 10000) -> Tuple[float, float]:
-    """Compute bootstrap confidence interval for the mean."""
-    if len(data) == 0:
-        return np.nan, np.nan
-    np.random.seed(42)
-    means = [np.mean(np.random.choice(data, len(data), replace=True)) for _ in range(n_boot)]
-    alpha = 1 - confidence
-    return np.percentile(means, 100 * alpha / 2), np.percentile(means, 100 * (1 - alpha / 2))
-
-
-def format_p(p: float) -> str:
-    """Format p-value for display."""
-    if np.isnan(p):
-        return "N/A"
-    elif p < 0.001:
-        return "< 0.001***"
-    elif p < 0.01:
-        return f"{p:.4f}**"
-    elif p < 0.05:
-        return f"{p:.4f}*"
-    else:
-        return f"{p:.4f}"
 
 
 # ============================================================
@@ -196,7 +135,7 @@ def run_pairwise_tests(df: pd.DataFrame, metric: str, mode: str,
             "ttest_stat": t_stat,
             "ttest_p": t_p,
             "cohens_d": d,
-            "effect_size": interpret_effect(d),
+            "effect_size": interpret_cohens_d(d),
             "significant_05": w_p < 0.05 if not np.isnan(w_p) else False,
             "significant_01": w_p < 0.01 if not np.isnan(w_p) else False,
             "level_filter": level_filter if level_filter else "all",
@@ -242,7 +181,7 @@ def generate_report(df: pd.DataFrame) -> str:
                 lines.append(f"      Baseline: {row['baseline_mean']:.4f} ± {row['baseline_std']:.4f}")
                 lines.append(f"      {row['comparison']}: {row['method_mean']:.4f} ± {row['method_std']:.4f}")
                 lines.append(f"      Difference: {row['mean_diff']:+.4f} [{row['diff_ci_lower']:.4f}, {row['diff_ci_upper']:.4f}]")
-                lines.append(f"      Wilcoxon p: {format_p(row['wilcoxon_p'])}")
+                lines.append(f"      Wilcoxon p: {format_p_value(row['wilcoxon_p'])}")
                 lines.append(f"      Cohen's d: {row['cohens_d']:.3f} ({row['effect_size']})")
         
         # By domain level
@@ -262,7 +201,7 @@ def generate_report(df: pd.DataFrame) -> str:
                     lines.append(f"      Baseline: {row['baseline_mean']:.4f} ± {row['baseline_std']:.4f}")
                     lines.append(f"      {row['comparison']}: {row['method_mean']:.4f} ± {row['method_std']:.4f}")
                     lines.append(f"      Difference: {row['mean_diff']:+.4f} [{row['diff_ci_lower']:.4f}, {row['diff_ci_upper']:.4f}]")
-                    lines.append(f"      Wilcoxon p: {format_p(row['wilcoxon_p'])}")
+                    lines.append(f"      Wilcoxon p: {format_p_value(row['wilcoxon_p'])}")
                     lines.append(f"      Cohen's d: {row['cohens_d']:.3f} ({row['effect_size']})")
     
     # Citation-ready summary

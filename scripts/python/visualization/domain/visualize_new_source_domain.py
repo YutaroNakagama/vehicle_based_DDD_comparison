@@ -11,30 +11,28 @@ This script:
 3. Creates summary_metrics_bar_new_source_domain.png for each ranking method
 
 Usage:
-    python scripts/python/domain_analysis/visualize_new_source_domain.py --jobid 14552850
+    python scripts/python/visualization/domain/visualize_new_source_domain.py --jobid 14552850
 """
 
 import argparse
 import json
 import logging
-import os
 import re
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional
 
-import matplotlib as mpl
-mpl.use('Agg')  # Non-interactive backend
-mpl.set_loglevel("warning")
-logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
+# Add project root to path
+PROJECT_ROOT = Path(__file__).resolve().parents[4]
+sys.path.insert(0, str(PROJECT_ROOT))
+
+# Setup matplotlib before importing pyplot
+from src.utils.visualization.setup import setup_matplotlib_headless
+setup_matplotlib_headless()
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-
-# Add project root to path
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(PROJECT_ROOT))
 
 from src import config as cfg
 from src.utils.visualization.visualization import save_figure, plot_grouped_bar_chart_raw
