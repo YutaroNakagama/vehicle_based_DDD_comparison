@@ -49,19 +49,20 @@ These are thin wrappers around `src/` modules, designed to be run as CLI tools.
 - **`analyze_ranking_convergence.py`** → Analyze ranking convergence
 - **`summarize_confusion_matrices.py`** → Aggregate confusion matrix results
 - **`distance/`** → Distance-based analysis scripts
-- **`domain/`** → Domain-specific analysis scripts
-- **`imbalance/`** → Imbalance-related analysis scripts
+- **`domain/`** → Domain-specific analysis scripts (metric collection, ranking)
+- **`imbalance/`** → Imbalance-related analysis scripts (statistical tests, convergence)
 
 ### Visualization (`visualization/`)
 
+- **`plot_metric_boxplot.py`** → Unified metric boxplot (F2, AUPRC, Precision, Recall, Specificity)
 - **`imbalance_visualize.py`** → Visualize imbalance experiment results
-- **`plot_f2_boxplot.py`** → F2 score box plots
-- **`plot_auprc_boxplot.py`** → AUPRC box plots
 - **`plot_confusion_matrices.py`** → Confusion matrix visualizations
 - **`visualize_baseline_metrics.py`** → Baseline metrics visualization
 - **`visualize_hyperparams.py`** → Hyperparameter visualization
 - **`visualize_multiseed_results.py`** → Multi-seed experiment results
 - **`visualize_optuna_convergence.py`** → Optuna convergence plots
+- **`domain/`** → Domain-specific visualization scripts
+- **`imbalance/`** → Imbalance-related visualization scripts
 
 ### Setup and Validation (`setup/`)
 
@@ -123,5 +124,3 @@ bash scripts/hpc/launchers/launch_train_all.sh
 * Actual results are saved under:
   * `results/` → metrics, CSVs, NumPy arrays
   * `models/` → trained model files
-  * `models/` → trained models and scalers
-
