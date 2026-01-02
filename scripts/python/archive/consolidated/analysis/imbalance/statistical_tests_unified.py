@@ -27,7 +27,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 
 # Import shared statistical utilities
-from src.utils.analysis.statistical_utils import (
+from src.analysis.domain.statistical_utils import (
     cohens_d,
     interpret_cohens_d,
     wilcoxon_test,

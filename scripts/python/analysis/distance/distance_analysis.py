@@ -33,7 +33,7 @@ import seaborn as sns
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 
 # Import core functions from src
-from src.utils.analysis.distance_utils import (
+from src.analysis.domain.distance_utils import (
     load_distance_matrix,
     load_group_subjects,
     load_all_subjects,

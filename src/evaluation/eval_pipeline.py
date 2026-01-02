@@ -40,7 +40,7 @@ from src.utils.io.savers import save_eval_results
 from src.utils.io.preprocessing import prepare_evaluation_features
 from src.utils.io.target_resolution import resolve_target_subjects_from_tag
 from src.utils.io.split_helpers import split_data, log_split_ratios
-from src.utils.evaluation.threshold import (
+from src.evaluation.threshold import (
     load_or_optimize_threshold,
     extract_jobid_components,
 )

@@ -40,3 +40,7 @@ __all__ = [
     "rank_subjects_by_mean_distance",
     "rank_subjects_by_std_distance",
 ]
+# Utility submodules (low-level helpers)
+# - distance_utils: Distance computation utilities
+# - projection_utils: Dimensionality reduction and clustering
+# - statistical_utils: Statistical test helpers

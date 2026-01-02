@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional, Tuple
 import numpy as np
 from sklearn.metrics import classification_report, fbeta_score
 
-from src.utils.evaluation.metrics import (
+from src.evaluation.metrics import (
     calculate_extended_metrics,
     find_optimal_threshold,
     apply_threshold,
