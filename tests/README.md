@@ -1,64 +1,64 @@
 # Tests
 
-このディレクトリには、プロジェクトのテストコードが含まれています。
+This directory contains the test code for the project.
 
-## テストの実行
+## Running Tests
 
-### 全テストの実行
+### Run all tests
 ```bash
 pytest tests/
 ```
 
-### カバレッジ付きで実行
+### Run with coverage
 ```bash
 pytest tests/ --cov=src --cov-report=html
 ```
 
-### 特定のテストファイルのみ実行
+### Run a specific test file
 ```bash
 pytest tests/test_config.py
 ```
 
-### 特定のテスト関数のみ実行
+### Run a specific test function
 ```bash
 pytest tests/test_config.py::test_paths_exist
 ```
 
-### 詳細な出力で実行
+### Run with verbose output
 ```bash
 pytest tests/ -v
 ```
 
-### マーカーでフィルタリング
+### Filter by markers
 ```bash
-# 高速なテストのみ
+# Fast tests only
 pytest tests/ -m fast
 
-# スモークテストのみ
+# Smoke tests only
 pytest tests/ -m smoke
 
-# 遅いテストを除外
+# Exclude slow tests
 pytest tests/ -m "not slow"
 ```
 
-## テストの構成
+## Test Structure
 
-- `conftest.py`: pytest共通fixtures（サンプルデータ生成、モック環境設定など）
-- `test_config.py`: 設定ファイルとパスのテスト
-- `test_imbalance_methods.py`: 不均衡データ処理手法のテスト（SMOTE、アンダーサンプリング等）
-- `test_smoke_pipeline.py`: データ処理の軽量なエンドツーエンドテスト
-- `test_smoke_training.py`: モデル学習の軽量なエンドツーエンドテスト
-- `fixtures/`: テスト用ダミーデータ
+- `conftest.py`: Common pytest fixtures (sample data generation, mock environment setup, etc.)
+- `test_config.py`: Configuration file and path tests
+- `test_imbalance_methods.py`: Imbalanced data handling method tests (SMOTE, undersampling, etc.)
+- `test_smoke_pipeline.py`: Lightweight end-to-end tests for data processing
+- `test_smoke_training.py`: Lightweight end-to-end tests for model training
+- `fixtures/`: Test dummy data
 
-## テストマーカーの説明
+## Test Marker Descriptions
 
-- `@pytest.mark.fast`: 数秒以内に完了する高速なテスト（デフォルト）
-- `@pytest.mark.slow`: 1分以上かかる可能性のあるテスト
-- `@pytest.mark.smoke`: パイプライン全体が動作することを確認する軽量テスト
-- `@pytest.mark.integration`: 複数のコンポーネントを統合したテスト
-- `@pytest.mark.requires_data`: 実際のデータセットが必要なテスト
+- `@pytest.mark.fast`: Fast tests that complete within seconds (default)
+- `@pytest.mark.slow`: Tests that may take more than 1 minute
+- `@pytest.mark.smoke`: Lightweight tests to verify the entire pipeline works
+- `@pytest.mark.integration`: Tests that integrate multiple components
+- `@pytest.mark.requires_data`: Tests that require actual datasets
 
-## テストデータ
+## Test Data
 
-テスト用のダミーデータは `tests/fixtures/` ディレクトリに配置されています。
-実データを使ったテストは、環境変数でデータパスを指定することで実行できます。
+Dummy data for testing is placed in the `tests/fixtures/` directory.
+Tests using real data can be run by specifying the data path via environment variables.
