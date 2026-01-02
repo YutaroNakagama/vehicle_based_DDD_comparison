@@ -13,6 +13,11 @@ results/
 │   │   │   ├── subject-wise/  # Subject-wise distances (MMD, Wasserstein, DTW)
 │   │   │   │   └── ranks/     # Distance-based ranking groups
 │   │   │   └── group-wise/    # Group-wise distances
+│   │   ├── imbalance/         # Imbalance experiment analysis (moved from outputs/)
+│   │   │   ├── hyperparam/    # Hyperparameter convergence analysis
+│   │   │   ├── plots/         # Metric visualizations
+│   │   │   ├── sampling/      # Sampling distribution analysis
+│   │   │   └── multiseed/     # Multi-seed experiment analysis
 │   │   ├── rankings/          # Ranking method results
 │   │   │   ├── centroid_umap/
 │   │   │   ├── lof/
@@ -22,27 +27,22 @@ results/
 │   │   └── summary/           # Summary tables and visualizations
 │   │       ├── csv/
 │   │       └── png/
-│   └── imbalance/             # Imbalance experiment analysis
-│       ├── hyperparam/        # Hyperparameter convergence analysis
+│   └── imbalance/             # Imbalance analysis (general)
 │       ├── plots/             # Metric visualizations
 │       ├── sampling/          # Sampling distribution analysis
 │       └── multiseed/         # Multi-seed experiment analysis
 │
 └── outputs/                   # Job outputs (raw data from HPC/local)
-    ├── evaluation/            # General evaluation outputs (by model type)
-    │   ├── RF/                # Random Forest evaluations
+    ├── evaluation/            # Evaluation outputs (by model type)
+    │   ├── RF/                # Random Forest
     │   │   └── {job_id}/      # Per-job results
     │   ├── BalancedRF/        # Balanced Random Forest
     │   └── EasyEnsemble/      # EasyEnsemble
-    └── imbalance/             # Imbalance experiment outputs
-        ├── training/          # Training outputs by method
-        │   ├── baseline/
-        │   ├── smote_0.5/
-        │   └── ...
-        └── evaluation/        # Evaluation outputs by method
-            ├── baseline/
-            ├── smote_0.5/
-            └── ...
+    └── training/              # Training outputs (by model type)
+        ├── RF/                # Random Forest
+        │   └── {job_id}/      # Per-job results
+        ├── BalancedRF/        # Balanced Random Forest
+        └── EasyEnsemble/      # EasyEnsemble
 ```
 
 ## Design Philosophy
@@ -80,7 +80,7 @@ The following paths are defined in `src/config.py`:
 | `RESULTS_ANALYSIS_IMBALANCE_PATH` | `./results/analysis/imbalance` |
 | `RESULTS_OUTPUTS_PATH` | `./results/outputs` |
 | `RESULTS_OUTPUTS_EVALUATION_PATH` | `./results/outputs/evaluation` |
-| `RESULTS_OUTPUTS_IMBALANCE_PATH` | `./results/outputs/imbalance` |
+| `RESULTS_OUTPUTS_TRAINING_PATH` | `./results/outputs/training` |
 
 ## Policy
 
