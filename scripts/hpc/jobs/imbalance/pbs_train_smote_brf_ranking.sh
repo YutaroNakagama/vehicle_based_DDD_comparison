@@ -1,16 +1,17 @@
 #!/bin/bash
-#PBS -N sw_smote_rank
-#PBS -l select=1:ncpus=4:mem=6gb
+#PBS -N smote_brf_rank
+#PBS -l select=1:ncpus=8:mem=8gb
 #PBS -l walltime=12:00:00
 #PBS -j oe
-#PBS -q SINGLE
+#PBS -q DEFAULT
 #PBS -o /home/s2240011/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/
 #PBS -e /home/s2240011/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/
 #PBS -M yutaro.nakagama@bosch.com
 #PBS -m abe
 
 # ============================================================
-# Subject-wise SMOTE + Ranking Training Script
+# SMOTE + BalancedRF + Ranking Training Script
+# For source_only/target_only mode with ranking-based subject selection
 # ============================================================
 set -euo pipefail
 
@@ -37,14 +38,14 @@ export PBS_JOBID="${PBS_JOBID:-manual_$(date +%Y%m%d_%H%M%S)}"
 cd "$PROJECT_ROOT"
 
 # Parameters from environment
-TAG="${TAG:-sw_smote_test}"
+TAG="${TAG:-smote_brf_rank_test}"
 RATIO="${RATIO:-0.33}"
-MODE="${MODE:-pooled}"
+MODE="${MODE:-source_only}"
 SUBJECT_FILE="${SUBJECT_FILE:-}"
 SEED="${SEED:-42}"
 
 echo "============================================================"
-echo "[Subject-wise SMOTE + Ranking] Training"
+echo "[SMOTE + BalancedRF + Ranking] Training"
 echo "============================================================"
 echo "TAG: $TAG"
 echo "RATIO: $RATIO"
@@ -57,14 +58,13 @@ echo "============================================================"
 
 # Build command
 CMD="python scripts/python/train/train.py \
-    --model RF \
+    --model BalancedRF \
     --mode $MODE \
     --seed $SEED \
     --time_stratify_labels \
     --use_oversampling \
     --oversample_method smote \
     --target_ratio $RATIO \
-    --subject_wise_oversampling \
     --tag $TAG"
 
 # Add target_file if mode is not pooled
@@ -85,4 +85,4 @@ echo ""
 
 eval $CMD
 
-echo "=== TRAINING DONE ==="
+echo "=== SMOTE + BalancedRF TRAINING DONE ==="
