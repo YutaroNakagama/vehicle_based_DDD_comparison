@@ -25,13 +25,9 @@ results/
 │   │   ├── lof/
 │   │   ├── mean_distance/
 │   │   └── ranking_comparison/
-│   ├── summary/               # Summary tables and visualizations
-│   │   ├── csv/
-│   │   └── png/
-│   └── imbalance/             # Imbalance-related domain analysis
-│       ├── analysis/
-│       ├── evaluation/
-│       └── training/
+│   └── summary/               # Summary tables and visualizations
+│       ├── csv/
+│       └── png/
 ├── evaluation/                # Model evaluation results (Job ID based)
 │   ├── RF/                    # Random Forest
 │   ├── BalancedRF/            # Balanced Random Forest
@@ -39,7 +35,14 @@ results/
 ├── hyperparam/                # Hyperparameter analysis results
 │   ├── *.csv                  # Raw hyperparameter data
 │   └── *.png                  # Hyperparameter visualizations
-└── imbalance/                 # Imbalance data analysis (currently empty)
+├── imbalance/                 # Imbalance experiments (category-based)
+│   ├── training/              # Training results by imbalance method
+│   ├── evaluation/            # Evaluation results by imbalance method
+│   └── analysis/              # Analysis and visualizations
+│       ├── plots/
+│       ├── sampling/
+│       └── multiseed/
+└── train/                     # General training results (currently empty)
 ```
 
 ## Naming Conventions

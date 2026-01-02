@@ -39,7 +39,7 @@ echo "Date: $(date)"
 echo "============================================================"
 
 # Create output directory
-OUTPUT_DIR="results/imbalance_analysis/pooled_comparison_$(date +%Y%m%d_%H%M%S)"
+OUTPUT_DIR="results/imbalance/analysis/pooled_comparison_$(date +%Y%m%d_%H%M%S)"
 mkdir -p "$OUTPUT_DIR"
 
 echo ""
@@ -59,7 +59,7 @@ import sys
 
 # Configuration
 RESULTS_DIR = Path("results/evaluation")
-OUTPUT_DIR = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("results/imbalance_analysis/pooled_comparison")
+OUTPUT_DIR = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("results/imbalance/analysis/pooled_comparison")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 print(f"Output directory: {OUTPUT_DIR}")

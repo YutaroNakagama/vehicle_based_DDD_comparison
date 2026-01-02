@@ -101,7 +101,7 @@ else
 fi
 
 # Get subject list from correct ranking method directory
-SUBJECT_LIST="results/domain_analysis/distance/subject-wise/ranks/ranks29/${RANKING_METHOD}/${DISTANCE}_${LEVEL}.txt"
+SUBJECT_LIST="results/domain/distance/subject-wise/ranks/ranks29/${RANKING_METHOD}/${DISTANCE}_${LEVEL}.txt"
 
 if [[ ! -f "$SUBJECT_LIST" ]]; then
     echo "[ERROR] Subject list not found: $SUBJECT_LIST"

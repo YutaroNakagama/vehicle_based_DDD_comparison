@@ -51,12 +51,12 @@ echo "PBS_JOBID: ${PBS_JOBID:-local}"
 echo "============================================================"
 
 # Build subject list path
-SUBJECT_LIST="results/domain_analysis/distance/subject-wise/ranks/ranks29/${RANKING_METHOD}/${DISTANCE_METRIC}_${DOMAIN_LEVEL}.txt"
+SUBJECT_LIST="results/domain/distance/subject-wise/ranks/ranks29/${RANKING_METHOD}/${DISTANCE_METRIC}_${DOMAIN_LEVEL}.txt"
 
 if [[ ! -f "$SUBJECT_LIST" ]]; then
     echo "[ERROR] Subject list not found: $SUBJECT_LIST"
     echo "[INFO] Available files in ranks29/${RANKING_METHOD}/:"
-    ls -la "results/domain_analysis/distance/subject-wise/ranks/ranks29/${RANKING_METHOD}/" 2>/dev/null || echo "Directory not found"
+    ls -la "results/domain/distance/subject-wise/ranks/ranks29/${RANKING_METHOD}/" 2>/dev/null || echo "Directory not found"
     exit 1
 fi
 

@@ -59,12 +59,12 @@ echo "============================================================"
 TAG="verify_fix_rank_${RANKING_METHOD}_${DISTANCE}_${LEVEL}"
 
 # Get subject list from correct ranking method directory
-SUBJECT_LIST="results/domain_analysis/distance/subject-wise/ranks/ranks29/${RANKING_METHOD}/${DISTANCE}_${LEVEL}.txt"
+SUBJECT_LIST="results/domain/distance/subject-wise/ranks/ranks29/${RANKING_METHOD}/${DISTANCE}_${LEVEL}.txt"
 
 if [[ ! -f "$SUBJECT_LIST" ]]; then
     echo "[ERROR] Subject list not found: $SUBJECT_LIST"
     echo "[INFO] Checking available files..."
-    ls -la "results/domain_analysis/distance/subject-wise/ranks/ranks29/${RANKING_METHOD}/" || true
+    ls -la "results/domain/distance/subject-wise/ranks/ranks29/${RANKING_METHOD}/" || true
     exit 1
 fi
 
