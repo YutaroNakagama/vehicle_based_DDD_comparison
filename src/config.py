@@ -66,16 +66,15 @@ RESULTS_OUTPUTS_PATH = './results/outputs'
 """str : Base directory for all job run outputs."""
 
 RESULTS_OUTPUTS_EVALUATION_PATH = './results/outputs/evaluation'
-"""str : Directory for general evaluation outputs (RF/BalancedRF/EasyEnsemble)."""
+"""str : Directory for evaluation outputs (RF/BalancedRF/EasyEnsemble)."""
 
-RESULTS_OUTPUTS_IMBALANCE_PATH = './results/outputs/imbalance'
-"""str : Directory for imbalance experiment outputs (training, evaluation)."""
+RESULTS_OUTPUTS_TRAINING_PATH = './results/outputs/training'
+"""str : Directory for training outputs (RF/BalancedRF/EasyEnsemble)."""
 
 # Legacy aliases (for backward compatibility)
 RESULTS_EVALUATION_PATH = RESULTS_OUTPUTS_EVALUATION_PATH
 RESULTS_RUNS_PATH = RESULTS_OUTPUTS_PATH
 RESULTS_RUNS_EVALUATION_PATH = RESULTS_OUTPUTS_EVALUATION_PATH
-RESULTS_RUNS_IMBALANCE_PATH = RESULTS_OUTPUTS_IMBALANCE_PATH
 RESULTS_DOMAIN_PATH = RESULTS_ANALYSIS_DOMAIN_PATH
 RESULTS_DOMAIN_ANALYSIS_PATH = RESULTS_ANALYSIS_DOMAIN_PATH
 RESULTS_IMBALANCE_PATH = RESULTS_ANALYSIS_IMBALANCE_PATH
