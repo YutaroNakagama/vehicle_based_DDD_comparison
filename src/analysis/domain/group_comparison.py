@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from src import config as cfg
-from utils.io.data_io import load_csv, save_csv
+from src.utils.io.data_io import load_csv, save_csv
 
 METRICS = ["accuracy", "f1", "auc", "precision", "recall"]
 
