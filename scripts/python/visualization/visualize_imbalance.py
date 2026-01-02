@@ -53,7 +53,7 @@ logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
 # Default paths
-RESULTS_DIR = Path(cfg.RESULTS_IMBALANCE_PATH) if hasattr(cfg, "RESULTS_IMBALANCE_PATH") else Path("results/imbalance_analysis")
+RESULTS_DIR = Path(cfg.RESULTS_IMBALANCE_PATH)
 
 # Metrics
 METRICS = ["f2", "recall", "precision", "f1", "auc_pr", "specificity"]
@@ -301,7 +301,7 @@ def main():
     # Common arguments
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--input", help="Input CSV file")
-    common.add_argument("--output-dir", default="results/imbalance_analysis/plots", help="Output directory")
+    common.add_argument("--output-dir", default="results/imbalance/analysis/plots", help="Output directory")
     
     # boxplot
     p_box = subparsers.add_parser("boxplot", parents=[common], help="Metric boxplots")

@@ -54,9 +54,17 @@ RESULTS_PATH = './results'
 RESULTS_EVALUATION_PATH = './results/evaluation'
 """str : Directory for evaluation metrics (JSON/CSV outputs)."""
 
-RESULTS_DOMAIN_ANALYSIS_PATH = './results/domain_analysis'
+RESULTS_DOMAIN_PATH = './results/domain'
 """str : Directory for domain analysis results (distances, rankings)."""
 
+RESULTS_IMBALANCE_PATH = './results/imbalance'
+"""str : Directory for imbalance experiments (training, evaluation, analysis)."""
+
+RESULTS_HYPERPARAM_PATH = './results/hyperparam'
+"""str : Directory for hyperparameter analysis results."""
+
+# Legacy aliases (for backward compatibility)
+RESULTS_DOMAIN_ANALYSIS_PATH = RESULTS_DOMAIN_PATH
 RESULTS_DOMAIN_GENERALIZATION_PATH = './results/domain_generalization'
 """str : Directory for domain generalization experiments and metrics."""
 

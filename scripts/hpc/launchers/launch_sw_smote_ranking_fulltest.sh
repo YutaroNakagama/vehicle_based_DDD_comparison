@@ -82,7 +82,7 @@ for RATIO in $RATIOS; do
                     TAG="swsmote_r${RATIO_STR}_${RANKING}_${DISTANCE}_${DOMAIN}_${MODE}_s${SEED}"
                     
                     # Get subject list file
-                    SUBJECT_FILE="results/domain_analysis/distance/subject-wise/ranks/ranks29/${RANKING}/${DISTANCE}_${DOMAIN}.txt"
+                    SUBJECT_FILE="results/domain/distance/subject-wise/ranks/ranks29/${RANKING}/${DISTANCE}_${DOMAIN}.txt"
                     
                     # Select queue (round-robin)
                     QUEUE="${QUEUES[$QUEUE_IDX]}"

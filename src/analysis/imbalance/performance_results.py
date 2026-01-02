@@ -723,7 +723,7 @@ def plot_method_ranking(
     return fig
 
 
-def generate_performance_visualizations(output_dir: str = "results/imbalance_analysis") -> Dict[str, str]:
+def generate_performance_visualizations(output_dir: str = "results/imbalance/analysis") -> Dict[str, str]:
     """Generate all performance visualizations.
     
     Parameters

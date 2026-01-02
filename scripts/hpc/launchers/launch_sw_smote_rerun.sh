@@ -83,7 +83,7 @@ for job_params in "${JOBS_TO_RUN[@]}"; do
     TAG="swsmote_v2_r${RATIO_STR}_${RANKING}_${DISTANCE}_${DOMAIN}_${MODE}_s${SEED}"
     
     # Get subject list file
-    SUBJECT_FILE="results/domain_analysis/distance/subject-wise/ranks/ranks29/${RANKING}/${DISTANCE}_${DOMAIN}.txt"
+    SUBJECT_FILE="results/domain/distance/subject-wise/ranks/ranks29/${RANKING}/${DISTANCE}_${DOMAIN}.txt"
     
     # Submit job
     JOB=$(qsub -N "swr_${RATIO_STR}_${RANKING:0:2}_${DISTANCE:0:1}_${DOMAIN:0:3}_${MODE:0:3}" \
