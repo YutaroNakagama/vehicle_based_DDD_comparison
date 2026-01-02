@@ -30,7 +30,7 @@ done
 # Aggregate results
 python scripts/python/aggregate_results.py \
     --experiment model_comparison \
-    --output results/evaluation/model_comparison.csv
+    --output results/outputs/evaluation/model_comparison.csv
 ```
 
 ### Experiment 2: Imbalance Handling
@@ -167,7 +167,7 @@ Generate plots for analysis:
 ```bash
 # Confusion matrix
 python scripts/results/plot_confusion_matrix.py \
-    --input results/evaluation/metrics_RF_common_only10.csv
+    --input results/outputs/evaluation/metrics_RF_common_only10.csv
 
 # ROC curves comparison
 python scripts/results/plot_roc_comparison.py \

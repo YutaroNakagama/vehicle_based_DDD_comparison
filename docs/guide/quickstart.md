@@ -76,7 +76,7 @@ Output metrics include:
 - **F2-score** (recall-weighted for safety)
 - **Confusion matrix**
 
-Results saved to: `results/evaluation/`
+Results saved to: `results/outputs/evaluation/`
 
 ## Complete Pipeline Example
 
@@ -121,7 +121,7 @@ CV_FOLDS_OPTUNA = 5
 ### Metrics CSV
 
 ```bash
-cat results/evaluation/metrics_RF_common_only10.csv
+cat results/outputs/evaluation/metrics_RF_common_only10.csv
 ```
 
 ### Model Artifacts

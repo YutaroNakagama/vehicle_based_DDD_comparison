@@ -43,7 +43,7 @@ def load_imbalance_results(
     Parameters
     ----------
     results_base : str
-        Base path for results (e.g., 'results/evaluation').
+        Base path for results (e.g., 'results/outputs/evaluation').
     models_info : list of tuple
         List of (model_type, jobid, display_name, tag) tuples.
     
@@ -58,7 +58,7 @@ def load_imbalance_results(
     ...     ("RF", "14468417", "Baseline RF", "imbal_v2_baseline"),
     ...     ("RF", "14468421", "SMOTE+RUS", "imbal_v2_smote_rus"),
     ... ]
-    >>> df = load_imbalance_results("results/evaluation", models)
+    >>> df = load_imbalance_results("results/outputs/evaluation", models)
     """
     results = []
     

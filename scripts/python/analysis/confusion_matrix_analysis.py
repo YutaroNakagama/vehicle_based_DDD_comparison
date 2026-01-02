@@ -154,7 +154,7 @@ Examples:
     if args.eval_dir:
         eval_dir = args.eval_dir
     elif args.mode == "aggregate":
-        eval_dir = PROJECT_ROOT / "results/evaluation"
+        eval_dir = PROJECT_ROOT / "results/outputs/evaluation"
     else:
         eval_dir = DEFAULT_EVAL_DIR
     
@@ -172,7 +172,7 @@ Examples:
     elif args.mode == "all":
         run_plot_mode(eval_dir)
         run_table_mode(eval_dir)
-        run_aggregate_mode(PROJECT_ROOT / "results/evaluation")
+        run_aggregate_mode(PROJECT_ROOT / "results/outputs/evaluation")
     
     print("\n" + "=" * 80)
     print("ANALYSIS COMPLETE")

@@ -77,7 +77,7 @@ from src.analysis.distance_computation import run_comp_dist
 #### Output Structure
 
 ```
-results/domain/
+results/analysis/domain/
 ├── distance/
 │   ├── subject-wise/
 │   │   ├── mmd/
@@ -249,7 +249,7 @@ This enables interpretation of how domain distance relates to model degradation.
 | -------------------- | ------------------------------------------------------ | ----------------------------- | ------------------------------------------------ |
 | Distance computation | `run_analysis.py comp-dist`                                 | `data/processed/common/*.csv` | `results/domain_generalization/{mmd,distances}/` |
 | Subject ranking      | `run_analysis.py rank-export`                               | Distance matrices             | `results/ranks10/*.txt`                          |
-| Domain finetuning    | `pbs_rank_only_general.sh` / `pbs_rank_only_target.sh` | Ranked lists                  | `models/`, `results/evaluation/`                 |
+| Domain finetuning    | `pbs_rank_only_general.sh` / `pbs_rank_only_target.sh` | Ranked lists                  | `models/`, `results/outputs/evaluation/`                 |
 | Correlation          | `run_analysis.py corr`                                      | `summary_*.csv` + distances   | `correlation_heatmap_all.png`                    |
 
 ---
