@@ -10,15 +10,15 @@ The DG pipeline consists of three sequential stages:
 
 1. **Distance computation**  
    Compute subject- and group-level distance matrices (MMD, Wasserstein, DTW) from processed features.  
-   → `scripts/python/domain_analysis/run_analysis.py comp-dist`
+   → `scripts/python/analysis/distance/`
 
 2. **Subject ranking**  
    Rank subjects by inter-domain distances (mean/std) to identify *general* and *target* domains.  
-   → `scripts/python/domain_analysis/run_analysis.py rank-export`
+   → `scripts/python/analysis/domain/`
 
 3. **Domain-specific training / evaluation**  
-   Fine-tune or evaluate models using ranked subject groups (e.g., “only general”, “only target”, “finetune”).  
-   → `scripts/hpc/domain_gen/pbs_rank_only_general.sh`, `pbs_rank_only_target.sh`
+   Fine-tune or evaluate models using ranked subject groups (e.g., "only general", "only target", "finetune").  
+   → `scripts/hpc/jobs/domain_analysis/`
 
 ---
 
@@ -77,21 +77,24 @@ from src.analysis.distance_computation import run_comp_dist
 #### Output Structure
 
 ```
-results/domain_generalization/
-├── mmd/
-│   ├── mmd_matrix.npy
-│   ├── mmd_subjects.json
-│   ├── mmd_mean.npy / _sorted.npy
-│   └── mmd_mean_std_sorted.png
-├── distances/
-│   ├── wasserstein_matrix.npy
-│   ├── dtw_matrix.npy
-│   ├── subjects.json
-│   └── *_heatmap.png
-└── group_distances/
-    ├── mmd/
-    ├── wasserstein/
-    └── dtw/
+results/domain/
+├── distance/
+│   ├── subject-wise/
+│   │   ├── mmd/
+│   │   ├── wasserstein/
+│   │   └── dtw/
+│   └── group-wise/
+│       ├── mmd/
+│       ├── wasserstein/
+│       └── dtw/
+├── rankings/
+│   ├── centroid_umap/
+│   ├── lof/
+│   ├── mean_distance/
+│   └── ranking_comparison/
+└── summary/
+    ├── csv/
+    └── png/
 ```
 
 #### Notes

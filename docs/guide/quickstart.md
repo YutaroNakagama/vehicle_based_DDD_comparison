@@ -15,7 +15,7 @@ The typical workflow consists of three stages:
 Extract features from raw sensor data:
 
 ```bash
-python scripts/python/preprocess.py --model common
+python scripts/python/preprocess/preprocess.py --model common
 ```
 
 This extracts:
@@ -30,7 +30,7 @@ Output: `data/processed/common/{subject}_features.csv`
 Train a Random Forest classifier with default settings:
 
 ```bash
-python scripts/python/train.py \
+python scripts/python/train/train.py \
     --model RF \
     --model_name common \
     --mode only10 \
@@ -51,7 +51,7 @@ python scripts/python/train.py \
 Handle class imbalance with SMOTE:
 
 ```bash
-python scripts/python/train.py \
+python scripts/python/train/train.py \
     --model RF \
     --model_name common \
     --mode only10 \
@@ -64,7 +64,7 @@ Available methods: `smote`, `adasyn`, `borderline`, `smote_tomek`, `smote_enn`
 ## Step 3: Evaluate the Model
 
 ```bash
-python scripts/python/evaluate.py \
+python scripts/python/evaluation/evaluate.py \
     --model RF \
     --model_name common \
     --mode only10
@@ -82,10 +82,10 @@ Results saved to: `results/evaluation/`
 
 ```bash
 # 1. Preprocess all subjects
-python scripts/python/preprocess.py --model common
+python scripts/python/preprocess/preprocess.py --model common
 
 # 2. Train with hyperparameter optimization
-python scripts/python/train.py \
+python scripts/python/train/train.py \
     --model LightGBM \
     --model_name common \
     --mode only10 \
@@ -93,7 +93,7 @@ python scripts/python/train.py \
     --oversample_method smote_tomek
 
 # 3. Evaluate on test set
-python scripts/python/evaluate.py \
+python scripts/python/evaluation/evaluate.py \
     --model LightGBM \
     --model_name common \
     --mode only10

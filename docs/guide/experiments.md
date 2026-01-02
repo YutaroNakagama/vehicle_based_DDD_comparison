@@ -20,7 +20,7 @@ Compare all supported classifiers:
 ```bash
 # Train all models
 for model in RF LightGBM XGBoost CatBoost SVM LogisticRegression; do
-    python scripts/python/train.py \
+    python scripts/python/train/train.py \
         --model $model \
         --model_name common \
         --mode only10 \
@@ -41,7 +41,7 @@ Compare oversampling strategies:
 methods=("none" "smote" "adasyn" "borderline" "smote_tomek" "smote_enn" "rus")
 
 for method in "${methods[@]}"; do
-    python scripts/python/train.py \
+    python scripts/python/train/train.py \
         --model RF \
         --model_name common \
         --mode only10 \
@@ -57,7 +57,7 @@ Run experiments with multiple random seeds:
 
 ```bash
 for seed in 42 123 456 789 1000; do
-    python scripts/python/train.py \
+    python scripts/python/train/train.py \
         --model RF \
         --model_name common \
         --mode only10 \
@@ -83,7 +83,7 @@ python scripts/python/loso_evaluation.py \
     --model_name common
 
 # Fine-tuning experiment
-python scripts/python/train.py \
+python scripts/python/train/train.py \
     --model RF \
     --model_name common \
     --mode finetune \
@@ -116,7 +116,7 @@ qsub -t 1-10 scripts/hpc/train_array.pbs
 cd $PBS_O_WORKDIR
 source activate ddd
 
-python scripts/python/train.py \
+python scripts/python/train/train.py \
     --model ${MODEL} \
     --seed ${SEED}
 ```
@@ -135,19 +135,17 @@ tail -f logs/train_${PBS_JOBID}.out
 
 ```
 results/
+├── domain/
+│   ├── distance/
+│   ├── rankings/
+│   └── summary/
 ├── evaluation/
-│   ├── metrics_RF_common_only10.csv
-│   ├── metrics_LightGBM_common_only10.csv
+│   ├── RF/
+│   ├── BalancedRF/
 │   └── ...
-├── imbalance_analysis/
-│   ├── multiseed/
-│   │   ├── confusion_matrix_summary.csv
-│   │   └── metrics_summary.csv
-│   └── comparison/
-│       └── imbalance_comparison.csv
-└── domain_analysis/
-    ├── distances/
-    └── ranks/
+├── hyperparam/
+│   └── *.csv, *.png
+└── imbalance/
 ```
 
 ## Saved Artifacts

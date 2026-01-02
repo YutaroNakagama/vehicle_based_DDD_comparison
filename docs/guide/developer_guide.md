@@ -22,11 +22,11 @@ spanning preprocessing, model training, evaluation, and domain generalisation an
 ```
 
 .
-├── config/             # Subject/group definitions, requirements
-│   ├── general_subjects.txt
-│   ├── subject_list.txt
-│   ├── target_groups.txt
-│   └── requirements.txt
+├── config/             # Subject/group definitions
+│   └── subjects/
+│       ├── general_subjects.txt
+│       ├── subject_list.txt
+│       └── target_groups.txt
 │
 ├── data/               # Dataset storage (not tracked except README)
 │   ├── interim/        # Intermediate cleaned data
@@ -44,11 +44,10 @@ spanning preprocessing, model training, evaluation, and domain generalisation an
 │   └── SvmW/           # Wavelet-based SVM
 │
 ├── results/            # Experiment results
+│   ├── domain/         # Domain distance matrices and analysis
 │   ├── evaluation/     # Test metrics, thresholds
-│   ├── mmd/            # Domain distance matrices (MMD)
-│   ├── distances/      # Wasserstein / DTW results
-│   ├── ranks/          # Subject-level rankings
-│   └── archive/
+│   ├── hyperparam/     # Hyperparameter analysis
+│   └── imbalance/      # Imbalance analysis results
 │
 ├── scripts/
 │   ├── python/         # Entry-point CLI scripts (train, evaluate, analyze)
@@ -176,7 +175,7 @@ The **domain generalisation analysis** quantifies the difference between subject
 (compute-distances)=
 ### 1. Compute Distances
 
-**Job script:** `scripts/hpc/domain_analysis/pbs_compute_distance.sh`
+**Job script:** `scripts/hpc/jobs/domain_analysis/pbs_compute_distance.sh`
 
 ```bash
 #PBS -N compute_distance
@@ -192,11 +191,11 @@ python scripts/python/domain_analysis/run_analysis.py comp-dist --metric "$METRI
   --groups_file config/target_groups.txt
 ```
 
-| Metric      | Module                      | Output Path                                                           |
-| ----------- | --------------------------- | --------------------------------------------------------------------- |
-| MMD         | `src/analysis/distances.py` | `results/domain_analysis/distance/mmd/mmd_matrix.npy`                 |
-| Wasserstein | `src/analysis/distances.py` | `results/domain_analysis/distance/wasserstein/wasserstein_matrix.npy` |
-| DTW         | `src/analysis/distances.py` | `results/domain_analysis/distance/dtw/dtw_matrix.npy`                 |
+| Metric      | Module                      | Output Path                                                     |
+| ----------- | --------------------------- | --------------------------------------------------------------- |
+| MMD         | `src/analysis/distances.py` | `results/domain/distance/mmd/mmd_matrix.npy`                    |
+| Wasserstein | `src/analysis/distances.py` | `results/domain/distance/wasserstein/wasserstein_matrix.npy`    |
+| DTW         | `src/analysis/distances.py` | `results/domain/distance/dtw/dtw_matrix.npy`                    |
 
 Each metric is computed via an **array job (`PBS -J 1–3`)**,
 where the array index determines which metric (`mmd`, `wasserstein`, or `dtw`) is processed.
