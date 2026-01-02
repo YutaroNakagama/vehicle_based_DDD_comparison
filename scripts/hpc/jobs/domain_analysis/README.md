@@ -149,7 +149,7 @@ print("""
 
 最新の実験結果:
   - Job ID: 14354364
-  - 保存場所: results/evaluation/RF/14354364/
+  - 保存場所: results/outputs/evaluation/RF/14354364/
   - モデル: models/RF/14354364/
 
 
@@ -176,19 +176,19 @@ Precision重視（新規）: suffix="_precision_focused"
 保存先の例:
   Recall重視:
     - models/RF/{job_id}/model_RF_target_only.pkl
-    - results/evaluation/RF/{job_id}/target_only/eval_results_mmd_mean_low.json
+    - results/outputs/evaluation/RF/{job_id}/target_only/eval_results_mmd_mean_low.json
   
   Precision重視:
     - models/RF/{job_id}/model_RF_target_only_precision_focused.pkl
-    - results/evaluation/RF/{job_id}/target_only_precision_focused/eval_results_mmd_mean_low.json
+    - results/outputs/evaluation/RF/{job_id}/target_only_precision_focused/eval_results_mmd_mean_low.json
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 方法2: 別ディレクトリに保存
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Recall重視: results/evaluation/RF_recall/{job_id}/
-Precision重視: results/evaluation/RF_precision/{job_id}/
+Recall重視: results/outputs/evaluation/RF_recall/{job_id}/
+Precision重視: results/outputs/evaluation/RF_precision/{job_id}/
 
 
 【Precision重視への変更内容】
@@ -253,16 +253,16 @@ ap = average_precision_score(y_va, p)
   cat models/RF/latest_job.txt
   
   # バックアップディレクトリ作成
-  mkdir -p results/evaluation/RF_backup_recall_focused
+  mkdir -p results/outputs/evaluation/RF_backup_recall_focused
   mkdir -p models/RF_backup_recall_focused
   
   # 現在の結果をコピー
-  cp -r results/evaluation/RF/14354364 results/evaluation/RF_backup_recall_focused/
+  cp -r results/outputs/evaluation/RF/14354364 results/outputs/evaluation/RF_backup_recall_focused/
   cp -r models/RF/14354364 models/RF_backup_recall_focused/
   
   # サマリーCSVもバックアップ
-  cp results/domain_analysis/summary/csv/summary_40cases_*.csv \\
-     results/domain_analysis/summary/csv/summary_recall_focused_backup.csv
+  cp results/analysis/domain/summary/csv/summary_40cases_*.csv \\
+     results/analysis/domain/summary/csv/summary_recall_focused_backup.csv
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -436,7 +436,7 @@ if latest_job_file.exists():
         latest_job = f.read().strip()
     print(f"\n最新のJob ID: {latest_job}")
     
-    eval_dir = Path(f"results/evaluation/RF/{latest_job}")
+    eval_dir = Path(f"results/outputs/evaluation/RF/{latest_job}")
     if eval_dir.exists():
         json_files = list(eval_dir.rglob("*.json"))
         print(f"評価結果ファイル数: {len(json_files)}件")
@@ -459,7 +459,7 @@ print("""
 
 ✅ ステップ1: バックアップ完了
    - 既存のRecall重視結果を保存
-   - 場所: results/evaluation/RF_backup_recall_focused/14354364/
+   - 場所: results/outputs/evaluation/RF_backup_recall_focused/14354364/
 
 ✅ ステップ2: コード修正完了
    変更1: class_weight {0:1.0, 1:10.0} → {0:1.0, 1:3.0}
@@ -532,9 +532,9 @@ FN（見逃し）  少ない(~10)   増加(~40)        ↑ 増加
 【結果確認（完了後）】
 
 結果の場所:
-  - 評価JSON: results/evaluation/RF/14357100/
-  - サマリーCSV: results/domain_analysis/summary/csv/
-  - 可視化PNG: results/domain_analysis/summary/png/
+  - 評価JSON: results/outputs/evaluation/RF/14357100/
+  - サマリーCSV: results/analysis/domain/summary/csv/
+  - 可視化PNG: results/analysis/domain/summary/png/
 
 比較コマンド:
   # Recall重視とPrecision重視の比較

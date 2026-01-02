@@ -162,7 +162,7 @@ graph LR
 | `(3) split_data`        | DataFrame + strategy | Train/Val/Test splits                           | Supports random, subject-wise, time-wise, and fine-tune strategies |
 | `(4) load_model`        | `models/{model}` | model, scaler, selected_features                  | Uses unified filenames (`{model}.pkl`, `scaler_{model}.pkl`, etc.) |
 | `(5) evaluate_model`    | model, test data | metrics dict                                      | Accuracy, F1, AUC (via `common_eval`, `lstm_eval`, `SvmA_eval`) |
-| `(6) save_results`      | metrics dict     | `results/evaluation/{model}/metrics_*.json`       | Includes metadata (subject list, sample size, selected features); filenames timestamped |
+| `(6) save_results`      | metrics dict     | `results/outputs/evaluation/{model}/metrics_*.json`       | Includes metadata (subject list, sample size, selected features); filenames timestamped |
 
 ---
 
@@ -193,9 +193,9 @@ python scripts/python/domain_analysis/run_analysis.py comp-dist --metric "$METRI
 
 | Metric      | Module                      | Output Path                                                     |
 | ----------- | --------------------------- | --------------------------------------------------------------- |
-| MMD         | `src/analysis/distances.py` | `results/domain/distance/mmd/mmd_matrix.npy`                    |
-| Wasserstein | `src/analysis/distances.py` | `results/domain/distance/wasserstein/wasserstein_matrix.npy`    |
-| DTW         | `src/analysis/distances.py` | `results/domain/distance/dtw/dtw_matrix.npy`                    |
+| MMD         | `src/analysis/distances.py` | `results/analysis/domain/distance/mmd/mmd_matrix.npy`                    |
+| Wasserstein | `src/analysis/distances.py` | `results/analysis/domain/distance/wasserstein/wasserstein_matrix.npy`    |
+| DTW         | `src/analysis/distances.py` | `results/analysis/domain/distance/dtw/dtw_matrix.npy`                    |
 
 Each metric is computed via an **array job (`PBS -J 1–3`)**,
 where the array index determines which metric (`mmd`, `wasserstein`, or `dtw`) is processed.
@@ -408,14 +408,14 @@ and visualizes their cross-domain differences.
 
 | Step | Script | Description | Output |
 |------|---------|-------------|---------|
-| 1 | `collect_evaluation_metrics.py` | Collects all per-run metrics from `results/evaluation/common/` and merges them by domain type and rank level. | `results/analysis/summary_40cases_*.csv` |
+| 1 | `collect_evaluation_metrics.py` | Collects all per-run metrics from `results/outputs/evaluation/common/` and merges them by domain type and rank level. | `results/analysis/summary_40cases_*.csv` |
 | 2 | `visualize_summary_metrics.py` | Visualizes aggregated scores as multi-panel bar plots and heatmaps for metric deltas between modes. | `results/analysis/summary_metrics_40_mean_tri_bar.png`, `diff_heatmap_all5_40.png` |
 
 ---
 
 #### Step 1 — Aggregation: `collect_evaluation_metrics.py`
 
-This script parses all metric CSVs from `results/evaluation/common/`,  
+This script parses all metric CSVs from `results/outputs/evaluation/common/`,  
 infers experimental mode and rank grouping from filenames,  
 and produces both long-form and comparison-form summary tables.
 
@@ -476,7 +476,7 @@ subgraph Step2["plot_summary_results.py"]
 end
 
 subgraph Output["Results/"]
-  A1["results/evaluation/common/metrics_*.csv (per-group test metrics)"]
+  A1["results/outputs/evaluation/common/metrics_*.csv (per-group test metrics)"]
   D1["results/analysis/summary_40cases_*.csv"]
   D2["results/analysis/summary_metrics_40_mean_tri_bar.png"]
   D3["results/analysis/diff_heatmap_all5_40.png"]

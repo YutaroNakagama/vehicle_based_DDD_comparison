@@ -71,7 +71,7 @@ def load_evaluation_results_from_json(
     model_type: str, 
     jobid: str, 
     tag: str,
-    base_path: str = "results/evaluation"
+    base_path: str = "results/outputs/evaluation"
 ) -> Optional[Dict]:
     """Load evaluation results from JSON file.
     

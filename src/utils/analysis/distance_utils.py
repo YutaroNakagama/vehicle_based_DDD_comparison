@@ -26,7 +26,7 @@ import numpy as np
 # =============================================================================
 # Note: These can be overridden by the calling script if needed
 BASE_DIR = Path(__file__).resolve().parents[2]
-DISTANCE_DIR = BASE_DIR / "results" / "domain_analysis" / "distance"
+DISTANCE_DIR = BASE_DIR / "results" / "analysis" / "domain" / "distance"
 
 # =============================================================================
 # Constants
