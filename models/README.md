@@ -1,6 +1,6 @@
 # models/
 
-学習済みモデル、スケーラー、特徴量選択結果を保存するディレクトリ。
+Directory for storing trained models, scalers, and feature selection results.
 
 ## Directory Structure
 
@@ -11,25 +11,24 @@ models/
 ├── EasyEnsemble/          # EasyEnsemble Classifier
 ├── Lstm/                  # LSTM (deep learning)
 ├── SvmA/                  # SVM (all features)
-├── SvmW/                  # SVM (wavelet features)
-└── RF_backup_*/           # バックアップ（特定実験の保存）
+└── SvmW/                  # SVM (wavelet features)
 ```
 
 ## Job-based Organization
 
-各モデルディレクトリはPBS Job IDで整理:
+Each model directory is organized by PBS Job ID:
 
 ```
 RF/
 ├── <jobID>/               # PBS job ID
-│   └── <jobID>[<idx>]/    # Array job index
-│       ├── RF_<tag>.pkl           # 学習済みモデル
+│   └── <jobID>[<idx>]/    # Array job index (optional)
+│       ├── RF_<tag>.pkl           # Trained model
 │       ├── scaler_<tag>.pkl       # StandardScaler
-│       ├── selected_features_<tag>.pkl  # 特徴量選択結果
-│       ├── feature_meta_<tag>.json      # 特徴量メタ情報
-│       └── threshold_<tag>.json         # 分類閾値
-├── latest_job.txt         # 最新ジョブID
-└── imbalance_train_job.txt # 進行中の不均衡実験ジョブ
+│       ├── selected_features_<tag>.pkl  # Feature selection result
+│       ├── feature_meta_<tag>.json      # Feature metadata
+│       └── threshold_<tag>.json         # Classification threshold
+├── latest_job.txt         # Latest completed job ID
+└── imbalance_train_job.txt # Current imbalance experiment job (RF only)
 ```
 
 ## File Naming Convention
@@ -38,7 +37,7 @@ RF/
 
 Tag format: `<mode>_<experiment>_<details>_<jobID>_<arrayIdx>_<seed>`
 
-例: `RF_source_only_imbalance_knn_mmd_out_domain_smote_14572594_1_1.pkl`
+Example: `RF_source_only_imbalance_knn_mmd_out_domain_smote_14572594_1_1.pkl`
 
 ## Model Types
 
@@ -53,6 +52,5 @@ Tag format: `<mode>_<experiment>_<details>_<jobID>_<arrayIdx>_<seed>`
 
 ## Notes
 
-- モデルファイル (*.pkl, *.h5) は `.gitignore` により Git 管理対象外
-- `latest_job.txt` には最新の完了ジョブIDを記録
-- バックアップディレクトリは重要な実験結果を保護
+- Model files (*.pkl, *.h5) are excluded from Git via `.gitignore`
+- `latest_job.txt` records the most recent completed job ID
