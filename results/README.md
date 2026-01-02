@@ -7,37 +7,48 @@ The structure follows a consistent policy to ensure reproducibility, clarity, an
 
 ```
 results/
-├── domain_analysis/           # ドメイン分析結果
-│   ├── distance/              # 距離行列・可視化
-│   │   ├── subject-wise/      # 被験者間距離
-│   │   │   ├── mmd/           # MMD距離
-│   │   │   └── wasserstein/   # Wasserstein距離
-│   │   └── group-wise/        # グループ間距離
-│   ├── rankings/              # ランキング結果
+├── domain/                    # Domain analysis results
+│   ├── distance/              # Distance matrices and visualizations
+│   │   ├── subject-wise/      # Subject-wise distances
+│   │   │   ├── mmd/           # MMD distance
+│   │   │   ├── wasserstein/   # Wasserstein distance
+│   │   │   ├── dtw/           # DTW distance
+│   │   │   └── ranks/         # Distance-based rankings
+│   │   └── group-wise/        # Group-wise distances
+│   │       ├── mmd/
+│   │       ├── wasserstein/
+│   │       ├── dtw/
+│   │       ├── intergroup_analysis/
+│   │       └── random10/
+│   ├── rankings/              # Ranking results
 │   │   ├── centroid_umap/
 │   │   ├── lof/
-│   │   └── mean_distance/
-│   ├── summary/               # 要約テーブル・可視化
+│   │   ├── mean_distance/
+│   │   └── ranking_comparison/
+│   ├── summary/               # Summary tables and visualizations
 │   │   ├── csv/
 │   │   └── png/
-│   └── archive/               # 古い実験結果
-│       └── knn_imbalance/
-├── evaluation/                # モデル評価結果（Job IDベース）
+│   └── imbalance/             # Imbalance-related domain analysis
+│       ├── analysis/
+│       ├── evaluation/
+│       └── training/
+├── evaluation/                # Model evaluation results (Job ID based)
 │   ├── RF/                    # Random Forest
 │   ├── BalancedRF/            # Balanced Random Forest
 │   ├── EasyEnsemble/          # EasyEnsemble
-│   └── ensemble/              # アンサンブル評価
-└── imbalance_analysis/        # 不均衡データ分析
-    ├── v1/                    # 初期分析結果
-    └── v2/                    # 改良版分析結果
+│   └── ensemble/              # Ensemble evaluation
+├── hyperparam/                # Hyperparameter analysis results
+│   ├── *.csv                  # Raw hyperparameter data
+│   └── *.png                  # Hyperparameter visualizations
+└── imbalance/                 # Imbalance data analysis (currently empty)
 ```
 
 ## Naming Conventions
 
 ### Per-job Results (evaluation/)
 
-各Job IDディレクトリに評価結果を保存:
-- `<jobID>/<jobID>[<idx>]/` - Array job index別
+Evaluation results are saved per Job ID directory:
+- `<jobID>/<jobID>[<idx>]/` - Organized by array job index
 
 ### Summary Files
 
@@ -50,4 +61,4 @@ results/
 - **CSV** for numerical data, **PNG** for visualizations
 - Job results are never overwritten: each run is placed in its own job ID folder
 - No PDF/SVG — PNG is the single standard format
-- Old experiments are moved to `archive/` subdirectory
+
