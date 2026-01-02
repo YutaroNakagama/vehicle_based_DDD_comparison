@@ -35,8 +35,7 @@ results/
 ├── evaluation/                # Model evaluation results (Job ID based)
 │   ├── RF/                    # Random Forest
 │   ├── BalancedRF/            # Balanced Random Forest
-│   ├── EasyEnsemble/          # EasyEnsemble
-│   └── ensemble/              # Ensemble evaluation
+│   └── EasyEnsemble/          # EasyEnsemble
 ├── hyperparam/                # Hyperparameter analysis results
 │   ├── *.csv                  # Raw hyperparameter data
 │   └── *.png                  # Hyperparameter visualizations
