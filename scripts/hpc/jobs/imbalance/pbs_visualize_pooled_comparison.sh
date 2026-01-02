@@ -58,7 +58,7 @@ from pathlib import Path
 import sys
 
 # Configuration
-RESULTS_DIR = Path("results/runs/evaluation")
+RESULTS_DIR = Path("results/outputs/evaluation")
 OUTPUT_DIR = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("results/analysis/imbalance/pooled_comparison")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -69,9 +69,9 @@ records = []
 
 # Search patterns for different model types
 search_patterns = [
-    ("RF", "results/runs/evaluation/RF/*/*/eval_results_RF_pooled*.json"),
-    ("BalancedRF", "results/runs/evaluation/BalancedRF/*/*/eval_results_BalancedRF_pooled*.json"),
-    ("EasyEnsemble", "results/runs/evaluation/EasyEnsemble/*/*/eval_results_EasyEnsemble_pooled*.json"),
+    ("RF", "results/outputs/evaluation/RF/*/*/eval_results_RF_pooled*.json"),
+    ("BalancedRF", "results/outputs/evaluation/BalancedRF/*/*/eval_results_BalancedRF_pooled*.json"),
+    ("EasyEnsemble", "results/outputs/evaluation/EasyEnsemble/*/*/eval_results_EasyEnsemble_pooled*.json"),
 ]
 
 for model_type, pattern in search_patterns:

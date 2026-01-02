@@ -62,17 +62,20 @@ RESULTS_ANALYSIS_IMBALANCE_PATH = './results/analysis/imbalance'
 """str : Directory for imbalance analysis (plots, sampling, multiseed)."""
 
 # Job outputs (raw outputs from HPC/local runs)
-RESULTS_RUNS_PATH = './results/runs'
+RESULTS_OUTPUTS_PATH = './results/outputs'
 """str : Base directory for all job run outputs."""
 
-RESULTS_RUNS_EVALUATION_PATH = './results/runs/evaluation'
-"""str : Directory for general evaluation runs (RF/BalancedRF/EasyEnsemble)."""
+RESULTS_OUTPUTS_EVALUATION_PATH = './results/outputs/evaluation'
+"""str : Directory for general evaluation outputs (RF/BalancedRF/EasyEnsemble)."""
 
-RESULTS_RUNS_IMBALANCE_PATH = './results/runs/imbalance'
-"""str : Directory for imbalance experiment runs (training, evaluation)."""
+RESULTS_OUTPUTS_IMBALANCE_PATH = './results/outputs/imbalance'
+"""str : Directory for imbalance experiment outputs (training, evaluation)."""
 
 # Legacy aliases (for backward compatibility)
-RESULTS_EVALUATION_PATH = RESULTS_RUNS_EVALUATION_PATH
+RESULTS_EVALUATION_PATH = RESULTS_OUTPUTS_EVALUATION_PATH
+RESULTS_RUNS_PATH = RESULTS_OUTPUTS_PATH
+RESULTS_RUNS_EVALUATION_PATH = RESULTS_OUTPUTS_EVALUATION_PATH
+RESULTS_RUNS_IMBALANCE_PATH = RESULTS_OUTPUTS_IMBALANCE_PATH
 RESULTS_DOMAIN_PATH = RESULTS_ANALYSIS_DOMAIN_PATH
 RESULTS_DOMAIN_ANALYSIS_PATH = RESULTS_ANALYSIS_DOMAIN_PATH
 RESULTS_IMBALANCE_PATH = RESULTS_ANALYSIS_IMBALANCE_PATH
