@@ -25,7 +25,7 @@ from glob import glob
 
 from src import config as cfg
 from src.utils.io.data_io import load_json_glob, save_csv
-from src.utils.evaluation.metrics import extract_metrics_from_eval_json
+from src.evaluation.metrics import extract_metrics_from_eval_json
 
 EVAL_DIR = Path(cfg.RESULTS_EVALUATION_PATH) / "RF"
 OUT_DIR = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "summary" / "csv"

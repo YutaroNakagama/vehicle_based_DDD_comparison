@@ -23,7 +23,7 @@ from numba import njit
 from joblib import Parallel, delayed
 
 from src.utils.io.loaders import safe_load_mat, save_csv
-from src.utils.domain_generalization.jitter import jittering
+from src.data_pipeline.augmentation.jitter import jittering
 from src.config import (
     DATASET_PATH,
     SAMPLE_RATE_SIMLSL,

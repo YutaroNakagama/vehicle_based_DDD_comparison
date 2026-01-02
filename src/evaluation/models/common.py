@@ -12,7 +12,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import StandardScaler
 from src.config import MODEL_PKL_PATH
 
-from src.utils.evaluation.metrics import calculate_extended_metrics, calculate_class_specific_metrics
+from src.evaluation.metrics import calculate_extended_metrics, calculate_class_specific_metrics
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 

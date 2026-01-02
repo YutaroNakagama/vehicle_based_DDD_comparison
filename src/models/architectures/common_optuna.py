@@ -38,7 +38,7 @@ from src.config import (
     LIGHTGBM_LEARNING_RATE_RANGE,
     FBETA_SCORE_BETA,
 )
-from src.utils.evaluation.metrics import find_optimal_threshold
+from src.evaluation.metrics import find_optimal_threshold
 
 
 # List of models that support Optuna tuning

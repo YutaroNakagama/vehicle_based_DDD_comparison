@@ -32,7 +32,7 @@ from scipy.cluster.hierarchy import dendrogram, linkage
 
 from src import config as cfg
 from src.utils.io.data_io import load_numpy, load_json, save_json
-from src.utils.analysis.projection_utils import (
+from src.analysis.domain.projection_utils import (
     get_projection_coords as _get_projection_coords,
     cluster_kmeans,
     cluster_hierarchical,

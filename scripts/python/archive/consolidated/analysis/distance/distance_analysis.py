@@ -46,7 +46,7 @@ except ImportError:
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 
 # Import shared utilities from src
-from src.utils.analysis.distance_utils import (
+from src.analysis.domain.distance_utils import (
     load_distance_matrix,
     load_group_subjects,
     load_all_subjects,
