@@ -55,15 +55,25 @@ results/
 
 ### outputs/ (Raw Job Outputs)
 - **Purpose**: Store direct outputs from training and evaluation jobs
-- **Examples**: Model evaluation JSON files, training logs, job metadata
-- **Structure**: Organized by job ID for traceability
+- **Structure**: Organized by model type and job ID for traceability
 - **Lifecycle**: Primary data, should not be overwritten
+
+#### outputs/training/
+- **Examples**: Training metrics JSON, hyperparameter logs, convergence data
+- **Save function**: `save_training_results()` in `src/utils/io/savers.py`
+
+#### outputs/evaluation/
+- **Examples**: Evaluation metrics JSON (accuracy, F1, AUC), confusion matrices
+- **Save function**: `save_eval_results()` in `src/utils/io/savers.py`
+
+**Note**: Model artifacts (.pkl files) are saved to `models/` directory, not `results/`.
 
 ## Naming Conventions
 
 ### Job Outputs (outputs/)
 - `{job_id}/{job_id}[{array_idx}]/` - Array job outputs
-- `eval_results_{model}_{tag}.json` - Evaluation metrics
+- `train_results_{model}_{mode}_{tag}.json` - Training metrics
+- `eval_results_{model}_{mode}_{tag}.json` - Evaluation metrics
 
 ### Analysis Outputs (analysis/)
 - `summary_{category}_{date}.csv` - Summary tables
