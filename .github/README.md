@@ -32,10 +32,11 @@ curl -L -O -J "https://dataverse.harvard.edu/api/access/dataset/:persistentId/?p
 ## Directory Structure
 
 ```
-├── config/               # Subject/group definitions, requirements
-│   ├── subject_list.txt
-│   ├── target_groups.txt
-│   └── requirements.txt
+├── config/               # Subject/group definitions
+│   └── subjects/
+│       ├── subject_list.txt
+│       ├── target_groups.txt
+│       └── general_subjects.txt
 ├── data/                 # Data storage (not tracked, except README)
 │   ├── interim/          # Intermediate cleaned data
 │   ├── processed/        # Final datasets for modeling
@@ -43,23 +44,30 @@ curl -L -O -J "https://dataverse.harvard.edu/api/access/dataset/:persistentId/?p
 ├── docs/                 # Documentation (Sphinx, RST, HTML)
 ├── models/               # Trained models & feature metadata (ignored except README)
 ├── results/              # Generated evaluation metrics, predictions, tables, figures
-│   ├── metrics/
-│   ├── predictions/
-│   ├── distances/
-│   ├── ranks/
-│   ├── figures/
-│   └── tables/
+│   ├── domain/
+│   ├── evaluation/
+│   ├── hyperparam/
+│   └── imbalance/
 ├── scripts/
 │   ├── python/           # Entry-point scripts (preprocess, train, evaluate, analyze)
+│   │   ├── preprocess/
+│   │   ├── train/
+│   │   ├── evaluation/
+│   │   ├── analysis/
+│   │   └── visualization/
 │   └── hpc/              # HPC job scripts (PBS) organized by purpose
+│       ├── jobs/
+│       ├── launchers/
+│       ├── lib/
+│       ├── logs/
+│       └── templates/
 ├── src/                  # Core source code
 │   ├── analysis/         # Distance metrics, correlation, summaries
-│   ├── data/             # Data utilities (checks, subject grouping)
 │   ├── data_pipeline/    # Preprocessing & feature extraction
 │   ├── evaluation/       # Evaluation framework
 │   ├── models/           # Model definitions & training pipelines
 │   └── utils/            # Shared helpers (domain gen, I/O, visualization)
-
+├── requirements.txt      # Python dependencies
 ```
 
 ---
@@ -68,7 +76,7 @@ curl -L -O -J "https://dataverse.harvard.edu/api/access/dataset/:persistentId/?p
 
 ```bash
 cd vehicle_based_DDD_comparison
-pip install -r misc/config/requirements.txt
+pip install -r requirements.txt
 ```
 
 * Python 3.10 is recommended.
@@ -88,13 +96,13 @@ open _build/html/index.html
 ### 1. Data Preprocessing
 
 ```bash
-python bin/preprocess.py --model [common|SvmA|SvmW|Lstm] [--jittering]
+python scripts/python/preprocess/preprocess.py --model [common|SvmA|SvmW|Lstm] [--jittering]
 ```
 
 ### 2. Model Training
 
 ```bash
-python bin/train.py \
+python scripts/python/train/train.py \
     --model [RF|SvmA|SvmW|Lstm|BalancedRF|LightGBM|XGBoost|CatBoost|LogisticRegression|SVM|DecisionTree|AdaBoost|GradientBoosting|KNN|MLP] \
     [--domain_mixup] [--coral] [--vae] ...
 ```
@@ -102,41 +110,40 @@ python bin/train.py \
 ### 3. Model Evaluation
 
 ```bash
-python bin/evaluate.py --model RF [--subject_wise_split]
+python scripts/python/evaluation/evaluate.py --model RF [--subject_wise_split]
 ```
 
 ### 4. Analysis
 
 ```bash
-python bin/analyze.py comp-dist --subject_list misc/config/subject_list.txt ...
+python scripts/python/analysis/analyze.py comp-dist --subject_list config/subjects/subject_list.txt ...
 ```
 
 ---
 
 ## HPC Usage
 
-Batch job scripts are provided in [`jobs/`](jobs/). Example:
+Batch job scripts are provided in [`scripts/hpc/jobs/`](scripts/hpc/jobs/). Example:
 
 ```bash
 # Preprocessing
-qsub jobs/preprocess/pbs_preprocess.sh
+qsub scripts/hpc/jobs/preprocess/pbs_preprocess.sh
 
 # Training
-qsub jobs/train/pbs_train_only10.sh
+qsub scripts/hpc/jobs/train/pbs_train_only10.sh
 
 # Evaluation
-qsub jobs/evaluate/pbs_evaluate.sh
+qsub scripts/hpc/jobs/evaluate/pbs_evaluate.sh
 
 # Domain generalization
-qsub jobs/domain_gen/pbs_pretrain_coral.sh
+qsub scripts/hpc/jobs/domain_analysis/pbs_pretrain_coral.sh
 ```
 
-Logs appear under `jobs/log/`.
+Logs appear under `scripts/hpc/logs/`.
 Results will be saved in:
 
 * `results/` (metrics, CSVs, NumPy arrays)
 * `models/` (trained models, scalers, feature metadata)
-* `reports/figures/` (visualizations)
 
 ---
 
