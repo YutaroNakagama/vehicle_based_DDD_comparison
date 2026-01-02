@@ -27,8 +27,7 @@ RF/
 │       ├── selected_features_<tag>.pkl  # Feature selection result
 │       ├── feature_meta_<tag>.json      # Feature metadata
 │       └── threshold_<tag>.json         # Classification threshold
-├── latest_job.txt         # Latest completed job ID
-└── imbalance_train_job.txt # Current imbalance experiment job (RF only)
+└── latest_job.txt         # Latest completed job ID
 ```
 
 ## File Naming Convention
