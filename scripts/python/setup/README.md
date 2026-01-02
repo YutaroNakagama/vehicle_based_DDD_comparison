@@ -55,8 +55,8 @@ python scripts/python/setup/check_only_modes.py
 ### `make_ranked_groups.py`
 Generates ranked subject groups based on domain distance matrices.
 - **Purpose**: Creates out_domain/mid_domain/in_domain subject groups using MMD, Wasserstein, DTW distances
-- **Input**: Distance matrices in `results/domain/distance/subject-wise/`
-- **Output**: Group files in `results/domain/distance/subject-wise/ranks/`
+- **Input**: Distance matrices in `results/analysis/domain/distance/subject-wise/`
+- **Output**: Group files in `results/analysis/domain/distance/subject-wise/ranks/`
 
 **Usage**:
 ```bash

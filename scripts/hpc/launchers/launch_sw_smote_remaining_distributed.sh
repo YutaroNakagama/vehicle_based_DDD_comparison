@@ -44,7 +44,7 @@ submit_job() {
     
     RATIO_STR=$(echo $RATIO | sed 's/\./_/g')
     TAG="swsmote_v2_r${RATIO_STR}_${RANKING}_${DISTANCE}_${DOMAIN}_${MODE}_s${SEED}"
-    SUBJECT_FILE="results/domain/distance/subject-wise/ranks/ranks29/${RANKING}/${DISTANCE}_${DOMAIN}.txt"
+    SUBJECT_FILE="results/analysis/domain/distance/subject-wise/ranks/ranks29/${RANKING}/${DISTANCE}_${DOMAIN}.txt"
     
     QUEUE="${QUEUES[$QUEUE_IDX]}"
     QUEUE_IDX=$(( (QUEUE_IDX + 1) % ${#QUEUES[@]} ))

@@ -39,7 +39,7 @@ echo "Date: $(date)"
 echo "============================================================"
 
 # Create output directory
-OUTPUT_DIR="results/imbalance/analysis/pooled_comparison_$(date +%Y%m%d_%H%M%S)"
+OUTPUT_DIR="results/analysis/imbalance/pooled_comparison_$(date +%Y%m%d_%H%M%S)"
 mkdir -p "$OUTPUT_DIR"
 
 echo ""
@@ -58,8 +58,8 @@ from pathlib import Path
 import sys
 
 # Configuration
-RESULTS_DIR = Path("results/evaluation")
-OUTPUT_DIR = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("results/imbalance/analysis/pooled_comparison")
+RESULTS_DIR = Path("results/runs/evaluation")
+OUTPUT_DIR = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("results/analysis/imbalance/pooled_comparison")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 print(f"Output directory: {OUTPUT_DIR}")
@@ -69,9 +69,9 @@ records = []
 
 # Search patterns for different model types
 search_patterns = [
-    ("RF", "results/evaluation/RF/*/*/eval_results_RF_pooled*.json"),
-    ("BalancedRF", "results/evaluation/BalancedRF/*/*/eval_results_BalancedRF_pooled*.json"),
-    ("EasyEnsemble", "results/evaluation/EasyEnsemble/*/*/eval_results_EasyEnsemble_pooled*.json"),
+    ("RF", "results/runs/evaluation/RF/*/*/eval_results_RF_pooled*.json"),
+    ("BalancedRF", "results/runs/evaluation/BalancedRF/*/*/eval_results_BalancedRF_pooled*.json"),
+    ("EasyEnsemble", "results/runs/evaluation/EasyEnsemble/*/*/eval_results_EasyEnsemble_pooled*.json"),
 ]
 
 for model_type, pattern in search_patterns:

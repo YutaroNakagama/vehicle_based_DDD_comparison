@@ -11,7 +11,7 @@ This module is automatically called after distance computation to create
 subject groups for domain generalization experiments.
 
 Outputs are saved under:
-    results/domain/distance/ranks{N}/{metric}_mean_{level}.txt
+    results/analysis/domain/distance/ranks{N}/{metric}_mean_{level}.txt
 """import argparse
 import json
 import sys

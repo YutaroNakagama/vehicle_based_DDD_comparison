@@ -511,7 +511,7 @@ def plot_summary_dashboard(
 def generate_imbalance_report(
     df: pd.DataFrame,
     ensemble_df: Optional[pd.DataFrame] = None,
-    output_dir: str = "results/imbalance/analysis",
+    output_dir: str = "results/analysis/imbalance",
     baseline_auprc: float = 0.039,
 ) -> Dict[str, str]:
     """Generate complete analysis report with all visualizations.

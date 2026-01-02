@@ -51,20 +51,32 @@ MODEL_PKL_PATH = os.environ.get("DDD_MODEL_PKL_PATH", "./models/")
 RESULTS_PATH = './results'
 """str : Root directory for storing analysis results and evaluation metrics."""
 
-RESULTS_EVALUATION_PATH = './results/evaluation'
-"""str : Directory for evaluation metrics (JSON/CSV outputs)."""
+# Analysis results (derived/computed from job outputs)
+RESULTS_ANALYSIS_PATH = './results/analysis'
+"""str : Base directory for all analysis results."""
 
-RESULTS_DOMAIN_PATH = './results/domain'
-"""str : Directory for domain analysis results (distances, rankings)."""
+RESULTS_ANALYSIS_DOMAIN_PATH = './results/analysis/domain'
+"""str : Directory for domain analysis (distances, rankings, summary)."""
 
-RESULTS_IMBALANCE_PATH = './results/imbalance'
-"""str : Directory for imbalance experiments (training, evaluation, analysis)."""
+RESULTS_ANALYSIS_IMBALANCE_PATH = './results/analysis/imbalance'
+"""str : Directory for imbalance analysis (plots, sampling, multiseed)."""
 
-RESULTS_HYPERPARAM_PATH = './results/hyperparam'
-"""str : Directory for hyperparameter analysis results."""
+# Job outputs (raw outputs from HPC/local runs)
+RESULTS_RUNS_PATH = './results/runs'
+"""str : Base directory for all job run outputs."""
+
+RESULTS_RUNS_EVALUATION_PATH = './results/runs/evaluation'
+"""str : Directory for general evaluation runs (RF/BalancedRF/EasyEnsemble)."""
+
+RESULTS_RUNS_IMBALANCE_PATH = './results/runs/imbalance'
+"""str : Directory for imbalance experiment runs (training, evaluation)."""
 
 # Legacy aliases (for backward compatibility)
-RESULTS_DOMAIN_ANALYSIS_PATH = RESULTS_DOMAIN_PATH
+RESULTS_EVALUATION_PATH = RESULTS_RUNS_EVALUATION_PATH
+RESULTS_DOMAIN_PATH = RESULTS_ANALYSIS_DOMAIN_PATH
+RESULTS_DOMAIN_ANALYSIS_PATH = RESULTS_ANALYSIS_DOMAIN_PATH
+RESULTS_IMBALANCE_PATH = RESULTS_ANALYSIS_IMBALANCE_PATH
+RESULTS_HYPERPARAM_PATH = './results/analysis/domain/hyperparam'
 RESULTS_DOMAIN_GENERALIZATION_PATH = './results/domain_generalization'
 """str : Directory for domain generalization experiments and metrics."""
 
