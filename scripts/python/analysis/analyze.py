@@ -37,13 +37,12 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 # ---- import backend functions from src/analysis ----
 from src import config as cfg
-from src.analysis.distance_computation import run_comp_dist
-from src.analysis.distance_correlation import run_distance_vs_delta
-from src.analysis.group_comparison import run_summarize_only10_vs_finetune
-from src.analysis.metrics_tables import summarize_metrics, make_comparison_table
-from src.analysis.group_distance_report import run_report_pretrain_groups
-from src.analysis.subject_ranking import run_rank_export
-from src.analysis.distance_correlation import run_corr_all
+from src.analysis.domain.distance import run_comp_dist
+from src.analysis.domain.correlation import run_distance_vs_delta, run_corr_all
+from src.analysis.domain.group_comparison import run_summarize_only10_vs_finetune
+from src.analysis.metrics.tables import summarize_metrics, make_comparison_table
+from src.analysis.domain.distance_report import run_report_pretrain_groups
+from src.analysis.domain.ranking import run_rank_export
 
 # ---------------------- subcommand handlers ----------------------
 def cmd_comp_dist(args) -> int:

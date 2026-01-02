@@ -33,7 +33,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.analysis.sampling import (
+from src.analysis.imbalance.sampling import (
     extract_sampling_distribution,
     calculate_sampling_distribution,
     calculate_batch_distributions,
