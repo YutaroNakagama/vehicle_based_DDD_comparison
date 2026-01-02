@@ -28,13 +28,13 @@ results/
 │       ├── sampling/          # Sampling distribution analysis
 │       └── multiseed/         # Multi-seed experiment analysis
 │
-└── runs/                      # Job run outputs (raw data from HPC/local)
-    ├── evaluation/            # General evaluation runs (by model type)
+└── outputs/                   # Job outputs (raw data from HPC/local)
+    ├── evaluation/            # General evaluation outputs (by model type)
     │   ├── RF/                # Random Forest evaluations
     │   │   └── {job_id}/      # Per-job results
     │   ├── BalancedRF/        # Balanced Random Forest
     │   └── EasyEnsemble/      # EasyEnsemble
-    └── imbalance/             # Imbalance experiment runs
+    └── imbalance/             # Imbalance experiment outputs
         ├── training/          # Training outputs by method
         │   ├── baseline/
         │   ├── smote_0.5/
@@ -51,9 +51,9 @@ results/
 - **Purpose**: Store computed/analyzed results derived from raw job outputs
 - **Examples**: Distance matrices, ranking comparisons, summary plots, hyperparameter convergence
 - **Structure**: Organized by research category (domain, imbalance)
-- **Lifecycle**: Can be regenerated from `runs/` data
+- **Lifecycle**: Can be regenerated from `outputs/` data
 
-### runs/ (Raw Job Outputs)
+### outputs/ (Raw Job Outputs)
 - **Purpose**: Store direct outputs from training and evaluation jobs
 - **Examples**: Model evaluation JSON files, training logs, job metadata
 - **Structure**: Organized by job ID for traceability
@@ -61,7 +61,7 @@ results/
 
 ## Naming Conventions
 
-### Job Outputs (runs/)
+### Job Outputs (outputs/)
 - `{job_id}/{job_id}[{array_idx}]/` - Array job outputs
 - `eval_results_{model}_{tag}.json` - Evaluation metrics
 
@@ -78,9 +78,9 @@ The following paths are defined in `src/config.py`:
 | `RESULTS_ANALYSIS_PATH` | `./results/analysis` |
 | `RESULTS_ANALYSIS_DOMAIN_PATH` | `./results/analysis/domain` |
 | `RESULTS_ANALYSIS_IMBALANCE_PATH` | `./results/analysis/imbalance` |
-| `RESULTS_RUNS_PATH` | `./results/runs` |
-| `RESULTS_RUNS_EVALUATION_PATH` | `./results/runs/evaluation` |
-| `RESULTS_RUNS_IMBALANCE_PATH` | `./results/runs/imbalance` |
+| `RESULTS_OUTPUTS_PATH` | `./results/outputs` |
+| `RESULTS_OUTPUTS_EVALUATION_PATH` | `./results/outputs/evaluation` |
+| `RESULTS_OUTPUTS_IMBALANCE_PATH` | `./results/outputs/imbalance` |
 
 ## Policy
 
