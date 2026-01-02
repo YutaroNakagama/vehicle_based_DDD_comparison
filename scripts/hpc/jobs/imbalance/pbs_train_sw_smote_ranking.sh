@@ -1,5 +1,11 @@
 #!/bin/bash
+#PBS -N sw_smote_rank
+#PBS -l select=1:ncpus=4:mem=6gb
+#PBS -l walltime=12:00:00
 #PBS -j oe
+#PBS -q SINGLE
+#PBS -o /home/hpcuser/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/
+#PBS -e /home/hpcuser/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/
 #PBS -M user@example.com
 #PBS -m abe
 
