@@ -24,6 +24,7 @@ scripts/hpc/logs/**
 # ===== Python cache =====
 **/__pycache__/
 **/*.py[cod]
+.pytest_cache/
 
 # ===== Cluster outputs =====
 *.o*
