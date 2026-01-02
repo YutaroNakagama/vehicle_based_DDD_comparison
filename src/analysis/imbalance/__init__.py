@@ -5,13 +5,17 @@ imbalanced data experiments in drowsy driving detection.
 
 Modules
 -------
+analysis
+    Core analysis functions for imbalance experiments
+sampling
+    Sampling distribution extraction and theoretical comparison
 sample_distribution
     Visualizations for sample count changes across methods
 performance_results
     Visualizations for performance metrics comparison
 """
 
-from src.analysis.imbalance.sample_distribution import (
+from .sample_distribution import (
     create_sample_distribution_data,
     create_split_distribution_data,
     create_train_after_sampling_data,
@@ -23,7 +27,7 @@ from src.analysis.imbalance.sample_distribution import (
     generate_all_visualizations,
 )
 
-from src.analysis.imbalance.performance_results import (
+from .performance_results import (
     create_performance_results_data,
     plot_recall_comparison,
     plot_precision_recall_scatter,
@@ -33,7 +37,29 @@ from src.analysis.imbalance.performance_results import (
     generate_performance_visualizations,
 )
 
+from .sampling import (
+    extract_sampling_distribution,
+    calculate_sampling_distribution,
+    calculate_batch_distributions,
+    compare_actual_vs_theoretical,
+    DEFAULT_TRAIN_ALERT,
+    DEFAULT_TRAIN_DROWSY,
+)
+
+from .analysis import (
+    load_imbalance_results,
+)
+
 __all__ = [
+    # Analysis
+    "load_imbalance_results",
+    # Sampling
+    "extract_sampling_distribution",
+    "calculate_sampling_distribution",
+    "calculate_batch_distributions",
+    "compare_actual_vs_theoretical",
+    "DEFAULT_TRAIN_ALERT",
+    "DEFAULT_TRAIN_DROWSY",
     # Sample distribution
     "create_sample_distribution_data",
     "create_split_distribution_data",

@@ -224,7 +224,7 @@ def generate_rankings_for_metric(metric: str) -> dict:
     """Generate ranking files for new methods."""
     try:
         from src.utils.io.data_io import load_numpy, load_json
-        from src.analysis.clustering_projection_ranked import (
+        from src.analysis.domain.projection import (
             _rank_by_knn,
             _rank_by_median_distance,
             _rank_by_isolation_forest,
@@ -355,7 +355,7 @@ def cmd_compare(args) -> int:
 def cmd_table(args) -> int:
     """Generate comparison table."""
     try:
-        from src.analysis.metrics_tables import summarize_metrics, make_comparison_table
+        from src.analysis.metrics.tables import summarize_metrics, make_comparison_table
     except ImportError:
         logger.error("Could not import metrics_tables module")
         return 1

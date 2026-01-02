@@ -16,7 +16,7 @@ Usage:
 import argparse
 from pathlib import Path
 
-from src.analysis.confusion_matrix import (
+from src.analysis.metrics.confusion_matrix import (
     # Data loading
     collect_eval_data,
     # Visualization
