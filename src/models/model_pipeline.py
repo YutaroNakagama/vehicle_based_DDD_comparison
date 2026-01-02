@@ -28,7 +28,7 @@ from src.models.train_stages import (
 from src.utils.io.split_helpers import split_data, log_split_ratios
 from src.utils.io.feature_utils import normalize_feature_names
 from src.utils.io.preprocessing import clean_feature_dataframe, align_train_val_test_columns
-from src.utils.io.savers import save_artifacts
+from src.utils.io.savers import save_artifacts, save_training_results
 from src.models.feature_selection.feature_helpers import select_features_and_scale
 from src.models.architectures.train_helpers import train_model
 
@@ -273,5 +273,22 @@ def train_pipeline(
             logging.info("[CHECKPOINT] Final artifacts saved.")
         except Exception as e:
             logging.error(f"[CHECKPOINT] Failed to save artifacts: {e}")
+
+        # Stage 9: Save training results to results/outputs/training/
+        if results:
+            try:
+                # Add metadata to results
+                results["model_name"] = model_name
+                results["mode"] = mode
+                results["tag"] = tag
+                results["suffix"] = suffix
+                save_training_results(
+                    results=results,
+                    model_name=model_name,
+                    mode=mode or "unknown",
+                )
+                logging.info("[CHECKPOINT] Training results saved to results/outputs/training/.")
+            except Exception as e:
+                logging.error(f"[CHECKPOINT] Failed to save training results: {e}")
 
     logging.info(f"[DONE] Training complete for {model_name}{suffix}")

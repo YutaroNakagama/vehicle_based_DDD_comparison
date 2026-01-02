@@ -9,14 +9,13 @@ import datetime
 import pandas as pd
 from typing import Dict, Optional, List
 
-from src.config import LATEST_JOB_FILENAME
+from src.config import LATEST_JOB_FILENAME, RESULTS_OUTPUTS_TRAINING_PATH
 
 # NOTE: The above import errors are due to missing dependencies in the environment and are unrelated to the variable naming unification. The code changes for variable naming are correct and ready for commit.
 
 # === Unified artifact saving utility ===
 import joblib
 from typing import Any
-
 
 def save_artifacts(
     model_obj=None,
@@ -329,6 +328,106 @@ def save_eval_results(
     abs_json = os.path.abspath(out_path_json)
     abs_csv  = os.path.abspath(out_path_csv)
     logging.info(f"[EVAL] Results saved successfully:")
+    logging.info(f"        JSON: {abs_json}")
+    logging.info(f"        CSV : {abs_csv}")
+
+    return out_path_json
+
+
+# ============================================
+# Training result saving utility
+# ============================================
+
+def save_training_results(
+    results: dict,
+    model_name: str,
+    mode: str,
+    job_id: str = None,
+    out_dir: str = None,
+) -> str:
+    """
+    Save training results (metrics, hyperparameters, logs) to JSON.
+
+    This saves training-related outputs to results/outputs/training/<model>/
+    while model artifacts (.pkl) are saved to models/<model>/.
+
+    Parameters
+    ----------
+    results : dict
+        Dictionary of training metrics, e.g. {"train_f1": 0.88, "val_f1": 0.85, "best_params": {...}}.
+    model_name : str
+        Model name (e.g. "RF", "BalancedRF", "EasyEnsemble").
+    mode : str
+        Mode (e.g. "pooled", "target_only").
+    job_id : str, optional
+        PBS job ID (if available). Defaults to the value of PBS_JOBID env var.
+    out_dir : str, optional
+        Root directory for saving training result files. 
+        Defaults to RESULTS_OUTPUTS_TRAINING_PATH.
+
+    Returns
+    -------
+    str
+        Path to the saved JSON file.
+    """
+
+    if out_dir is None:
+        out_dir = RESULTS_OUTPUTS_TRAINING_PATH
+
+    # --- resolve jobid (with hostname stripped) ---
+    if job_id is None:
+        job_id = os.environ.get("PBS_JOBID", "local")
+    if "." in job_id:
+        job_id = job_id.split(".")[0]
+
+    # --- normalize job_id: drop trailing [n] if present ---
+    pure_job_id = re.sub(r"\[\d+\]$", "", str(job_id))
+
+    # --- get PBS array index (fold number) robustly ---
+    array_idx = os.environ.get("PBS_ARRAY_INDEX")
+    if not array_idx:
+        m = re.search(r"\[(\d+)\]$", str(job_id))
+        array_idx = m.group(1) if m else "1"
+
+    # --- hierarchical directory structure ---
+    # results/outputs/training/<model>/<pure_job_id>/<pure_job_id>[array_idx]/
+    job_root = os.path.join(out_dir, model_name, pure_job_id)
+    save_dir = os.path.join(job_root, f"{pure_job_id}[{array_idx}]")
+    os.makedirs(save_dir, exist_ok=True)
+
+    # --- optional: record the latest job ID for reference ---
+    try:
+        latest_marker = os.path.join(out_dir, model_name, LATEST_JOB_FILENAME)
+        with open(latest_marker, "w") as f:
+            f.write(str(pure_job_id) + "\n")
+    except Exception as e:
+        logging.warning(f"[SAVE] Could not update latest_job.txt: {e}")
+
+    # --- construct file name ---
+    tag = results.get("tag") or ""
+    if tag:
+        base_name = f"train_results_{model_name}_{mode}_{tag}"
+    else:
+        base_name = f"train_results_{model_name}_{mode}"
+
+    out_path_json = os.path.join(save_dir, f"{base_name}.json")
+    out_path_csv  = os.path.join(save_dir, f"{base_name}.csv")
+
+    # --- save JSON ---
+    with open(out_path_json, "w") as f:
+        json.dump(results, f, indent=2)
+
+    # --- optionally save flat CSV (for easier parsing) ---
+    try:
+        df = pd.json_normalize(results)
+        df.to_csv(out_path_csv, index=False)
+    except Exception as e:
+        logging.warning(f"[SAVE] Failed to export CSV for {base_name}: {e}")
+
+    # --- Detailed logging of saved result paths ---
+    abs_json = os.path.abspath(out_path_json)
+    abs_csv  = os.path.abspath(out_path_csv)
+    logging.info(f"[TRAIN] Results saved successfully:")
     logging.info(f"        JSON: {abs_json}")
     logging.info(f"        CSV : {abs_csv}")
 
