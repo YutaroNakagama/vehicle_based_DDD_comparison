@@ -29,7 +29,7 @@ from typing import Iterable, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from utils.io.data_io import load_csv, load_json, load_numpy
+from src.utils.io.data_io import load_csv, load_json, load_numpy
 
 from src import config as cfg
 

@@ -14,33 +14,29 @@ ranking : Subject ranking and group generation
 group_comparison : Metrics comparison across subject groups
 distance_report : Distance statistics reporting
 group_generator : Generate ranked subject group files
+
+Utility Submodules
+------------------
+distance_utils : Low-level distance computation utilities
+projection_utils : Dimensionality reduction and clustering helpers
+statistical_utils : Statistical test helpers (Cohen's d, Wilcoxon, etc.)
 """
 
-from .distance import (
-    compute_distance_matrix,
-    compute_distance_matrix_parallel,
-)
-from .correlation import (
-    compute_group_distances,
-    compute_correlations,
-)
-from .ranking import (
-    rank_subjects_by_mean_distance,
-    rank_subjects_by_std_distance,
-)
+# Import submodules for easy access (lazy loading)
+# Users can access via: from src.analysis.domain import correlation
+# Or directly: from src.analysis.domain.correlation import run_distance_vs_delta
 
 __all__ = [
-    # distance
-    "compute_distance_matrix",
-    "compute_distance_matrix_parallel",
-    # correlation
-    "compute_group_distances",
-    "compute_correlations",
-    # ranking
-    "rank_subjects_by_mean_distance",
-    "rank_subjects_by_std_distance",
+    # Main analysis modules
+    "distance",
+    "correlation",
+    "projection",
+    "ranking",
+    "group_comparison",
+    "distance_report",
+    "group_generator",
+    # Utility modules
+    "distance_utils",
+    "projection_utils",
+    "statistical_utils",
 ]
-# Utility submodules (low-level helpers)
-# - distance_utils: Distance computation utilities
-# - projection_utils: Dimensionality reduction and clustering
-# - statistical_utils: Statistical test helpers

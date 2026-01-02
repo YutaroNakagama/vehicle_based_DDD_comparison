@@ -20,8 +20,8 @@ from .confusion_matrix import (
     aggregate_multiseed_results,
 )
 from .tables import (
-    load_metrics_df,
-    pivot_metrics_wide,
+    summarize_metrics,
+    make_comparison_table,
 )
 
 __all__ = [
@@ -34,6 +34,6 @@ __all__ = [
     "extract_multiseed_results",
     "aggregate_multiseed_results",
     # tables
-    "load_metrics_df",
-    "pivot_metrics_wide",
+    "summarize_metrics",
+    "make_comparison_table",
 ]

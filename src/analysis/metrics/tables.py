@@ -6,7 +6,7 @@ import pandas as pd
 from typing import Optional, Tuple, Dict, List, Any
 
 from src import config as cfg
-from utils.io.data_io import load_csv, save_csv
+from src.utils.io.data_io import load_csv, save_csv
 
 METRIC_COLS_DEFAULT = ["accuracy", "precision", "recall", "f1", "auc", "ap"]
 
