@@ -254,9 +254,13 @@ def common_train(
     results = prepare_results_dict(m_train, m_val, m_test)
 
     # ====== Save artifacts ======
-    _save_model_artifacts(
-        model, model_name, mode, suffix,
-        best_clf, scaler, selected_features, feature_meta,
+    save_artifacts(
+        model_name=model,
+        suffix=suffix,
+        best_clf=best_clf,
+        scaler=scaler,
+        selected_features=selected_features,
+        feature_meta=feature_meta,
     )
 
     # ====== Threshold optimization ======
@@ -336,55 +340,3 @@ def _run_eval_only_mode(
     logging.info(f"[EVAL_ONLY] Saved metrics CSV -> metrics_{model}_{mode}{eval_suffix}.csv")
 
     return {"val": m_val, "test": m_test}
-
-
-def _save_model_artifacts(
-    model, model_name, mode, suffix,
-    best_clf, scaler, selected_features, feature_meta,
-):
-    """Save model artifacts to disk.
-
-    Parameters
-    ----------
-    model : str
-        Model identifier.
-    model_name : str
-        Model name.
-    mode : str
-        Training mode.
-    suffix : str
-        Experiment suffix.
-    best_clf : Classifier
-        Trained classifier.
-    scaler : StandardScaler
-        Fitted scaler.
-    selected_features : list
-        Feature names.
-    feature_meta : dict
-        Feature metadata.
-    """
-    try:
-        _model_name = model if isinstance(model, str) else getattr(model, "__name__", "unknown")
-    except Exception:
-        _model_name = "unknown"
-
-    if not isinstance(mode, str):
-        logging.warning("[common_train] `mode` is not a string. Forcing to 'default'.")
-        mode = "default"
-    else:
-        mode = mode.strip()
-        if not mode:
-            logging.info("[common_train] empty `mode` string detected, proceeding without suffix.")
-
-    if isinstance(_model_name, dict):
-        logging.warning(f"[common_train] model_name was dict: {_model_name}")
-        _model_name = _model_name.get("name", "unknown")
-
-    save_artifacts(
-        model_name=str(_model_name),
-        suffix=suffix,
-        best_clf=best_clf,
-        scaler=scaler,
-        selected_features=selected_features,
-        feature_meta=feature_meta,
-    )
