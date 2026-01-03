@@ -83,7 +83,6 @@ def common_train(
     scaler: object = None,
     suffix: str = "",
     data_leak: bool = False,
-    eval_only: bool = False,
     train_only: bool = False,
     use_oversampling: bool = False,
     oversample_method: str = "smote",
@@ -126,8 +125,6 @@ def common_train(
         Suffix appended to saved file names (e.g., tags, strategies).
     data_leak : bool, default=False
         Whether to allow intentional data leakage (for ablation studies).
-    eval_only : bool, default=False
-        If True, load pre-trained model and evaluate only.
     train_only : bool, default=False
         If True, train model and skip evaluation.
     use_oversampling : bool, default=False
@@ -143,16 +140,8 @@ def common_train(
     -------
     tuple or dict
         In normal mode: (best_clf, scaler, best_threshold, feature_meta, results)
-        In eval_only mode: {"val": metrics, "test": metrics}
         In train_only mode: (best_clf, scaler, None, feature_meta, {})
     """
-    # ====== eval_only mode ======
-    if eval_only:
-        return _run_eval_only_mode(
-            X_val, X_test, y_val, y_test,
-            selected_features, model, model_name, mode, suffix,
-        )
-
     # ====== Data preparation ======
     X_train = X_train.loc[:, ~X_train.columns.duplicated()]
     X_val = X_val.loc[:, ~X_val.columns.duplicated()]
@@ -271,72 +260,3 @@ def common_train(
     )
 
     return best_clf, scaler, best_threshold, feature_meta, results
-
-
-def _run_eval_only_mode(
-    X_val, X_test, y_val, y_test,
-    selected_features, model, model_name, mode, suffix,
-):
-    """Run evaluation-only mode using pre-trained model.
-
-    Parameters
-    ----------
-    X_val, X_test : pd.DataFrame
-        Validation and test features.
-    y_val, y_test : pd.Series
-        Validation and test labels.
-    selected_features : list
-        Feature names.
-    model : str
-        Model identifier.
-    model_name : str
-        Model name for artifact loading.
-    mode : str
-        Training mode.
-    suffix : str
-        Experiment suffix.
-
-    Returns
-    -------
-    dict
-        Validation and test metrics.
-    """
-    logging.info("[EVAL_ONLY] Loading pre-trained model and scaler...")
-    out_dir = f"{MODEL_PKL_PATH}/{model_name}"
-
-    best_clf, scaler, selected_features = load_model_artifacts(
-        model_name=model,
-        base_dir=out_dir,
-        suffix=suffix,
-        mode=mode,
-        use_joblib=True,
-    )
-
-    if best_clf is None or scaler is None or selected_features is None:
-        logging.error("[EVAL_ONLY] Failed to load required artifacts. Aborting.")
-        return {}
-
-    X_val_scaled = scaler.transform(X_val[selected_features])
-    X_test_scaled = scaler.transform(X_test[selected_features])
-
-    # Use shared evaluation function from common_evaluation
-    m_val = _eval_single_split(best_clf, X_val_scaled, y_val)
-    m_test = _eval_single_split(best_clf, X_test_scaled, y_test)
-
-    logging.info(f"[EVAL_ONLY] Validation metrics: {json.dumps(m_val, indent=2)}")
-    logging.info(f"[EVAL_ONLY] Test metrics: {json.dumps(m_test, indent=2)}")
-
-    # Save metrics
-    rows = [
-        {"split": "val", **m_val},
-        {"split": "test", **m_test},
-    ]
-    os.makedirs(f"{MODEL_PKL_PATH}/{model_name}", exist_ok=True)
-    eval_suffix = suffix + f"_{model_name}_evalonly"
-    pd.DataFrame(rows).to_csv(
-        f"{MODEL_PKL_PATH}/{model_name}/metrics_{model}_{mode}{eval_suffix}.csv",
-        index=False,
-    )
-    logging.info(f"[EVAL_ONLY] Saved metrics CSV -> metrics_{model}_{mode}{eval_suffix}.csv")
-
-    return {"val": m_val, "test": m_test}
