@@ -60,6 +60,7 @@ def data_split(
     val_ratio: float = None,
     test_ratio: float = None,
     random_state: int = 42,
+    keep_subject_id: bool = False,
 ):
     """
     Split the dataset into train, validation, and test sets.
@@ -77,6 +78,8 @@ def data_split(
         Proportion of the dataset to allocate for testing. If None, uses config.TEST_RATIO.
     random_state : int, default=42
         Random seed for reproducibility.
+    keep_subject_id : bool, default=False
+        If True, retain subject_id column in X_train for subject-wise oversampling.
 
     Returns
     -------
@@ -115,8 +118,10 @@ def data_split(
         "KSS_Theta_Alpha_Beta_percent",
         "theta_alpha_over_beta",
         "theta_alpha_over_beta_label",
-        "subject_id",  # in case it's injected
     }
+    # Conditionally exclude subject_id based on keep_subject_id flag
+    if not keep_subject_id:
+        exclude_cols.add("subject_id")
     feature_columns = [c for c in df.columns if c not in exclude_cols]
 
     # --- Step 3: Define X, y ---
