@@ -34,10 +34,6 @@ from src import config as cfg
 from src.utils.io.data_io import load_numpy, load_json, save_json
 from src.analysis.domain.projection_utils import (
     get_projection_coords as _get_projection_coords,
-    cluster_kmeans,
-    cluster_hierarchical,
-    cluster_dbscan,
-    cluster_spectral,
 )
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")

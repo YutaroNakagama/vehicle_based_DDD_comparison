@@ -16,7 +16,6 @@ from src import config as cfg
 from src.utils.io.loaders import read_subject_list, load_subject_csvs
 from src.utils.io.target_resolution import (
     resolve_target_subjects_from_tag,
-    resolve_mid_domain_group_subjects,
     resolve_source_group_subjects,
     SOURCE_ONLY_TRAIN_GROUP,
 )

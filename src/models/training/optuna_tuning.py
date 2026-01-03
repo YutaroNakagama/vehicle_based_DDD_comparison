@@ -4,7 +4,6 @@ This module provides the Optuna objective function and optimization
 logic for hyperparameter tuning of various classifiers.
 """
 
-import gc
 import logging
 import os
 import json

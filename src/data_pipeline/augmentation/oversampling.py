@@ -185,7 +185,6 @@ def analyze_augmentation_quality(
     X_original: np.ndarray,
     X_augmented: np.ndarray,
     y_original: np.ndarray,
-    y_augmented: np.ndarray,
 ) -> Dict[str, float]:
     """Analyze the quality of augmented samples.
     
@@ -200,8 +199,6 @@ def analyze_augmentation_quality(
         Augmented feature matrix.
     y_original : np.ndarray
         Original labels.
-    y_augmented : np.ndarray
-        Augmented labels (includes original + new).
     
     Returns
     -------
