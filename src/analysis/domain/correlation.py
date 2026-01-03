@@ -36,7 +36,7 @@ from scipy.stats import pearsonr, spearmanr
 from src import config as cfg
 from src.utils.io.data_io import (
     load_csv, save_csv, load_json, save_json,
-    load_numpy, load_distance_data
+    load_numpy,
 )
 from src.utils.visualization import save_current_figure
 

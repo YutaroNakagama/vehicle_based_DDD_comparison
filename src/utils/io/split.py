@@ -333,7 +333,7 @@ def time_stratified_three_way_split(
     train_ratio=0.6, 
     val_ratio=0.2, 
     test_ratio=0.2,
-    tolerance=0.02,
+    tolerance=0.02,  # noqa: ARG001 - reserved for future tolerance checking
     window_prop=0.10,
     min_chunk=100,
 ):

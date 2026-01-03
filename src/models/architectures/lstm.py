@@ -13,7 +13,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import KFold
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense, Flatten, Bidirectional, LSTM, Layer, Input, Reshape
+from tensorflow.keras.layers import Dense, Flatten, Bidirectional, LSTM, Layer, Input
 from tensorflow.keras.callbacks import EarlyStopping
 import tensorflow as tf
 

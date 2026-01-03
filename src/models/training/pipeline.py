@@ -12,15 +12,10 @@ This is a refactored version with logic split into submodules:
 
 import os
 import logging
-import json
 import numpy as np
 import pandas as pd
-import warnings
-import contextlib
-import sys
-from sklearn.exceptions import FitFailedWarning
 from sklearn.metrics import (
-    classification_report, roc_curve, auc, make_scorer, roc_auc_score,
+    roc_curve, auc, roc_auc_score,
     accuracy_score, precision_score, recall_score, f1_score, fbeta_score,
     confusion_matrix, precision_recall_curve, average_precision_score
 )
@@ -28,7 +23,6 @@ from sklearn.metrics import (
 from src.config import (
     MODEL_PKL_PATH,
     configure_blas_threads,
-    MIN_RECALL_THRESHOLD,
     FBETA_SCORE_BETA,
 )
 from src.utils.io.savers import save_artifacts
@@ -66,7 +60,6 @@ configure_blas_threads(n_threads=1)
 import joblib
 joblib.parallel_backend("sequential")
 
-import gc
 
 def common_train(
     X_train: "pd.DataFrame",
