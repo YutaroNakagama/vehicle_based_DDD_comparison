@@ -44,20 +44,24 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Resource configurations per method
+# Optimized based on actual job completion times (Jan 2026)
 get_resources() {
     local method="$1"
     case "$method" in
-        balanced_rf|easy_ensemble|smote_balanced_rf|smote_enn)
-            echo "ncpus=8:mem=8gb 12:00:00 DEFAULT"
+        smote_balanced_rf|smote_enn)
+            echo "ncpus=8:mem=8gb 06:00:00 DEFAULT"
             ;;
-        smote_subjectwise)
-            echo "ncpus=4:mem=6gb 12:00:00 SINGLE"
+        balanced_rf|easy_ensemble)
+            echo "ncpus=8:mem=8gb 04:00:00 DEFAULT"
             ;;
-        baseline|smote_rus)
-            echo "ncpus=4:mem=8gb 08:00:00 SINGLE"
+        smote|smote_tomek|smote_subjectwise)
+            echo "ncpus=4:mem=8gb 06:00:00 SINGLE"
+            ;;
+        baseline|smote_rus|undersample_rus|undersample_tomek|undersample_enn)
+            echo "ncpus=4:mem=8gb 02:00:00 SINGLE"
             ;;
         *)
-            echo "ncpus=4:mem=8gb 10:00:00 SINGLE"
+            echo "ncpus=4:mem=8gb 06:00:00 SINGLE"
             ;;
     esac
 }
