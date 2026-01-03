@@ -4,10 +4,10 @@ This module supports ANFIS-based feature selection and trains a RandomForest cla
 The model is saved as a `.pkl` file and selected features are stored for reproducibility.
 
 This is a refactored version with logic split into submodules:
-- common_oversampling: Sampling strategies for class imbalance
-- common_optuna: Hyperparameter optimization with Optuna
-- common_models: Classifier instantiation and calibration
-- common_evaluation: Evaluation and threshold optimization
+- sampling.oversampling: Sampling strategies for class imbalance
+- training.optuna_tuning: Hyperparameter optimization with Optuna
+- training.classifiers: Classifier instantiation and calibration
+- training.evaluation: Evaluation and threshold optimization
 """
 
 import os
@@ -40,19 +40,19 @@ from src.evaluation.metrics import (
 from src.utils.io.model_artifacts import load_model_artifacts
 
 # Import refactored submodules
-from src.models.architectures.common_oversampling import apply_oversampling
-from src.models.architectures.common_optuna import (
+from src.models.sampling.oversampling import apply_oversampling
+from src.models.training.optuna_tuning import (
     create_optuna_objective,
     run_optuna_optimization,
     OPTUNA_SUPPORTED_MODELS,
 )
-from src.models.architectures.common_models import (
+from src.models.training.classifiers import (
     create_classifier,
     apply_rf_calibration,
     fit_classifier,
     make_sample_weight,
 )
-from src.models.architectures.common_evaluation import (
+from src.models.training.evaluation import (
     evaluate_classifier,
     optimize_threshold,
     prepare_results_dict,
