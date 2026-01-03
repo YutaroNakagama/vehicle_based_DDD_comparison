@@ -1,6 +1,8 @@
 #!/bin/bash
 #PBS -l select=1:ncpus=4:mem=16gb
 #PBS -j oe
+#PBS -o /home/s2240011/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/evaluate/
+#PBS -e /home/s2240011/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/evaluate/
 #PBS -M yutaro.nakagama@bosch.com
 #PBS -m ae
 

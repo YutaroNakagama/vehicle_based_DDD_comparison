@@ -3,8 +3,8 @@
 #PBS -l select=1:ncpus=20
 #PBS -j oe
 #PBS -q SINGLE
-#PBS -o /home/s2240011/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/
-#PBS -e /home/s2240011/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/
+#PBS -o /home/s2240011/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/preprocess/
+#PBS -e /home/s2240011/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/preprocess/
 #PBS -M yutaro.nakagama@bosch.com
 #PBS -m abe
 

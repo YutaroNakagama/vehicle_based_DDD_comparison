@@ -5,8 +5,8 @@
 #PBS -l walltime=24:00:00
 #PBS -j oe
 #PBS -q DEFAULT
-#PBS -o /home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/jobs/log/
-#PBS -e /home/s2240011/git/ddd/vehicle_based_DDD_comparison/project/jobs/log/
+#PBS -o /home/s2240011/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/train/
+#PBS -e /home/s2240011/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/train/
 #PBS -M yutaro.nakagama@bosch.com
 #PBS -m abe
 

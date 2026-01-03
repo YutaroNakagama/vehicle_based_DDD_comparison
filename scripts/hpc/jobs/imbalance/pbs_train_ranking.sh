@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -j oe
-#PBS -o /home/s2240011/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/
-#PBS -e /home/s2240011/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/
+#PBS -o /home/s2240011/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/imbalance/
+#PBS -e /home/s2240011/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/imbalance/
 #PBS -M yutaro.nakagama@bosch.com
 #PBS -m abe
 # Note: -N, -l select, -l walltime, -q are passed dynamically via qsub options
