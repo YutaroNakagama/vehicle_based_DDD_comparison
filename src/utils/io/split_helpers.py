@@ -208,6 +208,7 @@ def split_data(
     return split_module.data_split(
         data,
         random_state=seed,
+        keep_subject_id=keep_subject_id,
     )
 
 # ==========================================================
