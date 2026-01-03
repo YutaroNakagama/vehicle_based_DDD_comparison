@@ -5,14 +5,7 @@
 #PBS -m ae
 
 # ==============================================================================
-# eval_domain_ranking.sh - Domain Analysis Ranking Comparison Evaluation Job
-# ==============================================================================
-# Environment variables expected:
-#   RANKING_METHOD: mean_distance, median_distance, knn, lof, isolation_forest, centroid_umap
-#   DISTANCE_METRIC: dtw, mmd, wasserstein
-#   DOMAIN_LEVEL: out_domain, in_domain, cross_domain
-#   MODE: source_only, target_only, pooled
-#   SEED: random seed (42, 123, 456, etc.)
+# eval_domain_ranking_v3.sh - Uses TRAIN_JOBID and correct MODE
 # ==============================================================================
 
 set -euo pipefail
@@ -26,21 +19,23 @@ source ~/conda/etc/profile.d/conda.sh
 conda activate python310
 export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
 
-# Get parameters from environment or use defaults
+# Get parameters
 RANKING_METHOD="${RANKING_METHOD:-knn}"
 DISTANCE_METRIC="${DISTANCE_METRIC:-dtw}"
 DOMAIN_LEVEL="${DOMAIN_LEVEL:-out_domain}"
 MODE="${MODE:-source_only}"
 SEED="${SEED:-42}"
+TRAIN_JOBID="${TRAIN_JOBID:-}"
 
 echo "============================================================"
-echo "[INFO] Domain Ranking Comparison - Evaluation Started at $(date)"
+echo "[INFO] Domain Ranking Evaluation V3 - Started at $(date)"
 echo "============================================================"
 echo "Ranking Method: ${RANKING_METHOD}"
 echo "Distance Metric: ${DISTANCE_METRIC}"
 echo "Domain Level: ${DOMAIN_LEVEL}"
 echo "Mode: ${MODE}"
 echo "Seed: ${SEED}"
+echo "Training Job ID: ${TRAIN_JOBID}"
 echo "PBS_JOBID: ${PBS_JOBID:-local}"
 echo "============================================================"
 
@@ -54,18 +49,22 @@ fi
 
 echo "[INFO] Using subject list: $SUBJECT_LIST"
 
-# Build tag (must match training tag)
+# Build tag
 TAG="rank_cmp_${RANKING_METHOD}_${DISTANCE_METRIC}_${DOMAIN_LEVEL}_s${SEED}"
 echo "[INFO] Tag: $TAG"
 
-# Run evaluation with --mode pooled for proper cross-domain evaluation
+# Use training mode and job ID
+echo "[INFO] Using mode: $MODE (same as training)"
+echo "[INFO] Using training jobid: $TRAIN_JOBID"
+
+# Run evaluation with CORRECT MODE (same as training)
 echo "[INFO] Starting evaluation..."
 python scripts/python/evaluation/evaluate.py \
     --model RF \
-    --mode pooled \
+    --mode "$MODE" \
     --tag "$TAG" \
     --target_file "$SUBJECT_LIST" \
-    --jobid "${PBS_JOBID:-local}"
+    --jobid "$TRAIN_JOBID"
 
 echo "============================================================"
 echo "[INFO] Evaluation Completed Successfully at $(date)"

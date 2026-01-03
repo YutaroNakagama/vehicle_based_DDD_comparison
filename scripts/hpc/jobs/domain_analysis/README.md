@@ -8,9 +8,6 @@ PBS job scripts for domain-based driver drowsiness detection experiments.
 |--------|-------------|
 | `train_domain_ranking.sh` | Train models using domain-ranked subject splits |
 | `eval_domain_ranking.sh` | Evaluate trained models on test data |
-| `eval_domain_ranking_v2.sh` | Evaluation with updated metrics |
-| `eval_domain_ranking_v3.sh` | Latest evaluation pipeline |
-| `verify_in_domain_*.sh` | Verification scripts for in-domain experiments |
 
 ## Usage
 
