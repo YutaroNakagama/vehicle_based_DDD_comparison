@@ -83,7 +83,6 @@ def common_train(
     scaler: object = None,
     suffix: str = "",
     data_leak: bool = False,
-    train_only: bool = False,
     use_oversampling: bool = False,
     oversample_method: str = "smote",
     target_ratio: float = 0.33,
@@ -125,8 +124,6 @@ def common_train(
         Suffix appended to saved file names (e.g., tags, strategies).
     data_leak : bool, default=False
         Whether to allow intentional data leakage (for ablation studies).
-    train_only : bool, default=False
-        If True, train model and skip evaluation.
     use_oversampling : bool, default=False
         Apply oversampling to minority class.
     oversample_method : str, default="smote"
@@ -138,9 +135,8 @@ def common_train(
 
     Returns
     -------
-    tuple or dict
-        In normal mode: (best_clf, scaler, best_threshold, feature_meta, results)
-        In train_only mode: (best_clf, scaler, None, feature_meta, {})
+    tuple
+        (best_clf, scaler, best_threshold, feature_meta, results)
     """
     # ====== Data preparation ======
     X_train = X_train.loc[:, ~X_train.columns.duplicated()]
@@ -225,11 +221,6 @@ def common_train(
         "selected_features": selected_features,
         "feature_source": model_name,
     }
-
-    # ====== train_only mode ======
-    if train_only:
-        logging.info(f"[TRAIN_ONLY] Model trained, skipping evaluation/return.")
-        return best_clf, scaler, None, feature_meta, {}
 
     # ====== Evaluate classifier ======
     m_train, m_val, m_test = evaluate_classifier(
