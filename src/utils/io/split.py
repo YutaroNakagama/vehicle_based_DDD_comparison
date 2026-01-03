@@ -15,16 +15,32 @@ from typing import List, Tuple
 from sklearn.model_selection import train_test_split
 
 
-def _check_nonfinite(X: pd.DataFrame, name: str) -> pd.DataFrame:
-    """Check for NaN or infinite values in numeric columns and replace safely."""
+def _check_nonfinite(X: pd.DataFrame, name: str, preserve_cols: list = None) -> pd.DataFrame:
+    """Check for NaN or infinite values in numeric columns and replace safely.
+    
+    Parameters
+    ----------
+    X : pd.DataFrame
+        Input dataframe to check.
+    name : str
+        Name for logging purposes.
+    preserve_cols : list, optional
+        Non-numeric columns to preserve (e.g., ['subject_id']).
+    """
     CLIP_THRESHOLD = 1e6  # Avoid float overflow during sklearn fit
+    preserve_cols = preserve_cols or []
+    
     # Convert only numeric columns to numpy
     X_num = X.select_dtypes(include=[np.number])
     non_numeric_cols = X.columns.difference(X_num.columns)
+    
+    # Identify which non-numeric columns should be dropped vs preserved
+    cols_to_preserve = [c for c in non_numeric_cols if c in preserve_cols]
+    cols_to_drop = [c for c in non_numeric_cols if c not in preserve_cols]
 
-    if len(non_numeric_cols) > 0:
-        logging.warning(f"{name} contains non-numeric columns: {list(non_numeric_cols)}")
-        X = X.select_dtypes(include=[np.number])
+    if len(cols_to_drop) > 0:
+        logging.warning(f"{name} contains non-numeric columns: {list(cols_to_drop)}")
+        X = X.drop(columns=cols_to_drop)
 
     # Detect NaN / Inf
     mask_nan = X_num.isna()
@@ -151,7 +167,9 @@ def data_split(
         X_val, y_val = pd.DataFrame(), pd.Series(dtype=int)
         X_test, y_test = pd.DataFrame(), pd.Series(dtype=int)
 
-    X_train = _check_nonfinite(X_train, "X_train")
+    # Determine which columns to preserve
+    preserve_cols = ["subject_id"] if keep_subject_id else []
+    X_train = _check_nonfinite(X_train, "X_train", preserve_cols=preserve_cols)
     X_val   = _check_nonfinite(X_val, "X_val")
     X_test  = _check_nonfinite(X_test, "X_test")
 
