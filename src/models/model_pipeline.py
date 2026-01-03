@@ -169,8 +169,7 @@ def train_pipeline(
     # Stage 4.5: Subject-wise oversampling (before dropping subject_id)
     if use_oversampling and subject_wise_oversampling:
         from src.models.sampling.oversampling import apply_oversampling
-        subject_ids = X_train.get("subject_id", None)
-        if subject_ids is None:
+        if "subject_id" not in X_train.columns:
             logging.warning("[OVERSAMPLE] subject_id not found, falling back to pooled oversampling")
         else:
             logging.info("[OVERSAMPLE] Applying subject-wise oversampling")
