@@ -30,7 +30,7 @@ from src.utils.io.feature_utils import normalize_feature_names
 from src.utils.io.preprocessing import clean_feature_dataframe, align_train_val_test_columns
 from src.utils.io.savers import save_artifacts, save_training_results
 from src.models.feature_selection.feature_helpers import select_features_and_scale
-from src.models.architectures.train_helpers import train_model
+from src.models.training.dispatch import train_model
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -168,7 +168,7 @@ def train_pipeline(
 
     # Stage 4.5: Subject-wise oversampling (before dropping subject_id)
     if use_oversampling and subject_wise_oversampling:
-        from src.models.architectures.common_oversampling import apply_oversampling
+        from src.models.sampling.oversampling import apply_oversampling
         subject_ids = X_train.get("subject_id", None)
         if subject_ids is None:
             logging.warning("[OVERSAMPLE] subject_id not found, falling back to pooled oversampling")

@@ -12,10 +12,10 @@ import pandas as pd
 from typing import Dict, List, Optional, Tuple
 from sklearn.preprocessing import StandardScaler
 
-from src.models.architectures.helpers import get_classifier
+from src.models.training.model_factory import get_classifier
 from src.models.architectures.SvmA import SvmA_train
 from src.models.architectures.lstm import lstm_train
-from src.models.architectures.common import common_train
+from src.models.training.pipeline import common_train
 
 from src.utils.io.savers import save_artifacts
 
