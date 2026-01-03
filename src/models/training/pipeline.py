@@ -68,53 +68,6 @@ joblib.parallel_backend("sequential")
 
 import gc
 
-from typing import Union
-import numpy.typing as npt
-
-
-def precision_at_min_recall(
-    y_true: Union[npt.NDArray, list],
-    y_proba: Union[npt.NDArray, list],
-    min_recall: float = MIN_RECALL_THRESHOLD
-) -> float:
-    """Calculate maximum precision at or above minimum recall.
-    
-    This metric is useful for Precision-focused optimization while
-    maintaining a minimum safety threshold (Recall).
-    
-    Parameters
-    ----------
-    y_true : array-like
-        True binary labels.
-    y_proba : array-like
-        Predicted probabilities for the positive class.
-    min_recall : float, default=0.70
-        Minimum recall threshold. Returns max precision where recall >= min_recall.
-    
-    Returns
-    -------
-    float
-        Maximum precision at recall >= min_recall. Returns 0.0 if no threshold
-        satisfies the minimum recall constraint.
-    """
-    if len(y_true) == 0 or len(y_proba) == 0:
-        return 0.0
-    
-    # Handle edge case: only one class present
-    if len(np.unique(y_true)) < 2:
-        return 0.0
-    
-    precisions, recalls, thresholds = precision_recall_curve(y_true, y_proba)
-    
-    # Find indices where recall >= min_recall
-    valid_idx = recalls >= min_recall
-    if not np.any(valid_idx):
-        return 0.0  # No threshold satisfies min_recall
-    
-    # Return maximum precision in valid range
-    return float(np.max(precisions[valid_idx]))
-
-
 def common_train(
     X_train: "pd.DataFrame",
     X_val: "pd.DataFrame",
