@@ -51,25 +51,26 @@ def train_model(
         logging.info("LSTM training completed.")
         return None, None, None, {}, {}
 
-    if model_name == "SvmA":
+    elif model_name == "SvmA":
         SvmA_train(X_train_fs, X_val_fs, y_train, y_val, selected_features, model_name)
         logging.info("SvmA training completed.")
         return None, None, None, {}, {}
 
-    # Tree-based / linear models
-    clf = get_classifier(model_name)
-    best_clf, scaler, best_threshold, feature_meta, results = common_train(
-        X_train_fs, X_val_fs, X_test_fs,
-        y_train, y_val, y_test,
-        selected_features,
-        model_name, model_name, mode,
-        clf=clf,
-        scaler=scaler,
-        suffix=suffix,
-        data_leak=False,
-        use_oversampling=use_oversampling,
-        oversample_method=oversample_method,
-        target_ratio=target_ratio,
-        seed=seed,
-    )
-    return best_clf, scaler, best_threshold, feature_meta, results
+    else:
+        # Tree-based / linear models (RF, XGBoost, LightGBM, etc.)
+        clf = get_classifier(model_name)
+        best_clf, scaler, best_threshold, feature_meta, results = common_train(
+            X_train_fs, X_val_fs, X_test_fs,
+            y_train, y_val, y_test,
+            selected_features,
+            model_name, model_name, mode,
+            clf=clf,
+            scaler=scaler,
+            suffix=suffix,
+            data_leak=False,
+            use_oversampling=use_oversampling,
+            oversample_method=oversample_method,
+            target_ratio=target_ratio,
+            seed=seed,
+        )
+        return best_clf, scaler, best_threshold, feature_meta, results
