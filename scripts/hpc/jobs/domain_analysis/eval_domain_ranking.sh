@@ -1,6 +1,8 @@
 #!/bin/bash
 #PBS -l select=1:ncpus=4:mem=16gb
 #PBS -j oe
+#PBS -o /home/hpcuser/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/evaluate/
+#PBS -e /home/hpcuser/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/evaluate/
 #PBS -M user@example.com
 #PBS -m ae
 

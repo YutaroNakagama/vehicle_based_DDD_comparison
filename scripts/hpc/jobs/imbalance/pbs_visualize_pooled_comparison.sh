@@ -4,8 +4,8 @@
 #PBS -l walltime=00:30:00
 #PBS -j oe
 #PBS -q SINGLE
-#PBS -o /home/hpcuser/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/
-#PBS -e /home/hpcuser/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/
+#PBS -o /home/hpcuser/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/imbalance/
+#PBS -e /home/hpcuser/git/ddd/vehicle_based_DDD_comparison/scripts/hpc/logs/imbalance/
 #PBS -M user@example.com
 #PBS -m abe
 
