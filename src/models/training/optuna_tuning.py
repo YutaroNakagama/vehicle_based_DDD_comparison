@@ -160,21 +160,28 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
         return XGBClassifier(**params)
 
     elif model == "RF":
-        max_depth_choice = trial.suggest_categorical("max_depth", [None, 10, 20, 30, 50, 100])
+        # Expanded search space based on analysis:
+        # - max_depth: Added smaller values (3,5,7) since 53% of best were at min (10)
+        # - max_features: Added 0.05 since 67% of best were at min (0.1)
+        # - n_estimators: Expanded to 1500 since 12% were at upper boundary
+        # - min_samples_leaf: Minimum 5 to prevent overfitting (was 1)
+        # - min_samples_split: Minimum 10 to prevent overfitting (was 2)
+        # - oob_score: True to enable out-of-bag score for generalization monitoring
+        max_depth_choice = trial.suggest_categorical("max_depth", [3, 5, 7, 10, 15, 20, 30, None])
         params = {
-            "n_estimators": trial.suggest_int("n_estimators", 50, 1000),
+            "n_estimators": trial.suggest_int("n_estimators", 100, 1500),
             "max_depth": max_depth_choice,
-            "min_samples_split": trial.suggest_int("min_samples_split", 2, 100),
-            "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 50),
-            "max_features": trial.suggest_categorical("max_features", ["sqrt", "log2", 0.1, 0.3, 0.5, 0.7, 1.0]),
-            "min_weight_fraction_leaf": trial.suggest_float("min_weight_fraction_leaf", 0.0, 0.3),
-            "class_weight": trial.suggest_categorical("class_weight", ["balanced", "balanced_subsample", None]),
+            "min_samples_split": trial.suggest_int("min_samples_split", 10, 100),
+            "min_samples_leaf": trial.suggest_int("min_samples_leaf", 5, 50),
+            "max_features": trial.suggest_categorical("max_features", ["sqrt", "log2", 0.05, 0.1, 0.2, 0.3, 0.5]),
+            "min_weight_fraction_leaf": trial.suggest_float("min_weight_fraction_leaf", 0.0, 0.1),
+            "class_weight": trial.suggest_categorical("class_weight", ["balanced", "balanced_subsample"]),
             "random_state": 42,
             "n_jobs": 1,
             "max_samples": trial.suggest_categorical("max_samples", [None, 0.5, 0.7, 0.9]),
             "warm_start": False,
             "bootstrap": True,
-            "oob_score": False,
+            "oob_score": True,
         }
         return RandomForestClassifier(**params)
 
