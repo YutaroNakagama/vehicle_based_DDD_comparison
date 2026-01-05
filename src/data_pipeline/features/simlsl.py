@@ -86,23 +86,31 @@ def sample_entropy(
     Returns
     -------
     float
-        Sample Entropy value, or ``np.nan`` if calculation fails.
+        Sample Entropy value. Returns 0.0 for constant signals (maximum regularity),
+        or a large value (10.0) when templates cannot be matched (high irregularity).
     """
     signal = np.asarray(signal, dtype=np.float64)
     N = len(signal)
     if r is None:
         r = 0.2 * np.std(signal)
+    
+    # Constant signal or too short: maximum regularity = entropy 0
     if N <= m + 1 or r == 0:
-        return np.nan
+        return 0.0
 
     try:
         A = _count_similar_templates(signal, m + 1, r)
         B = _count_similar_templates(signal, m, r)
-        if B == 0 or A == 0:
-            return np.nan
+        
+        # No template matches found: high irregularity
+        if B == 0:
+            return 10.0  # Large finite value instead of inf/nan
+        if A == 0:
+            return 10.0  # -log(0) would be inf, use large value
+            
         return -np.log(A / B)
     except Exception:
-        return np.nan
+        return 0.0  # Fallback for any unexpected errors
 
 def extract_statistical_features(signal: np.ndarray, prefix: str = "") -> dict:
     """Extract statistical and spectral features from a 1D signal.
