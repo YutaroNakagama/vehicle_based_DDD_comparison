@@ -240,10 +240,20 @@ def eval_pipeline(
     # Stage 9: Add metadata and save results
     distance, level = extract_metadata_from_tag(tag)
     full_metadata = extract_full_metadata_from_tag(tag)
+    
+    # Add threshold suffix to tag for filename if custom threshold was specified
+    save_tag = tag
+    if threshold is not None:
+        # e.g., "baseline_s42" -> "baseline_s42_th05" for threshold=0.5
+        th_suffix = f"_th{int(threshold * 100):02d}"
+        save_tag = f"{tag}{th_suffix}"
+    
     result.update({
         "subject_list": subjects,
         "mode": mode,
-        "tag": tag,
+        "tag": save_tag,  # Use save_tag with threshold suffix
+        "original_tag": tag,  # Keep original tag for reference
+        "custom_threshold": threshold,  # Record the custom threshold used
         "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "distance": distance,
         "level": level,
