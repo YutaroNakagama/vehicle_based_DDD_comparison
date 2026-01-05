@@ -132,7 +132,11 @@ def save_artifacts(
     # ============================================================
     # If mode doesn't include [n] (fold index), skip the entire save process
     # BEFORE creating directories. This prevents empty dirs like models/RF/14060981[1]/.
-    if not re.search(r"\[\d+\]", str(mode)):
+    # EXCEPTION: For local runs (jobid="local"), always allow saving with default fold [1]
+    is_local_run = (jobid == "local")
+    has_fold_index = re.search(r"\[\d+\]", str(mode))
+    
+    if not has_fold_index and not is_local_run:
         # If callers provide a suffix that already expanded [n] into "_n",
         # we cannot infer the fold; in that case we intentionally skip to keep tree clean.
         # Callers should pass mode with "[n]" (PBS_ARRAY_INDEX) when saving fold artifacts.
@@ -141,6 +145,10 @@ def save_artifacts(
             f"[save_artifacts] Skipping non-fold call (mode={mode}, jobid={jobid}) — no directory created"
         )
         return
+    
+    # For local runs without fold index, use default [1]
+    if is_local_run and not has_fold_index:
+        model_dir = os.path.join("models", model_name, "local", "local[1]")
 
     # --- create directory only if fold-level call ---
     os.makedirs(model_dir, exist_ok=True)
@@ -299,8 +307,8 @@ def save_eval_results(
     tag = results.get("tag") or ""
 
     # --- construct file name including tag for unique identification ---
-    # If tag exists and starts with known prefixes, use tag directly for filename
-    if tag and (tag.startswith("imbalv2_") or tag.startswith("imbalv3_") or tag.startswith("full_") or tag.startswith("rank_")):
+    # If tag exists and is not empty, use tag for unique filename
+    if tag:
         # Use tag directly: eval_results_{model}_{mode}_{tag}
         base_name = f"eval_results_{model_name}_{mode}_{tag}"
     elif dist != "unknown" and "_" in dist:

@@ -41,23 +41,38 @@ def _is_exact_tag_match(filename: str, tag_key: str) -> bool:
     """Check if filename contains an exact match for the tag key.
     
     This is critical to prevent partial matches like 'smote' matching
-    'smote_tomek' or 'smote_rus'.
+    'smote_tomek' or 'smote_rus', or 'smote_ratio0.1' matching 'subjectwise_smote_ratio0.1'.
     
     Parameters
     ----------
     filename : str
-        Model filename to check (e.g., 'RF_source_only_imbalance_knn_mmd_in_domain_smote_14572963_3_3.pkl')
+        Model filename to check (e.g., 'RF_pooled_smote_ratio0.1_s42.pkl')
     tag_key : str
-        Tag key to match (e.g., 'imbalance_knn_mmd_in_domain_smote')
+        Tag key to match (e.g., 'smote_ratio0.1_s42')
     
     Returns
     -------
     bool
         True if exact match found, False otherwise.
     """
-    # Extract the imbalance method from the tag (last segment before any jobid)
-    # Tag format: imbalance_{ranking}_{metric}_{level}_{imbalance_method}
-    # Also handle pooled format: imbalance_pooled_{imbalance_method}
+    import re
+    
+    # For new imbalance experiment tags (e.g., baseline_s42, smote_ratio0.1_s42, subjectwise_smote_ratio0.5_s123)
+    # These have format: RF_pooled_{tag}.pkl
+    # We need exact match to avoid subjectwise_smote matching smote
+    
+    # Extract the base name without extension
+    basename = os.path.splitext(filename)[0]
+    
+    # Check for exact tag at the end of filename
+    # Pattern: RF_pooled_{tag} or RF_{mode}_{tag}
+    if basename.endswith(tag_key):
+        # Additional check: ensure it's not a partial match
+        # e.g., 'smote_ratio0.1_s42' should NOT match 'subjectwise_smote_ratio0.1_s42'
+        prefix_before_tag = basename[:-len(tag_key)]
+        # Valid if prefix ends with underscore (separator) or is just the model_mode part
+        if prefix_before_tag.endswith("_"):
+            return True
     
     # Known imbalance methods (order matters - check longer ones first)
     imbalance_methods = ['smote_tomek', 'smote_rus', 'smote_enn', 'smote', 'baseline']
@@ -70,8 +85,10 @@ def _is_exact_tag_match(filename: str, tag_key: str) -> bool:
             break
     
     if not tag_imbalance:
-        # Fallback: simple substring match
-        return tag_key in filename
+        # Fallback: simple substring match but stricter
+        # Ensure tag_key is bounded by underscores or file boundaries
+        pattern = rf"(^|_){re.escape(tag_key)}(_|\.pkl$)"
+        return bool(re.search(pattern, filename))
     
     # Find which imbalance method is in the filename
     file_imbalance = None

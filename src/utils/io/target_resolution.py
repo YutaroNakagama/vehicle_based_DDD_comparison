@@ -140,8 +140,10 @@ def resolve_source_group_subjects(tag: Optional[str], source_group: Optional[str
     # Determine which group to use
     group_level = source_group or SOURCE_ONLY_TRAIN_GROUP
     
-    # Extract ranking method (knn, lof, median_distance) from imbalv3 tags
+    # Extract ranking method (knn, lof, median_distance) from imbalv3, baseline_domain, or smote_plain tags
     # Format: imbalv3_{ranking}_{metric}_{level}_{method}_ratio{X_Y}
+    # Format: baseline_domain_{ranking}_{metric}_{level}_{method}_s{seed}
+    # Format: smote_plain_{ranking}_{metric}_{level}_{method}_s{seed}
     ranking_method = None
     if tag.startswith("imbalv3_"):
         parts = tag.split("_")
@@ -151,8 +153,26 @@ def resolve_source_group_subjects(tag: Optional[str], source_group: Optional[str
                 ranking_method = candidate
             elif candidate == "median" and len(parts) >= 3 and parts[2] == "distance":
                 ranking_method = "median_distance"
+    elif tag.startswith("baseline_domain_"):
+        # baseline_domain_{ranking}_{metric}_{level}_{method}_s{seed}
+        parts = tag.split("_")
+        if len(parts) >= 3:
+            candidate = parts[2]  # ranking is at index 2 for baseline_domain
+            if candidate in ["knn", "lof"]:
+                ranking_method = candidate
+            elif candidate == "median" and len(parts) >= 4 and parts[3] == "distance":
+                ranking_method = "median_distance"
+    elif tag.startswith("smote_plain_"):
+        # smote_plain_{ranking}_{metric}_{level}_{method}_s{seed}
+        parts = tag.split("_")
+        if len(parts) >= 3:
+            candidate = parts[2]  # ranking is at index 2 for smote_plain
+            if candidate in ["knn", "lof"]:
+                ranking_method = candidate
+            elif candidate == "median" and len(parts) >= 4 and parts[3] == "distance":
+                ranking_method = "median_distance"
     
-    # Fallback to mean_distance for non-imbalv3 tags
+    # Fallback to mean_distance for other tags
     if ranking_method is None:
         ranking_method = "mean_distance"
     
