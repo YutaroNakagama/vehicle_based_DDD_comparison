@@ -53,6 +53,7 @@ docs/**/*.html
 
 # ===== Virtual env & tooling =====
 .venv/
+.venv-*/
 **/*.ps1
 **/tags
 catboost_info/
