@@ -73,3 +73,4 @@ scripts/hpc/logs/imbalance/*.txt
 test_rf_smote.o*
 visualize_imbalv3.o*
 *.o[0-9]*
+scripts/hpc/launchers/auto_submit.log
