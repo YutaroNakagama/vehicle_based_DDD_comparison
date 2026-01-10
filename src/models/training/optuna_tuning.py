@@ -52,6 +52,10 @@ OPTUNA_SUPPORTED_MODELS = [
 # Timeout for Optuna optimization (0 = no timeout)
 OPTUNA_TIMEOUT_SEC = int(os.getenv("OPTUNA_TIMEOUT_SEC", "0"))
 
+# Number of parallel jobs for models (default 1, can be overridden via environment)
+# Use -1 for all cores, or specify a number like 4, 8, etc.
+N_JOBS_OVERRIDE = int(os.getenv("N_JOBS_OVERRIDE", "1"))
+
 
 def create_optuna_objective(
     model: str,
@@ -137,7 +141,7 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
             "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
             "class_weight": "balanced",
             "random_state": 42,
-            "n_jobs": 1,
+            "n_jobs": N_JOBS_OVERRIDE,
         }
         return LGBMClassifier(**params)
 
@@ -154,7 +158,7 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
             "use_label_encoder": False,
             "eval_metric": "logloss",
             "random_state": 42,
-            "n_jobs": 1,
+            "n_jobs": N_JOBS_OVERRIDE,
             "tree_method": "hist",
         }
         return XGBClassifier(**params)
@@ -177,7 +181,7 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
             "min_weight_fraction_leaf": trial.suggest_float("min_weight_fraction_leaf", 0.0, 0.1),
             "class_weight": trial.suggest_categorical("class_weight", ["balanced", "balanced_subsample"]),
             "random_state": 42,
-            "n_jobs": 1,
+            "n_jobs": N_JOBS_OVERRIDE,
             "max_samples": trial.suggest_categorical("max_samples", [None, 0.5, 0.7, 0.9]),
             "warm_start": False,
             "bootstrap": True,
@@ -210,7 +214,7 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
             ),
             "replacement": trial.suggest_categorical("replacement", [False, True]),
             "random_state": 42,
-            "n_jobs": 1,
+            "n_jobs": N_JOBS_OVERRIDE,
         }
         return EasyEnsembleClassifier(**params)
 
