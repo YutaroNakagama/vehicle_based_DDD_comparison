@@ -52,7 +52,7 @@ RATIO="${RATIO:-0.5}"
 SEED="${SEED:-42}"
 RANKING="${RANKING:-knn}"
 RUN_EVAL="${RUN_EVAL:-true}"
-export N_TRIALS_OVERRIDE="${N_TRIALS:-100}"  # 論文用: 100 trials
+export N_TRIALS_OVERRIDE="${N_TRIALS:-150}"  # 論文用: 150 trials (2026-01-10 update: 100では18.6%が未収束)
 
 # Auto-select model based on condition
 case "$CONDITION" in

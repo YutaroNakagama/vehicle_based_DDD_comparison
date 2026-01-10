@@ -771,16 +771,20 @@ def create_metrics_csv(results: Dict[str, dict], output_path: Path) -> pd.DataFr
 
 def main():
     parser = argparse.ArgumentParser(description="Visualize local domain analysis results")
-    parser.add_argument("--job_id", default="local", help="Job ID (default: local)")
+    parser.add_argument("--job_id", default="all", help="Job ID (default: all - search all jobs)")
     parser.add_argument("--patterns", default="smote_plain,baseline_domain,imbalv3",
                        help="Comma-separated patterns to search (default: smote_plain,baseline_domain,imbalv3)")
     parser.add_argument("--seed", type=int, default=None, help="Filter by seed")
     parser.add_argument("--output_dir", default=None, help="Output directory")
     args = parser.parse_args()
     
-    # Paths
-    eval_dir = Path(f"results/outputs/evaluation/RF/{args.job_id}")
-    models_dir = Path(f"models/RF/{args.job_id}")
+    # Paths - if job_id is "all", search entire RF directory
+    if args.job_id == "all":
+        eval_dir = Path("results/outputs/evaluation/RF")
+        models_dir = Path("models/RF")
+    else:
+        eval_dir = Path(f"results/outputs/evaluation/RF/{args.job_id}")
+        models_dir = Path(f"models/RF/{args.job_id}")
     
     if args.output_dir:
         output_base = Path(args.output_dir)

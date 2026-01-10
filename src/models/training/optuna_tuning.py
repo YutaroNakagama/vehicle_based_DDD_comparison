@@ -164,14 +164,16 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
         return XGBClassifier(**params)
 
     elif model == "RF":
-        # Expanded search space based on analysis:
-        # - max_depth: Added smaller values (3,5,7) since 53% of best were at min (10)
+        # Expanded search space based on analysis (2026-01-10 update):
+        # - max_depth: Expanded range since 69% of best were at upper boundary (100 or None)
+        #   Previous: [3, 5, 7, 10, 15, 20, 30, None]
+        #   New: [5, 10, 20, 30, 50, 100, None] - allows deeper trees
         # - max_features: Added 0.05 since 67% of best were at min (0.1)
         # - n_estimators: Expanded to 1500 since 12% were at upper boundary
         # - min_samples_leaf: Minimum 5 to prevent overfitting (was 1)
         # - min_samples_split: Minimum 10 to prevent overfitting (was 2)
         # - oob_score: True to enable out-of-bag score for generalization monitoring
-        max_depth_choice = trial.suggest_categorical("max_depth", [3, 5, 7, 10, 15, 20, 30, None])
+        max_depth_choice = trial.suggest_categorical("max_depth", [5, 10, 20, 30, 50, 100, None])
         params = {
             "n_estimators": trial.suggest_int("n_estimators", 100, 1500),
             "max_depth": max_depth_choice,
@@ -190,10 +192,11 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
         return RandomForestClassifier(**params)
 
     elif model == "BalancedRF":
+        # Updated 2026-01-10: Expanded max_depth range to allow deeper trees
         sampling_strategy = trial.suggest_categorical(
             "sampling_strategy", ["auto", "majority", "not majority", "not minority", "all", 1.0]
         )
-        max_depth_choice = trial.suggest_categorical("max_depth", [None, 10, 20, 30, 50, 100])
+        max_depth_choice = trial.suggest_categorical("max_depth", [10, 20, 30, 50, 100, 150, None])
         params = {
             "n_estimators": trial.suggest_int("n_estimators", 50, 500),
             "max_depth": max_depth_choice,
