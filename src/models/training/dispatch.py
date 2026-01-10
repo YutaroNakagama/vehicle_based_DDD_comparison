@@ -47,14 +47,21 @@ def train_model(
     """
 
     if model_name == "Lstm":
-        lstm_train(X_train_fs, y_train, model_name)
+        model_obj, scaler_obj, selected_feats, results = lstm_train(
+            X_train_fs, y_train, model_name,
+            X_val=X_val_fs, y_val=y_val,
+            X_test=X_test_fs, y_test=y_test,
+        )
         logging.info("LSTM training completed.")
-        return None, None, None, {}, {}
+        return model_obj, scaler_obj, None, {"selected_features": selected_feats}, results
 
     elif model_name == "SvmA":
-        SvmA_train(X_train_fs, X_val_fs, y_train, y_val, selected_features, model_name)
+        model_obj, scaler_obj, selected_feats, results = SvmA_train(
+            X_train_fs, X_val_fs, y_train, y_val, selected_features, model_name,
+            X_test=X_test_fs, y_test=y_test,
+        )
         logging.info("SvmA training completed.")
-        return None, None, None, {}, {}
+        return model_obj, scaler_obj, None, {"selected_features": selected_feats}, results
 
     else:
         # Tree-based / linear models (RF, XGBoost, LightGBM, etc.)
