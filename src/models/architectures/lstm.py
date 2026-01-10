@@ -93,16 +93,20 @@ def lstm_train(
     X: pd.DataFrame,
     y: pd.Series,
     model_name: str,
+    X_val: pd.DataFrame = None,
+    y_val: pd.Series = None,
+    X_test: pd.DataFrame = None,
+    y_test: pd.Series = None,
     n_splits: int = 5,
     epochs: int = 10,
     batch_size: int = 16
-) -> None:
+) -> tuple:
     """
     Train a Bidirectional LSTM model with an attention mechanism using k-fold cross-validation.
 
     This function performs preprocessing, model construction, training, evaluation, and saving of
     an LSTM model using a k-fold strategy. It selects numeric features, handles missing or infinite
-    values, and standardizes input before model training. Each fold’s model and scaler are saved.
+    values, and standardizes input before model training. Each fold's model and scaler are saved.
 
     Parameters
     ----------
@@ -112,6 +116,14 @@ def lstm_train(
         Binary class labels (0 or 1) corresponding to ``X``.
     model_name : str
         Name used for saving the model and scaler (e.g., ``"Lstm"``) under ``MODEL_PKL_PATH``.
+    X_val : pandas.DataFrame, optional
+        Validation feature matrix (not used in k-fold but kept for interface consistency).
+    y_val : pandas.Series, optional
+        Validation labels.
+    X_test : pandas.DataFrame, optional
+        Test feature matrix for final evaluation.
+    y_test : pandas.Series, optional
+        Test labels for final evaluation.
     n_splits : int, default=5
         Number of folds for K-Fold cross-validation.
     epochs : int, default=10
@@ -121,10 +133,12 @@ def lstm_train(
 
     Returns
     -------
-    None
-        Trained models and scalers are saved to disk.
+    tuple
+        (best_model, scaler, selected_features, results_dict)
     """
     import joblib
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+    from sklearn.metrics import confusion_matrix, roc_auc_score, average_precision_score
 
     # Extract numeric columns
     X_numeric = X.select_dtypes(include=[np.number])
@@ -144,6 +158,10 @@ def lstm_train(
 
     kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
     accuracies = []
+    best_accuracy = 0.0
+    best_model = None
+    best_scaler = None
+    best_fold = 1
 
     for fold_no, (train_idx, test_idx) in enumerate(kf.split(X_array), start=1):
         # Standardize (fit per fold)
@@ -172,19 +190,100 @@ def lstm_train(
 
         scores = model.evaluate(X_test, y_test, verbose=0)
         accuracies.append(scores[1])
+        
+        # Keep track of the best model (highest validation accuracy)
+        if fold_no == 1 or scores[1] > best_accuracy:
+            best_accuracy = scores[1]
+            best_model = model
+            best_scaler = scaler
+            best_fold = fold_no
 
-        # Save model
+        # Save model with proper PBS jobid format
+        # Get PBS job ID and array index for proper directory structure
+        pbs_jobid = os.environ.get("PBS_JOBID", "local")
+        if "." in pbs_jobid:
+            pbs_jobid = pbs_jobid.split(".")[0]
+        pbs_array_idx = os.environ.get("PBS_ARRAY_INDEX", "1")
+        
+        # Construct mode with jobid[array_idx] format for save_artifacts
+        save_mode = f"fold{fold_no}_{pbs_jobid}[{pbs_array_idx}]"
+        
         save_artifacts(
             model_obj=model,
             scaler_obj=scaler,
             selected_features=X_numeric.columns.tolist(),
             feature_meta=None,
             model_name=model_name,
-            mode=f"fold{fold_no}"
+            mode=save_mode
         )
         logging.info(f"Artifacts for fold {fold_no} saved successfully (via unified saver).")
         logging.info(f'Fold {fold_no} - Loss: {scores[0]}, Accuracy: {scores[1]}')
 
     logging.info(f'\nScores per fold: {accuracies}')
     logging.info(f'Average accuracy: {np.mean(accuracies)}')
+    
+    # --- Compute evaluation metrics using the best model ---
+    def compute_metrics(model_obj, scaler_obj, X_data, y_data, dataset_name):
+        # Preprocess data
+        X_num = X_data.select_dtypes(include=[np.number])
+        X_num = X_num.replace([np.inf, -np.inf], np.nan).dropna()
+        y_aligned = y_data.loc[X_num.index]
+        X_num = X_num.clip(lower=np.finfo(np.float32).min, upper=np.finfo(np.float32).max)
+        X_arr = X_num.astype(np.float32).values
+        
+        # Scale and reshape
+        X_scaled = scaler_obj.transform(X_arr)
+        X_reshaped = np.expand_dims(X_scaled, axis=1)
+        
+        # Predict
+        y_prob = model_obj.predict(X_reshaped, verbose=0).flatten()
+        y_pred = (y_prob > 0.5).astype(int)
+        y_true = y_aligned.values
+        
+        acc = accuracy_score(y_true, y_pred)
+        prec = precision_score(y_true, y_pred, average='binary', zero_division=0)
+        rec = recall_score(y_true, y_pred, average='binary', zero_division=0)
+        f1 = f1_score(y_true, y_pred, average='binary', zero_division=0)
+        conf = confusion_matrix(y_true, y_pred)
+        
+        metrics = {
+            "accuracy": float(acc),
+            "precision": float(prec),
+            "recall": float(rec),
+            "f1": float(f1),
+            "confusion_matrix": conf.tolist(),
+        }
+        
+        try:
+            metrics["roc_auc"] = float(roc_auc_score(y_true, y_prob))
+            metrics["auc_pr"] = float(average_precision_score(y_true, y_prob))
+        except Exception:
+            metrics["roc_auc"] = None
+            metrics["auc_pr"] = None
+        
+        logging.info(f"{dataset_name} Accuracy: {acc}")
+        logging.info(f"{dataset_name} Precision: {prec}")
+        logging.info(f"{dataset_name} Recall: {rec}")
+        logging.info(f"{dataset_name} F1 Score: {f1}")
+        
+        return metrics
+    
+    results = {
+        "cv_accuracies": accuracies,
+        "cv_mean_accuracy": float(np.mean(accuracies)),
+        "best_fold": best_fold,
+    }
+    
+    # Compute train metrics
+    results["train"] = compute_metrics(best_model, best_scaler, X, y, "Training")
+    
+    # Compute validation metrics if provided
+    if X_val is not None and y_val is not None:
+        results["val"] = compute_metrics(best_model, best_scaler, X_val, y_val, "Validation")
+    
+    # Compute test metrics if provided
+    if X_test is not None and y_test is not None:
+        results["test"] = compute_metrics(best_model, best_scaler, X_test, y_test, "Test")
+    
+    return best_model, best_scaler, X_numeric.columns.tolist(), results
 

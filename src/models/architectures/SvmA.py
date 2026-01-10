@@ -206,8 +206,9 @@ def evaluate_model(model: SVC, X: pd.DataFrame, y: pd.Series, dataset_name: str)
 def SvmA_train(
     X_train: pd.DataFrame, X_val: pd.DataFrame,
     y_train: pd.Series, y_val: pd.Series,
-    indices_df: pd.DataFrame, model: str
-) -> None:
+    indices_df: pd.DataFrame, model: str,
+    X_test: pd.DataFrame = None, y_test: pd.Series = None,
+) -> tuple:
     """
     Train SVM using ANFIS-based feature weighting and PSO optimization.
 
@@ -228,11 +229,15 @@ def SvmA_train(
         Feature selection index scores.
     model : str
         Model name used for saving artifacts.
+    X_test : pandas.DataFrame, optional
+        Test feature matrix for final evaluation.
+    y_test : pandas.Series, optional
+        Test labels for final evaluation.
 
     Returns
     -------
-    None
-        Trained model and selected features are saved to disk.
+    tuple
+        (model, scaler, selected_features, results_dict)
     """
     logging.info("Starting SVM-ANFIS optimization...")
 
@@ -249,7 +254,7 @@ def SvmA_train(
         X_train_sel = X_train.copy()
         X_val_sel = X_val.copy()
 
-    svm_final = SVC(kernel='rbf', C=best_C, gamma=best_gamma)
+    svm_final = SVC(kernel='rbf', C=best_C, gamma=best_gamma, probability=True)
     svm_final.fit(X_train_sel, y_train)
 
     model_dir = f"{MODEL_PKL_PATH}/{model}"
@@ -257,7 +262,17 @@ def SvmA_train(
     
     # --- Unified saving rules ---
     from sklearn.preprocessing import StandardScaler
+    from sklearn.metrics import roc_auc_score, average_precision_score
     dummy_scaler = StandardScaler().fit(X_train_sel)
+
+    # Get PBS job ID and array index for proper directory structure
+    pbs_jobid = os.environ.get("PBS_JOBID", "local")
+    if "." in pbs_jobid:
+        pbs_jobid = pbs_jobid.split(".")[0]
+    pbs_array_idx = os.environ.get("PBS_ARRAY_INDEX", "1")
+    
+    # Construct mode with jobid[array_idx] format for save_artifacts
+    save_mode = f"train_{pbs_jobid}[{pbs_array_idx}]"
 
     save_artifacts(
         model_obj=svm_final,
@@ -265,13 +280,59 @@ def SvmA_train(
         selected_features=X_train_sel.columns.tolist(),
         feature_meta=None,
         model_name=model,
-        mode="train"
+        mode=save_mode
     )
     logging.info("Model and features saved successfully (via unified saver).")
 
-    evaluate_model(svm_final, X_train_sel, y_train, "Training")
-    evaluate_model(svm_final, X_val_sel, y_val, "Validation")
+    # --- Compute evaluation metrics ---
+    def compute_metrics(model_obj, X, y, dataset_name):
+        y_pred = model_obj.predict(X)
+        y_prob = model_obj.predict_proba(X)[:, 1] if hasattr(model_obj, 'predict_proba') else None
+        
+        acc = accuracy_score(y, y_pred)
+        prec = precision_score(y, y_pred, average='binary', zero_division=0)
+        rec = recall_score(y, y_pred, average='binary', zero_division=0)
+        f1 = f1_score(y, y_pred, average='binary', zero_division=0)
+        conf = confusion_matrix(y, y_pred)
+        
+        metrics = {
+            "accuracy": float(acc),
+            "precision": float(prec),
+            "recall": float(rec),
+            "f1": float(f1),
+            "confusion_matrix": conf.tolist(),
+        }
+        
+        if y_prob is not None:
+            try:
+                metrics["roc_auc"] = float(roc_auc_score(y, y_prob))
+                metrics["auc_pr"] = float(average_precision_score(y, y_prob))
+            except Exception:
+                metrics["roc_auc"] = None
+                metrics["auc_pr"] = None
+        
+        logging.info(f"{dataset_name} Accuracy: {acc}")
+        logging.info(f"{dataset_name} Precision: {prec}")
+        logging.info(f"{dataset_name} Recall: {rec}")
+        logging.info(f"{dataset_name} F1 Score: {f1}")
+        logging.info(f"{dataset_name} Confusion Matrix:\n{conf}")
+        
+        return metrics
+    
+    results = {}
+    results["train"] = compute_metrics(svm_final, X_train_sel, y_train, "Training")
+    results["val"] = compute_metrics(svm_final, X_val_sel, y_val, "Validation")
+    
+    # Evaluate on test set if provided
+    if X_test is not None and y_test is not None:
+        X_test_sel = select_features(X_test, importance_degree)
+        if X_test_sel.shape[1] == 0:
+            X_test_sel = X_test.copy()
+        results["test"] = compute_metrics(svm_final, X_test_sel, y_test, "Test")
 
     logging.info(f"Optimal ANFIS Parameters: {best_anfis_params}")
     logging.info(f"Optimal SVM Parameters (C, gamma): ({best_C}, {best_gamma})")
+    
+    # Return model, scaler, selected features, and results
+    return svm_final, dummy_scaler, X_train_sel.columns.tolist(), results
 
