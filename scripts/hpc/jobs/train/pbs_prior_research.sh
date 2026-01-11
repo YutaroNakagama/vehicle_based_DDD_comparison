@@ -46,7 +46,11 @@ echo "  OMP_NUM_THREADS=$OMP_NUM_THREADS"
 echo "  MKL_NUM_THREADS=$MKL_NUM_THREADS"
 echo "  TF_NUM_INTRAOP_THREADS=$TF_NUM_INTRAOP_THREADS"
 
-PROJECT_ROOT="${PBS_O_WORKDIR}"
+PROJECT_ROOT="${PBS_O_WORKDIR:-/home/s2240011/git/ddd/vehicle_based_DDD_comparison}"
+# Handle case where PBS_O_WORKDIR is scripts/hpc/jobs/train/
+if [[ "$PROJECT_ROOT" == *"scripts/hpc/jobs"* ]]; then
+    PROJECT_ROOT="${PROJECT_ROOT%%/scripts/hpc*}"
+fi
 export PYTHONPATH=$PROJECT_ROOT:${PYTHONPATH:-}
 export PBS_JOBID="${PBS_JOBID:-manual_$(date +%Y%m%d_%H%M%S)}"
 
