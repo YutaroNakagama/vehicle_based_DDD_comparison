@@ -17,8 +17,10 @@ import numpy as np
 import pandas as pd
 import joblib
 import logging
+from scipy import stats
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, f1_score
+from sklearn.feature_selection import mutual_info_classif
 from pyswarm import pso
 
 from src.config import MODEL_PKL_PATH
@@ -27,7 +29,109 @@ from src.utils.io.savers import save_artifacts
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
-def calculate_importance_degree(params: list[float], indices_df: pd.DataFrame) -> np.ndarray:
+def compute_feature_indices(X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
+    """
+    Compute ANFIS-style feature indices for each feature.
+    
+    The four indices are:
+    1. Fisher Index: Between-class variance / Within-class variance
+    2. Correlation Index: Pearson correlation with target (absolute value)
+    3. T-test Index: t-statistic between class 0 and class 1 (normalized)
+    4. Mutual Information Index: MI between feature and target
+    
+    All indices are normalized to [0, 1] range.
+    
+    Parameters
+    ----------
+    X : pd.DataFrame
+        Feature matrix (n_samples, n_features)
+    y : pd.Series
+        Binary labels (0 or 1)
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with shape (n_features, 4) containing normalized indices
+        Columns: ['Fisher_Index', 'Correlation_Index', 'T-test_Index', 'Mutual_Information_Index']
+    """
+    n_features = X.shape[1]
+    feature_names = X.columns.tolist()
+    
+    # Initialize arrays
+    fisher_idx = np.zeros(n_features)
+    corr_idx = np.zeros(n_features)
+    ttest_idx = np.zeros(n_features)
+    mi_idx = np.zeros(n_features)
+    
+    # Split by class
+    X_class0 = X[y == 0]
+    X_class1 = X[y == 1]
+    
+    n0, n1 = len(X_class0), len(X_class1)
+    
+    if n0 == 0 or n1 == 0:
+        logging.warning("[ANFIS] One class has no samples, returning zero indices")
+        return pd.DataFrame({
+            'Fisher_Index': fisher_idx,
+            'Correlation_Index': corr_idx,
+            'T-test_Index': ttest_idx,
+            'Mutual_Information_Index': mi_idx
+        }, index=feature_names)
+    
+    for i, col in enumerate(feature_names):
+        x = X[col].values
+        x0 = X_class0[col].values
+        x1 = X_class1[col].values
+        
+        # 1. Fisher Index: (mu1 - mu0)^2 / (var0 + var1)
+        mu0, mu1 = np.mean(x0), np.mean(x1)
+        var0, var1 = np.var(x0) + 1e-10, np.var(x1) + 1e-10
+        fisher_idx[i] = (mu1 - mu0) ** 2 / (var0 + var1)
+        
+        # 2. Correlation Index: |pearson correlation with y|
+        corr, _ = stats.pearsonr(x, y.values)
+        corr_idx[i] = abs(corr) if not np.isnan(corr) else 0.0
+        
+        # 3. T-test Index: |t-statistic| (Welch's t-test)
+        t_stat, _ = stats.ttest_ind(x0, x1, equal_var=False)
+        ttest_idx[i] = abs(t_stat) if not np.isnan(t_stat) else 0.0
+    
+    # 4. Mutual Information (computed in batch)
+    try:
+        mi_idx = mutual_info_classif(X, y, discrete_features=False, random_state=42)
+    except Exception as e:
+        logging.warning(f"[ANFIS] MI computation failed: {e}, using zeros")
+        mi_idx = np.zeros(n_features)
+    
+    # Normalize all indices to [0, 1]
+    def normalize(arr):
+        min_val, max_val = arr.min(), arr.max()
+        if max_val - min_val < 1e-10:
+            return np.zeros_like(arr)
+        return (arr - min_val) / (max_val - min_val)
+    
+    fisher_idx = normalize(fisher_idx)
+    corr_idx = normalize(corr_idx)  # Already in [0, 1] but normalize for consistency
+    ttest_idx = normalize(ttest_idx)
+    mi_idx = normalize(mi_idx)
+    
+    indices_df = pd.DataFrame({
+        'Fisher_Index': fisher_idx,
+        'Correlation_Index': corr_idx,
+        'T-test_Index': ttest_idx,
+        'Mutual_Information_Index': mi_idx
+    }, index=feature_names)
+    
+    logging.info(f"[ANFIS] Computed feature indices for {n_features} features")
+    logging.info(f"[ANFIS] Index stats - Fisher: [{fisher_idx.min():.3f}, {fisher_idx.max():.3f}], "
+                 f"Corr: [{corr_idx.min():.3f}, {corr_idx.max():.3f}], "
+                 f"T-test: [{ttest_idx.min():.3f}, {ttest_idx.max():.3f}], "
+                 f"MI: [{mi_idx.min():.3f}, {mi_idx.max():.3f}]")
+    
+    return indices_df
+
+
+def calculate_importance_degree(params: list, indices_df: pd.DataFrame) -> np.ndarray:
     """
     Compute importance degree per feature using ANFIS-style weighted indices.
 
