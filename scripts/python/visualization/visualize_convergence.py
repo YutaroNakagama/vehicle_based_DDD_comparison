@@ -202,24 +202,42 @@ def visualize_svma_pso_convergence(histories: dict, output_prefix: str = "svma")
         C_values = [h['params']['C'] for h in pso_history]
         gamma_values = [h['params']['gamma'] for h in pso_history]
         
-        ax_acc = axes[seed_idx, 0]
+        ax_fitness = axes[seed_idx, 0]
         ax_params = axes[seed_idx, 1]
         
-        # Plot accuracy over evaluations
-        ax_acc.plot(evaluations, accuracies, 'b-o', markersize=4, label='Accuracy')
+        # Plot fitness over evaluations (lower is better, 1.0 = penalty)
+        # Convert to "score" for easier interpretation (higher is better)
+        # fitness = -accuracy (when valid) or 1.0 (penalty)
+        scores = [-f if f < 1.0 else 0.0 for f in fitness]
+        penalty_mask = [f == 1.0 for f in fitness]
+        valid_mask = [f < 1.0 for f in fitness]
+        
+        # Count valid vs penalty evaluations
+        n_valid = sum(valid_mask)
+        n_penalty = sum(penalty_mask)
+        
+        # Plot all evaluations
+        ax_fitness.scatter([e for e, p in zip(evaluations, penalty_mask) if p], 
+                          [0 for p in penalty_mask if p], 
+                          c='red', alpha=0.3, s=20, label=f'Penalty (empty features): {n_penalty}')
+        ax_fitness.scatter([e for e, v in zip(evaluations, valid_mask) if v], 
+                          [s for s, v in zip(scores, valid_mask) if v], 
+                          c='blue', alpha=0.6, s=30, label=f'Valid: {n_valid}')
         
         # Show best accuracy with horizontal line
-        best_acc = max(accuracies)
-        best_eval = evaluations[accuracies.index(best_acc)]
-        ax_acc.axhline(y=best_acc, color='r', linestyle='--', alpha=0.7, 
-                      label=f'Best: {best_acc:.4f}')
-        ax_acc.axvline(x=best_eval, color='r', linestyle=':', alpha=0.5)
+        if n_valid > 0:
+            best_acc = max(scores)
+            best_eval = evaluations[scores.index(best_acc)]
+            ax_fitness.axhline(y=best_acc, color='green', linestyle='--', alpha=0.7, 
+                              label=f'Best Accuracy: {best_acc:.4f}')
         
-        ax_acc.set_xlabel('Evaluation')
-        ax_acc.set_ylabel('Accuracy')
-        ax_acc.set_title(f'SvmA PSO Optimization (Seed {seed})')
-        ax_acc.legend()
-        ax_acc.grid(True, alpha=0.3)
+        ax_fitness.set_xlabel('Evaluation')
+        ax_fitness.set_ylabel('Accuracy (0 = penalty/empty features)')
+        ax_fitness.set_title(f'SvmA PSO Optimization (Seed {seed})\n'
+                            f'{n_valid}/{len(fitness)} valid evaluations')
+        ax_fitness.legend(loc='upper right', fontsize=8)
+        ax_fitness.grid(True, alpha=0.3)
+        ax_fitness.set_ylim(-0.05, 1.05)
         
         # Plot parameter evolution
         ax_params.scatter(evaluations, C_values, c='blue', alpha=0.6, label='C', s=30)
@@ -326,11 +344,14 @@ def create_combined_summary(lstm_histories: dict, svma_histories: dict, svmw_stu
     for seed, pso_history in svma_histories.items():
         if pso_history:
             best_acc = max(h['accuracy'] for h in pso_history)
+            n_evals = len(pso_history)
+            # Infer swarmsize and maxiter from total evaluations
+            # swarmsize * (maxiter + 1) = n_evals
             rows.append({
                 'Model': 'SvmA',
                 'Seed': seed,
-                'Method': 'PSO (swarmsize=3, maxiter=3)',
-                'Total Evaluations': len(pso_history),
+                'Method': f'PSO ({n_evals} evaluations)',
+                'Total Evaluations': n_evals,
                 'Avg per Fold': '-',
                 'Best Value': f"{best_acc:.4f}"
             })
@@ -374,8 +395,8 @@ def main():
     }
     
     SVMA_JOBS = {
-        's42': '14674643',   # SvmA seed 42 with PSO history
-        's123': '14674644',  # SvmA seed 123 with PSO history
+        's42': '14674658',   # SvmA seed 42 with improved PSO (swarmsize=10, maxiter=20)
+        's123': '14674659',  # SvmA seed 123 with improved PSO
     }
     
     SVMW_JOBS = {

@@ -13,7 +13,7 @@ from typing import Dict, List, Optional, Tuple
 from sklearn.preprocessing import StandardScaler
 
 from src.models.training.model_factory import get_classifier
-from src.models.architectures.SvmA import SvmA_train
+from src.models.architectures.SvmA import SvmA_train, compute_feature_indices
 from src.models.architectures.lstm import lstm_train
 from src.models.training.pipeline import common_train
 
@@ -56,8 +56,13 @@ def train_model(
         return model_obj, scaler_obj, None, {"selected_features": selected_feats}, results
 
     elif model_name == "SvmA":
+        # Compute ANFIS feature indices from training data
+        # indices_df contains Fisher, Correlation, T-test, and MI scores per feature
+        indices_df = compute_feature_indices(X_train_fs, y_train)
+        logging.info(f"[SvmA] Computed feature indices with shape {indices_df.shape}")
+        
         model_obj, scaler_obj, selected_feats, results = SvmA_train(
-            X_train_fs, X_val_fs, y_train, y_val, selected_features, model_name,
+            X_train_fs, X_val_fs, y_train, y_val, indices_df, model_name,
             X_test=X_test_fs, y_test=y_test,
         )
         logging.info("SvmA training completed.")
