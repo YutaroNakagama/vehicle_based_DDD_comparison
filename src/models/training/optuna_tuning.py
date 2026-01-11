@@ -247,21 +247,14 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
         return LogisticRegression(**params)
 
     elif model in ["SVM", "SvmW"]:
-        # Expanded hyperparameter search: kernel type and gamma
-        kernel = trial.suggest_categorical("kernel", ["linear", "rbf", "poly"])
+        # Linear kernel only (fast and sufficient for this dataset)
         params = {
             "C": trial.suggest_float("C", 1e-3, 10.0, log=True),
-            "kernel": kernel,
+            "kernel": "linear",
             "probability": True,
             "random_state": 42,
             "class_weight": "balanced",
         }
-        # Add gamma for non-linear kernels (rbf, poly)
-        if kernel in ["rbf", "poly"]:
-            params["gamma"] = trial.suggest_float("gamma", 1e-4, 1.0, log=True)
-        # Add degree for polynomial kernel
-        if kernel == "poly":
-            params["degree"] = trial.suggest_int("degree", 2, 5)
         return SVC(**params)
 
     elif model == "DecisionTree":
