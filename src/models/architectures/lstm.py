@@ -140,6 +140,20 @@ def lstm_train(
     from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
     from sklearn.metrics import confusion_matrix, roc_auc_score, average_precision_score
 
+    # Convert to DataFrame if numpy array
+    if isinstance(X, np.ndarray):
+        X = pd.DataFrame(X)
+    if isinstance(y, np.ndarray):
+        y = pd.Series(y)
+    if X_val is not None and isinstance(X_val, np.ndarray):
+        X_val = pd.DataFrame(X_val)
+    if y_val is not None and isinstance(y_val, np.ndarray):
+        y_val = pd.Series(y_val)
+    if X_test is not None and isinstance(X_test, np.ndarray):
+        X_test = pd.DataFrame(X_test)
+    if y_test is not None and isinstance(y_test, np.ndarray):
+        y_test = pd.Series(y_test)
+
     # Extract numeric columns
     X_numeric = X.select_dtypes(include=[np.number])
     
