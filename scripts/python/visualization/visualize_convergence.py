@@ -369,13 +369,13 @@ def main():
     # Define job IDs for each model and seed
     # These should be updated to match actual job IDs with convergence data
     LSTM_JOBS = {
-        # 's42': 'JOB_ID_HERE',  # Need job ID with training history
-        # 's123': 'JOB_ID_HERE', # Need job ID with training history
+        's42': '14674645',   # Lstm seed 42 with training history
+        's123': '14674646',  # Lstm seed 123 with training history
     }
     
     SVMA_JOBS = {
-        # 's42': 'JOB_ID_HERE',  # Need job ID with PSO history
-        # 's123': 'JOB_ID_HERE', # Need job ID with PSO history
+        's42': '14674643',   # SvmA seed 42 with PSO history
+        's123': '14674644',  # SvmA seed 123 with PSO history
     }
     
     SVMW_JOBS = {
