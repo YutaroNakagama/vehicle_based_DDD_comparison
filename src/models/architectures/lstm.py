@@ -184,17 +184,17 @@ def lstm_train(
         X_scaled_test = scaler.transform(X_array[test_idx])
 
         # Reshape for LSTM
-        X_train = np.expand_dims(X_scaled, axis=1)
-        X_test = np.expand_dims(X_scaled_test, axis=1)
-        y_train = y_cleaned.values[train_idx]
-        y_test = y_cleaned.values[test_idx]
+        X_train_fold = np.expand_dims(X_scaled, axis=1)
+        X_test_fold = np.expand_dims(X_scaled_test, axis=1)
+        y_train_fold = y_cleaned.values[train_idx]
+        y_test_fold = y_cleaned.values[test_idx]
 
-        model = build_lstm_model((X_train.shape[1], X_train.shape[2]))
+        model = build_lstm_model((X_train_fold.shape[1], X_train_fold.shape[2]))
         early_stopping = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
 
         logging.info(f'--- Fold {fold_no} Training Start ---')
         model.fit(
-            X_train, y_train,
+            X_train_fold, y_train_fold,
             epochs=epochs,
             batch_size=batch_size,
             validation_split=0.2,
@@ -202,7 +202,7 @@ def lstm_train(
             callbacks=[early_stopping]
         )
 
-        scores = model.evaluate(X_test, y_test, verbose=0)
+        scores = model.evaluate(X_test_fold, y_test_fold, verbose=0)
         accuracies.append(scores[1])
         
         # Keep track of the best model (highest validation accuracy)
