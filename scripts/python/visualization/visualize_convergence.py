@@ -70,33 +70,33 @@ def load_svma_pso_history(job_id: str, array_idx: str = "1") -> list:
 
 
 def load_svmw_optuna_study(job_id: str, array_idx: str = "1"):
-    """Load SvmW Optuna study from SQLite database."""
-    svmw_dir = MODELS_DIR / "SvmW" / job_id / f"{job_id}[{array_idx}]"
+    """Load SvmW Optuna convergence from JSON file (or study.pkl)."""
+    svmw_dir = MODELS_DIR / "SvmW" / job_id
     
     if not svmw_dir.exists():
         print(f"[WARN] SvmW directory not found: {svmw_dir}")
         return None
     
-    db_files = list(svmw_dir.glob("optuna_SvmW_*.db"))
-    if not db_files:
-        print(f"[WARN] No Optuna database found in: {svmw_dir}")
-        return None
+    # First try to find convergence JSON files
+    convergence_files = list(svmw_dir.glob("*_convergence.json"))
+    if convergence_files:
+        filepath = convergence_files[0]
+        print(f"[INFO] Loading SvmW convergence from: {filepath}")
+        with open(filepath, 'r') as f:
+            return json.load(f)
     
-    db_path = db_files[0]
-    print(f"[INFO] Loading Optuna study from: {db_path}")
-    try:
-        study = optuna.load_study(
-            study_name=None,
-            storage=f"sqlite:///{db_path}"
-        )
-        # Get the first study if multiple exist
-        studies = optuna.study.get_all_study_names(f"sqlite:///{db_path}")
-        if studies:
-            study = optuna.load_study(study_name=studies[0], storage=f"sqlite:///{db_path}")
-        return study
-    except Exception as e:
-        print(f"[ERROR] Failed to load Optuna study: {e}")
-        return None
+    # Fallback to subdirectory
+    subdir = svmw_dir / f"{job_id}[{array_idx}]"
+    if subdir.exists():
+        convergence_files = list(subdir.glob("*_convergence.json"))
+        if convergence_files:
+            filepath = convergence_files[0]
+            print(f"[INFO] Loading SvmW convergence from: {filepath}")
+            with open(filepath, 'r') as f:
+                return json.load(f)
+    
+    print(f"[WARN] No SvmW convergence data found in: {svmw_dir}")
+    return None
 
 
 def visualize_lstm_convergence(histories: dict, output_prefix: str = "lstm"):
@@ -245,7 +245,7 @@ def visualize_svmw_optuna_convergence(studies: dict, output_prefix: str = "svmw"
     Parameters
     ----------
     studies : dict
-        Dictionary with seed as key, Optuna study as value
+        Dictionary with seed as key, convergence data (dict) as value
     output_prefix : str
         Prefix for output filename
     """
@@ -258,47 +258,44 @@ def visualize_svmw_optuna_convergence(studies: dict, output_prefix: str = "svmw"
     if n_seeds == 1:
         axes = axes.reshape(1, -1)
     
-    for seed_idx, (seed, study) in enumerate(studies.items()):
-        if study is None:
+    for seed_idx, (seed, data) in enumerate(studies.items()):
+        if data is None:
             continue
-            
-        trials_df = study.trials_dataframe()
-        if trials_df.empty:
+        
+        # Extract trials from JSON structure
+        trials = data.get('trials', [])
+        if not trials:
             continue
         
         ax_obj = axes[seed_idx, 0]
         ax_param = axes[seed_idx, 1]
         
+        # Extract data
+        trial_nums = [t['trial_number'] for t in trials]
+        values = [t['value'] for t in trials]
+        best_so_far = [t['best_so_far'] for t in trials]
+        C_values = [t['params']['C'] for t in trials]
+        
         # Plot objective value over trials
-        trial_nums = trials_df['number'].values
-        values = trials_df['value'].values
-        
-        # Compute cumulative best
-        best_so_far = np.minimum.accumulate(values)
-        
-        ax_obj.plot(trial_nums, values, 'b-o', markersize=3, alpha=0.5, label='Trial Value')
+        ax_obj.plot(trial_nums, values, 'b-o', markersize=3, alpha=0.5, label='Trial Value (F1)')
         ax_obj.plot(trial_nums, best_so_far, 'r-', linewidth=2, label='Best So Far')
         ax_obj.set_xlabel('Trial')
-        ax_obj.set_ylabel('Objective Value (Negative F1)')
+        ax_obj.set_ylabel('Objective Value (F1 Score)')
         ax_obj.set_title(f'SvmW Optuna Optimization (Seed {seed})')
         ax_obj.legend()
         ax_obj.grid(True, alpha=0.3)
         
-        # Plot C parameter over trials
-        if 'params_C' in trials_df.columns:
-            ax_param.scatter(trial_nums, trials_df['params_C'].values, 
-                           c=values, cmap='viridis', alpha=0.7, s=30)
-            ax_param.set_xlabel('Trial')
-            ax_param.set_ylabel('C Parameter')
-            ax_param.set_title(f'SvmW C Parameter Search (Seed {seed})')
-            ax_param.set_yscale('log')
-            ax_param.grid(True, alpha=0.3)
-            
-            # Add colorbar
-            sm = plt.cm.ScalarMappable(cmap='viridis', 
-                                       norm=plt.Normalize(vmin=min(values), vmax=max(values)))
-            sm.set_array([])
-            plt.colorbar(sm, ax=ax_param, label='Objective')
+        # Plot C parameter over trials with color by objective
+        scatter = ax_param.scatter(trial_nums, C_values, 
+                       c=values, cmap='viridis', alpha=0.7, s=30)
+        ax_param.set_xlabel('Trial')
+        ax_param.set_ylabel('C Parameter')
+        ax_param.set_title(f'SvmW C Parameter Search (Seed {seed})')
+        ax_param.set_yscale('log')
+        ax_param.grid(True, alpha=0.3)
+        
+        # Add colorbar
+        plt.colorbar(scatter, ax=ax_param, label='F1 Score')
     
     plt.tight_layout()
     output_path = OUTPUT_DIR / f"{output_prefix}_optuna_convergence.png"
@@ -339,15 +336,18 @@ def create_combined_summary(lstm_histories: dict, svma_histories: dict, svmw_stu
             })
     
     # SvmW summary
-    for seed, study in svmw_studies.items():
-        if study:
+    for seed, data in svmw_studies.items():
+        if data:
+            metadata = data.get('metadata', {})
+            best_val = metadata.get('best_value', 0)
+            n_trials = metadata.get('n_trials', len(data.get('trials', [])))
             rows.append({
                 'Model': 'SvmW',
                 'Seed': seed,
-                'Method': 'Optuna TPE (50 trials)',
-                'Total Evaluations': len(study.trials),
+                'Method': f'Optuna TPE ({n_trials} trials)',
+                'Total Evaluations': n_trials,
                 'Avg per Fold': '-',
-                'Best Value': f"{-study.best_value:.4f}"
+                'Best Value': f"{best_val:.4f}"
             })
     
     if rows:
@@ -379,8 +379,8 @@ def main():
     }
     
     SVMW_JOBS = {
-        's42': '14661700',   # SvmW seed 42
-        's123': '14661699',  # SvmW seed 123
+        's42': '14662837',   # SvmW seed 42
+        's123': '14662838',  # SvmW seed 123
     }
     
     # Load histories
