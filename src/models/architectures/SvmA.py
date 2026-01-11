@@ -188,7 +188,10 @@ def optimize_svm_anfis(
     lb = [0, 0, 0, 0, 0.1, 0.001]
     ub = [1, 1, 1, 1, 10, 1]
 
-    optimal_params, _ = pso(objective, lb, ub, swarmsize=3, maxiter=3)
+    # Increased swarmsize and maxiter for better exploration
+    # Original: swarmsize=3, maxiter=3 (12 evaluations) - insufficient
+    # Improved: swarmsize=10, maxiter=20 (200 evaluations)
+    optimal_params, _ = pso(objective, lb, ub, swarmsize=10, maxiter=20)
     return optimal_params, pso_history
 
 
