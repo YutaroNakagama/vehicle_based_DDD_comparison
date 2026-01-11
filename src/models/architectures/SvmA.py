@@ -268,11 +268,12 @@ def SvmA_train(
     
     # Save PSO optimization history for convergence visualization
     import json
+    from pathlib import Path
     pbs_jobid_pso = os.environ.get("PBS_JOBID", "local")
     if "." in pbs_jobid_pso:
         pbs_jobid_pso = pbs_jobid_pso.split(".")[0]
     pbs_array_idx_pso = os.environ.get("PBS_ARRAY_INDEX", "1")
-    history_dir = MODEL_PKL_PATH / model / f"{pbs_jobid_pso}" / f"{pbs_jobid_pso}[{pbs_array_idx_pso}]"
+    history_dir = Path(MODEL_PKL_PATH) / model / f"{pbs_jobid_pso}" / f"{pbs_jobid_pso}[{pbs_array_idx_pso}]"
     history_dir.mkdir(parents=True, exist_ok=True)
     history_filename = f"pso_history_{model}_{pbs_jobid_pso}_{pbs_array_idx_pso}.json"
     with open(history_dir / history_filename, 'w') as f:
