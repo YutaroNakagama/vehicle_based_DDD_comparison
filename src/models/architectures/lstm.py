@@ -249,12 +249,13 @@ def lstm_train(
     
     # Save training histories for convergence visualization
     import json
+    from pathlib import Path
     pbs_jobid_hist = os.environ.get("PBS_JOBID", "local")
     if "." in pbs_jobid_hist:
         pbs_jobid_hist = pbs_jobid_hist.split(".")[0]
     pbs_array_idx_hist = os.environ.get("PBS_ARRAY_INDEX", "1")
     history_filename = f"training_history_{model_name}_{pbs_jobid_hist}_{pbs_array_idx_hist}.json"
-    history_path = MODEL_PKL_PATH / model_name / f"{pbs_jobid_hist}" / f"{pbs_jobid_hist}[{pbs_array_idx_hist}]" / history_filename
+    history_path = Path(MODEL_PKL_PATH) / model_name / f"{pbs_jobid_hist}" / f"{pbs_jobid_hist}[{pbs_array_idx_hist}]" / history_filename
     history_path.parent.mkdir(parents=True, exist_ok=True)
     with open(history_path, 'w') as f:
         json.dump(fold_histories, f, indent=2)
