@@ -238,6 +238,12 @@ def lstm_train(
     
     # --- Compute evaluation metrics using the best model ---
     def compute_metrics(model_obj, scaler_obj, X_data, y_data, dataset_name):
+        # Convert to DataFrame if numpy array
+        if isinstance(X_data, np.ndarray):
+            X_data = pd.DataFrame(X_data)
+        if isinstance(y_data, np.ndarray):
+            y_data = pd.Series(y_data)
+        
         # Preprocess data
         X_num = X_data.select_dtypes(include=[np.number])
         X_num = X_num.replace([np.inf, -np.inf], np.nan).dropna()
