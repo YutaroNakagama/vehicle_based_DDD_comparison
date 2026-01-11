@@ -4,7 +4,7 @@ Prior Research Comparison Visualization
 ========================================
 
 This script generates comparison plots between prior research methods
-(SvmA, SvmW, Lstm) and the BalancedRF baseline using pooled training mode.
+(SvmA, SvmW, Lstm) and the RF baseline using pooled training mode.
 
 Metrics visualized:
 - Accuracy, Recall, Precision, Specificity
@@ -80,9 +80,9 @@ def find_result_files() -> Dict[str, str]:
             key = f"{model}_{seed}"
             result_files[key] = str(path)
     
-    # Baseline BalancedRF (pooled mode)
-    brf_pattern = "**/BalancedRF/**/train_results_BalancedRF_pooled_balanced_rf_*.json"
-    for path in RESULTS_BASE.glob(brf_pattern):
+    # Baseline RF (pooled mode) - look for baseline results
+    rf_pattern = "**/RF/**/train_results_RF_pooled_baseline_*.json"
+    for path in RESULTS_BASE.glob(rf_pattern):
         filename = path.stem
         if "_s42" in filename:
             seed = "s42"
@@ -90,7 +90,7 @@ def find_result_files() -> Dict[str, str]:
             seed = "s123"
         else:
             continue
-        key = f"BalancedRF_{seed}"
+        key = f"RF_{seed}"
         result_files[key] = str(path)
     
     return result_files
@@ -207,7 +207,7 @@ def plot_metrics_by_split(df: pd.DataFrame, split: str, output_path: Path) -> No
     std_df = split_df.groupby("model")[METRICS].std().reset_index()
     
     # Order models: prior research first, then baseline
-    model_order = ["SvmA", "SvmW", "Lstm", "BalancedRF"]
+    model_order = ["SvmA", "SvmW", "Lstm", "RF"]
     avg_df["model"] = pd.Categorical(avg_df["model"], categories=model_order, ordered=True)
     avg_df = avg_df.sort_values("model").dropna(subset=["model"])
     std_df["model"] = pd.Categorical(std_df["model"], categories=model_order, ordered=True)
@@ -255,7 +255,7 @@ def plot_metrics_by_split(df: pd.DataFrame, split: str, output_path: Path) -> No
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
     
-    plt.suptitle(f"Prior Research Methods vs BalancedRF Baseline\n{split_titles[split]} Performance", 
+    plt.suptitle(f"Prior Research Methods vs RF Baseline\n{split_titles[split]} Performance", 
                  fontsize=14, fontweight='bold')
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.savefig(output_path, dpi=150, bbox_inches='tight')
@@ -277,7 +277,7 @@ def plot_all_splits_comparison(df: pd.DataFrame, output_path: Path) -> None:
     # Average over seeds
     avg_df = df.groupby(["model", "split"])[METRICS].mean().reset_index()
     
-    model_order = ["SvmA", "SvmW", "Lstm", "BalancedRF"]
+    model_order = ["SvmA", "SvmW", "Lstm", "RF"]
     split_order = ["train", "val", "test"]
     
     # Create figure with 2x4 subplots for metrics
@@ -366,7 +366,7 @@ def create_summary_table(df: pd.DataFrame, output_path: Path) -> None:
     print("=" * 80)
     
     avg_summary = df.groupby(["model", "split"])[METRICS].mean().round(4)
-    for model in ["SvmA", "SvmW", "Lstm", "BalancedRF"]:
+    for model in ["SvmA", "SvmW", "Lstm", "RF"]:
         if model in avg_summary.index.get_level_values(0):
             print(f"\n{model}:")
             for split in ["train", "val", "test"]:
