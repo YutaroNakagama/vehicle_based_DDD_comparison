@@ -172,6 +172,7 @@ def lstm_train(
 
     kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
     accuracies = []
+    fold_histories = []  # Store training history for convergence visualization
     best_accuracy = 0.0
     best_model = None
     best_scaler = None
@@ -193,7 +194,7 @@ def lstm_train(
         early_stopping = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
 
         logging.info(f'--- Fold {fold_no} Training Start ---')
-        model.fit(
+        history = model.fit(
             X_train_fold, y_train_fold,
             epochs=epochs,
             batch_size=batch_size,
@@ -201,6 +202,16 @@ def lstm_train(
             verbose=1,
             callbacks=[early_stopping]
         )
+        
+        # Save training history for convergence visualization
+        history_dict = {
+            'loss': history.history.get('loss', []),
+            'val_loss': history.history.get('val_loss', []),
+            'accuracy': history.history.get('accuracy', []),
+            'val_accuracy': history.history.get('val_accuracy', []),
+            'epochs': list(range(1, len(history.history.get('loss', [])) + 1))
+        }
+        fold_histories.append({'fold': fold_no, 'history': history_dict})
 
         scores = model.evaluate(X_test_fold, y_test_fold, verbose=0)
         accuracies.append(scores[1])
@@ -235,6 +246,19 @@ def lstm_train(
 
     logging.info(f'\nScores per fold: {accuracies}')
     logging.info(f'Average accuracy: {np.mean(accuracies)}')
+    
+    # Save training histories for convergence visualization
+    import json
+    pbs_jobid_hist = os.environ.get("PBS_JOBID", "local")
+    if "." in pbs_jobid_hist:
+        pbs_jobid_hist = pbs_jobid_hist.split(".")[0]
+    pbs_array_idx_hist = os.environ.get("PBS_ARRAY_INDEX", "1")
+    history_filename = f"training_history_{model_name}_{pbs_jobid_hist}_{pbs_array_idx_hist}.json"
+    history_path = MODEL_PKL_PATH / model_name / f"{pbs_jobid_hist}" / f"{pbs_jobid_hist}[{pbs_array_idx_hist}]" / history_filename
+    history_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(history_path, 'w') as f:
+        json.dump(fold_histories, f, indent=2)
+    logging.info(f"Training history saved to {history_path}")
     
     # --- Compute evaluation metrics using the best model ---
     def compute_metrics(model_obj, scaler_obj, X_data, y_data, dataset_name):

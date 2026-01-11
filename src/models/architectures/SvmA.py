@@ -127,7 +127,7 @@ def optimize_svm_anfis(
     X_train: pd.DataFrame, y_train: pd.Series,
     X_val: pd.DataFrame, y_val: pd.Series,
     indices_df: pd.DataFrame
-) -> list[float]:
+) -> tuple[list[float], list[dict]]:
     """
     Optimize ANFIS feature weights and SVM hyperparameters using PSO.
 
@@ -146,28 +146,50 @@ def optimize_svm_anfis(
 
     Returns
     -------
-    list of float
-        Optimal parameters in the form:
-        [w1, w2, w3, w4, C, gamma].
+    tuple
+        - list of float: Optimal parameters [w1, w2, w3, w4, C, gamma].
+        - list of dict: PSO optimization history for convergence visualization.
     """
+    # Track PSO optimization history
+    pso_history = []
+    eval_count = [0]  # Use list to allow mutation in nested function
+    
     def objective(params):
+        eval_count[0] += 1
         importance_degree = calculate_importance_degree(params[:4], indices_df)
         X_train_sel = select_features(X_train, importance_degree)
         X_val_sel = select_features(X_val, importance_degree)
 
         if X_train_sel.shape[1] == 0:
-            return 1.0  # Penalty for empty selection
-
-        model = SVC(kernel='rbf', C=params[4], gamma=params[5])
-        model.fit(X_train_sel, y_train)
-        accuracy = accuracy_score(y_val, model.predict(X_val_sel))
-        return -accuracy
+            fitness = 1.0  # Penalty for empty selection
+        else:
+            model = SVC(kernel='rbf', C=params[4], gamma=params[5])
+            model.fit(X_train_sel, y_train)
+            accuracy = accuracy_score(y_val, model.predict(X_val_sel))
+            fitness = -accuracy
+        
+        # Record this evaluation
+        pso_history.append({
+            'evaluation': eval_count[0],
+            'params': {
+                'w1': float(params[0]),
+                'w2': float(params[1]),
+                'w3': float(params[2]),
+                'w4': float(params[3]),
+                'C': float(params[4]),
+                'gamma': float(params[5])
+            },
+            'fitness': float(fitness),
+            'accuracy': float(-fitness) if fitness != 1.0 else 0.0
+        })
+        
+        return fitness
 
     lb = [0, 0, 0, 0, 0.1, 0.001]
     ub = [1, 1, 1, 1, 10, 1]
 
     optimal_params, _ = pso(objective, lb, ub, swarmsize=3, maxiter=3)
-    return optimal_params
+    return optimal_params, pso_history
 
 
 def evaluate_model(model: SVC, X: pd.DataFrame, y: pd.Series, dataset_name: str) -> None:
@@ -241,8 +263,21 @@ def SvmA_train(
     """
     logging.info("Starting SVM-ANFIS optimization...")
 
-    optimal_params = optimize_svm_anfis(X_train, y_train, X_val, y_val, indices_df)
+    optimal_params, pso_history = optimize_svm_anfis(X_train, y_train, X_val, y_val, indices_df)
     best_anfis_params, best_C, best_gamma = optimal_params[:4], optimal_params[4], optimal_params[5]
+    
+    # Save PSO optimization history for convergence visualization
+    import json
+    pbs_jobid_pso = os.environ.get("PBS_JOBID", "local")
+    if "." in pbs_jobid_pso:
+        pbs_jobid_pso = pbs_jobid_pso.split(".")[0]
+    pbs_array_idx_pso = os.environ.get("PBS_ARRAY_INDEX", "1")
+    history_dir = MODEL_PKL_PATH / model / f"{pbs_jobid_pso}" / f"{pbs_jobid_pso}[{pbs_array_idx_pso}]"
+    history_dir.mkdir(parents=True, exist_ok=True)
+    history_filename = f"pso_history_{model}_{pbs_jobid_pso}_{pbs_array_idx_pso}.json"
+    with open(history_dir / history_filename, 'w') as f:
+        json.dump(pso_history, f, indent=2)
+    logging.info(f"PSO optimization history saved to {history_dir / history_filename}")
 
     importance_degree = calculate_importance_degree(best_anfis_params, indices_df)
     X_train_sel = select_features(X_train, importance_degree)
