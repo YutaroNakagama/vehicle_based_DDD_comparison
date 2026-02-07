@@ -52,6 +52,7 @@ bash scripts/hpc/launchers/launch_paper_domain_split2.sh
 ```
 
 **Experiment Matrix:**
+**詳細な実験条件一覧:** [conditions/experiment_2_conditions.md](conditions/experiment_2_conditions.md)
 
 | Parameter | Values |
 |-----------|--------|
