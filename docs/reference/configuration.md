@@ -144,9 +144,3 @@ MIN_RECALL_THRESHOLD = 0.80
 # Aggressive class weighting
 RF_CLASS_WEIGHT = {0: 1.0, 1: 5.0}
 ```
-
-Usage:
-
-```bash
-PYTHONPATH=config python scripts/python/train.py --model RF
-```

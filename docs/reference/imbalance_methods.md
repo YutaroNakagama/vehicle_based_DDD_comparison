@@ -14,6 +14,8 @@ To address this problem, we implemented and compared methods in the following th
 | **Data Augmentation** | Jittering + Scaling | Increase |
 | **Ensemble** | BalancedRF, EasyEnsemble | No change |
 
+> For evaluation metrics details, see [Evaluation Metrics](evaluation_metrics.md).
+
 ---
 
 ## 1. Oversampling Methods
@@ -200,46 +202,7 @@ Ensembles multiple AdaBoost classifiers. Each classifier is trained on a differe
 
 ---
 
-## 5. Evaluation Metrics
-
-With imbalanced data, Accuracy becomes an inappropriate metric, so we use the following metrics:
-
-| Metric | Description | Characteristics |
-|--------|-------------|-----------------|
-| **AUPRC (PR-AUC)** | Area under Precision-Recall curve | Threshold-independent, optimal for imbalanced data |
-| **F2 Score** | Recall-weighted F-measure ($\beta=2$) | Prioritizes reducing missed detections |
-| **Recall** | True positive rate (sensitivity) | Drowsiness detection rate |
-| **Precision** | Positive predictive value | Inverse of false alarm rate |
-
-**F-beta Score definition:**
-$$F_\beta = (1 + \beta^2) \cdot \frac{\text{Precision} \cdot \text{Recall}}{\beta^2 \cdot \text{Precision} + \text{Recall}}$$
-
-**Reference:**
-> Saito, T., & Rehmsmeier, M. (2015).
-> **The Precision-Recall Plot Is More Informative than the ROC Plot When Evaluating Binary Classifiers on Imbalanced Datasets.**
-> *PLOS ONE*, 10(3), e0118432.
-> https://doi.org/10.1371/journal.pone.0118432
-
----
-
-## 6. Experiment Results Summary
-
-### Implemented Methods and Corresponding Job IDs
-
-| Method | Job ID | Tag |
-|--------|--------|-----|
-| Baseline RF (class_weight) | 14468417 | `imbal_v2_baseline` |
-| SMOTE + Tomek | 14468418 | `imbal_v2_smote_tomek` |
-| SMOTE + ENN | 14468419 | `imbal_v2_smote_enn` |
-| SMOTE + RUS | 14468421 | `imbal_v2_smote_rus` |
-| EasyEnsemble | 14468501 | `imbal_v2_easyensemble` |
-| Jittering + Scaling | 14471460 | `imbal_v2_jitter_scale` |
-| Undersample RUS | 14471478 | `imbal_v2_undersample_rus` |
-| Undersample Tomek | 14471479 | `imbal_v2_undersample_tomek` |
-
----
-
-## 7. Recommended Reading
+## 5. Recommended Reading
 
 ### Survey Papers
 
@@ -268,108 +231,10 @@ $$F_\beta = (1 + \beta^2) \cdot \frac{\text{Precision} \cdot \text{Recall}}{\bet
 
 ---
 
-## 8. Related Files
+## 6. Related Files
 
 - **Augmentation implementation:** `src/data_pipeline/augmentation.py`
 - **Training Pipeline:** `src/models/architectures/common.py`
 - **CLI Helper:** `src/utils/cli/train_cli_helpers.py`
 - **Visualization:** `src/analysis/imbalance_analysis.py`
 - **HPC scripts:** `scripts/hpc/jobs/imbalance/`
-
----
-
-## 9. Imbalance Single Experiment Results (2026-01-10)
-
-### 9.1 Experiment Overview
-
-**Objective:** Compare imbalance handling methods in isolation (pooled training without domain generalization).
-
-**Conditions:**
-- Model: Random Forest (RF)
-- Seeds: 42, 123
-- Optuna trials: 100
-- Optimization metric: F2 score (validation set)
-- 8 methods × 2 seeds = 16 experiments
-
-| Method | Description |
-|--------|-------------|
-| Baseline | RF with class_weight only |
-| SMOTE 0.1 | SMOTE with sampling_ratio=0.1 |
-| SMOTE 0.5 | SMOTE with sampling_ratio=0.5 |
-| SW-SMOTE 0.1 | Subject-wise SMOTE with ratio=0.1 |
-| SW-SMOTE 0.5 | Subject-wise SMOTE with ratio=0.5 |
-| RUS 0.1 | Random Under-Sampling with ratio=0.1 |
-| RUS 0.5 | Random Under-Sampling with ratio=0.5 |
-| Balanced RF | BalancedRandomForestClassifier |
-
-### 9.2 Results Summary
-
-#### Validation Set Performance (Optuna Best F2)
-
-| Method | Best F2 (seed 42) | Best F2 (seed 123) | Improvement |
-|--------|-------------------|--------------------| ------------|
-| **SW-SMOTE 0.5** | **0.931** | **0.929** | +13.2% |
-| SW-SMOTE 0.1 | 0.605 | 0.591 | +14.5% |
-| SMOTE 0.5 | 0.779 | 0.804 | +8.4% |
-| SMOTE 0.1 | 0.406 | 0.434 | +8.3% |
-| RUS 0.5 | 0.716 | 0.715 | +0.2% |
-| RUS 0.1 | 0.337 | 0.335 | +0.1% |
-| Balanced RF | 0.173 | 0.171 | +0.1% |
-| Baseline | 0.172 | 0.171 | +0.2% |
-
-**Key Finding:** Subject-wise SMOTE with ratio=0.5 achieved the best performance, significantly outperforming all other methods.
-
-#### Test Set Performance (Generalization)
-
-| Method | ROC AUC | AUPRC | Recall |
-|--------|---------|-------|--------|
-| All methods | ~0.50-0.54 | ~0.04 | 0-50% |
-
-**Observation:** Severe generalization gap between validation and test sets across all methods. This suggests that the imbalance handling alone cannot solve the domain shift problem.
-
-### 9.3 Optuna Hyperparameter Optimization Analysis
-
-#### Trial Count Evaluation (100 trials)
-
-| Aspect | Evaluation | Details |
-|--------|------------|---------|
-| Best Trial Position | ⚠️ Late discovery | Many best trials found late (76, 77, 88, 93, 94, 96, 99) |
-| Convergence | ✅ Converged | RUS/Baseline converged early (11, 61 trials) |
-| High-improvement methods | ⚠️ More trials recommended | SW-SMOTE (+13-14%), SMOTE (+6-8%) may benefit from more trials |
-
-**Recommendation:** For SW-SMOTE and SMOTE methods, consider increasing trials to **150-200** for more precise optimization.
-
-#### Search Range Evaluation
-
-| Parameter | Range | Evaluation |
-|-----------|-------|------------|
-| n_estimators | [100, 1500] | ✅ Appropriate (no boundary saturation) |
-| max_depth | [5,10,20,30,50,100,None] | ✅ Appropriate (wide range explored) |
-| min_samples_split | [10, 100] | ✅ Appropriate |
-| min_samples_leaf | [5, 50] | ✅ Appropriate |
-| max_features | [sqrt,log2,0.05-0.5] | ✅ Appropriate (0.05 addition effective) |
-| max_samples | [None, 0.5, 0.7, 0.9] | ⚠️ Consider adding 0.3 |
-
-### 9.4 Future Work
-
-1. **Increase Optuna trials for SW-SMOTE/SMOTE methods**
-   - Current: 100 trials → Recommended: 150-200 trials
-   - Rationale: Best trials found at 96-99th trial indicate incomplete search
-
-2. **Expand max_samples search range**
-   - Current: [None, 0.5, 0.7, 0.9]
-   - Proposed: [0.3, 0.5, 0.7, 0.9, None]
-
-3. **Investigate generalization gap**
-   - Large gap between validation (F2~0.93) and test (F2~0.02) performance
-   - Consider combining with domain generalization methods
-
-4. **Subject-wise SMOTE as default for domain experiments**
-   - SW-SMOTE 0.5 showed best validation performance
-   - Use as baseline imbalance handling for domain generalization experiments
-
-### 9.5 Visualization Files
-
-- **Metrics comparison:** `results/analysis/imbalance/metrics/`
-- **Optuna convergence:** `results/analysis/imbalance/optuna/`
-- **Sampling distribution:** `results/analysis/imbalance/sampling/`

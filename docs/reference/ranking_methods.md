@@ -230,8 +230,8 @@ results/domain_analysis/ranks29/{method}/
 ## Implementation
 
 The ranking methods are implemented in:
-- `src/analysis/clustering_projection_ranked.py` - Core ranking algorithms
-- `scripts/python/domain_analysis/generate_new_rankings.py` - CLI interface
+- `src/analysis/clustering_projection_ranked.py` — Core ranking algorithms
+- `scripts/python/domain_analysis/generate_new_rankings.py` — CLI interface
 
 Each method follows a consistent interface:
 ```python

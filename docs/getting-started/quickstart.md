@@ -135,17 +135,17 @@ ls models/common/RF/
 
 ## HPC Batch Execution
 
-For large-scale experiments on PBS/Slurm clusters:
+For large-scale experiments on PBS clusters:
 
 ```bash
 # Submit training job
-qsub scripts/hpc/train_rf.pbs
+qsub scripts/hpc/jobs/train/pbs_train.sh
 
 # Monitor jobs
 qstat -u $USER
 ```
 
-See the Developer Guide for HPC details.
+See the [Developer Guide](../architecture/developer_guide.md) for HPC details.
 
 ## Common Issues
 
@@ -167,6 +167,6 @@ If validation metrics are much lower than training:
 
 ## Next Steps
 
-- [Developer Guide](developer_guide.md) - Understand the codebase architecture
-- [Imbalance Methods](imbalance_methods.md) - Detailed oversampling strategies
-- [Evaluation Metrics](evaluation_metrics.md) - Understanding metrics for DDD
+- [Developer Guide](../architecture/developer_guide.md) — Understand the codebase architecture
+- [Imbalance Methods](../reference/imbalance_methods.md) — Detailed oversampling strategies
+- [Evaluation Metrics](../reference/evaluation_metrics.md) — Understanding metrics for DDD

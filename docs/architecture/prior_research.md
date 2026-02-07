@@ -16,7 +16,7 @@ Three prior research methods are implemented:
 
 ### 2.1 SvmA (ANFIS-based Feature Weighting)
 
-**Location:** [src/models/architectures/SvmA.py](../../src/models/architectures/SvmA.py)
+**Location:** `src/models/architectures/SvmA.py`
 
 This model combines:
 - **ANFIS-style feature importance**: Weights features using Fisher Index, Correlation, T-test, and Mutual Information
@@ -43,7 +43,7 @@ Only high-importance features are selected for final SVM training.
 
 ### 2.2 SvmW (Wavelet-based SVM)
 
-**Location:** Standard SVM via [src/models/training/model_factory.py](../../src/models/training/model_factory.py)
+**Location:** Standard SVM via `src/models/training/model_factory.py`
 
 This model uses:
 - **Wavelet decomposition features**: Extracted from steering wheel and lane offset signals
@@ -59,7 +59,7 @@ Raw Signals → Wavelet Transform → Statistical Features → SVM (RBF)
 
 ### 2.3 Lstm (Bidirectional LSTM with Attention)
 
-**Location:** [src/models/architectures/lstm.py](../../src/models/architectures/lstm.py)
+**Location:** `src/models/architectures/lstm.py`
 
 This model implements:
 - **Bidirectional LSTM**: Captures temporal patterns in both directions
@@ -148,14 +148,19 @@ python scripts/python/train/train.py \
 qsub -v MODEL=SvmA,SEED=42 scripts/hpc/jobs/train/pbs_prior_research.sh
 qsub -v MODEL=SvmW,SEED=42 scripts/hpc/jobs/train/pbs_prior_research.sh
 qsub -v MODEL=Lstm,SEED=42 scripts/hpc/jobs/train/pbs_prior_research.sh
-
-# With different seed
-qsub -v MODEL=SvmA,SEED=123 scripts/hpc/jobs/train/pbs_prior_research.sh
-qsub -v MODEL=SvmW,SEED=123 scripts/hpc/jobs/train/pbs_prior_research.sh
-qsub -v MODEL=Lstm,SEED=123 scripts/hpc/jobs/train/pbs_prior_research.sh
 ```
 
-**PBS Job Script:** [scripts/hpc/jobs/train/pbs_prior_research.sh](../../scripts/hpc/jobs/train/pbs_prior_research.sh)
+### 4.3 Domain Split Experiments (Split2)
+
+```bash
+# Prior research models with domain-based split2 grouping
+bash scripts/hpc/launchers/launch_prior_research_split2.sh
+
+# Dry run to preview jobs
+bash scripts/hpc/launchers/launch_prior_research_split2.sh --dry-run
+```
+
+**PBS Job Script:** `scripts/hpc/jobs/train/pbs_prior_research_split2.sh`
 
 ## 5. Output Artifacts
 
@@ -163,22 +168,22 @@ qsub -v MODEL=Lstm,SEED=123 scripts/hpc/jobs/train/pbs_prior_research.sh
 
 ```
 models/{MODEL}/{JOB_ID}/{JOB_ID}[1]/
-├── {MODEL}_pooled_prior_research_s{SEED}_{JOB_ID}_1.pkl    # Trained model
-├── scaler_{MODEL}_pooled_prior_research_s{SEED}_{JOB_ID}_1.pkl   # Feature scaler
-├── selected_features_{MODEL}_pooled_prior_research_s{SEED}_{JOB_ID}_1.pkl  # Selected features
-├── feature_meta_{MODEL}_pooled_prior_research_s{SEED}_{JOB_ID}_1.json     # Feature metadata
-└── threshold_{MODEL}_pooled_prior_research_s{SEED}_{JOB_ID}_1.json        # Classification threshold
+├── {MODEL}_pooled_*.pkl                    # Trained model
+├── scaler_{MODEL}_pooled_*.pkl             # Feature scaler
+├── selected_features_{MODEL}_pooled_*.pkl  # Selected features
+├── feature_meta_{MODEL}_pooled_*.json      # Feature metadata
+└── threshold_{MODEL}_pooled_*.json         # Classification threshold
 ```
 
 ### 5.2 Result Files
 
 ```
 results/outputs/training/{MODEL}/{JOB_ID}/{JOB_ID}[1]/
-├── train_results_{MODEL}_pooled_prior_research_s{SEED}.json  # Metrics (train/val/test)
-└── train_results_{MODEL}_pooled_prior_research_s{SEED}.csv   # Detailed results
+├── train_results_{MODEL}_pooled_*.json  # Metrics (train/val/test)
+└── train_results_{MODEL}_pooled_*.csv   # Detailed results
 ```
 
-### 5.3 Optuna Study
+### 5.3 Optuna Study (SvmW only)
 
 ```
 models/{MODEL}/{JOB_ID}/
@@ -187,48 +192,7 @@ models/{MODEL}/{JOB_ID}/
 └── optuna_{MODEL}_pooled_*_convergence.json  # Convergence data
 ```
 
-## 6. Experiment Results (2025-01-10)
-
-### 6.1 SvmW Results (Completed)
-
-| Seed | val_F1 | test_F1 | test_Recall | test_Precision |
-|------|--------|---------|-------------|----------------|
-| 42   | 0.076  | 0.076   | 1.000       | 0.039          |
-| 123  | 0.076  | 0.076   | 1.000       | 0.039          |
-
-**Observations:**
-- High test recall (1.0) indicates the model detects all drowsiness events
-- Low precision indicates many false positives
-- Consistent results across seeds
-
-### 6.2 SvmA and Lstm (Pending Re-run)
-
-Previous runs failed due to model saving issue (returned `None`). Code has been fixed:
-- `SvmA.py`: Now returns `(model, scaler, selected_features, results)`
-- `lstm.py`: Tracks best model across folds, returns results
-- `dispatch.py`: Updated to handle new return format
-
-**Re-run commands:**
-```bash
-qsub -v MODEL=SvmA,SEED=42 scripts/hpc/jobs/train/pbs_prior_research.sh
-qsub -v MODEL=SvmA,SEED=123 scripts/hpc/jobs/train/pbs_prior_research.sh
-qsub -v MODEL=Lstm,SEED=42 scripts/hpc/jobs/train/pbs_prior_research.sh
-qsub -v MODEL=Lstm,SEED=123 scripts/hpc/jobs/train/pbs_prior_research.sh
-```
-
-## 7. Comparison with Proposed Methods
-
-### 7.1 Baseline Comparison
-
-| Method | Model | val_F1 | test_F1 | Notes |
-|--------|-------|--------|---------|-------|
-| Prior Research | SvmW | 0.076 | 0.076 | High recall, low precision |
-| Prior Research | SvmA | TBD | TBD | Pending re-run |
-| Prior Research | Lstm | TBD | TBD | Pending re-run |
-| Proposed (Imbalance) | BalancedRF + SW-SMOTE 0.5 | **0.931** | 0.022 | Best validation, generalization gap |
-| Proposed (Domain) | BalancedRF + domain ranking | TBD | TBD | In progress |
-
-### 7.2 Key Differences
+## 6. Key Differences from Proposed Methods
 
 | Aspect | Prior Research | Proposed Methods |
 |--------|---------------|------------------|
@@ -237,29 +201,22 @@ qsub -v MODEL=Lstm,SEED=123 scripts/hpc/jobs/train/pbs_prior_research.sh
 | Cross-Validation | K-Fold (Lstm), None (SvmA/SvmW) | Subject-wise split (no data leakage) |
 | Hyperparameter Tuning | PSO (SvmA), Grid (SvmW) | Optuna Bayesian optimization |
 
-## 8. Known Issues and Limitations
+## 7. Known Issues and Limitations
 
-### 8.1 Generalization Gap
+### 7.1 Generalization Gap
 
 All models show significant validation-test performance gap due to:
 - Subject-wise split: Models trained on some subjects, tested on completely different subjects
 - Individual variability: Drowsiness patterns vary significantly between drivers
 - Class imbalance: Majority of data is "awake" class
 
-### 8.2 Reproducibility Notes
+### 7.2 Reproducibility Notes
 
 - **Random seeds**: Set via `--seed` parameter
 - **Thread limits**: Controlled via environment variables in PBS script
 - **TensorFlow**: Forced to CPU mode for reproducibility
 
-## 9. Future Work
-
-1. **Complete SvmA/Lstm experiments** after queue space becomes available
-2. **Domain adaptation**: Apply domain ranking methods to prior research models
-3. **Ensemble methods**: Combine prior research models with proposed methods
-4. **Feature analysis**: Compare feature importance across methods
-
-## 10. References
+## 8. References
 
 The implementations are based on representative approaches from the driver drowsiness detection literature:
 
@@ -268,3 +225,11 @@ The implementations are based on representative approaches from the driver drows
 - **Bidirectional LSTM (Lstm)**: Deep learning approach with attention mechanism for sequential data
 
 For specific paper citations, see the original publications in the project bibliography.
+
+---
+
+## Related Documents
+
+- [Developer Guide](developer_guide.md) — Overall repository architecture
+- [Domain Generalization Pipeline](domain_generalization.md) — Domain analysis workflow
+- [Imbalance Methods](../reference/imbalance_methods.md) — Imbalance handling strategies
