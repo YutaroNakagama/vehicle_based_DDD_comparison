@@ -16,6 +16,8 @@ The repository supports three main experiment types:
 
 Compare imbalance handling methods in isolation (pooled training without domain generalization).
 
+**詳細な実験条件一覧:** [conditions/experiment_1_conditions.md](conditions/experiment_1_conditions.md)
+
 **Launcher:** `scripts/hpc/launchers/launch_imbalance.sh`
 
 ```bash
@@ -68,6 +70,8 @@ bash scripts/hpc/launchers/launch_paper_domain_split2.sh
 ## Experiment 3: Prior Research Replication (Split2)
 
 Replicate prior research baselines with domain split2 grouping.
+
+**詳細な実験条件一覧:** [conditions/experiment_3_conditions.md](conditions/experiment_3_conditions.md)
 
 **Launcher:** `scripts/hpc/launchers/launch_prior_research_split2.sh`
 
