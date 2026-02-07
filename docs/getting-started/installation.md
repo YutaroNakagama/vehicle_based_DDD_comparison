@@ -91,11 +91,6 @@ Run the smoke tests to verify the installation:
 python -m pytest tests/ -m "smoke" -v
 ```
 
-Expected output:
-```
-31 passed, 12 deselected
-```
-
 ## IDE Setup (VS Code)
 
 Recommended extensions:
@@ -149,6 +144,6 @@ For large datasets, consider:
 
 ## Next Steps
 
-- [Quickstart Guide](quickstart.md) - Run your first experiment
-- [Data Pipeline](data_pipeline.rst) - Understanding data preprocessing
-- [Model Training](models.rst) - Train classification models
+- [Quickstart Guide](quickstart.md) — Run your first experiment
+- [Configuration Reference](../reference/configuration.md) — Customize parameters
+- [Developer Guide](../architecture/developer_guide.md) — Understand the codebase

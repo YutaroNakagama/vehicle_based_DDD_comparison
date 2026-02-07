@@ -220,4 +220,4 @@ best_threshold = max(thresholds, key=lambda t: fbeta_score(y_val, y_pred > t, be
 ## Related Documents
 
 - [Imbalance Handling Methods](imbalance_methods.md)
-- [Evaluation Pipeline](evaluation.rst)
+- [Configuration Reference](configuration.md)
