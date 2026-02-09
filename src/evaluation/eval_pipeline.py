@@ -115,7 +115,7 @@ def eval_pipeline(
     )
 
     # Stage 4: Split data for evaluation
-    if mode in ["source_only", "target_only"] and len(target_subjects) > 0:
+    if mode in ["source_only", "target_only", "mixed"] and len(target_subjects) > 0:
         X_t_tr, X_val, X_test, y_t_tr, y_val, y_test = split_data(
             subject_split_strategy="subject_time_split",
             subject_list=subjects,
@@ -129,18 +129,20 @@ def eval_pipeline(
         )
         log_split_ratios(y_t_tr, y_val, y_test, tag=f"eval|target_timewise|mode={mode}|tag={tag}")
     else:
+        eval_strategy = "subject_time_split" if subject_wise_split else "random"
+        eval_time_stratify = subject_wise_split
         X_train, X_val, X_test, y_train, y_val, y_test = split_data(
-            subject_split_strategy="random",
+            subject_split_strategy=eval_strategy,
             subject_list=subjects,
             target_subjects=[],
             model_name=model_name,
             seed=seed,
-            time_stratify_labels=False,
-            time_stratify_tolerance=0.1,
-            time_stratify_window=5,
-            time_stratify_min_chunk=30,
+            time_stratify_labels=eval_time_stratify,
+            time_stratify_tolerance=cfg.TIME_STRATIFY_TOLERANCE,
+            time_stratify_window=cfg.TIME_STRATIFY_WINDOW,
+            time_stratify_min_chunk=cfg.TIME_STRATIFY_MIN_CHUNK,
         )
-        log_split_ratios(y_train, y_val, y_test, tag=f"eval|random|mode={mode}|tag={tag}")
+        log_split_ratios(y_train, y_val, y_test, tag=f"eval|{eval_strategy}|mode={mode}|tag={tag}")
 
     # Stage 5: Resolve job ID and load model artifacts
     jobid, model_path = resolve_jobid_for_evaluation(model, mode, tag, jobid)

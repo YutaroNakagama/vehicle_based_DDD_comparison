@@ -175,7 +175,9 @@ if [[ "$RUN_EVAL" == "true" ]]; then
     EVAL_CMD="python scripts/python/evaluation/evaluate.py \
         --model $MODEL \
         --tag $TAG \
-        --mode $MODE"
+        --mode $MODE \
+        --target_file $TARGET_FILE \
+        --seed $SEED"
     
     echo "[EVAL] $EVAL_CMD"
     eval $EVAL_CMD || echo "[WARNING] Evaluation failed but continuing..."
