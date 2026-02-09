@@ -43,14 +43,18 @@ bash scripts/hpc/launchers/launch_imbalance.sh
 
 Evaluate cross-domain generalization using 2-group domain splitting.
 
-**Launcher:** `scripts/hpc/launchers/launch_paper_domain_split2.sh`
+**Launchers:**
+- Cross/Single-domain: `scripts/hpc/launchers/launch_paper_domain_split2.sh`
+- Mixed-domain: `scripts/hpc/launchers/launch_exp2_mixed.sh`
 
 ```bash
-# Dry run first
+# Cross/Single-domain (source_only + target_only): 192 jobs
 bash scripts/hpc/launchers/launch_paper_domain_split2.sh --dry-run
-
-# Submit all jobs
 bash scripts/hpc/launchers/launch_paper_domain_split2.sh
+
+# Mixed-domain (mixed): 96 jobs
+bash scripts/hpc/launchers/launch_exp2_mixed.sh --dry-run
+bash scripts/hpc/launchers/launch_exp2_mixed.sh
 ```
 
 **Experiment Matrix:**
@@ -60,12 +64,20 @@ bash scripts/hpc/launchers/launch_paper_domain_split2.sh
 |-----------|--------|
 | Distance metrics | mmd, dtw, wasserstein (3) |
 | Domain groups | in_domain (44), out_domain (43) |
-| Training modes | source_only, target_only (2) |
+| Training modes | source_only, target_only, mixed (3) |
 | Seeds | 42, 123 (2) |
 | Imbalance methods | baseline, smote_plain, smote, undersample, balanced_rf |
 | Target ratios | 0.1, 0.5 (for ratio-based methods) |
 
-**Total:** 3 × 2 × 2 × 2 × 8 conditions = 192 jobs
+**Training Mode Descriptions:**
+
+| Mode | Description | Training Data | Evaluation Data |
+|------|-------------|---------------|------------------|
+| source_only | Cross-domain | Opposite domain | Target domain |
+| target_only | Single-domain | Same domain | Same domain |
+| mixed | Mixed-domain | All 87 subjects (pooled) | Target domain |
+
+**Total:** 3 × 2 × 3 × 2 × 8 conditions = **288 jobs** (192 cross/single + 96 mixed)
 
 ## Experiment 3: Prior Research Replication (Split2)
 

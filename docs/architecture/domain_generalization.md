@@ -175,8 +175,9 @@ To evaluate generalization ability by **training/fine-tuning models** on differe
 |------|-------------|
 | **source_only** | Cross-domain: Train on the *opposite* domain, evaluate on the target domain |
 | **target_only** | Single-domain: Train and evaluate within the *same* domain |
+| **mixed** | Mixed-domain: Train on *all 87 subjects* (pooled), evaluate on the target domain |
 
-### Split2 Cross-Domain Logic
+### Split2 Domain Logic
 
 | Mode | Domain | Training Data | Evaluation Data |
 |---|---|---|---|
@@ -184,6 +185,12 @@ To evaluate generalization ability by **training/fine-tuning models** on differe
 | source_only | in_domain | out_domain (43 subjects) | in_domain (44 subjects) |
 | target_only | out_domain | out_domain (43 subjects) | out_domain (43 subjects) |
 | target_only | in_domain | in_domain (44 subjects) | in_domain (44 subjects) |
+| mixed | out_domain | All subjects (87) | out_domain (43 subjects) |
+| mixed | in_domain | All subjects (87) | in_domain (44 subjects) |
+
+> **Mixed-domain** serves as a pooled-training baseline: it measures how well a model
+> trained on all available subjects generalizes to each domain subset, compared to
+> cross-domain (source_only) and single-domain (target_only) training.
 
 ### PBS Execution
 
