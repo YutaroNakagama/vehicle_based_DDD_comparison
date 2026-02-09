@@ -11,7 +11,7 @@ Metrics visualized:
 - F1, F2, AUROC, AUPRC
 
 Output:
-    results/analysis/prior_research/
+    results/analysis/exp3_prior_research/
     - train_metrics.png: Training set metrics
     - val_metrics.png: Validation set metrics  
     - test_metrics.png: Test set metrics

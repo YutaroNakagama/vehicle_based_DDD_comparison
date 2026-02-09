@@ -148,7 +148,7 @@ run_smote_experiment() {
     local ratio=$(echo "$exp" | cut -d'|' -f4)
     
     local TAG="imbalv3_${RANKING}_${distance}_${domain}_${mode}_subjectwise_ratio${ratio}_s${SEED}"
-    local TARGET_FILE="results/analysis/domain/distance/subject-wise/ranks/ranks29/${RANKING}/${distance}_${domain}.txt"
+    local TARGET_FILE="results/analysis/exp2_domain_shift/distance/subject-wise/ranks/ranks29/${RANKING}/${distance}_${domain}.txt"
     local LOG_FILE="${LOG_DIR}/${TAG}_${TIMESTAMP}.log"
     
     echo "[START] SW-SMOTE r${ratio} | ${mode} | ${distance} | ${domain} - $(date '+%H:%M:%S')"
@@ -183,7 +183,7 @@ run_baseline_experiment() {
     local domain=$(echo "$exp" | cut -d'|' -f3)
     
     local TAG="baseline_domain_${RANKING}_${distance}_${domain}_${mode}_s${SEED}"
-    local TARGET_FILE="results/analysis/domain/distance/subject-wise/ranks/ranks29/${RANKING}/${distance}_${domain}.txt"
+    local TARGET_FILE="results/analysis/exp2_domain_shift/distance/subject-wise/ranks/ranks29/${RANKING}/${distance}_${domain}.txt"
     local LOG_FILE="${LOG_DIR}/${TAG}_${TIMESTAMP}.log"
     
     echo "[START] BASE | ${mode} | ${distance} | ${domain} - $(date '+%H:%M:%S')"
@@ -215,7 +215,7 @@ run_smote_plain_experiment() {
     local ratio=$(echo "$exp" | cut -d'|' -f4)
     
     local TAG="smote_plain_${RANKING}_${distance}_${domain}_${mode}_ratio${ratio}_s${SEED}"
-    local TARGET_FILE="results/analysis/domain/distance/subject-wise/ranks/ranks29/${RANKING}/${distance}_${domain}.txt"
+    local TARGET_FILE="results/analysis/exp2_domain_shift/distance/subject-wise/ranks/ranks29/${RANKING}/${distance}_${domain}.txt"
     local LOG_FILE="${LOG_DIR}/${TAG}_${TIMESTAMP}.log"
     
     echo "[START] SMOTE-P r${ratio} | ${mode} | ${distance} | ${domain} - $(date '+%H:%M:%S')"
@@ -388,7 +388,7 @@ if [[ "$RUN_EVAL" == true ]]; then
         local ratio=$(echo "$exp" | cut -d'|' -f4)
         
         local TAG="imbalv3_${RANKING}_${distance}_${domain}_${mode}_subjectwise_ratio${ratio}_s${SEED}"
-        local TARGET_FILE="results/analysis/domain/distance/subject-wise/ranks/ranks29/${RANKING}/${distance}_${domain}.txt"
+        local TARGET_FILE="results/analysis/exp2_domain_shift/distance/subject-wise/ranks/ranks29/${RANKING}/${distance}_${domain}.txt"
         local EVAL_LOG="${LOG_DIR}/${TAG}_eval_${TIMESTAMP}.log"
         
         echo "[EVAL] SW-SMOTE r${ratio} | ${mode} | ${distance} | ${domain} - $(date '+%H:%M:%S')"
@@ -418,7 +418,7 @@ if [[ "$RUN_EVAL" == true ]]; then
         local domain=$(echo "$exp" | cut -d'|' -f3)
         
         local TAG="baseline_domain_${RANKING}_${distance}_${domain}_${mode}_s${SEED}"
-        local TARGET_FILE="results/analysis/domain/distance/subject-wise/ranks/ranks29/${RANKING}/${distance}_${domain}.txt"
+        local TARGET_FILE="results/analysis/exp2_domain_shift/distance/subject-wise/ranks/ranks29/${RANKING}/${distance}_${domain}.txt"
         local EVAL_LOG="${LOG_DIR}/${TAG}_eval_${TIMESTAMP}.log"
         
         echo "[EVAL] BASE | ${mode} | ${distance} | ${domain} - $(date '+%H:%M:%S')"
@@ -449,7 +449,7 @@ if [[ "$RUN_EVAL" == true ]]; then
         local ratio=$(echo "$exp" | cut -d'|' -f4)
         
         local TAG="smote_plain_${RANKING}_${distance}_${domain}_${mode}_ratio${ratio}_s${SEED}"
-        local TARGET_FILE="results/analysis/domain/distance/subject-wise/ranks/ranks29/${RANKING}/${distance}_${domain}.txt"
+        local TARGET_FILE="results/analysis/exp2_domain_shift/distance/subject-wise/ranks/ranks29/${RANKING}/${distance}_${domain}.txt"
         local EVAL_LOG="${LOG_DIR}/${TAG}_eval_${TIMESTAMP}.log"
         
         echo "[EVAL] PLN r${ratio} | ${mode} | ${distance} | ${domain} - $(date '+%H:%M:%S')"

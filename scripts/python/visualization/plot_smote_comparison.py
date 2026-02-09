@@ -9,9 +9,9 @@ Generates publication-ready figures comparing SMOTE methods:
 
 Usage:
     python scripts/python/visualization/plot_smote_comparison.py \
-        --input results/analysis/imbalance/smote_comparison/aggregated_results.csv \
-        --output-imbalance results/analysis/imbalance/smote_comparison/figures/ \
-        --output-domain results/analysis/domain/imbalance/smote_comparison/figures/
+        --input results/analysis/exp1_imbalance/smote_comparison/aggregated_results.csv \
+        --output-imbalance results/analysis/exp1_imbalance/smote_comparison/figures/ \
+        --output-domain results/analysis/exp1_imbalance/smote_comparison/figures/
 """
 
 import argparse
@@ -377,17 +377,17 @@ def main():
     parser = argparse.ArgumentParser(description="Visualize SMOTE comparison results")
     parser.add_argument(
         "--input", "-i",
-        default="results/analysis/imbalance/smote_comparison/aggregated_results.csv",
+        default="results/analysis/exp1_imbalance/smote_comparison/aggregated_results.csv",
         help="Input CSV path",
     )
     parser.add_argument(
         "--output-imbalance",
-        default="results/analysis/imbalance/smote_comparison/figures/",
+        default="results/analysis/exp1_imbalance/smote_comparison/figures/",
         help="Output directory for imbalance-only (pooled) figures",
     )
     parser.add_argument(
         "--output-domain",
-        default="results/analysis/domain/imbalance/smote_comparison/figures/",
+        default="results/analysis/exp1_imbalance/smote_comparison/figures/",
         help="Output directory for domain (ranking-based) figures",
     )
     parser.add_argument(

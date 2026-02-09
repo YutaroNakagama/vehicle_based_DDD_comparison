@@ -12,7 +12,7 @@ Optimization methods used:
 - Lstm: K-Fold Cross-Validation - no hyperparameter tuning
 
 Output:
-    results/analysis/prior_research/
+    results/analysis/exp3_prior_research/
     - optuna_convergence_SvmW.png: SvmW convergence plot
     - optuna_summary.csv: Summary of Optuna trials
 """

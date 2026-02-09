@@ -8,9 +8,9 @@ Generates comparison tables and statistical tests for SMOTE experiments:
 
 Usage:
     python scripts/python/analysis/compare_smote_methods.py \
-        --input results/analysis/imbalance/smote_comparison/aggregated_results.csv \
-        --output-imbalance results/analysis/imbalance/smote_comparison/ \
-        --output-domain results/analysis/domain/imbalance/smote_comparison/
+        --input results/analysis/exp1_imbalance/smote_comparison/aggregated_results.csv \
+        --output-imbalance results/analysis/exp1_imbalance/smote_comparison/ \
+        --output-domain results/analysis/exp1_imbalance/smote_comparison/
 """
 
 import argparse
@@ -238,17 +238,17 @@ def main():
     parser = argparse.ArgumentParser(description="Compare SMOTE methods performance")
     parser.add_argument(
         "--input", "-i",
-        default="results/analysis/imbalance/smote_comparison/aggregated_results.csv",
+        default="results/analysis/exp1_imbalance/smote_comparison/aggregated_results.csv",
         help="Input CSV path (from aggregate_smote_results.py)",
     )
     parser.add_argument(
         "--output-imbalance",
-        default="results/analysis/imbalance/smote_comparison/",
+        default="results/analysis/exp1_imbalance/smote_comparison/",
         help="Output directory for imbalance-only (pooled) results",
     )
     parser.add_argument(
         "--output-domain",
-        default="results/analysis/domain/imbalance/smote_comparison/",
+        default="results/analysis/exp1_imbalance/smote_comparison/",
         help="Output directory for domain (ranking-based) results",
     )
     parser.add_argument(

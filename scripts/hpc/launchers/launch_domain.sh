@@ -19,7 +19,7 @@ set -euo pipefail
 
 PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
 JOB_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/domain_analysis/pbs_train.sh"
-RANKING_BASE="$PROJECT_ROOT/results/analysis/domain/distance/subject-wise"
+RANKING_BASE="$PROJECT_ROOT/results/analysis/exp2_domain_shift/distance/subject-wise"
 
 # Default parameters
 EXPERIMENT_TYPE=""

@@ -37,9 +37,9 @@ from src.analysis.metrics.confusion_matrix import (
 # Configuration paths
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_EVAL_DIR = PROJECT_ROOT / "results/outputs/evaluation/RF/14357179"
-OUTPUT_DIR_PNG = PROJECT_ROOT / "results/analysis/domain/summary/png/confusion_matrices"
-OUTPUT_DIR_CSV = PROJECT_ROOT / "results/analysis/domain/summary/csv"
-OUTPUT_DIR_MULTISEED = PROJECT_ROOT / "results/analysis/imbalance/multiseed"
+OUTPUT_DIR_PNG = PROJECT_ROOT / "results/analysis/exp1_imbalance/figures/png/confusion_matrices"
+OUTPUT_DIR_CSV = PROJECT_ROOT / "results/analysis/exp1_imbalance/figures/csv"
+OUTPUT_DIR_MULTISEED = PROJECT_ROOT / "results/analysis/exp1_imbalance/multiseed"
 
 
 def run_plot_mode(eval_dir: Path) -> None:

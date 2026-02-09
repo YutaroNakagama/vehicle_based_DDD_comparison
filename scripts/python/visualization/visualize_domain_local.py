@@ -789,7 +789,7 @@ def main():
     if args.output_dir:
         output_base = Path(args.output_dir)
     else:
-        output_base = Path(f"results/analysis/domain/imbalance")
+        output_base = Path(f"results/analysis/exp1_imbalance")
     
     output_base.mkdir(parents=True, exist_ok=True)
     (output_base / "metrics").mkdir(exist_ok=True)

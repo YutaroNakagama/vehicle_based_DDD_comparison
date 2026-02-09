@@ -21,7 +21,7 @@ Consolidates functionality from:
 - visualize_new_source_domain.py
 
 Usage:
-    python visualize_domain.py summary --input results/analysis/domain/summary/csv/summary_ranked_test.csv
+    python visualize_domain.py summary --input results/analysis/exp1_imbalance/figures/csv/summary_ranked_test.csv
     python visualize_domain.py ranking --mode heatmap
     python visualize_domain.py full
     python visualize_domain.py projections --method umap

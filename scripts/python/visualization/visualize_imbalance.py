@@ -301,7 +301,7 @@ def main():
     # Common arguments
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--input", help="Input CSV file")
-    common.add_argument("--output-dir", default="results/analysis/imbalance/plots", help="Output directory")
+    common.add_argument("--output-dir", default="results/analysis/exp1_imbalance/plots", help="Output directory")
     
     # boxplot
     p_box = subparsers.add_parser("boxplot", parents=[common], help="Metric boxplots")

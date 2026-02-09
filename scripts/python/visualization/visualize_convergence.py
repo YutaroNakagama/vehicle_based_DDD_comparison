@@ -7,7 +7,7 @@ This script visualizes the training/optimization convergence for:
 - SvmA: PSO optimization history
 - SvmW: Optuna trial history (already visualized separately)
 
-Outputs are saved to: results/analysis/prior_research/convergence/
+Outputs are saved to: results/analysis/exp3_prior_research/convergence/
 """
 
 import json

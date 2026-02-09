@@ -10,7 +10,7 @@ The visualization helps understand:
 2. Whether drowsiness tends to occur early, middle, or late in sessions
 3. The overall class imbalance per subject
 
-Output: results/analysis/imbalance/drowsy_timeline/
+Output: results/analysis/exp1_imbalance/drowsy_timeline/
 """
 
 import os

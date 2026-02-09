@@ -128,7 +128,7 @@ export BLIS_NUM_THREADS=1
 # Optuna trials override
 export N_TRIALS_OVERRIDE="$TRIALS"
 
-RANKS_DIR="results/analysis/domain/distance/subject-wise/ranks/ranks29/${RANKING}"
+RANKS_DIR="results/analysis/exp2_domain_shift/distance/subject-wise/ranks/ranks29/${RANKING}"
 LOG_DIR="scripts/hpc/logs/domain"
 mkdir -p "$LOG_DIR"
 MASTER_LOG="${LOG_DIR}/domain_analysis_$(date +%Y%m%d_%H%M%S).log"
