@@ -365,8 +365,13 @@ def plot_grouped_bar_chart(
         squeeze=False
     )
     
-    colors = ["#66cc99", "#6699cc", "#ff9966"]
-    mode_labels = {"pooled": "Pooled", "source_only": "Source-only", "target_only": "Target-only"}
+    colors = ["#66cc99", "#6699cc", "#ff9966", "#cc99ff"]
+    mode_labels = {
+        "pooled": "Pooled",
+        "source_only": "Cross-domain",
+        "target_only": "Single-domain",
+        "mixed": "Mixed-domain",
+    }
     
     for i, dist in enumerate(distances):
         sub = data[data[distance_col] == dist]
@@ -472,8 +477,8 @@ def plot_grouped_bar_chart_raw(
     """Create multi-panel bar chart from raw (unpivoted) data.
     
     Layout: 3 distance metrics (columns 1-3) + 1 pooled column (column 4)
-    - Columns 1-3: source_only vs target_only comparison for out_domain/mid_domain/in_domain
-    - Column 4: pooled mode only (all 3 modes: pooled/source_only/target_only)
+    - Columns 1-3: cross-domain vs single-domain comparison for out_domain/mid_domain/in_domain
+    - Column 4: pooled mode only (all modes: pooled/cross-domain/single-domain)
     
     Parameters
     ----------
@@ -528,8 +533,13 @@ def plot_grouped_bar_chart_raw(
     
     fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize, squeeze=False)
     
-    colors = ["#66cc99", "#6699cc", "#ff9966"]
-    mode_labels = {"pooled": "Pooled", "source_only": "Source-only", "target_only": "Target-only"}
+    colors = ["#66cc99", "#6699cc", "#ff9966", "#cc99ff"]
+    mode_labels = {
+        "pooled": "Pooled",
+        "source_only": "Cross-domain",
+        "target_only": "Single-domain",
+        "mixed": "Mixed-domain",
+    }
     
     # Calculate pooled baseline values for each metric
     pooled_data = data[data[mode_col] == "pooled"]
@@ -538,7 +548,7 @@ def plot_grouped_bar_chart_raw(
         if not pooled_data.empty:
             pooled_baselines[metric] = pooled_data[metric].mean()
     
-    # Rows 1-3: Distance metrics (source_only vs target_only)
+    # Rows 1-3: Distance metrics (cross-domain vs single-domain)
     comparison_modes = ["source_only", "target_only"]
     
     for i, dist in enumerate(distances):
