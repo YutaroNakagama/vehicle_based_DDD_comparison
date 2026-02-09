@@ -14,6 +14,10 @@ from tensorflow.keras.layers import Layer
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
 
 from src.config import MODEL_PKL_PATH
+from src.evaluation.metrics import (
+    calculate_extended_metrics,
+    calculate_class_specific_metrics,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -66,7 +70,11 @@ def lstm_eval(
     Parameters
     ----------
     X_test : pandas.DataFrame
-        Test feature matrix. Only numeric columns are used.
+        Test feature matrix.  When called from ``eval_pipeline``, the data
+        has already been cleaned, aligned, and scaled by
+        ``prepare_evaluation_features()``.  Only when *both* ``clf`` and
+        ``scaler`` are ``None`` (standalone mode) does this function load
+        artifacts from disk and apply scaling itself.
     y_test : pandas.Series
         Ground truth labels corresponding to ``X_test``.
     model_name : str
@@ -94,29 +102,52 @@ def lstm_eval(
             Confusion matrix as a nested list.
     """
 
-    # Load model and scaler if not provided
+    # ------------------------------------------------------------------
+    # Standalone mode: load model/scaler from disk & preprocess
+    # ------------------------------------------------------------------
     if clf is None or scaler is None:
-        # Load from disk based on fold
         scaler_path = f"{MODEL_PKL_PATH}/{model_name}/scaler_fold{fold_to_test}.pkl"
         scaler = joblib.load(scaler_path)
-    
+
         model_path = f"{MODEL_PKL_PATH}/{model_name}/lstm_model_fold{fold_to_test}.keras"
         clf = load_model(model_path, custom_objects={'AttentionLayer': AttentionLayer})
 
         model = clf
+
+        # Preprocessing only needed in standalone mode
+        X_numeric = X_test.select_dtypes(include=[np.number])
+        X_numeric = X_numeric.replace([np.inf, -np.inf], np.nan).dropna()
+        y_test = y_test.loc[X_numeric.index].values.flatten()
+
+        X_numeric = X_numeric.clip(np.finfo(np.float32).min, np.finfo(np.float32).max)
+        X_array = X_numeric.astype(np.float32).values
+
+        # Apply scaling (only once — data is raw here)
+        X_scaled = scaler.transform(X_array)
     else:
+        # ------------------------------------------------------------------
+        # Pipeline mode: data already cleaned, aligned, and scaled by
+        # prepare_evaluation_features() — do NOT re-scale.
+        # ------------------------------------------------------------------
         model = clf
 
-    # Preprocessing: numeric only, clean NaN/inf
-    X_numeric = X_test.select_dtypes(include=[np.number])
-    X_numeric = X_numeric.replace([np.inf, -np.inf], np.nan).dropna()
-    y_test = y_test.loc[X_numeric.index].values.flatten()
+        X_array = X_test.values.astype(np.float32)
+        # Handle any residual NaN/inf (should be rare after prepare_evaluation_features)
+        mask = np.isfinite(X_array).all(axis=1)
+        if not mask.all():
+            logging.warning(
+                f"[LSTM] Dropping {(~mask).sum()} rows with NaN/inf from pre-scaled data"
+            )
+            X_array = X_array[mask]
+            y_test = y_test[mask] if hasattr(y_test, '__getitem__') else y_test
 
-    X_numeric = X_numeric.clip(np.finfo(np.float32).min, np.finfo(np.float32).max)
-    X_array = X_numeric.astype(np.float32).values
+        X_scaled = X_array
 
-    # Apply scaling
-    X_scaled = scaler.transform(X_array)
+    # Flatten y_test to 1-D numpy array
+    if hasattr(y_test, 'values'):
+        y_test = y_test.values.flatten()
+    elif isinstance(y_test, np.ndarray) and y_test.ndim > 1:
+        y_test = y_test.flatten()
 
     # Reshape into LSTM input format
     X_test_3d = np.expand_dims(X_scaled, axis=1)
@@ -127,18 +158,43 @@ def lstm_eval(
 
     # Prediction and report
     y_pred_prob = model.predict(X_test_3d)
-    y_pred = (y_pred_prob > 0.5).astype(int).flatten()
+    y_score = y_pred_prob.flatten()           # sigmoid probabilities
+    y_pred = (y_score > 0.5).astype(int)
 
-    report = classification_report(y_test, y_pred)
+    report_str = classification_report(y_test, y_pred)
+    report_dict = classification_report(y_test, y_pred, output_dict=True)
     conf_matrix = confusion_matrix(y_test, y_pred)
 
-    logging.info("Classification Report:\n" + report)
+    logging.info("Classification Report:\n" + report_str)
     logging.info("Confusion Matrix:\n" + str(conf_matrix))
 
-    return {
+    # --- Compute extended metrics (ROC-AUC, AUPRC) via shared library ---
+    ext = calculate_extended_metrics(
+        y_test, y_pred, y_score,
+        zero_division=0,
+        include_roc=True,
+        include_pr=True,
+    )
+
+    # Extract positive-class metrics from classification report
+    class_metrics = calculate_class_specific_metrics(
+        np.array(conf_matrix), report_dict
+    )
+
+    result = {
         'loss': float(loss),
         'accuracy': float(accuracy),
-        'classification_report': classification_report(y_test, y_pred, output_dict=True),
-        'confusion_matrix': conf_matrix.tolist()
+        'classification_report': report_dict,
+        'confusion_matrix': conf_matrix.tolist(),
+        # ROC-AUC and AUPRC
+        'roc_auc': ext.get('roc_auc'),
+        'auc_pr':  ext.get('auc_pr'),
     }
+    # Merge positive-class metrics (precision_pos, recall_pos, f1_pos, ...)
+    result.update(class_metrics)
+
+    logging.info(f"ROC AUC: {result.get('roc_auc'):.4f}" if result.get('roc_auc') is not None else "ROC AUC: N/A")
+    logging.info(f"AUPRC:   {result.get('auc_pr'):.4f}" if result.get('auc_pr') is not None else "AUPRC: N/A")
+
+    return result
 

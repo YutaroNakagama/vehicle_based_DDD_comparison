@@ -9,7 +9,7 @@ processed DDD dataset. Subject lists are loaded from external text files.
 
 CLI Options (summary):
   --model <name>          Required. One of src.config.MODEL_CHOICES
-  --mode <mode>           pooled | target_only | source_only | joint_train
+  --mode <mode>           pooled | target_only | source_only | joint_train | mixed
   --target_file <path>    Path to target subject IDs file (required unless pooled)
   --subject_wise_split    Enable subject-wise splitting (avoid leakage)
   --seed <int>            Random seed (default: from config.DEFAULT_RANDOM_SEED)

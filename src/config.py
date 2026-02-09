@@ -52,14 +52,23 @@ RESULTS_PATH = './results'
 """str : Root directory for storing analysis results and evaluation metrics."""
 
 # Analysis results (derived/computed from job outputs)
+# Organised by experiment number: exp1=imbalance, exp2=domain_shift
 RESULTS_ANALYSIS_PATH = './results/analysis'
 """str : Base directory for all analysis results."""
 
-RESULTS_ANALYSIS_DOMAIN_PATH = './results/analysis/domain'
-"""str : Directory for domain analysis (distances, rankings, summary)."""
+RESULTS_ANALYSIS_EXP1_PATH = './results/analysis/exp1_imbalance'
+"""str : Experiment 1 – imbalance methods comparison (split3, BalancedRF)."""
 
-RESULTS_ANALYSIS_IMBALANCE_PATH = './results/analysis/imbalance'
-"""str : Directory for imbalance analysis (plots, sampling, multiseed)."""
+RESULTS_ANALYSIS_EXP2_PATH = './results/analysis/exp2_domain_shift'
+"""str : Experiment 2 – domain shift generalization (split2, RF/BalancedRF)."""
+
+RESULTS_ANALYSIS_PRIOR_PATH = './results/analysis/prior_research'
+"""str : Prior research replication."""
+
+# Semantic aliases (point to the experiment directories above)
+RESULTS_ANALYSIS_IMBALANCE_PATH = RESULTS_ANALYSIS_EXP1_PATH
+RESULTS_ANALYSIS_DOMAIN_PATH = RESULTS_ANALYSIS_EXP2_PATH
+RESULTS_ANALYSIS_PRIOR_RESEARCH_PATH = RESULTS_ANALYSIS_PRIOR_PATH
 
 # Job outputs (raw outputs from HPC/local runs)
 RESULTS_OUTPUTS_PATH = './results/outputs'
@@ -77,8 +86,9 @@ RESULTS_RUNS_PATH = RESULTS_OUTPUTS_PATH
 RESULTS_RUNS_EVALUATION_PATH = RESULTS_OUTPUTS_EVALUATION_PATH
 RESULTS_DOMAIN_PATH = RESULTS_ANALYSIS_DOMAIN_PATH
 RESULTS_DOMAIN_ANALYSIS_PATH = RESULTS_ANALYSIS_DOMAIN_PATH
+RESULTS_PRIOR_RESEARCH_ANALYSIS_PATH = RESULTS_ANALYSIS_PRIOR_RESEARCH_PATH
 RESULTS_IMBALANCE_PATH = RESULTS_ANALYSIS_IMBALANCE_PATH
-RESULTS_HYPERPARAM_PATH = './results/analysis/domain/hyperparam'
+RESULTS_HYPERPARAM_PATH = RESULTS_ANALYSIS_EXP2_PATH + '/figures/hyperparam'
 RESULTS_DOMAIN_GENERALIZATION_PATH = './results/domain_generalization'
 """str : Directory for domain generalization experiments and metrics."""
 

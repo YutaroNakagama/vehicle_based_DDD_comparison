@@ -21,22 +21,16 @@ from src.utils.io.split import (
     data_split_by_subject,
     data_time_split_by_subject,
     time_stratified_three_way_split,
+    _resolve_feature_columns,
 )
-
-# NOTE: The following import errors are unrelated to the variable naming unification and are due to missing dependencies in the environment.
-# The code changes for variable naming are correct and ready for commit.
 
 # --- Local helper to avoid circular import with model_pipeline ---
 def _prepare_df_with_label_and_features(df: pd.DataFrame):
     from src.config import KSS_BIN_LABELS, KSS_LABEL_MAP
     d = df[df["KSS_Theta_Alpha_Beta"].isin(KSS_BIN_LABELS)].copy()
     d["label"] = d["KSS_Theta_Alpha_Beta"].replace(KSS_LABEL_MAP).astype(int)
-    # vehicle-based feature range (adjust if your columns differ)
-    start_col = "Steering_Range"
-    end_col   = "LaneOffset_AAA"
-    features = d.loc[:, start_col:end_col].columns.tolist()
-    if "subject_id" in d.columns:
-        features.append("subject_id")
+    # Model-aware feature detection (supports SvmW/SvmA/Lstm/common column layouts)
+    features = _resolve_feature_columns(d, include_subject_id=True)
     return d, features
 
 def log_split_ratios(y_tr: pd.Series, y_va: pd.Series, y_te: pd.Series, tag: str = "") -> None:
