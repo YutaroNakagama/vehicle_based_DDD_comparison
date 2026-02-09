@@ -70,12 +70,12 @@ METRICS = ["accuracy", "precision", "recall", "f1", "f2", "auc", "auc_pr"]
 # Older:   eval_results_BalancedRF_source_only_balanced_rf_knn_wasserstein_out_domain_source_only_s42.json
 SPLIT2_PATTERN = re.compile(
     r"eval_results_BalancedRF_"
-    r"(?P<mode>source_only|target_only)_"
+    r"(?P<mode>source_only|target_only|mixed)_"
     r"(?P<condition>[a-z_]+?)_"        # greedy‐minimal before 'knn'
     r"knn_"
     r"(?P<distance>mmd|dtw|wasserstein)_"
     r"(?P<domain>in_domain|out_domain)"
-    r"(?:_split2)?(?:_(?:source_only|target_only))?"  # optional trailing tags
+    r"(?:_split2)?(?:_(?:source_only|target_only|mixed))?"  # optional trailing tags
     r"_s(?P<seed>\d+)"
     r"\.json$"
 )
@@ -289,7 +289,7 @@ def generate_plots(df: pd.DataFrame, df_pooled: pd.DataFrame) -> list[Path]:
         fig = plot_grouped_bar_chart_raw(
             data=sub_with_pooled,
             metrics=METRICS,
-            modes=["pooled", "source_only", "target_only"],
+            modes=["pooled", "source_only", "target_only", "mixed"],
             distance_col="distance",
             level_col="level",
             baseline_rates={"auc_pr": 0.033},

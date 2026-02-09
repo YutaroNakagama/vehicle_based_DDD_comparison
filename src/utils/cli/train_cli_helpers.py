@@ -133,7 +133,7 @@ def map_mode_to_strategy(mode: str) -> str:
     Parameters
     ----------
     mode : str
-        Mode string (pooled, target_only, source_only, joint_train).
+        Mode string (pooled, target_only, source_only, joint_train, mixed).
     
     Returns
     -------
@@ -150,6 +150,7 @@ def map_mode_to_strategy(mode: str) -> str:
         "target_only": "subject_time_split",
         "source_only": "subject_wise_split",
         "joint_train": "finetune_target_subjects",
+        "mixed": "subject_time_split",
     }
     if mode not in mapping:
         raise ValueError(f"Unknown mode: {mode}")
@@ -166,9 +167,9 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     """
     parser.add_argument(
         "--mode",
-        choices=["pooled", "target_only", "source_only", "joint_train"],
+        choices=["pooled", "target_only", "source_only", "joint_train", "mixed"],
         required=True,
-        help="Training/evaluation mode (pooled / target_only / source_only / joint_train).",
+        help="Training/evaluation mode (pooled / target_only / source_only / joint_train / mixed).",
     )
     parser.add_argument(
         "--target_file",

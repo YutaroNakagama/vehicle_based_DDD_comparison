@@ -17,7 +17,6 @@ from src.utils.io.loaders import read_subject_list, load_subject_csvs
 from src.utils.io.target_resolution import (
     resolve_target_subjects_from_tag,
     resolve_source_group_subjects,
-    SOURCE_ONLY_TRAIN_GROUP,
 )
 
 
@@ -149,6 +148,19 @@ def load_and_filter_data(
         else:
             logging.warning("[LOAD] source_only: No target_subjects to exclude. Using all data.")
     
+    elif mode == "mixed":
+        # Mixed-domain: resolve target subjects for evaluation, but keep ALL data for training
+        target_subjects_resolved = resolve_target_subjects_from_tag(
+            tag=tag,
+            mode=mode,
+            cli_target_subjects=target_subjects,
+        )
+        # No data filtering — prepare_mixed_splits handles the split logic
+        logging.info(
+            f"[LOAD] mixed: All {len(data)} samples retained for training. "
+            f"Evaluation target: {len(target_subjects_resolved)} subjects."
+        )
+    
     elif mode == "joint_train":
         # Combine source and target subjects
         if target_subjects:
@@ -177,12 +189,13 @@ def prepare_source_only_splits(
 ) -> Tuple:
     """Prepare train/val/test splits for source_only mode.
 
-    In source_only mode:
-    - Training: Use MIDDLE group (source domain)
-    - Evaluation: Use target group (out_domain/mid_domain/in_domain) specified by tag
+    In source_only (cross-domain) mode:
+    - Training: Use opposite domain from target (in_domain ↔ out_domain)
+    - Evaluation: Use target group (out_domain/in_domain/mid_domain) specified by tag
 
-    For middle-level experiments, this ensures identical data splits as target_only mode,
-    since both use the same subject group.
+    Examples:
+    - Target=out_domain → train on in_domain, evaluate on out_domain
+    - Target=in_domain → train on out_domain, evaluate on in_domain
 
     Parameters
     ----------
@@ -208,11 +221,7 @@ def prepare_source_only_splits(
     """
     from src.utils.io.split_helpers import split_data
     
-    # Resolve source group subjects for training (LOW or MIDDLE based on config)
-    source_subjects = resolve_source_group_subjects(tag)
-    source_group_name = "LOW" if SOURCE_ONLY_TRAIN_GROUP == "in_domain" else "MIDDLE"
-    
-    # Resolve evaluation subjects (out_domain/mid_domain/in_domain groups based on tag)
+    # Resolve evaluation subjects (target domain: out_domain/in_domain/mid_domain based on tag)
     eval_subjects = resolve_target_subjects_from_tag(
         tag=tag,
         mode="source_only",
@@ -225,13 +234,27 @@ def prepare_source_only_splits(
             "Cannot proceed without target group."
         )
     
+    # Infer target domain from tag
+    target_domain = None
+    for domain in ["out_domain", "in_domain", "mid_domain"]:
+        if domain in tag:
+            target_domain = domain
+            break
+    
+    if not target_domain:
+        raise ValueError(f"[SOURCE_ONLY] Cannot infer target domain from tag: {tag}")
+    
+    # Resolve source group subjects for training (opposite domain from target)
+    source_subjects = resolve_source_group_subjects(tag, target_domain=target_domain)
+    
     # Check if training and evaluation groups are identical
     is_same_group_case = set(source_subjects) == set(eval_subjects)
     
     if is_same_group_case:
         # When source and target are the same group: use single split to ensure consistency with target_only
-        logging.info(
-            f"[SOURCE_ONLY] Same-group case detected: training and evaluation use same {len(source_subjects)} subjects ({source_group_name})")
+        # This should not happen with the new cross-domain logic, but kept for safety
+        logging.warning(
+            f"[SOURCE_ONLY] Same-group case detected (unexpected): training and evaluation use same {len(source_subjects)} subjects")
         X_train, X_val, X_test, y_train, y_val, y_test = split_data(
             subject_split_strategy="subject_time_split",
             subject_list=source_subjects,
@@ -248,10 +271,11 @@ def prepare_source_only_splits(
             f"[SOURCE_ONLY] Same-group case: train={len(y_train)}, val={len(y_val)}, test={len(y_test)} samples"
         )
     else:
-        # Cross-domain case: train on source group (LOW/MIDDLE), evaluate on target group
+        # Cross-domain case: train on opposite domain, evaluate on target domain
+        source_domain = "out_domain" if target_domain == "in_domain" else "in_domain"
         logging.info(
-            f"[SOURCE_ONLY] Cross-domain case: training on {source_group_name} ({len(source_subjects)} subjects), "
-            f"evaluating on target group ({len(eval_subjects)} subjects)"
+            f"[SOURCE_ONLY] Cross-domain: target={target_domain} ({len(eval_subjects)} subjects), "
+            f"source={source_domain} ({len(source_subjects)} subjects)"
         )
         
         # Split source group (use only train partition)
@@ -270,7 +294,7 @@ def prepare_source_only_splits(
         
         X_train = src_train
         y_train = y_src_train.astype(int)
-        logging.info(f"[SOURCE_ONLY] Training: {len(X_train)} samples from {source_group_name} group")
+        logging.info(f"[SOURCE_ONLY] Training: {len(X_train)} samples from {source_domain} group")
         
         # Split target group (use val/test partitions)
         _, X_val, X_test, _, y_val, y_test = split_data(
@@ -286,4 +310,122 @@ def prepare_source_only_splits(
         )
         logging.info(f"[SOURCE_ONLY] Evaluation: val={len(y_val)}, test={len(y_test)} samples from target group")
     
+    return X_train, X_val, X_test, y_train, y_val, y_test
+
+
+def prepare_mixed_splits(
+    model_name: str,
+    tag: str,
+    seed: int,
+    target_subjects: List[str],
+    time_stratify_labels: bool,
+    time_stratify_tolerance: float,
+    time_stratify_window: float,
+    time_stratify_min_chunk: int,
+    keep_subject_id: bool = False,
+) -> Tuple:
+    """Prepare train/val/test splits for mixed (mixed-domain) mode.
+
+    In mixed mode:
+    - Training: Use ALL subjects (87 pooled) for training
+    - Evaluation: Use target domain group (in_domain/out_domain) for val/test
+
+    This allows evaluating how a model trained on the full population
+    performs on domain-specific subsets, compared to cross-domain
+    (source_only) and single-domain (target_only) training.
+
+    Parameters
+    ----------
+    model_name : str
+        Model name.
+    tag : str
+        Experiment tag (must contain distance metric and domain info).
+    seed : int
+        Random seed.
+    target_subjects : list of str
+        Pre-resolved target subjects from CLI or tag.
+    time_stratify_labels : bool
+        Whether to use time-stratified splitting.
+    time_stratify_tolerance : float
+        Class ratio tolerance for time stratification.
+    time_stratify_window : float
+        Search window for time stratification.
+    time_stratify_min_chunk : int
+        Minimum chunk size for time stratification.
+    keep_subject_id : bool, default=False
+        Whether to keep subject_id column (needed for subject-wise oversampling).
+
+    Returns
+    -------
+    tuple
+        (X_train, X_val, X_test, y_train, y_val, y_test)
+    """
+    from src.utils.io.split_helpers import split_data
+
+    # Resolve evaluation subjects (target domain based on tag)
+    eval_subjects = resolve_target_subjects_from_tag(
+        tag=tag,
+        mode="mixed",
+        cli_target_subjects=target_subjects,
+    )
+
+    if not eval_subjects:
+        raise ValueError(
+            "[MIXED] No evaluation subjects resolved. "
+            "Cannot proceed without target group."
+        )
+
+    # Infer target domain from tag
+    target_domain = None
+    for domain in ["out_domain", "in_domain"]:
+        if domain in tag:
+            target_domain = domain
+            break
+
+    if not target_domain:
+        raise ValueError(f"[MIXED] Cannot infer target domain from tag: {tag}")
+
+    # For mixed mode: use ALL subjects for training
+    all_subjects = read_subject_list()
+
+    logging.info(
+        f"[MIXED] Mixed-domain: training on ALL {len(all_subjects)} subjects, "
+        f"evaluating on {target_domain} ({len(eval_subjects)} subjects)"
+    )
+
+    # Split all subjects → use train partition only
+    src_train, _, _, y_src_train, _, _ = split_data(
+        subject_split_strategy="subject_time_split",
+        subject_list=all_subjects,
+        target_subjects=all_subjects,
+        model_name=model_name,
+        seed=seed,
+        time_stratify_labels=time_stratify_labels,
+        time_stratify_tolerance=time_stratify_tolerance,
+        time_stratify_window=time_stratify_window,
+        time_stratify_min_chunk=time_stratify_min_chunk,
+        keep_subject_id=keep_subject_id,
+    )
+
+    X_train = src_train
+    y_train = y_src_train.astype(int)
+    logging.info(f"[MIXED] Training: {len(X_train)} samples from ALL {len(all_subjects)} subjects")
+
+    # Split target domain subjects → use val/test partitions
+    _, X_val, X_test, _, y_val, y_test = split_data(
+        subject_split_strategy="subject_time_split",
+        subject_list=eval_subjects,
+        target_subjects=eval_subjects,
+        model_name=model_name,
+        seed=seed,
+        time_stratify_labels=time_stratify_labels,
+        time_stratify_tolerance=time_stratify_tolerance,
+        time_stratify_window=time_stratify_window,
+        time_stratify_min_chunk=time_stratify_min_chunk,
+    )
+    logging.info(
+        f"[MIXED] Evaluation: val={len(y_val)}, test={len(y_test)} samples "
+        f"from {target_domain} ({len(eval_subjects)} subjects)"
+    )
+
     return X_train, X_val, X_test, y_train, y_val, y_test

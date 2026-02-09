@@ -79,12 +79,12 @@ RF_CONDITIONS = ["baseline_domain", "smote_plain", "undersample_rus", "sw_smote"
 #   eval_results_RF_{mode}_{condition}_knn_{distance}_{domain}_{mode_tag}[_split2][_ratio{r}]_s{seed}.json
 SPLIT2_RF_PATTERN = re.compile(
     r"eval_results_RF_"
-    r"(?P<mode>source_only|target_only)_"
+    r"(?P<mode>source_only|target_only|mixed)_"
     r"(?P<condition>baseline_domain|smote_plain|undersample_rus)_"
     r"knn_"
     r"(?P<distance>mmd|dtw|wasserstein)_"
     r"(?P<domain>in_domain|out_domain)_"
-    r"(?:source_only|target_only)"
+    r"(?:source_only|target_only|mixed)"
     r"(?:_split2)?"
     r"(?:_ratio(?P<ratio>[0-9.]+))?"
     r"_s(?P<seed>\d+)"
@@ -111,7 +111,7 @@ POOLED_RF_PATTERNS = [
 # Variant 1: swsmote  (no ratio, s42 only — oldest runs)
 SW_SMOTE_PAT1 = re.compile(
     r"eval_results_RF_"
-    r"(?P<mode>source_only|target_only)_"
+    r"(?P<mode>source_only|target_only|mixed)_"
     r"swsmote_knn_"
     r"(?P<distance>mmd|dtw|wasserstein)_"
     r"(?P<domain>in_domain|out_domain)"
@@ -122,7 +122,7 @@ SW_SMOTE_PAT1 = re.compile(
 # Variant 2: smote_subjectwise  (ratio with dot, e.g. ratio0.1)
 SW_SMOTE_PAT2 = re.compile(
     r"eval_results_RF_"
-    r"(?P<mode>source_only|target_only)_"
+    r"(?P<mode>source_only|target_only|mixed)_"
     r"smote_subjectwise_knn_"
     r"(?P<distance>mmd|dtw|wasserstein)_"
     r"(?P<domain>in_domain|out_domain)"
@@ -134,11 +134,11 @@ SW_SMOTE_PAT2 = re.compile(
 # Variant 3: imbalv3  (latest runs, ratio with dot, has _subjectwise tag)
 SW_SMOTE_PAT3 = re.compile(
     r"eval_results_RF_"
-    r"(?P<mode>source_only|target_only)_"
+    r"(?P<mode>source_only|target_only|mixed)_"
     r"imbalv3_knn_"
     r"(?P<distance>mmd|dtw|wasserstein)_"
     r"(?P<domain>in_domain|out_domain)_"
-    r"(?:source_only|target_only)"
+    r"(?:source_only|target_only|mixed)"
     r"(?:_split2)"
     r"(?:_subjectwise)"
     r"_ratio(?P<ratio>[0-9.]+)"
@@ -148,7 +148,7 @@ SW_SMOTE_PAT3 = re.compile(
 # Variant 4: smote  (ratio with underscore, e.g. ratio0_5)
 SW_SMOTE_PAT4 = re.compile(
     r"eval_results_RF_"
-    r"(?P<mode>source_only|target_only)_"
+    r"(?P<mode>source_only|target_only|mixed)_"
     r"smote_knn_"
     r"(?P<distance>mmd|dtw|wasserstein)_"
     r"(?P<domain>in_domain|out_domain)"
@@ -380,7 +380,7 @@ def generate_plots(df: pd.DataFrame, df_pooled: pd.DataFrame) -> list[Path]:
         fig = plot_grouped_bar_chart_raw(
             data=sub_with_pooled,
             metrics=METRICS,
-            modes=["pooled", "source_only", "target_only"],
+            modes=["pooled", "source_only", "target_only", "mixed"],
             distance_col="distance",
             level_col="level",
             baseline_rates={"auc_pr": 0.033},
