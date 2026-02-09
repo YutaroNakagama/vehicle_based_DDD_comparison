@@ -371,10 +371,15 @@ def generate_plots(df: pd.DataFrame, df_pooled: pd.DataFrame) -> list[Path]:
         else:
             sub_with_pooled = sub
 
-        # Build output filename
-        cond_short = cond.replace("baseline_domain", "baseline_domain")
+        # Build output filename (short: condition + ratio + seed)
+        cond_short = {
+            "baseline_domain": "baseline",
+            "smote_plain": "smote",
+            "undersample_rus": "rus",
+            "sw_smote": "sw_smote",
+        }.get(cond, cond)
         ratio_tag = _ratio_label(ratio)
-        out_name = f"summary_metrics_bar_{cond_short}{ratio_tag}_v2_s{seed}.png"
+        out_name = f"{cond_short}{ratio_tag}_s{seed}.png"
         out_path = png_dir / out_name
 
         fig = plot_grouped_bar_chart_raw(
@@ -439,7 +444,8 @@ def main():
         logger.info("\n[DRY-RUN] Would generate plots for:")
         for (cond, ratio, seed), sub in df.groupby(["condition", "ratio", "seed"]):
             ratio_tag = _ratio_label(ratio)
-            name = f"summary_metrics_bar_{cond}{ratio_tag}_v2_s{seed}.png"
+            cond_short = {"baseline_domain": "baseline", "smote_plain": "smote", "undersample_rus": "rus", "sw_smote": "sw_smote"}.get(cond, cond)
+            name = f"{cond_short}{ratio_tag}_s{seed}.png"
             logger.info(f"  {name}  ({len(sub)} rows)")
         return 0
 

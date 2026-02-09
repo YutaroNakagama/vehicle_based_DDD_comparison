@@ -280,9 +280,9 @@ def generate_plots(df: pd.DataFrame, df_pooled: pd.DataFrame) -> list[Path]:
         else:
             sub_with_pooled = sub
 
-        # Build a short label for filename
-        cond_label = cond.replace("_plain", "").replace("balanced_rf", "balancedrf")
-        out_name = f"summary_metrics_bar_{cond_label}_v2_s{seed}.png"
+        # Build output filename (short: condition + seed)
+        cond_label = {"balanced_rf": "brf", "smote_plain": "smote", "smote": "sw_smote", "undersample": "rus"}.get(cond, cond)
+        out_name = f"{cond_label}_s{seed}.png"
         out_path = png_dir / out_name
 
         # plot_grouped_bar_chart_raw expects modes and levels
