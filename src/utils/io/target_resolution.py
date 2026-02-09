@@ -218,8 +218,8 @@ def resolve_source_group_subjects(tag: Optional[str], target_domain: Optional[st
     is_split2 = "split2" in tag
     
     if is_split2:
-        # For split2, use split2 directory instead of ranks29
-        ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks" / "split2" / ranking_method
+        # For split2, use rankings/split2 directory (same as PBS --target_file)
+        ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "rankings" / "split2" / ranking_method
         source_file = ranks_dir / f"{metric_prefix}_{group_level}.txt"
         
         if not source_file.exists():
