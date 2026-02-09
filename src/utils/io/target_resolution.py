@@ -44,7 +44,7 @@ def resolve_target_subjects_from_tag(
     target_subjects = []
     
     # Only resolve for modes that use target groups
-    if mode not in ["source_only", "target_only"]:
+    if mode not in ["source_only", "target_only", "mixed"]:
         logging.info(f"[TARGET] Mode '{mode}' does not require target resolution.")
         return cli_target_subjects or []
     
@@ -105,22 +105,21 @@ def resolve_target_subjects_from_tag(
     return target_subjects
 
 
-# Source group for source_only mode training
-# Options: "in_domain" (LOW - typical subjects), "mid_domain" (MIDDLE)
-SOURCE_ONLY_TRAIN_GROUP = "in_domain"  # Changed from "mid_domain" to use LOW group
-
-
-def resolve_source_group_subjects(tag: Optional[str], source_group: Optional[str] = None) -> List[str]:
+def resolve_source_group_subjects(tag: Optional[str], target_domain: Optional[str] = None) -> List[str]:
     """Resolve source group subjects for source_only mode training.
+
+    In source_only (cross-domain) mode, training uses the opposite domain from target:
+    - If target is out_domain → train on in_domain
+    - If target is in_domain → train on out_domain
 
     Parameters
     ----------
     tag : str, optional
         Experiment tag to extract distance metric prefix (e.g., "rank_dtw_mean_high").
         For imbalv3 tags: "imbalv3_knn_mmd_in_domain_smote_tomek_ratio0_1"
-    source_group : str, optional
-        Which group to use for training. Options: "in_domain" (LOW), "mid_domain" (MIDDLE).
-        If None, uses SOURCE_ONLY_TRAIN_GROUP constant.
+    target_domain : str, optional
+        Target domain level ("in_domain", "out_domain", "mid_domain").
+        If provided, uses the opposite domain for training.
 
     Returns
     -------
@@ -137,8 +136,33 @@ def resolve_source_group_subjects(tag: Optional[str], source_group: Optional[str
     if not tag:
         raise ValueError("[SOURCE] Tag is required to resolve source group.")
     
-    # Determine which group to use
-    group_level = source_group or SOURCE_ONLY_TRAIN_GROUP
+    # Determine which group to use based on target domain
+    # Cross-domain training: use opposite domain from target
+    if target_domain:
+        if target_domain == "in_domain":
+            group_level = "out_domain"
+        elif target_domain == "out_domain":
+            group_level = "in_domain"
+        elif target_domain == "mid_domain":
+            # For mid_domain target, use in_domain (LOW) for training
+            group_level = "in_domain"
+        else:
+            raise ValueError(f"[SOURCE] Unknown target_domain: {target_domain}")
+    else:
+        # Fallback: extract target domain from tag
+        group_level = None
+        for domain in ["out_domain", "in_domain", "mid_domain"]:
+            if domain in tag:
+                # Use opposite domain
+                if domain == "in_domain":
+                    group_level = "out_domain"
+                elif domain == "out_domain":
+                    group_level = "in_domain"
+                else:  # mid_domain
+                    group_level = "in_domain"
+                break
+        if group_level is None:
+            raise ValueError(f"[SOURCE] Cannot infer target domain from tag: {tag}")
     
     # Extract ranking method (knn, lof, median_distance) from imbalv3, baseline_domain, or smote_plain tags
     # Format: imbalv3_{ranking}_{metric}_{level}_{method}_ratio{X_Y}
@@ -190,20 +214,49 @@ def resolve_source_group_subjects(tag: Optional[str], source_group: Optional[str
             f"Expected one of ['dtw', 'mmd', 'wasserstein']."
         )
     
-    # Load source group file using the correct ranking method directory
-    ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks" / "ranks29" / ranking_method
-    source_file = ranks_dir / f"{metric_prefix}_{group_level}.txt"
+    # Check if this is split2 experiment
+    is_split2 = "split2" in tag
     
-    if not source_file.exists():
-        raise FileNotFoundError(
-            f"[SOURCE] Source group file does not exist: {source_file}"
+    if is_split2:
+        # For split2, use split2 directory instead of ranks29
+        ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks" / "split2" / ranking_method
+        source_file = ranks_dir / f"{metric_prefix}_{group_level}.txt"
+        
+        if not source_file.exists():
+            raise FileNotFoundError(
+                f"[SOURCE] split2 source group file does not exist: {source_file}"
+            )
+        
+        with open(source_file) as f:
+            source_subjects = [s.strip() for s in f if s.strip()]
+        
+        group_name_map = {"in_domain": "LOW", "out_domain": "HIGH"}
+        group_name = group_name_map.get(group_level, group_level.upper())
+        target_name = group_name_map.get(target_domain, target_domain) if target_domain else "(auto-detected)"
+        logging.info(
+            f"[SOURCE] split2 cross-domain training: target={target_name}, source={group_name} "
+            f"({len(source_subjects)} subjects from {source_file.name})"
         )
-    
-    with open(source_file) as f:
-        source_subjects = [s.strip() for s in f if s.strip()]
-    
-    group_name = "LOW" if group_level == "in_domain" else "MIDDLE"
-    logging.info(f"[SOURCE] Loaded {len(source_subjects)} {group_name} group subjects from {source_file}")
+    else:
+        # Original ranks29 logic
+        ranks_dir = Path(cfg.RESULTS_DOMAIN_ANALYSIS_PATH) / "distance" / "subject-wise" / "ranks" / "ranks29" / ranking_method
+        source_file = ranks_dir / f"{metric_prefix}_{group_level}.txt"
+        
+        if not source_file.exists():
+            raise FileNotFoundError(
+                f"[SOURCE] Source group file does not exist: {source_file}"
+            )
+        
+        with open(source_file) as f:
+            source_subjects = [s.strip() for s in f if s.strip()]
+        
+        group_name_map = {"in_domain": "LOW", "out_domain": "HIGH", "mid_domain": "MIDDLE"}
+        group_name = group_name_map.get(group_level, group_level.upper())
+        target_name = group_name_map.get(target_domain, target_domain) if target_domain else "(auto-detected)"
+        logging.info(
+            f"[SOURCE] Cross-domain training: target={target_name}, source={group_name} "
+            f"({len(source_subjects)} subjects from {source_file.name})"
+        )
 
     
     return source_subjects
@@ -281,7 +334,7 @@ def filter_data_by_mode(
         logging.info(f"[FILTER] Injected subject_id column (n={unique_ids} unique IDs).")
     
     # Resolve target subjects if not provided
-    if mode in ["target_only", "source_only"] and not target_subjects:
+    if mode in ["target_only", "source_only", "mixed"] and not target_subjects:
         target_subjects = resolve_target_subjects_from_tag(tag, mode)
     
     # Apply mode-specific filtering
@@ -304,6 +357,17 @@ def filter_data_by_mode(
             )
         else:
             logging.warning("[FILTER] source_only: No target_subjects to exclude. Using all data.")
+    
+    elif mode == "mixed":
+        # Mixed-domain: use ALL subjects for training, target domain subjects for evaluation
+        # No data filtering here — the mixed split function handles the logic
+        if target_subjects:
+            logging.info(
+                f"[FILTER] mixed: All {len(data)} samples retained for training. "
+                f"Evaluation target: {len(target_subjects)} subjects."
+            )
+        else:
+            logging.warning("[FILTER] mixed: No target_subjects resolved. Evaluation may fail.")
     
     elif mode == "joint_train":
         if target_subjects:

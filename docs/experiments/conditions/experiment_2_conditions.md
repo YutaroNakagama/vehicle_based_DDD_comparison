@@ -7,7 +7,7 @@
 - **目的**: split2 ドメイン分割による RF モデルのドメインシフト耐性評価
 - **モデル**: RF（BalancedRF は不均衡対策手法として含む）
 - **データ分割**: `split2`（`in_domain`: 44 名、`out_domain`: 43 名）
-- **ランチャー**: `scripts/hpc/launchers/launch_paper_domain_split2.sh`
+- **ランチャー**: `scripts/hpc/launchers/launch_paper_domain_split2.sh`（cross/single）、`scripts/hpc/launchers/launch_exp2_mixed.sh`（mixed）
 - **ジョブスクリプト**: `scripts/hpc/jobs/domain_analysis/pbs_domain_comparison_split2.sh`
 
 ## パラメータ一覧
@@ -16,7 +16,7 @@
 |---|---|
 | 距離指標 (DISTANCE) | `mmd`, `dtw`, `wasserstein`（3 種） |
 | ドメイン (DOMAIN) | `in_domain`, `out_domain`（2 種） |
-| 訓練モード (MODE) | `source_only`, `target_only`（2 種） |
+| 訓練モード (MODE) | `source_only`, `target_only`, `mixed`（3 種） |
 | 乱数シード (SEED) | 42, 123（2 種） |
 | ターゲット比率 (RATIO) | 0.1, 0.5（2 種、比率ベース手法のみ） |
 | ランキング手法 (RANKING) | `knn` |
@@ -29,6 +29,7 @@
 |---|---|---|---|
 | `source_only` | Cross-domain | ターゲットの逆ドメイン | 指定ドメイン |
 | `target_only` | Single-domain | 指定ドメイン内 | 指定ドメイン内 |
+| `mixed` | Mixed-domain | 全被験者（87 名） | 指定ドメイン |
 
 ### Cross-Domain ロジック（source_only の場合）
 
@@ -36,6 +37,17 @@
 |---|---|---|
 | `out_domain` | in_domain（44 名） | out_domain（43 名） |
 | `in_domain` | out_domain（43 名） | in_domain（44 名） |
+
+### Mixed-Domain ロジック（mixed の場合）
+
+| DOMAIN 指定 | 訓練データ | 評価データ |
+|---|---|---|
+| `out_domain` | 全被験者（87 名） | out_domain（43 名） |
+| `in_domain` | 全被験者（87 名） | in_domain（44 名） |
+
+> **Mixed-domain の目的**: ドメイン分割に依存しないモデル（全被験者プール）が、
+> 各ドメインのデータにどの程度汎化するかを評価する。Cross-domain（逆ドメイン訓練）
+> および Single-domain（同一ドメイン訓練）との比較基準として機能する。
 
 ## 不均衡対策手法
 
@@ -60,9 +72,12 @@
 | balanced_rf（比率なし） | 1 |
 | **小計** | **8** |
 
-ループ数: 3 (DISTANCE) × 2 (DOMAIN) × 2 (MODE) × 2 (SEED) = **24**
+ループ数: 3 (DISTANCE) × 2 (DOMAIN) × 3 (MODE) × 2 (SEED) = **36**
 
-**合計: 24 × 8 = 192 ジョブ**
+**合計: 36 × 8 = 288 ジョブ**
+
+- Cross/Single-domain（source_only + target_only）: 24 × 8 = 192 ジョブ → `launch_paper_domain_split2.sh`
+- Mixed-domain（mixed）: 12 × 8 = 96 ジョブ → `launch_exp2_mixed.sh`
 
 ## HPC リソース設定
 

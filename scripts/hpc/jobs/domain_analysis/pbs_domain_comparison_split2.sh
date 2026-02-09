@@ -14,7 +14,7 @@
 #
 # Environment Variables:
 #   CONDITION : baseline | smote | smote_plain | undersample | balanced_rf (required)
-#   MODE      : source_only | target_only (required)
+#   MODE      : source_only | target_only | mixed (required)
 #   DISTANCE  : mmd | wasserstein | dtw (required)
 #   DOMAIN    : in_domain | out_domain (required) ※mid_domainなし
 #   RATIO     : Target ratio for SMOTE (default: 0.5)
@@ -60,6 +60,12 @@ if [[ "$DOMAIN" == "mid_domain" ]]; then
     exit 1
 fi
 
+# Validate MODE
+if [[ "$MODE" != "source_only" && "$MODE" != "target_only" && "$MODE" != "mixed" ]]; then
+    echo "[ERROR] Unknown MODE: $MODE. Use source_only, target_only, or mixed."
+    exit 1
+fi
+
 # Auto-select model based on condition
 case "$CONDITION" in
     balanced_rf)
@@ -71,6 +77,7 @@ case "$CONDITION" in
 esac
 
 # Target file path (split2 directory)
+# For mixed mode, target file defines the EVALUATION domain
 TARGET_FILE="results/analysis/exp2_domain_shift/distance/rankings/split2/${RANKING}/${DISTANCE}_${DOMAIN}.txt"
 
 # Generate tag based on condition

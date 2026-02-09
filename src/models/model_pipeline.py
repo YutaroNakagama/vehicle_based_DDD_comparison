@@ -24,6 +24,7 @@ from src.models.train_stages import (
     prepare_suffix_with_jobid,
     load_and_filter_data,
     prepare_source_only_splits,
+    prepare_mixed_splits,
 )
 from src.utils.io.split_helpers import split_data, log_split_ratios
 from src.utils.io.feature_utils import normalize_feature_names
@@ -61,8 +62,13 @@ def train_pipeline(
     ----------
     model_name : {"RF", "SvmA", "Lstm"}
         Model architecture to train.
-    mode : {"pooled", "target_only", "source_only", "joint_train"}, optional
+    mode : {"pooled", "target_only", "source_only", "mixed", "joint_train"}, optional
         Experimental mode for domain generalization.
+        - pooled: use all subjects for training and evaluation
+        - target_only (Single-domain): train and evaluate within same domain
+        - source_only (Cross-domain): train on opposite domain, evaluate on target
+        - mixed (Mixed-domain): train on ALL subjects, evaluate on target domain
+        - joint_train: combine source and target subjects
     subject_split_strategy : {"random", "subject_time_split"}, default="random"
         Strategy for splitting subjects into train/val/test.
     target_subjects : list of str, optional
@@ -113,6 +119,18 @@ def train_pipeline(
     # Stage 3: Split data into train/val/test
     if mode == "source_only":
         X_train, X_val, X_test, y_train, y_val, y_test = prepare_source_only_splits(
+            model_name=model_name,
+            tag=tag,
+            seed=seed,
+            target_subjects=target_subjects_resolved or target_subjects or [],
+            time_stratify_labels=time_stratify_labels,
+            time_stratify_tolerance=time_stratify_tolerance,
+            time_stratify_window=time_stratify_window,
+            time_stratify_min_chunk=time_stratify_min_chunk,
+            keep_subject_id=(use_oversampling and subject_wise_oversampling),
+        )
+    elif mode == "mixed":
+        X_train, X_val, X_test, y_train, y_val, y_test = prepare_mixed_splits(
             model_name=model_name,
             tag=tag,
             seed=seed,
