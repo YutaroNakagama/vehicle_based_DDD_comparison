@@ -72,26 +72,43 @@ submit_job() {
     local cmd="$1"
     local label="$2"
     local log_entry="$3"
+    local max_retries=30  # 30 retries × 120s = ~1 hour max wait per job
 
     if $DRY_RUN; then
         echo "[DRY-RUN] $label"
         return 0
     fi
 
-    wait_for_queue_slot
+    local attempt=0
+    while (( attempt < max_retries )); do
+        wait_for_queue_slot
 
-    local job_id
-    job_id=$(eval "$cmd" 2>&1)
-    local rc=$?
-    if (( rc != 0 )); then
-        echo "[ERROR] $label → $job_id (rc=$rc)"
-        echo "FAIL:$log_entry:$job_id" >> "$LOG_FILE"
-        return 1
-    fi
-    echo "[SUBMIT] $label → $job_id"
-    echo "OK:$log_entry:$job_id" >> "$LOG_FILE"
-    sleep 0.2
-    return 0
+        local job_id
+        job_id=$(eval "$cmd" 2>&1)
+        local rc=$?
+        if (( rc == 0 )); then
+            echo "[SUBMIT] $label → $job_id"
+            echo "OK:$log_entry:$job_id" >> "$LOG_FILE"
+            sleep 0.2
+            return 0
+        fi
+
+        # Queue limit race condition — wait and retry
+        if [[ "$job_id" == *"exceed"*"limit"* ]]; then
+            ((attempt++))
+            echo "[RETRY $attempt/$max_retries] $label — queue full, waiting ${WAIT_INTERVAL}s..."
+            sleep "$WAIT_INTERVAL"
+        else
+            # Non-queue error — log and fail
+            echo "[ERROR] $label → $job_id (rc=$rc)"
+            echo "FAIL:$log_entry:$job_id" >> "$LOG_FILE"
+            return 1
+        fi
+    done
+
+    echo "[GIVE UP] $label — max retries reached"
+    echo "GIVEUP:$log_entry" >> "$LOG_FILE"
+    return 1
 }
 
 get_train_resources() {
