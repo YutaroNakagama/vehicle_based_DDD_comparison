@@ -194,7 +194,7 @@ def main():
     p_logs = subparsers.add_parser("from-logs", help="Extract and visualize from job logs")
     p_logs.add_argument("--log-dir", default="scripts/hpc/logs", help="Log directory")
     p_logs.add_argument("--prefix", default="14618", help="Job ID prefix")
-    p_logs.add_argument("--output-dir", default="results/analysis/imbalance/sampling", help="Output directory")
+    p_logs.add_argument("--output-dir", default="results/analysis/exp1_imbalance/sampling", help="Output directory")
     p_logs.set_defaults(func=cmd_from_logs)
     
     # theoretical
@@ -202,7 +202,7 @@ def main():
     p_theo.add_argument("--methods", default="baseline,smote,smote_tomek,smote_rus,undersample_tomek",
                         help="Comma-separated methods")
     p_theo.add_argument("--ratio", type=float, default=0.5, help="Target ratio")
-    p_theo.add_argument("--output-dir", default="results/analysis/imbalance/sampling", help="Output directory")
+    p_theo.add_argument("--output-dir", default="results/analysis/exp1_imbalance/sampling", help="Output directory")
     p_theo.set_defaults(func=cmd_theoretical)
     
     # compare

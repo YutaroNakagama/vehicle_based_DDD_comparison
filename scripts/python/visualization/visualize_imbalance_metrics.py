@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 # ============================================================
 TRAIN_DIR = Path(cfg.RESULTS_OUTPUTS_PATH) / "training"
 EVAL_DIR = Path(cfg.RESULTS_OUTPUTS_PATH) / "evaluation"
-OUTPUT_DIR = PROJECT_ROOT / "results/analysis/imbalance/metrics"
+OUTPUT_DIR = PROJECT_ROOT / "results/analysis/exp1_imbalance/metrics"
 
 SPLITS = ["train", "val", "test"]
 SPLIT_LABELS = {"train": "Training Set", "val": "Validation Set", "test": "Test Set"}

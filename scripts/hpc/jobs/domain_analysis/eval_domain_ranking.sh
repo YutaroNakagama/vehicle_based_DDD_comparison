@@ -42,7 +42,7 @@ echo "PBS_JOBID: ${PBS_JOBID:-local}"
 echo "============================================================"
 
 # Build subject list path
-SUBJECT_LIST="results/analysis/domain/distance/subject-wise/ranks/ranks29/${RANKING_METHOD}/${DISTANCE_METRIC}_${DOMAIN_LEVEL}.txt"
+SUBJECT_LIST="results/analysis/exp2_domain_shift/distance/subject-wise/ranks/ranks29/${RANKING_METHOD}/${DISTANCE_METRIC}_${DOMAIN_LEVEL}.txt"
 
 if [[ ! -f "$SUBJECT_LIST" ]]; then
     echo "[ERROR] Subject list not found: $SUBJECT_LIST"

@@ -348,7 +348,7 @@ def print_summary_table(results):
 def main():
     parser = argparse.ArgumentParser(description="閾値固定 vs 最適化の比較可視化")
     parser.add_argument("--output-dir", type=str, 
-                       default="results/analysis/imbalance/local/threshold_comparison",
+                       default="results/analysis/exp1_imbalance/local/threshold_comparison",
                        help="出力ディレクトリ")
     args = parser.parse_args()
     

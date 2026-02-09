@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 # Configuration
 # ============================================================
 LOG_DIR = PROJECT_ROOT / "scripts/hpc/logs/imbalance"
-OUTPUT_DIR = PROJECT_ROOT / "results/analysis/imbalance/sampling"
+OUTPUT_DIR = PROJECT_ROOT / "results/analysis/exp1_imbalance/sampling"
 
 # Method display names and colors
 METHOD_CONFIG = {

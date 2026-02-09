@@ -14,7 +14,7 @@ Features:
 
 Usage:
     python scripts/python/visualization/visualize_optuna_convergence.py
-    python scripts/python/visualization/visualize_optuna_convergence.py --output results/analysis/imbalance/optuna
+    python scripts/python/visualization/visualize_optuna_convergence.py --output results/analysis/exp1_imbalance/optuna
 """
 
 import argparse
@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 # Configuration
 # ============================================================
 MODELS_DIR = PROJECT_ROOT / "models"
-OUTPUT_DIR = PROJECT_ROOT / "results/analysis/imbalance/optuna"
+OUTPUT_DIR = PROJECT_ROOT / "results/analysis/exp1_imbalance/optuna"
 
 # Method configuration
 METHOD_CONFIG = {

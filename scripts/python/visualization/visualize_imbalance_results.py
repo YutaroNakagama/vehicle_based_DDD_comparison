@@ -877,7 +877,7 @@ def main():
     model = args.model
     
     # Setup paths
-    # Output structure: results/analysis/imbalance/{job_id}/
+    # Output structure: results/analysis/exp1_imbalance/{job_id}/
     #   - sampling/       : sampling distribution plots and data
     #   - metrics/        : metrics comparison (CSV and plots)
     #   - confusion/      : confusion matrices

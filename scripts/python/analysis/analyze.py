@@ -402,7 +402,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # rank-export (neutral, research-friendly naming)
     s = sub.add_parser("rank-export", help="Export top/bottom-k subject lists from mean/std rankings (MMD/Wasserstein/DTW).")
-    s.add_argument("--outdir", default="results/analysis/domain/rankings")
+    s.add_argument("--outdir", default="results/analysis/exp2_domain_shift/distance/rankings")
     s.add_argument("--k", type=int, default=10)
     s.add_argument("--metrics_root", default=cfg.RESULTS_DOMAIN_GENERALIZATION_PATH,
                    help="Root directory containing metric results (mmd/wasserstein/dtw).")

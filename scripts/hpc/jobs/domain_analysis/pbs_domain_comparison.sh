@@ -65,7 +65,7 @@ case "$CONDITION" in
 esac
 
 # Target file path
-TARGET_FILE="results/analysis/domain/distance/subject-wise/ranks/ranks29/${RANKING}/${DISTANCE}_${DOMAIN}.txt"
+TARGET_FILE="results/analysis/exp2_domain_shift/distance/subject-wise/ranks/ranks29/${RANKING}/${DISTANCE}_${DOMAIN}.txt"
 
 # Generate tag based on condition
 case "$CONDITION" in

@@ -49,10 +49,10 @@ if [ $# -gt 0 ]; then
 fi
 
 # Output directories (following project structure)
-# - Imbalance-only (pooled): results/analysis/imbalance/smote_comparison/
-# - Domain analysis (ranking): results/analysis/domain/imbalance/smote_comparison/
-IMBALANCE_DIR="results/analysis/imbalance/smote_comparison"
-DOMAIN_DIR="results/analysis/domain/imbalance/smote_comparison"
+# - Imbalance-only (pooled): results/analysis/exp1_imbalance/smote_comparison/
+# - Domain analysis (ranking): results/analysis/exp1_imbalance/smote_comparison/
+IMBALANCE_DIR="results/analysis/exp1_imbalance/smote_comparison"
+DOMAIN_DIR="results/analysis/exp1_imbalance/smote_comparison"
 AGGREGATED_CSV="$IMBALANCE_DIR/aggregated_results.csv"
 
 echo ""

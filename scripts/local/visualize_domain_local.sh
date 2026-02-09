@@ -49,7 +49,7 @@ echo ""
 echo "========================================"
 echo "Output files:"
 echo "========================================"
-ls -la results/analysis/domain/imbalance/metrics/ 2>/dev/null || true
-ls -la results/analysis/domain/imbalance/optuna/ 2>/dev/null || true
-ls -la results/analysis/domain/imbalance/confusion/ 2>/dev/null || true
+ls -la results/analysis/exp1_imbalance/metrics/ 2>/dev/null || true
+ls -la results/analysis/exp1_imbalance/optuna/ 2>/dev/null || true
+ls -la results/analysis/exp1_imbalance/confusion/ 2>/dev/null || true
 echo "========================================"

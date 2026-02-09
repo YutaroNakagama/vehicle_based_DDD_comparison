@@ -95,7 +95,7 @@ case "$EXPERIMENT" in
         echo "DOMAIN_LEVEL: $DOMAIN_LEVEL"
         
         # Build subject list path
-        SUBJECT_FILE="results/analysis/domain/distance/subject-wise/ranks/ranks29/${RANKING_METHOD}/${DISTANCE_METRIC}_${DOMAIN_LEVEL}.txt"
+        SUBJECT_FILE="results/analysis/exp2_domain_shift/distance/subject-wise/ranks/ranks29/${RANKING_METHOD}/${DISTANCE_METRIC}_${DOMAIN_LEVEL}.txt"
         
         if [[ ! -f "$SUBJECT_FILE" ]]; then
             echo "[ERROR] Subject list not found: $SUBJECT_FILE"
