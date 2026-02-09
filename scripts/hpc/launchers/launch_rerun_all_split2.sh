@@ -1,11 +1,10 @@
 #!/bin/bash
 # ============================================================
-# Unified re-run launcher for split2 domain experiments
+# Unified re-run launcher for split2 domain experiments (v3)
 # ============================================================
 # Fixes applied in commit 87bc95b:
 #   Bug #1: eval_pipeline missing --target_file → random split (all modes)
 #   Bug #2: source_group subjects read from Dir B instead of Dir A
-#           (source_only, mixed modes)
 #   Bug #3: eval_pipeline didn't handle "mixed" mode
 #
 # Re-run strategy:
@@ -13,7 +12,9 @@
 #   Phase 2: source_only  → re-train + eval (training used wrong Dir B)
 #   Phase 3: mixed        → re-train + eval (training used wrong Dir B)
 #
-# Queue-aware: auto-waits when PBS queue limit is reached.
+# Queue limits (KAGAYAKI):
+#   SINGLE: max_queued=40/user, max_run=10/user
+#   LONG:   max_queued=15/user, max_run=2/user
 # ============================================================
 set -uo pipefail
 
@@ -28,19 +29,24 @@ RANKING="knn"
 DISTANCES=("mmd" "dtw" "wasserstein")
 DOMAINS=("out_domain" "in_domain")
 
-QUEUE_LIMIT=490  # Leave buffer below hard 500 limit
-WAIT_INTERVAL=120  # seconds between queue checks
+# Per-queue per-user limits (leave 1 slot buffer)
+SINGLE_LIMIT=39   # actual max_queued=40
+LONG_LIMIT=14     # actual max_queued=15
+
+WAIT_INTERVAL=60   # seconds between queue checks
 
 DRY_RUN=false
 PHASE=""  # empty = all phases; "1","2","3" for specific phase
-VERBOSE=false
+
+# Workaround: /var/tmp and /tmp may be full on head node
+export TMPDIR="$HOME/tmp"
+mkdir -p "$TMPDIR"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --dry-run)  DRY_RUN=true; shift ;;
         --phase)    PHASE="$2"; shift 2 ;;
-        --verbose)  VERBOSE=true; shift ;;
         *)          echo "Unknown arg: $1"; exit 1 ;;
     esac
 done
@@ -53,18 +59,31 @@ LOG_FILE="$LOG_DIR/rerun_all_split2_${TIMESTAMP}.log"
 # ============================================================
 # Helper Functions
 # ============================================================
+
+# Count jobs in a specific queue for this user (Q + R + H)
 get_queue_count() {
-    qstat -u s2240011 2>/dev/null | grep -c "s2240011" || echo "0"
+    local queue_name="$1"
+    qstat -u s2240011 2>/dev/null | awk -v q="$queue_name" '/s2240011/ && $3==q{n++} END{print n+0}'
 }
 
+# Wait until the target queue has a slot available
 wait_for_queue_slot() {
+    local queue_name="$1"
+    local limit
+    if [[ "$queue_name" == "LONG" ]]; then
+        limit=$LONG_LIMIT
+    else
+        limit=$SINGLE_LIMIT
+    fi
+
     if $DRY_RUN; then return 0; fi
+
     local count
-    count=$(get_queue_count)
-    while (( count >= QUEUE_LIMIT )); do
-        echo "[WAIT] Queue at $count/$QUEUE_LIMIT — waiting ${WAIT_INTERVAL}s... ($(date +%H:%M:%S))"
+    count=$(get_queue_count "$queue_name")
+    while (( count >= limit )); do
+        echo "[WAIT] $queue_name at $count/$limit — waiting ${WAIT_INTERVAL}s... ($(date +%H:%M:%S))"
         sleep "$WAIT_INTERVAL"
-        count=$(get_queue_count)
+        count=$(get_queue_count "$queue_name")
     done
 }
 
@@ -72,7 +91,8 @@ submit_job() {
     local cmd="$1"
     local label="$2"
     local log_entry="$3"
-    local max_retries=30  # 30 retries × 120s = ~1 hour max wait per job
+    local queue_name="$4"
+    local max_retries=120  # 120 × 60s = 2 hours max wait per job
 
     if $DRY_RUN; then
         echo "[DRY-RUN] $label"
@@ -81,7 +101,7 @@ submit_job() {
 
     local attempt=0
     while (( attempt < max_retries )); do
-        wait_for_queue_slot
+        wait_for_queue_slot "$queue_name"
 
         local job_id
         job_id=$(eval "$cmd" 2>&1)
@@ -89,17 +109,19 @@ submit_job() {
         if (( rc == 0 )); then
             echo "[SUBMIT] $label → $job_id"
             echo "OK:$log_entry:$job_id" >> "$LOG_FILE"
-            sleep 0.2
+            sleep 0.3
             return 0
         fi
 
-        # Queue limit race condition — wait and retry
-        if [[ "$job_id" == *"exceed"*"limit"* ]]; then
+        # Queue limit or temp space error — wait and retry
+        if [[ "$job_id" == *"exceed"*"limit"* ]] || [[ "$job_id" == *"No space"* ]] || [[ "$job_id" == *"mkstemp"* ]]; then
             ((attempt++))
-            echo "[RETRY $attempt/$max_retries] $label — queue full, waiting ${WAIT_INTERVAL}s..."
+            if (( attempt % 10 == 1 )); then
+                echo "[RETRY $attempt/$max_retries] $label — $job_id — waiting ${WAIT_INTERVAL}s..."
+            fi
             sleep "$WAIT_INTERVAL"
         else
-            # Non-queue error — log and fail
+            # Unexpected error — log and fail
             echo "[ERROR] $label → $job_id (rc=$rc)"
             echo "FAIL:$log_entry:$job_id" >> "$LOG_FILE"
             return 1
@@ -124,7 +146,7 @@ TOTAL_SUBMITTED=0
 TOTAL_FAILED=0
 
 # ============================================================
-# Phase 1: target_only → evaluation only
+# Phase 1: target_only → evaluation only (all SINGLE queue)
 # ============================================================
 run_phase1() {
     echo ""
@@ -141,7 +163,7 @@ run_phase1() {
                 local cmd="qsub -N $jname -l select=1:ncpus=2:mem=8gb -l walltime=00:30:00 -q SINGLE"
                 cmd="$cmd -v CONDITION=baseline,MODE=target_only,DISTANCE=$DIST,DOMAIN=$DOM,SEED=$SEED,RANKING=$RANKING"
                 cmd="$cmd $REEVAL_SCRIPT"
-                if submit_job "$cmd" "baseline | $DIST | $DOM | target_only | s$SEED" "reeval:baseline:$DIST:$DOM:target_only:$SEED"; then
+                if submit_job "$cmd" "baseline | $DIST | $DOM | target_only | s$SEED" "reeval:baseline:$DIST:$DOM:target_only:$SEED" "SINGLE"; then
                     ((count++))
                 else
                     ((TOTAL_FAILED++))
@@ -155,7 +177,7 @@ run_phase1() {
                         cmd="qsub -N $jname -l select=1:ncpus=2:mem=8gb -l walltime=00:30:00 -q SINGLE"
                         cmd="$cmd -v CONDITION=$COND,MODE=target_only,DISTANCE=$DIST,DOMAIN=$DOM,RATIO=$RATIO,SEED=$SEED,RANKING=$RANKING"
                         cmd="$cmd $REEVAL_SCRIPT"
-                        if submit_job "$cmd" "$COND | $DIST | $DOM | target_only | r=$RATIO | s$SEED" "reeval:$COND:$DIST:$DOM:target_only:$RATIO:$SEED"; then
+                        if submit_job "$cmd" "$COND | $DIST | $DOM | target_only | r=$RATIO | s$SEED" "reeval:$COND:$DIST:$DOM:target_only:$RATIO:$SEED" "SINGLE"; then
                             ((count++))
                         else
                             ((TOTAL_FAILED++))
@@ -168,7 +190,7 @@ run_phase1() {
                 cmd="qsub -N $jname -l select=1:ncpus=2:mem=8gb -l walltime=00:30:00 -q SINGLE"
                 cmd="$cmd -v CONDITION=balanced_rf,MODE=target_only,DISTANCE=$DIST,DOMAIN=$DOM,SEED=$SEED,RANKING=$RANKING"
                 cmd="$cmd $REEVAL_SCRIPT"
-                if submit_job "$cmd" "balanced_rf | $DIST | $DOM | target_only | s$SEED" "reeval:balanced_rf:$DIST:$DOM:target_only:$SEED"; then
+                if submit_job "$cmd" "balanced_rf | $DIST | $DOM | target_only | s$SEED" "reeval:balanced_rf:$DIST:$DOM:target_only:$SEED" "SINGLE"; then
                     ((count++))
                 else
                     ((TOTAL_FAILED++))
@@ -209,7 +231,7 @@ run_retrain_phase() {
                 local cmd="qsub -N $jname -l select=1:$ncpus_mem -l walltime=$walltime -q $queue"
                 cmd="$cmd -v CONDITION=baseline,MODE=$mode,DISTANCE=$DIST,DOMAIN=$DOM,SEED=$SEED,N_TRIALS=$N_TRIALS,RANKING=$RANKING,RUN_EVAL=true"
                 cmd="$cmd $TRAIN_SCRIPT"
-                if submit_job "$cmd" "baseline | $DIST | $DOM | $mode | s$SEED" "train:baseline:$DIST:$DOM:$mode:$SEED"; then
+                if submit_job "$cmd" "baseline | $DIST | $DOM | $mode | s$SEED" "train:baseline:$DIST:$DOM:$mode:$SEED" "$queue"; then
                     ((count++))
                 else
                     ((TOTAL_FAILED++))
@@ -228,7 +250,7 @@ run_retrain_phase() {
                         cmd="qsub -N $jname -l select=1:$ncpus_mem -l walltime=$walltime -q $queue"
                         cmd="$cmd -v CONDITION=$COND,MODE=$mode,DISTANCE=$DIST,DOMAIN=$DOM,RATIO=$RATIO,SEED=$SEED,N_TRIALS=$N_TRIALS,RANKING=$RANKING,RUN_EVAL=true"
                         cmd="$cmd $TRAIN_SCRIPT"
-                        if submit_job "$cmd" "$COND | $DIST | $DOM | $mode | r=$RATIO | s$SEED" "train:$COND:$DIST:$DOM:$mode:$RATIO:$SEED"; then
+                        if submit_job "$cmd" "$COND | $DIST | $DOM | $mode | r=$RATIO | s$SEED" "train:$COND:$DIST:$DOM:$mode:$RATIO:$SEED" "$queue"; then
                             ((count++))
                         else
                             ((TOTAL_FAILED++))
@@ -246,7 +268,7 @@ run_retrain_phase() {
                 cmd="qsub -N $jname -l select=1:$ncpus_mem -l walltime=$walltime -q $queue"
                 cmd="$cmd -v CONDITION=balanced_rf,MODE=$mode,DISTANCE=$DIST,DOMAIN=$DOM,SEED=$SEED,N_TRIALS=$N_TRIALS,RANKING=$RANKING,RUN_EVAL=true"
                 cmd="$cmd $TRAIN_SCRIPT"
-                if submit_job "$cmd" "balanced_rf | $DIST | $DOM | $mode | s$SEED" "train:balanced_rf:$DIST:$DOM:$mode:$SEED"; then
+                if submit_job "$cmd" "balanced_rf | $DIST | $DOM | $mode | s$SEED" "train:balanced_rf:$DIST:$DOM:$mode:$SEED" "$queue"; then
                     ((count++))
                 else
                     ((TOTAL_FAILED++))
@@ -263,20 +285,18 @@ run_retrain_phase() {
 # Main
 # ============================================================
 echo "============================================================"
-echo "  Split2 Bug-Fix Re-run Launcher"
+echo "  Split2 Bug-Fix Re-run Launcher (v3)"
 echo "============================================================"
 echo "  Dry run : $DRY_RUN"
 echo "  Phase   : ${PHASE:-all}"
-echo "  Queue   : limit=$QUEUE_LIMIT, poll=${WAIT_INTERVAL}s"
+echo "  Limits  : SINGLE=$SINGLE_LIMIT, LONG=$LONG_LIMIT"
+echo "  Poll    : ${WAIT_INTERVAL}s"
+echo "  TMPDIR  : $TMPDIR"
 echo "  Log     : $LOG_FILE"
-echo "  Phases  : 1=target_only(96 re-eval)"
-echo "            2=source_only(96 re-train)"
-echo "            3=mixed(96 re-train)"
-echo "  Total   : 288 jobs"
 echo "============================================================"
 
-CURRENT=$(get_queue_count)
-echo "  Current queue: $CURRENT jobs"
+echo "  SINGLE queue: $(get_queue_count SINGLE) jobs"
+echo "  LONG queue  : $(get_queue_count LONG) jobs"
 echo "============================================================"
 echo ""
 
