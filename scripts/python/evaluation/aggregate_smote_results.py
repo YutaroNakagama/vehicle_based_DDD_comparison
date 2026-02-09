@@ -7,11 +7,11 @@ for further analysis and visualization.
 
 Usage:
     python scripts/python/evaluation/aggregate_smote_results.py \
-        [--output results/analysis/imbalance/smote_comparison/aggregated_results.csv]
+        [--output results/analysis/exp1_imbalance/smote_comparison/aggregated_results.csv]
 
 Output directories:
-    - Pooled mode (imbalance-only): results/analysis/imbalance/smote_comparison/
-    - Domain mode (with ranking):   results/analysis/domain/imbalance/smote_comparison/
+    - Pooled mode (imbalance-only): results/analysis/exp1_imbalance/smote_comparison/
+    - Domain mode (with ranking):   results/analysis/exp1_imbalance/smote_comparison/
 """
 
 import argparse
@@ -246,7 +246,7 @@ def main():
     parser = argparse.ArgumentParser(description="Aggregate SMOTE comparison results")
     parser.add_argument(
         "--output", "-o",
-        default="results/analysis/imbalance/smote_comparison/aggregated_results.csv",
+        default="results/analysis/exp1_imbalance/smote_comparison/aggregated_results.csv",
         help="Output CSV path",
     )
     parser.add_argument(

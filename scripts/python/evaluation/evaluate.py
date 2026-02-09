@@ -6,7 +6,7 @@ accuracy, precision, recall, confusion matrix), and prints the results.
 
 Supported options (summary):
   --model <name>              Model architecture (choices: src.config.MODEL_CHOICES)
-  --mode <mode>               pooled | target_only | source_only | joint_train
+  --mode <mode>               pooled | target_only | source_only | joint_train | mixed
   --tag <str>                 Optional variant tag (e.g., 'erm', 'coral')
   --seed <int>                Random seed (default: from config.DEFAULT_RANDOM_SEED)
   --target_file <path>        Path to target subject list (required for non-pooled modes)

@@ -193,7 +193,7 @@ def prepare_evaluation_features(
     # Step 5: Transform using scaler
     transformed = scaler.transform(df)
     
-    return pd.DataFrame(transformed, index=df.index)
+    return pd.DataFrame(transformed, index=df.index, columns=df.columns)
 
 
 def align_train_val_test_columns(*dataframes: pd.DataFrame) -> List[pd.DataFrame]:

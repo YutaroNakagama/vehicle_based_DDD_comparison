@@ -330,8 +330,17 @@ def calculate_class_specific_metrics(
 
     # Extract from classification report if provided
     if classification_report_dict:
-        pos = classification_report_dict.get("1", {})
-        neg = classification_report_dict.get("0", {})
+        # Try multiple key formats for positive and negative classes
+        pos = {}
+        for key in ("1", "1.0", 1, 1.0, "True", "pos", "positive"):
+            pos = classification_report_dict.get(str(key), {})
+            if pos:
+                break
+        neg = {}
+        for key in ("0", "0.0", 0, 0.0, "False", "neg", "negative"):
+            neg = classification_report_dict.get(str(key), {})
+            if neg:
+                break
 
         result["precision_pos"] = float(pos.get("precision")) if "precision" in pos else None
         result["recall_pos"] = float(pos.get("recall")) if "recall" in pos else None

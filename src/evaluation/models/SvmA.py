@@ -14,10 +14,12 @@ import joblib
 from sklearn.metrics import (
     accuracy_score, confusion_matrix, roc_curve,
     precision_score, recall_score, f1_score,
-    roc_auc_score, mean_squared_error, classification_report
+    roc_auc_score, mean_squared_error, classification_report,
+    average_precision_score,
 )
 
 from src.config import MODEL_PKL_PATH
+from src.evaluation.metrics import calculate_class_specific_metrics
 
 
 def load_model_and_features(model: str):
@@ -155,18 +157,8 @@ def SvmA_eval(
             Confusion matrix as a nested list.
     """
 
-    # Clean column names
-    X_test.columns = X_test.columns.str.strip()
-
-    # Fill missing columns
-    missing_cols = set(selected_features) - set(X_test.columns)
-    if missing_cols:
-        print(f"Warning: Missing columns in X_test: {missing_cols}")
-        for col in missing_cols:
-            X_test[col] = 0.0
-
-    # Align feature order
-    X_test = X_test[selected_features]
+    # Note: Feature alignment and scaling are handled upstream by
+    # prepare_evaluation_features(). X_test arrives ready-to-predict.
 
     # Predict and compute metrics
     y_pred = clf.predict(X_test)
@@ -176,23 +168,49 @@ def SvmA_eval(
     f1 = f1_score(y_test, y_pred, average=None)
     conf_matrix = confusion_matrix(y_test, y_pred)
 
+    # --- ROC-AUC ---
+    y_decision = None
     try:
-        roc_auc = roc_auc_score(y_test, clf.decision_function(X_test))
-    except AttributeError:
+        y_decision = clf.decision_function(X_test)
+        roc_auc = roc_auc_score(y_test, y_decision)
+    except (AttributeError, ValueError) as e:
+        logging.warning(f"ROC AUC computation failed: {e}")
         roc_auc = None
-    
+
+    # --- AUPRC (Average Precision) ---
+    auc_pr = None
+    if y_decision is not None:
+        try:
+            auc_pr = float(average_precision_score(y_test, y_decision))
+        except (ValueError, Exception) as e:
+            logging.warning(f"AUPRC computation failed: {e}")
+
     mse = mean_squared_error(y_test, y_pred)
+
+    # Extract positive-class metrics
+    report_dict = classification_report(y_test, y_pred, output_dict=True)
+    class_metrics = calculate_class_specific_metrics(
+        np.array(conf_matrix), report_dict
+    )
 
     logging.info(f"Model: {model_name}")  
     logging.info(f"MSE: {mse:.4f}")
     logging.info(f"ROC AUC: {roc_auc:.4f}" if roc_auc is not None else "ROC AUC: N/A")
+    logging.info(f"AUPRC:   {auc_pr:.4f}" if auc_pr is not None else "AUPRC: N/A")
     logging.info(f"Classification Report:\n{classification_report(y_test, y_pred)}")
 
-    return {
+    result = {
         "model": model_name,
         "accuracy": float(accuracy),
         "precision": precision.tolist(),
         "recall": recall.tolist(),
         "f1_score": f1.tolist(),
-        "confusion_matrix": conf_matrix.tolist()
+        "confusion_matrix": conf_matrix.tolist(),
+        "roc_auc": roc_auc,
+        "auc_pr": auc_pr,
+        "classification_report": report_dict,
     }
+    # Merge positive-class metrics (precision_pos, recall_pos, f1_pos, ...)
+    result.update(class_metrics)
+
+    return result

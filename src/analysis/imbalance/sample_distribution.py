@@ -409,7 +409,7 @@ def plot_method_summary_dashboard(
     return fig
 
 
-def generate_all_visualizations(output_dir: str = "results/analysis/imbalance") -> Dict[str, str]:
+def generate_all_visualizations(output_dir: str = "results/analysis/exp1_imbalance") -> Dict[str, str]:
     """Generate all sample distribution visualizations.
     
     Parameters

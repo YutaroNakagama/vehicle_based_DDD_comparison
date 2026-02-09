@@ -503,9 +503,9 @@ def plot_grouped_bar_chart_raw(
     """
     import pandas as pd
     
-    # Get unique distances, excluding pooled entries (e.g., knn_pooled)
+    # Get unique distances, excluding pooled entries (e.g., knn_pooled, or literal "pooled")
     all_distances = sorted(data[data[distance_col].notna()][distance_col].unique())
-    distances = [d for d in all_distances if not d.endswith('_pooled')]
+    distances = [d for d in all_distances if d != 'pooled' and not d.endswith('_pooled')]
     ordered_levels = ["out_domain", "mid_domain", "in_domain"]
     
     # 4 columns: 3 distances + 1 pooled

@@ -15,6 +15,58 @@ from typing import List, Tuple
 from sklearn.model_selection import train_test_split
 
 
+# --- Model-aware feature column ranges (mirrors loaders.py) ---------------
+_MODEL_FEATURE_RANGES = {
+    "Lstm": ("steering_std_dev", "lane_offset_gaussian_smooth"),
+    "SvmA": ("Steering_Range", "LongAcc_SampleEntropy"),
+    "RF":   ("Steering_Range", "LongAcc_SampleEntropy"),
+    "SvmW": ("SteeringWheel_DDD", "LaneOffset_AAA"),
+    # common / BalancedRF data uses this range:
+    "common": ("Steering_Range", "LaneOffset_AAA"),
+}
+
+
+def _resolve_feature_columns(df: pd.DataFrame, include_subject_id: bool = False) -> list:
+    """Resolve feature columns from *df* using model-aware range detection.
+
+    Tries each known (start_col, end_col) pair from ``_MODEL_FEATURE_RANGES``.
+    If a matching pair is found in *df*.columns, returns the slice.
+    Otherwise falls back to an exclude-list approach (excludes Timestamp,
+    KSS labels, etc.).
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame whose columns should be inspected.
+    include_subject_id : bool
+        If True, append ``"subject_id"`` when present.
+
+    Returns
+    -------
+    list[str]
+        Ordered list of feature column names.
+    """
+    for _model, (start_col, end_col) in _MODEL_FEATURE_RANGES.items():
+        if start_col in df.columns and end_col in df.columns:
+            cols = df.loc[:, start_col:end_col].columns.tolist()
+            if include_subject_id and "subject_id" in df.columns:
+                cols.append("subject_id")
+            return cols
+
+    # Fallback: exclude non-feature columns
+    exclude = {
+        "Timestamp", "subject_id",
+        "KSS_Theta_Alpha_Beta", "KSS_Theta_Alpha_Beta_percent",
+        "theta_alpha_over_beta", "theta_alpha_over_beta_label",
+        "label",
+    }
+    if include_subject_id:
+        exclude.discard("subject_id")
+    cols = [c for c in df.columns if c not in exclude]
+    logging.info("[_resolve_feature_columns] Fallback: using %d columns (exclude-list).", len(cols))
+    return cols
+
+
 def _check_nonfinite(X: pd.DataFrame, name: str, preserve_cols: list = None) -> pd.DataFrame:
     """Check for NaN or infinite values in numeric columns and replace safely.
     
@@ -232,12 +284,8 @@ def data_split_by_subject(
     df_filtered["label"] = df_filtered["KSS_Theta_Alpha_Beta"].replace(KSS_LABEL_MAP)
     logging.info(f"Filtered data from {df.shape[0]} to {df_filtered.shape[0]} rows based on KSS labels.")
 
-    # Step 2: Define feature columns
-    start_col = "Steering_Range"
-    end_col = "LaneOffset_AAA"
-    feature_columns = df_filtered.loc[:, start_col:end_col].columns.tolist()
-    if 'subject_id' in df_filtered.columns:
-        feature_columns.append('subject_id')
+    # Step 2: Define feature columns (model-aware)
+    feature_columns = _resolve_feature_columns(df_filtered, include_subject_id=True)
 
     # Step 3: Create datasets based on subject lists
     X_train = df_filtered[df_filtered["subject_id"].isin(train_subjects)][feature_columns].dropna()
@@ -314,12 +362,8 @@ def data_time_split_by_subject(
     else:
         raise ValueError("KSS or KSS_Theta_Alpha_Beta column not found")
 
-    # 2. Column define （e.g. Steering_Range ～ LaneOffset_AAA, subject_id）
-    start_col = "Steering_Range"
-    end_col = "LaneOffset_AAA"
-    feature_columns = df.loc[:, start_col:end_col].columns.tolist()
-    if subject_col in df.columns:
-        feature_columns.append(subject_col)
+    # 2. Column define (model-aware: auto-detects feature range)
+    feature_columns = _resolve_feature_columns(df, include_subject_id=(subject_col in df.columns))
 
     dfs_train, dfs_val, dfs_test = [], [], []
 

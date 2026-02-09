@@ -314,8 +314,20 @@ def load_subject_csvs(
 
 import joblib
 import pickle
-from tensorflow.keras.models import load_model
-from src.evaluation.models.lstm import AttentionLayer
+
+# Lazy imports for TensorFlow/Keras (only needed for Lstm evaluation)
+# Avoids import failure on nodes without working TensorFlow
+_keras_load_model = None
+_AttentionLayer = None
+
+def _ensure_keras_imports():
+    """Lazy-load Keras dependencies on first use."""
+    global _keras_load_model, _AttentionLayer
+    if _keras_load_model is None:
+        from tensorflow.keras.models import load_model as _lm
+        from src.evaluation.models.lstm import AttentionLayer as _AL
+        _keras_load_model = _lm
+        _AttentionLayer = _AL
 
 
 def load_subjects_and_data(
@@ -386,8 +398,6 @@ def load_model_and_scaler(model_name: str, mode: str, tag: str, fold: int, jobid
     import pickle
     import os
     import logging
-    from tensorflow.keras.models import load_model
-    from src.evaluation.models.lstm import AttentionLayer
 
     # --- Normalize PBS jobid ---
     if jobid is None:
@@ -453,6 +463,14 @@ def load_model_and_scaler(model_name: str, mode: str, tag: str, fold: int, jobid
         exact_pattern = os.path.join(base_dir, "**", f"{model_name}_{mode}_*{tag_key}*.pkl")
     
     model_matches = glob.glob(exact_pattern, recursive=True)
+
+    # For Lstm, also search for .keras files if no .pkl found
+    if not model_matches and model_name == "Lstm":
+        if mode == "pooled" and not tag_key:
+            keras_pattern = os.path.join(base_dir, "**", f"{model_name}_{mode}_*.keras")
+        else:
+            keras_pattern = os.path.join(base_dir, "**", f"{model_name}_{mode}_*{tag_key}*.keras")
+        model_matches = glob.glob(keras_pattern, recursive=True)
     
     # Filter matches to ensure exact tag match (avoid partial matches)
     # CRITICAL: Prevent partial matches like 'smote' matching 'smote_tomek' or 'smote_rus'
@@ -475,6 +493,10 @@ def load_model_and_scaler(model_name: str, mode: str, tag: str, fold: int, jobid
     if not model_matches:
         fallback_pattern = os.path.join(base_dir, "**", f"{model_name}_{mode}_*.pkl")
         model_matches = glob.glob(fallback_pattern, recursive=True)
+        # For Lstm, also try .keras extension in fallback
+        if not model_matches and model_name == "Lstm":
+            fallback_keras = os.path.join(base_dir, "**", f"{model_name}_{mode}_*.keras")
+            model_matches = glob.glob(fallback_keras, recursive=True)
         logging.warning(f"[EVAL] No exact tag match found, using fallback pattern for mode={mode}")
 
     if not model_matches:
@@ -488,18 +510,39 @@ def load_model_and_scaler(model_name: str, mode: str, tag: str, fold: int, jobid
     # --- Locate corresponding scaler/feature files using same basename logic ---
     # Extract base name from model path to ensure matching files
     model_basename = os.path.basename(model_path)
-    model_prefix = model_basename.replace(f"{model_name}_", "").replace(".pkl", "")
+    # Derive the suffix that follows "<model_name>_" in the model filename.
+    # Use the model dir to co-locate scaler/feature files with the same suffix.
+    # Strip both .pkl and .keras extensions
+    model_suffix = model_basename
+    for ext in (".pkl", ".keras", ".h5"):
+        if model_suffix.endswith(ext):
+            model_suffix = model_suffix[: -len(ext)]
+            break
+    # Remove leading "<model_name>_" -> e.g. "target_only_prior_SvmW_..._14736326_1"
+    if model_suffix.startswith(f"{model_name}_"):
+        model_suffix = model_suffix[len(f"{model_name}_"):]
     
     # Try to match scaler/features with same suffix
+    # Use the model's containing directory for co-located artifact lookup first
+    model_containing_dir = os.path.dirname(model_path)
     if mode == "pooled" and not tag_key:
         scaler_pattern = os.path.join(base_dir, "**", f"scaler_{model_name}_{mode}_*.pkl")
         feature_pattern = os.path.join(base_dir, "**", f"selected_features_{model_name}_{mode}_*.pkl")
     else:
-        scaler_pattern = os.path.join(base_dir, "**", f"scaler_{model_name}_*{model_prefix}*.pkl")
-        feature_pattern = os.path.join(base_dir, "**", f"selected_features_{model_name}_*{model_prefix}*.pkl")
+        # Direct co-location: scaler/feature files sit next to model file with same suffix
+        scaler_pattern = os.path.join(model_containing_dir, f"scaler_{model_name}_{model_suffix}.pkl")
+        feature_pattern = os.path.join(model_containing_dir, f"selected_features_{model_name}_{model_suffix}.pkl")
     
     scaler_matches = glob.glob(scaler_pattern, recursive=True)
     feature_matches = glob.glob(feature_pattern, recursive=True)
+
+    # Fallback: recursive wildcard search if direct co-location failed
+    if not scaler_matches:
+        scaler_pattern_fb = os.path.join(base_dir, "**", f"scaler_{model_name}_{mode}_*{tag_key}*.pkl")
+        scaler_matches = glob.glob(scaler_pattern_fb, recursive=True)
+    if not feature_matches:
+        feature_pattern_fb = os.path.join(base_dir, "**", f"selected_features_{model_name}_{mode}_*{tag_key}*.pkl")
+        feature_matches = glob.glob(feature_pattern_fb, recursive=True)
 
     scaler_path = scaler_matches[0] if scaler_matches else None
     feature_path = feature_matches[0] if feature_matches else None
@@ -517,22 +560,31 @@ def load_model_and_scaler(model_name: str, mode: str, tag: str, fold: int, jobid
     try:
         # --- Keras 3.x Compatibility: auto-detect .keras / .h5 ---
         if model_name == "Lstm":
-            keras_path = os.path.join(model_dir, f"{model_name}.keras")
-            h5_path    = os.path.join(model_dir, f"{model_name}.h5")
-
-            if os.path.exists(keras_path):
-                clf = load_model(keras_path, custom_objects={"AttentionLayer": AttentionLayer})
-                logging.info(f"[EVAL] Loaded Keras model (.keras): {keras_path}")
-            elif os.path.exists(h5_path):
-                clf = load_model(h5_path, custom_objects={"AttentionLayer": AttentionLayer})
-                logging.info(f"[EVAL] Loaded Keras model (.h5): {h5_path}")
-            elif os.path.exists(model_path):
+            _ensure_keras_imports()
+            # Use the dynamically resolved model_path from the search above
+            if model_path.endswith(".keras"):
+                clf = _keras_load_model(model_path, custom_objects={"AttentionLayer": _AttentionLayer})
+                logging.info(f"[EVAL] Loaded Keras model (.keras): {model_path}")
+            elif model_path.endswith(".h5"):
+                clf = _keras_load_model(model_path, custom_objects={"AttentionLayer": _AttentionLayer})
+                logging.info(f"[EVAL] Loaded Keras model (.h5): {model_path}")
+            elif model_path.endswith(".pkl") and os.path.exists(model_path):
                 # Fallback (legacy): allow .pkl if older version
                 clf = joblib.load(model_path)
                 logging.warning(f"[EVAL] Fallback to legacy .pkl model: {model_path}")
             else:
-                logging.error(f"[EVAL] No valid model file found in {model_dir}")
-                return None, None, None
+                # Last resort: check for Lstm.keras / Lstm.h5 in model_dir
+                keras_path = os.path.join(model_dir, f"{model_name}.keras")
+                h5_path    = os.path.join(model_dir, f"{model_name}.h5")
+                if os.path.exists(keras_path):
+                    clf = _keras_load_model(keras_path, custom_objects={"AttentionLayer": _AttentionLayer})
+                    logging.info(f"[EVAL] Loaded Keras model (legacy .keras): {keras_path}")
+                elif os.path.exists(h5_path):
+                    clf = _keras_load_model(h5_path, custom_objects={"AttentionLayer": _AttentionLayer})
+                    logging.info(f"[EVAL] Loaded Keras model (legacy .h5): {h5_path}")
+                else:
+                    logging.error(f"[EVAL] No valid model file found for Lstm at {model_path}")
+                    return None, None, None
 
         else:
             # Standard sklearn models
