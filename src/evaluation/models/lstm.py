@@ -13,7 +13,8 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.layers import Layer
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
 
-from src.config import MODEL_PKL_PATH
+from src.config import MODEL_PKL_PATH, LSTM_SEQUENCE_LENGTH
+from src.models.architectures.lstm import create_sequences
 from src.evaluation.metrics import (
     calculate_extended_metrics,
     calculate_class_specific_metrics,
@@ -149,8 +150,13 @@ def lstm_eval(
     elif isinstance(y_test, np.ndarray) and y_test.ndim > 1:
         y_test = y_test.flatten()
 
-    # Reshape into LSTM input format
-    X_test_3d = np.expand_dims(X_scaled, axis=1)
+    # Create multi-timestep sequences for LSTM input
+    seq_len = LSTM_SEQUENCE_LENGTH
+    X_test_3d, y_test = create_sequences(X_scaled, y_test, seq_len)
+    logging.info(
+        f"[LSTM] Eval sequences: {X_test_3d.shape[0]} "
+        f"(seq_len={seq_len}, features={X_test_3d.shape[2]})"
+    )
 
     # Evaluation
     loss, accuracy = model.evaluate(X_test_3d, y_test, verbose=0)

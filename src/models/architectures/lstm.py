@@ -17,7 +17,7 @@ from tensorflow.keras.layers import Dense, Flatten, Bidirectional, LSTM, Layer, 
 from tensorflow.keras.callbacks import EarlyStopping
 import tensorflow as tf
 
-from src.config import MODEL_PKL_PATH
+from src.config import MODEL_PKL_PATH, LSTM_SEQUENCE_LENGTH
 from src.utils.io.savers import save_artifacts
 
 
@@ -60,6 +60,40 @@ class AttentionLayer(Layer):
         a = tf.keras.backend.softmax(e, axis=1)
         output = x * a
         return tf.keras.backend.sum(output, axis=1)
+
+
+def create_sequences(
+    X: np.ndarray,
+    y: np.ndarray,
+    seq_len: int = LSTM_SEQUENCE_LENGTH,
+) -> tuple:
+    """Create sliding-window sequences from 2-D feature data.
+
+    Parameters
+    ----------
+    X : np.ndarray, shape (n_samples, n_features)
+        Scaled feature matrix (2-D).
+    y : np.ndarray, shape (n_samples,)
+        Labels aligned with *X*.
+    seq_len : int, default=LSTM_SEQUENCE_LENGTH
+        Number of consecutive windows per sequence.
+
+    Returns
+    -------
+    X_seq : np.ndarray, shape (n_sequences, seq_len, n_features)
+    y_seq : np.ndarray, shape (n_sequences,)
+        Label of the last timestep in each sequence.
+    """
+    n = len(X)
+    if n < seq_len:
+        # Not enough data — pad with zeros and return single sequence
+        pad = np.zeros((seq_len - n, X.shape[1]), dtype=X.dtype)
+        X_padded = np.vstack([pad, X])
+        return X_padded[np.newaxis, :, :], y[-1:]
+
+    X_seq = np.array([X[i : i + seq_len] for i in range(n - seq_len + 1)])
+    y_seq = y[seq_len - 1 :]  # label of last timestep in each window
+    return X_seq, y_seq
 
 
 def build_lstm_model(input_shape: tuple) -> Model:
@@ -170,27 +204,32 @@ def lstm_train(
     # Convert to float32
     X_array = X_numeric.astype(np.float32).values
 
+    # --- Scale ALL training data once (shared across folds) ---
+    scaler = StandardScaler()
+    X_scaled_all = scaler.fit_transform(X_array)
+
+    # --- Create multi-timestep sequences ---
+    seq_len = LSTM_SEQUENCE_LENGTH
+    X_seq_all, y_seq_all = create_sequences(X_scaled_all, y_cleaned.values, seq_len)
+    logging.info(
+        f"[LSTM] Created {len(X_seq_all)} sequences "
+        f"(seq_len={seq_len}) from {len(X_array)} samples"
+    )
+
     kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
     accuracies = []
     fold_histories = []  # Store training history for convergence visualization
     best_accuracy = 0.0
     best_model = None
-    best_scaler = None
     best_fold = 1
 
-    for fold_no, (train_idx, test_idx) in enumerate(kf.split(X_array), start=1):
-        # Standardize (fit per fold)
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X_array[train_idx])
-        X_scaled_test = scaler.transform(X_array[test_idx])
+    for fold_no, (train_idx, test_idx) in enumerate(kf.split(X_seq_all), start=1):
+        X_train_fold = X_seq_all[train_idx]
+        X_test_fold = X_seq_all[test_idx]
+        y_train_fold = y_seq_all[train_idx]
+        y_test_fold = y_seq_all[test_idx]
 
-        # Reshape for LSTM
-        X_train_fold = np.expand_dims(X_scaled, axis=1)
-        X_test_fold = np.expand_dims(X_scaled_test, axis=1)
-        y_train_fold = y_cleaned.values[train_idx]
-        y_test_fold = y_cleaned.values[test_idx]
-
-        model = build_lstm_model((X_train_fold.shape[1], X_train_fold.shape[2]))
+        model = build_lstm_model((seq_len, X_train_fold.shape[2]))
         early_stopping = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
 
         logging.info(f'--- Fold {fold_no} Training Start ---')
@@ -220,7 +259,6 @@ def lstm_train(
         if fold_no == 1 or scores[1] > best_accuracy:
             best_accuracy = scores[1]
             best_model = model
-            best_scaler = scaler
             best_fold = fold_no
 
         # Save model with proper PBS jobid format
@@ -276,14 +314,14 @@ def lstm_train(
         X_num = X_num.clip(lower=np.finfo(np.float32).min, upper=np.finfo(np.float32).max)
         X_arr = X_num.astype(np.float32).values
         
-        # Scale and reshape
+        # Scale and create sequences
         X_scaled = scaler_obj.transform(X_arr)
-        X_reshaped = np.expand_dims(X_scaled, axis=1)
+        X_seq, y_seq = create_sequences(X_scaled, y_aligned.values, seq_len)
         
         # Predict
-        y_prob = model_obj.predict(X_reshaped, verbose=0).flatten()
+        y_prob = model_obj.predict(X_seq, verbose=0).flatten()
         y_pred = (y_prob > 0.5).astype(int)
-        y_true = y_aligned.values
+        y_true = y_seq
         
         acc = accuracy_score(y_true, y_pred)
         prec = precision_score(y_true, y_pred, average='binary', zero_division=0)
@@ -320,15 +358,15 @@ def lstm_train(
     }
     
     # Compute train metrics
-    results["train"] = compute_metrics(best_model, best_scaler, X, y, "Training")
+    results["train"] = compute_metrics(best_model, scaler, X, y, "Training")
     
     # Compute validation metrics if provided
     if X_val is not None and y_val is not None:
-        results["val"] = compute_metrics(best_model, best_scaler, X_val, y_val, "Validation")
+        results["val"] = compute_metrics(best_model, scaler, X_val, y_val, "Validation")
     
     # Compute test metrics if provided
     if X_test is not None and y_test is not None:
-        results["test"] = compute_metrics(best_model, best_scaler, X_test, y_test, "Test")
+        results["test"] = compute_metrics(best_model, scaler, X_test, y_test, "Test")
     
-    return best_model, best_scaler, X_numeric.columns.tolist(), results
+    return best_model, scaler, X_numeric.columns.tolist(), results
 
