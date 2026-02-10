@@ -191,6 +191,10 @@ def prepare_evaluation_features(
         df = align_feature_columns(df, scaler_cols, fill_missing=0.0, drop_extra=True)
     
     # Step 5: Transform using scaler
+    if scaler is None:
+        logging.warning("[PREPROCESS] Scaler is None — skipping transform. "
+                        "Returning cleaned/aligned features without scaling.")
+        return df
     transformed = scaler.transform(df)
     
     return pd.DataFrame(transformed, index=df.index, columns=df.columns)

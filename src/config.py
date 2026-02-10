@@ -144,9 +144,12 @@ MODEL_WINDOW_CONFIG = {
     "common": {"window_sec": 3, "step_sec": 1.5},
     "SvmA":   {"window_sec": 3, "step_sec": 1.5},
     "SvmW":   {"window_sec": 3, "step_sec": 1.5},
-    "Lstm":   {"window_sec": 3, "step_sec": 1.5},
+    "Lstm":   {"window_sec": 5, "step_sec": 2.5},
 }
 """dict : Windowing configuration (window length and step size in seconds)."""
+
+LSTM_SEQUENCE_LENGTH = 10
+"""int : Number of consecutive windows forming one LSTM input sequence."""
 
 # ---------------------------------------------------------------------
 # Sampling rates

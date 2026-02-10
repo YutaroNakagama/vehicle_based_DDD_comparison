@@ -74,7 +74,8 @@ def train_pipeline(
     target_subjects : list of str, optional
         Target subject IDs (used in target_only/source_only modes).
     subject_wise_split : bool, default=False
-        Kept for CLI compatibility; unused.
+        When True, overrides random split to per-subject temporal split
+        (each subject's data is split chronologically into train/val/test).
     seed : int, default=42
         Random seed for reproducibility.
     tag : str, optional
@@ -104,6 +105,11 @@ def train_pipeline(
     None
         Artifacts are saved to models/<model_name>/ directory.
     """
+    # subject_wise_split overrides random strategy to per-subject temporal split
+    if subject_wise_split and subject_split_strategy == "random":
+        subject_split_strategy = "subject_time_split"
+        logging.info("[TRAIN] subject_wise_split=True → using per-subject temporal split")
+
     # Stage 1: Build suffix with job ID
     suffix = prepare_suffix_with_jobid(mode, tag)
     logging.info(f"[START] model={model_name} | mode={mode} | tag={tag} | suffix={suffix}")
@@ -217,12 +223,18 @@ def train_pipeline(
     X_train, X_val, X_test = align_train_val_test_columns(X_train, X_val, X_test)
 
     # Stage 5: Feature selection & scaling
+    # SvmA uses ANFIS for internal feature selection; skip RF pre-selection
+    actual_fs_method = feature_selection_method
+    if model_name == "SvmA":
+        actual_fs_method = "none"
+        logging.info("[TRAIN] SvmA: skipping RF pre-selection (ANFIS handles feature selection)")
+
     selected_features, scaler, X_train_fs, X_val_fs, X_test_fs = select_features_and_scale(
         X_train=X_train,
         X_val=X_val,
         X_test=X_test,
         y_train=y_train,
-        feature_selection_method=feature_selection_method,
+        feature_selection_method=actual_fs_method,
         top_k=TOP_K_FEATURES,
         data_leak=data_leak,
     )

@@ -530,8 +530,11 @@ def load_model_and_scaler(model_name: str, mode: str, tag: str, fold: int, jobid
         feature_pattern = os.path.join(base_dir, "**", f"selected_features_{model_name}_{mode}_*.pkl")
     else:
         # Direct co-location: scaler/feature files sit next to model file with same suffix
-        scaler_pattern = os.path.join(model_containing_dir, f"scaler_{model_name}_{model_suffix}.pkl")
-        feature_pattern = os.path.join(model_containing_dir, f"selected_features_{model_name}_{model_suffix}.pkl")
+        # NOTE: Use glob.escape() for directory path to handle literal brackets
+        # in PBS job-array directories like "14735932[1]".
+        escaped_dir = glob.escape(model_containing_dir)
+        scaler_pattern = os.path.join(escaped_dir, f"scaler_{model_name}_{model_suffix}.pkl")
+        feature_pattern = os.path.join(escaped_dir, f"selected_features_{model_name}_{model_suffix}.pkl")
     
     scaler_matches = glob.glob(scaler_pattern, recursive=True)
     feature_matches = glob.glob(feature_pattern, recursive=True)

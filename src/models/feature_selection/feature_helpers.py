@@ -93,6 +93,10 @@ def select_features_and_scale(
         X_val   = _check_nonfinite(X_val[selected_features], "X_val(post-rf)")
         X_test  = _check_nonfinite(X_test[selected_features], "X_test(post-rf)")
 
+    elif feature_selection_method == "none":
+        selected_features = X_train.columns.tolist()
+        logging.info(f"[FS] No feature pre-selection applied. Keeping all {len(selected_features)} features.")
+
     else:
         raise ValueError(f"Unknown feature_selection_method: {feature_selection_method}")
 
