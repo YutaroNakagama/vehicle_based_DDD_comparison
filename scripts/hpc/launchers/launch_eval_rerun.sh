@@ -1,14 +1,18 @@
 #!/bin/bash
 # ============================================================
-# Eval再実行ランチャー (2026-02-07)
-# training完了済み・eval失敗の23件を再評価
+# Eval再実行ランチャー (2026-02-10 updated)
+# training完了済み・eval失敗のSvmA(91)+SvmW(87)=178件を再評価
+# 修正内容:
+#   - .str.strip() bug (SvmA_eval) — commit 6c5f14c で修正済
+#   - glob bracket escaping [1] dirs — commit e5a499d で修正
+#   - scaler None null guard — commit e5a499d で修正
 # ============================================================
 
 set -uo pipefail
 
 PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
 EVAL_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/evaluate/pbs_eval_only.sh"
-EVAL_LIST="/tmp/eval_rerun_list.txt"
+EVAL_LIST="$HOME/tmp/eval_rerun_list_v2.txt"
 
 DRY_RUN=false
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
@@ -31,10 +35,13 @@ echo "============================================================"
     echo ""
 } > "$LOG_FILE"
 
-while IFS='|' read -r JOBID MODEL TAG MODE; do
+while IFS='|' read -r JOBID MODEL TAG MODE SEED TARGET_FILE; do
     job_name="ev_${JOBID}"
-    vars="MODEL=$MODEL,TAG=$TAG,MODE=$MODE,JOBID=$JOBID"
-    cmd="qsub -N $job_name -l select=1:ncpus=2:mem=4gb -l walltime=00:30:00 -q SEMINAR -v $vars $EVAL_SCRIPT"
+    vars="MODEL=$MODEL,TAG=$TAG,MODE=$MODE,JOBID=$JOBID,SEED=${SEED:-42}"
+    if [[ -n "${TARGET_FILE:-}" ]]; then
+        vars="$vars,TARGET_FILE=$TARGET_FILE"
+    fi
+    cmd="qsub -N $job_name -l select=1:ncpus=2:mem=8gb -l walltime=02:00:00 -q SEMINAR -v $vars $EVAL_SCRIPT"
 
     if $DRY_RUN; then
         echo "[DRY-RUN] $JOBID | $TAG | $MODE"

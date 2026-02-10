@@ -172,12 +172,16 @@ if [[ "$RUN_EVAL" == "true" ]]; then
     echo "[EVAL] Running evaluation..."
     echo ""
     
+    # Strip PBS domain suffix (e.g. "14738867.spcc-adm1" -> "14738867")
+    JOBID_CLEAN="${PBS_JOBID%%.*}"
+
     EVAL_CMD="python scripts/python/evaluation/evaluate.py \
         --model $MODEL \
         --tag $TAG \
         --mode $MODE \
         --target_file $TARGET_FILE \
-        --seed $SEED"
+        --seed $SEED \
+        --jobid $JOBID_CLEAN"
     
     echo "[EVAL] $EVAL_CMD"
     eval $EVAL_CMD || echo "[WARNING] Evaluation failed but continuing..."
