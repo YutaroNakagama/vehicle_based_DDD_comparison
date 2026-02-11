@@ -147,7 +147,8 @@ get_conditions() {
     local model="$1"
     case "$model" in
         SvmW)
-            echo "baseline smote_plain smote undersample balanced_rf"
+            # balanced_rfは別モデル(BalancedRF)であり SvmWには不要
+            echo "baseline smote_plain smote undersample"
             ;;
         SvmA|Lstm)
             echo "baseline smote_plain smote undersample"
@@ -190,7 +191,7 @@ for MODEL in "${MODELS[@]}"; do
                     
                     # Ratio-based methods
                     for RATIO in "${RATIOS[@]}"; do
-                        for COND in "smote_plain" "smote" "undersample" "balanced_rf"; do
+                        for COND in "smote_plain" "smote" "undersample"; do
                             # Skip if not applicable for this model
                             if ! echo "$CONDITIONS" | grep -q "$COND"; then
                                 continue
