@@ -19,7 +19,10 @@ from sklearn.metrics import (
 )
 
 from src.config import MODEL_PKL_PATH
-from src.evaluation.metrics import calculate_class_specific_metrics
+from src.evaluation.metrics import (
+    calculate_class_specific_metrics,
+    find_optimal_threshold,
+)
 
 
 def load_model_and_features(model: str):
@@ -155,13 +158,36 @@ def SvmA_eval(
             Class-wise F1 scores.
         - ``"confusion_matrix"`` : list of list of int
             Confusion matrix as a nested list.
+        - ``"custom_threshold"`` : float or None
+            F2-optimal classification threshold.
     """
 
     # Note: Feature alignment and scaling are handled upstream by
     # prepare_evaluation_features(). X_test arrives ready-to-predict.
 
-    # Predict and compute metrics
-    y_pred = clf.predict(X_test)
+    # --- Obtain probability scores for threshold optimization ---
+    y_score = None
+    try:
+        y_proba = clf.predict_proba(X_test)
+        y_score = y_proba[:, 1]  # probability of positive class
+    except AttributeError:
+        logging.warning("predict_proba unavailable; falling back to decision_function")
+        try:
+            y_score = clf.decision_function(X_test)
+        except AttributeError:
+            logging.warning("decision_function also unavailable; using default predict()")
+
+    # --- Optimal threshold via F2-score (emphasize recall for drowsiness) ---
+    if y_score is not None:
+        opt_threshold, opt_f2 = find_optimal_threshold(y_test, y_score, beta=2.0)
+        logging.info(
+            f"[SvmA] Optimal threshold: {opt_threshold:.4f} (F2={opt_f2:.4f})"
+        )
+        y_pred = (y_score >= opt_threshold).astype(int)
+    else:
+        opt_threshold = None
+        y_pred = clf.predict(X_test)
+
     accuracy = accuracy_score(y_test, y_pred)
     precision = precision_score(y_test, y_pred, average=None)
     recall = recall_score(y_test, y_pred, average=None)
@@ -209,6 +235,7 @@ def SvmA_eval(
         "roc_auc": roc_auc,
         "auc_pr": auc_pr,
         "classification_report": report_dict,
+        "custom_threshold": float(opt_threshold) if opt_threshold is not None else None,
     }
     # Merge positive-class metrics (precision_pos, recall_pos, f1_pos, ...)
     result.update(class_metrics)

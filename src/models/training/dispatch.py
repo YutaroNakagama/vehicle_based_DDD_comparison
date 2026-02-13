@@ -67,6 +67,9 @@ def train_model(
         model_obj, scaler_obj, selected_feats, results = SvmA_train(
             X_train_fs, X_val_fs, y_train, y_val, indices_df, model_name,
             X_test=X_test_fs, y_test=y_test,
+            use_oversampling=use_oversampling,
+            oversample_method=oversample_method,
+            target_ratio=target_ratio,
         )
         logging.info("SvmA training completed.")
         return model_obj, scaler_obj, None, {"selected_features": selected_feats}, results
