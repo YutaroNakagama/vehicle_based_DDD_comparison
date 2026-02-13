@@ -15,7 +15,7 @@
 # Environment Variables:
 #   MODEL      : SvmA | SvmW | Lstm (required)
 #   CONDITION  : baseline | smote | smote_plain | undersample | balanced_rf (required)
-#   MODE       : source_only | target_only (required)
+#   MODE       : source_only | target_only | mixed | mixed (required)
 #   DISTANCE   : mmd | wasserstein | dtw (required)
 #   DOMAIN     : in_domain | out_domain (required)
 #   RATIO      : Target ratio for SMOTE (default: 0.5)

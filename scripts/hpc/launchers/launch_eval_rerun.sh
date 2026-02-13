@@ -12,7 +12,7 @@ set -uo pipefail
 
 PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
 EVAL_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/evaluate/pbs_eval_only.sh"
-EVAL_LIST="$HOME/tmp/eval_rerun_list_v2.txt"
+EVAL_LIST="$HOME/tmp/eval_rerun_list.txt"
 
 DRY_RUN=false
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
@@ -35,12 +35,9 @@ echo "============================================================"
     echo ""
 } > "$LOG_FILE"
 
-while IFS='|' read -r JOBID MODEL TAG MODE SEED TARGET_FILE; do
+while IFS='|' read -r JOBID MODEL TAG MODE; do
     job_name="ev_${JOBID}"
-    vars="MODEL=$MODEL,TAG=$TAG,MODE=$MODE,JOBID=$JOBID,SEED=${SEED:-42}"
-    if [[ -n "${TARGET_FILE:-}" ]]; then
-        vars="$vars,TARGET_FILE=$TARGET_FILE"
-    fi
+    vars="MODEL=$MODEL,TAG=$TAG,MODE=$MODE,JOBID=$JOBID"
     cmd="qsub -N $job_name -l select=1:ncpus=2:mem=8gb -l walltime=02:00:00 -q SEMINAR -v $vars $EVAL_SCRIPT"
 
     if $DRY_RUN; then
