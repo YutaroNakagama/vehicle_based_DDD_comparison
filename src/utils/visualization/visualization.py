@@ -369,8 +369,8 @@ def plot_grouped_bar_chart(
     mode_labels = {
         "pooled": "Pooled",
         "source_only": "Cross-domain",
-        "target_only": "Single-domain",
-        "mixed": "Mixed-domain",
+        "target_only": "Within-domain",
+        "mixed": "Multi-domain",
     }
     
     for i, dist in enumerate(distances):
@@ -477,8 +477,8 @@ def plot_grouped_bar_chart_raw(
     """Create multi-panel bar chart from raw (unpivoted) data.
     
     Layout: 3 distance metrics (columns 1-3) + 1 pooled column (column 4)
-    - Columns 1-3: cross-domain vs single-domain comparison for out_domain/mid_domain/in_domain
-    - Column 4: pooled mode only (all modes: pooled/cross-domain/single-domain)
+    - Columns 1-3: cross-domain vs within-domain vs multi-domain comparison for out_domain/in_domain
+    - Column 4: pooled mode only (all modes: pooled/cross-domain/within-domain/multi-domain)
     
     Parameters
     ----------
@@ -537,8 +537,8 @@ def plot_grouped_bar_chart_raw(
     mode_labels = {
         "pooled": "Pooled",
         "source_only": "Cross-domain",
-        "target_only": "Single-domain",
-        "mixed": "Mixed-domain",
+        "target_only": "Within-domain",
+        "mixed": "Multi-domain",
     }
     
     # Calculate pooled baseline values for each metric
@@ -548,8 +548,8 @@ def plot_grouped_bar_chart_raw(
         if not pooled_data.empty:
             pooled_baselines[metric] = pooled_data[metric].mean()
     
-    # Rows 1-3: Distance metrics (cross-domain vs single-domain)
-    comparison_modes = ["source_only", "target_only"]
+    # Rows 1-3: Distance metrics (cross-domain vs within-domain vs multi-domain)
+    comparison_modes = ["source_only", "target_only", "mixed"]
     
     for i, dist in enumerate(distances):
         sub = data[data[distance_col] == dist]
@@ -564,7 +564,7 @@ def plot_grouped_bar_chart_raw(
             # Filter to present levels
             levels_present = [lvl for lvl in ordered_levels if lvl in sub[level_col].unique()]
             x = np.arange(len(levels_present))
-            width = 0.35
+            width = 0.25
             
             # Collect values for source_only and target_only
             mode_values = {}
@@ -575,10 +575,10 @@ def plot_grouped_bar_chart_raw(
                     vals.append(mode_data[metric].mean() if not mode_data.empty else np.nan)
                 mode_values[mode] = vals
             
-            # Plot bars (only 2 modes)
+            # Plot bars (3 modes: cross, single, mixed)
             bars = []
             for idx, mode in enumerate(comparison_modes):
-                offset = (idx - 1 + 0.5) * width
+                offset = (idx - 1) * width
                 bar = ax.bar(
                     x + offset, 
                     mode_values[mode], 

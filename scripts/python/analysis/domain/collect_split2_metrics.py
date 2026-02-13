@@ -75,7 +75,7 @@ SPLIT2_PATTERN = re.compile(
     r"knn_"
     r"(?P<distance>mmd|dtw|wasserstein)_"
     r"(?P<domain>in_domain|out_domain)"
-    r"(?:_split2)?(?:_(?:source_only|target_only|mixed))?"  # optional trailing tags
+    r"(?:_(?:split2|source_only|target_only|mixed))*"  # optional trailing tags (any order)
     r"_s(?P<seed>\d+)"
     r"\.json$"
 )
