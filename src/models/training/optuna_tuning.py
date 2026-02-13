@@ -251,8 +251,19 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str, seed: int = 42):
         }
         return LogisticRegression(**params)
 
-    elif model in ["SVM", "SvmW"]:
-        # Linear kernel only (fast and sufficient for this dataset)
+    elif model == "SvmW":
+        # Zhao et al. 2009: RBF kernel, C=300 fixed
+        params = {
+            "C": 300.0,
+            "kernel": "rbf",
+            "gamma": trial.suggest_float("gamma", 1e-5, 1.0, log=True),
+            "probability": True,
+            "random_state": seed,
+            "class_weight": "balanced",
+        }
+        return SVC(**params)
+
+    elif model == "SVM":
         params = {
             "C": trial.suggest_float("C", 1e-3, 10.0, log=True),
             "kernel": "linear",

@@ -61,7 +61,7 @@ def get_classifier(model_name: str, seed: int = 42):
         "RF": RandomForestClassifier(random_state=seed),
         "BalancedRF": BalancedRandomForestClassifier(random_state=seed),
         "EasyEnsemble": EasyEnsembleClassifier(random_state=seed),
-        "SvmW": SVC(kernel="rbf", probability=True, random_state=seed),
+        "SvmW": SVC(kernel="rbf", C=300.0, probability=True, random_state=seed),
         "DecisionTree": DecisionTreeClassifier(random_state=seed),
         "AdaBoost": AdaBoostClassifier(random_state=seed),
         "GradientBoosting": GradientBoostingClassifier(random_state=seed),
