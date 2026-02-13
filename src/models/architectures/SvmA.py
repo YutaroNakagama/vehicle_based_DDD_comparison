@@ -1,18 +1,25 @@
 """SVM model with ANFIS-based feature weighting and PSO optimization.
 
-This module implements:
-- ANFIS-style feature importance calculation
-- Feature selection using learned importance
-- PSO-based hyperparameter and feature weighting optimization
-- SVM training and evaluation
+This module implements the method from:
+    Arefnezhad, S., Samiee, S., Eichberger, A., & Nahvi, A. (2019).
+    Driver Drowsiness Detection Based on Steering Wheel Data Applying
+    Adaptive Neuro-Fuzzy Feature Selection. Sensors, 19(4), 943.
 
-Trained models and selected features are saved using `joblib`.
+Components:
+- ANFIS (Adaptive Neuro-Fuzzy Inference System) with Gaussian MFs
+  and Takagi-Sugeno rules for feature importance computation
+- PSO optimization of ANFIS membership function parameters
+- Separate SVM hyperparameter optimization via grid search
+- Feature selection using ANFIS importance degree (threshold 0.5)
+
+Trained models and selected features are saved using ``joblib``.
 """
 
 import warnings
 warnings.filterwarnings("ignore")
 
 import os
+import itertools
 import numpy as np
 import pandas as pd
 import joblib
@@ -131,175 +138,266 @@ def compute_feature_indices(X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
     return indices_df
 
 
-def calculate_importance_degree(params: list, indices_df: pd.DataFrame) -> np.ndarray:
+# ============================================================================
+# ANFIS (Adaptive Neuro-Fuzzy Inference System)
+# ============================================================================
+
+class ANFIS:
+    """Takagi-Sugeno ANFIS for computing feature importance degree.
+
+    Implements the fuzzy inference system described in Arefnezhad et al.
+    (2019, Sensors 19(4), 943):
+
+    * **4 inputs** – Fisher, Correlation, T-test, Mutual-Information indices
+      (all normalised to [0, 1]).
+    * **3 Gaussian MFs per input** – Low (L), Medium (M), High (H).
+    * **81 rules** (3^4 combinations) with singleton consequences
+      α_l ∈ {0, 0.5, 1}.
+    * **Defuzzification** – weighted-average (Takagi-Sugeno first-order
+      with constant consequent).
+
+    PSO optimises the 24 MF parameters (centre *c* and spread *s* for
+    each of the 12 Gaussian MFs).  Rule consequences are derived from
+    a deterministic mapping of the input-level combination.
     """
-    Compute importance degree per feature using ANFIS-style weighted indices.
 
-    Parameters
-    ----------
-    params : list of float
-        Weight parameters for each index in the order:
-        [Fisher, Correlation, T-test, Mutual Information].
-    indices_df : pandas.DataFrame
-        DataFrame containing feature index scores.
+    N_INPUTS = 4
+    N_MFS    = 3       # Low, Medium, High
+    N_RULES  = 81      # 3 ** 4
+    N_PARAMS = 24      # 4 inputs × 3 MFs × 2 (c, s)
 
-    Returns
-    -------
-    numpy.ndarray
-        Importance degree array, where values are:
-        - 1   : High importance
-        - 0.5 : Medium importance
-        - 0   : Low importance
-    """
-    # --- Defensive conversion (must come first) ---
-    if not isinstance(indices_df, pd.DataFrame):
-        try:
-            # Handle list/array/dict gracefully
-            if isinstance(indices_df, (list, np.ndarray)):
-                df = pd.DataFrame(indices_df)
-                ncols = df.shape[1] if df.ndim > 1 else 1
-                # Assign column names safely
-                if ncols == 4:
-                    df.columns = ["Fisher_Index", "Correlation_Index", "T-test_Index", "Mutual_Information_Index"]
-                else:
-                    # If only 1 column → copy it 4 times
-                    if ncols == 1:
-                        df = pd.concat([df] * 4, axis=1)
-                    elif ncols > 4:
-                        df = df.iloc[:, :4]
-                    else:
-                        df = pd.concat([df] * (4 // ncols), axis=1)
-                    df.columns = ["Fisher_Index", "Correlation_Index", "T-test_Index", "Mutual_Information_Index"]
-                indices_df = df
-                logging.warning(f"indices_df auto-converted from {type(indices_df)} with shape {indices_df.shape}")
-            elif isinstance(indices_df, dict):
-                indices_df = pd.DataFrame(indices_df)
-                missing = set(["Fisher_Index", "Correlation_Index", "T-test_Index", "Mutual_Information_Index"]) - set(indices_df.columns)
-                for m in missing:
-                    indices_df[m] = 0.0
-                indices_df = indices_df[["Fisher_Index", "Correlation_Index", "T-test_Index", "Mutual_Information_Index"]]
-                logging.warning("indices_df auto-built from dict keys.")
-            else:
-                raise TypeError(f"indices_df must be DataFrame, list, array, or dict — got {type(indices_df)}")
+    # PSO bounds ----------------------------------------------------------
+    #   centre c ∈ [0, 1]   (indices are normalised)
+    #   spread s ∈ [0.01, 0.5]
+    LB = []
+    UB = []
+    for _i in range(N_INPUTS):
+        for _j in range(N_MFS):
+            LB.extend([0.0, 0.01])
+            UB.extend([1.0, 0.50])
 
-        except Exception as e:
-            raise TypeError(
-                f"indices_df could not be converted properly. Original type: {type(indices_df)}"
-            ) from e
+    def __init__(self):
+        self._rule_combos = list(
+            itertools.product(range(self.N_MFS), repeat=self.N_INPUTS)
+        )
+        self._rule_consequences = self._init_rule_consequences()
 
-    # Ensure expected columns exist
-    expected = ["Fisher_Index", "Correlation_Index", "T-test_Index", "Mutual_Information_Index"]
-    for col in expected:
-        if col not in indices_df.columns:
-            indices_df[col] = 0.0
+    # -- Rule consequences ------------------------------------------------
+    def _init_rule_consequences(self) -> np.ndarray:
+        """Deterministic singleton consequences for the 81 rules.
 
-    # --- Ensure numeric dtype for all index columns ---
-    for col in expected:
-        if col in indices_df.columns:
-            indices_df[col] = pd.to_numeric(indices_df[col], errors="coerce").fillna(0.0)
-    # --- Compute weighted scores ---
-    weighted_scores = (
-        indices_df["Fisher_Index"] * params[0] +
-        indices_df["Correlation_Index"] * params[1] +
-        indices_df["T-test_Index"] * params[2] +
-        indices_df["Mutual_Information_Index"] * params[3]
-    )
-    return np.where(weighted_scores > 0.75, 1, np.where(weighted_scores > 0.4, 0.5, 0))
+        Each input MF level is coded as L=0, M=1, H=2.  The sum of the
+        four levels (range 0 … 8) is mapped to:
+
+        * sum ≥ 6  →  α = 1.0  (high importance)
+        * 3 ≤ sum < 6  →  α = 0.5  (medium importance)
+        * sum < 3  →  α = 0.0  (low importance)
+        """
+        alpha = np.zeros(self.N_RULES)
+        for r, combo in enumerate(self._rule_combos):
+            level_sum = sum(combo)
+            if level_sum >= 6:
+                alpha[r] = 1.0
+            elif level_sum >= 3:
+                alpha[r] = 0.5
+            # else 0.0
+        return alpha
+
+    # -- Gaussian MF ------------------------------------------------------
+    @staticmethod
+    def gaussian_mf(x: np.ndarray, c: float, s: float) -> np.ndarray:
+        """Gaussian membership function  exp(-0.5 * ((x-c)/s)^2)."""
+        return np.exp(-0.5 * ((x - c) / (abs(s) + 1e-10)) ** 2)
+
+    # -- Core inference ---------------------------------------------------
+    def compute_importance_degree(
+        self,
+        indices_values: np.ndarray,
+        mf_params: np.ndarray,
+    ) -> np.ndarray:
+        """Compute continuous importance degree for every feature.
+
+        Parameters
+        ----------
+        indices_values : ndarray, shape (n_features, 4)
+            Normalised filter-index values per feature.
+        mf_params : ndarray, shape (24,)
+            MF parameters ``[c_L0, s_L0, c_M0, s_M0, c_H0, s_H0,
+            c_L1, s_L1, …, c_H3, s_H3]``.
+
+        Returns
+        -------
+        ndarray, shape (n_features,)
+            Importance degree ∈ [0, 1].
+        """
+        n_feat = indices_values.shape[0]
+
+        # 1) Fuzzification – compute MF values  (n_feat, 4, 3)
+        mf_vals = np.zeros((n_feat, self.N_INPUTS, self.N_MFS))
+        for inp in range(self.N_INPUTS):
+            for mf in range(self.N_MFS):
+                idx = inp * 6 + mf * 2
+                c = mf_params[idx]
+                s = mf_params[idx + 1]
+                mf_vals[:, inp, mf] = self.gaussian_mf(
+                    indices_values[:, inp], c, s
+                )
+
+        # 2) Firing strengths – product across inputs  (n_feat, 81)
+        firing = np.ones((n_feat, self.N_RULES))
+        for r, combo in enumerate(self._rule_combos):
+            for inp_idx, mf_idx in enumerate(combo):
+                firing[:, r] *= mf_vals[:, inp_idx, mf_idx]
+
+        # 3) Takagi-Sugeno defuzzification – weighted average
+        denom = firing.sum(axis=1) + 1e-10
+        importance = (firing @ self._rule_consequences) / denom
+        return importance
 
 
-def select_features(features_df: pd.DataFrame, importance_degree: np.ndarray) -> pd.DataFrame:
-    """
-    Select features based on importance threshold.
+def select_features(
+    features_df: pd.DataFrame,
+    importance_degree: np.ndarray,
+    threshold: float = 0.5,
+) -> pd.DataFrame:
+    """Select features whose ANFIS importance degree exceeds *threshold*.
+
+    Per Arefnezhad et al. (2019), a threshold of **0.5** on the
+    continuous importance degree is used.
 
     Parameters
     ----------
     features_df : pandas.DataFrame
-        Input feature matrix.
+        Full feature matrix  (n_samples, n_features).
     importance_degree : numpy.ndarray
-        Importance levels per feature (0, 0.5, or 1).
+        Continuous importance degree per feature (length = n_features).
+    threshold : float, default 0.5
+        Selection threshold.
 
     Returns
     -------
     pandas.DataFrame
-        Filtered DataFrame containing only features with
-        importance equal to 1.
+        Subset of columns with importance > threshold.
     """
-    return features_df.loc[:, importance_degree == 1]
+    mask = importance_degree > threshold
+    if not mask.any():
+        logging.warning(
+            "[ANFIS] No features above threshold %.2f → using all features",
+            threshold,
+        )
+        return features_df.copy()
+    return features_df.loc[:, mask]
+
+
+def _grid_search_svm(
+    X_train: pd.DataFrame, y_train: pd.Series,
+    X_val: pd.DataFrame, y_val: pd.Series,
+) -> tuple:
+    """Grid-search SVM *C* and *gamma* on the already-selected features.
+
+    Returns
+    -------
+    tuple
+        (best_C, best_gamma, best_f1)
+    """
+    best_f1 = -1.0
+    best_C, best_gamma = 1.0, 0.1
+    for C in [0.1, 1.0, 10.0, 100.0]:
+        for gamma in [0.001, 0.01, 0.1, 1.0]:
+            svm = SVC(kernel='rbf', C=C, gamma=gamma, class_weight='balanced')
+            svm.fit(X_train, y_train)
+            y_pred = svm.predict(X_val)
+            f1_val = f1_score(y_val, y_pred, average='binary', zero_division=0)
+            if f1_val > best_f1:
+                best_f1 = f1_val
+                best_C, best_gamma = C, gamma
+    logging.info(
+        "[SvmA] SVM grid-search best: C=%.3f gamma=%.4f F1=%.4f",
+        best_C, best_gamma, best_f1,
+    )
+    return best_C, best_gamma, best_f1
 
 
 def optimize_svm_anfis(
     X_train: pd.DataFrame, y_train: pd.Series,
     X_val: pd.DataFrame, y_val: pd.Series,
-    indices_df: pd.DataFrame
-) -> tuple[list[float], list[dict]]:
-    """
-    Optimize ANFIS feature weights and SVM hyperparameters using PSO.
+    indices_df: pd.DataFrame,
+) -> tuple:
+    """Optimise ANFIS MF parameters via PSO, then grid-search SVM params.
+
+    **Stage 1 – PSO** optimises the 24 Gaussian-MF parameters (centre
+    and spread for 4 inputs × 3 MFs).  During PSO, a fixed-parameter
+    SVM (C=1, gamma='scale') evaluates each candidate feature subset.
+
+    **Stage 2 – Grid search** finds the best SVM (C, gamma) on the
+    feature subset selected by the optimised ANFIS.
 
     Parameters
     ----------
-    X_train : pandas.DataFrame
-        Training feature matrix.
-    y_train : pandas.Series
-        Training labels.
-    X_val : pandas.DataFrame
-        Validation feature matrix.
-    y_val : pandas.Series
-        Validation labels.
-    indices_df : pandas.DataFrame
-        Feature importance index values.
+    X_train, X_val : DataFrame
+        Training / validation feature matrices.
+    y_train, y_val : Series
+        Training / validation labels.
+    indices_df : DataFrame
+        Per-feature filter indices (n_features × 4).
 
     Returns
     -------
     tuple
-        - list of float: Optimal parameters [w1, w2, w3, w4, C, gamma].
-        - list of dict: PSO optimization history for convergence visualization.
+        (optimal_mf_params, best_C, best_gamma, pso_history, anfis)
     """
-    # Track PSO optimization history
-    pso_history = []
-    eval_count = [0]  # Use list to allow mutation in nested function
-    
-    def objective(params):
-        eval_count[0] += 1
-        importance_degree = calculate_importance_degree(params[:4], indices_df)
-        X_train_sel = select_features(X_train, importance_degree)
-        X_val_sel = select_features(X_val, importance_degree)
+    anfis = ANFIS()
+    indices_values = indices_df.values  # (n_features, 4)
 
-        if X_train_sel.shape[1] == 0:
-            fitness = 1.0  # Penalty for empty selection
-            f1_val = 0.0
-        else:
-            model = SVC(kernel='rbf', C=params[4], gamma=params[5],
-                        class_weight='balanced')
-            model.fit(X_train_sel, y_train)
-            y_pred_val = model.predict(X_val_sel)
-            f1_val = f1_score(y_val, y_pred_val, average='binary', zero_division=0)
-            fitness = -f1_val  # Maximize F1 for positive class
-        
-        # Record this evaluation
+    pso_history = []
+    eval_count = [0]
+
+    def objective(mf_params):
+        eval_count[0] += 1
+        importance = anfis.compute_importance_degree(indices_values, mf_params)
+        mask = importance > 0.5
+        n_selected = int(mask.sum())
+
+        if n_selected == 0:
+            pso_history.append({
+                'evaluation': eval_count[0],
+                'n_selected': 0, 'f1_pos': 0.0, 'fitness': 1.0,
+            })
+            return 1.0  # penalty
+
+        X_tr = X_train.iloc[:, mask]
+        X_va = X_val.iloc[:, mask]
+
+        # Fixed SVM during PSO (paper: PSO trains ANFIS only)
+        svm = SVC(kernel='rbf', C=1.0, gamma='scale', class_weight='balanced')
+        svm.fit(X_tr, y_train)
+        y_pred = svm.predict(X_va)
+        f1_val = f1_score(y_val, y_pred, average='binary', zero_division=0)
+        fitness = -f1_val
+
         pso_history.append({
             'evaluation': eval_count[0],
-            'params': {
-                'w1': float(params[0]),
-                'w2': float(params[1]),
-                'w3': float(params[2]),
-                'w4': float(params[3]),
-                'C': float(params[4]),
-                'gamma': float(params[5])
-            },
+            'n_selected': n_selected,
+            'f1_pos': float(f1_val),
             'fitness': float(fitness),
-            'f1_pos': float(f1_val)
         })
-        
         return fitness
 
-    lb = [0, 0, 0, 0, 0.1, 0.001]
-    ub = [1, 1, 1, 1, 10, 1]
+    # PSO: 24 MF parameters
+    optimal_mf_params, _ = pso(
+        objective, ANFIS.LB, ANFIS.UB,
+        swarmsize=20, maxiter=40,
+    )
 
-    # Increased swarmsize and maxiter for better exploration
-    # Original: swarmsize=3, maxiter=3 (12 evaluations) - insufficient
-    # Improved: swarmsize=10, maxiter=20 (200 evaluations)
-    optimal_params, _ = pso(objective, lb, ub, swarmsize=10, maxiter=20)
-    return optimal_params, pso_history
+    # Stage 2 – grid-search SVM (C, gamma) on selected features
+    importance = anfis.compute_importance_degree(indices_values, optimal_mf_params)
+    X_train_sel = select_features(X_train, importance)
+    X_val_sel = select_features(X_val, importance)
+    best_C, best_gamma, _ = _grid_search_svm(
+        X_train_sel, y_train, X_val_sel, y_val,
+    )
+
+    return optimal_mf_params, best_C, best_gamma, pso_history, anfis
 
 
 def evaluate_model(model: SVC, X: pd.DataFrame, y: pd.Series, dataset_name: str) -> None:
@@ -382,10 +480,11 @@ def SvmA_train(
     """
     logging.info("Starting SVM-ANFIS optimization...")
 
-    optimal_params, pso_history = optimize_svm_anfis(X_train, y_train, X_val, y_val, indices_df)
-    best_anfis_params, best_C, best_gamma = optimal_params[:4], optimal_params[4], optimal_params[5]
-    
-    # Save PSO optimization history for convergence visualization
+    optimal_mf_params, best_C, best_gamma, pso_history, anfis = optimize_svm_anfis(
+        X_train, y_train, X_val, y_val, indices_df,
+    )
+
+    # Save PSO optimization history + MF parameters for reproducibility
     import json
     from pathlib import Path
     pbs_jobid_pso = os.environ.get("PBS_JOBID", "local")
@@ -396,10 +495,19 @@ def SvmA_train(
     history_dir.mkdir(parents=True, exist_ok=True)
     history_filename = f"pso_history_{model}_{pbs_jobid_pso}_{pbs_array_idx_pso}.json"
     with open(history_dir / history_filename, 'w') as f:
-        json.dump(pso_history, f, indent=2)
+        json.dump({
+            'pso_history': pso_history,
+            'optimal_mf_params': optimal_mf_params.tolist(),
+            'best_C': best_C,
+            'best_gamma': best_gamma,
+        }, f, indent=2)
     logging.info(f"PSO optimization history saved to {history_dir / history_filename}")
 
-    importance_degree = calculate_importance_degree(best_anfis_params, indices_df)
+    # Feature selection via optimised ANFIS
+    indices_values = indices_df.values
+    importance_degree = anfis.compute_importance_degree(indices_values, optimal_mf_params)
+    n_selected = int((importance_degree > 0.5).sum())
+    logging.info(f"[ANFIS] Selected {n_selected}/{len(importance_degree)} features (threshold=0.5)")
     X_train_sel = select_features(X_train, importance_degree)
     X_val_sel = select_features(X_val, importance_degree)
 
@@ -486,7 +594,7 @@ def SvmA_train(
             X_test_sel = X_test.copy()
         results["test"] = compute_metrics(svm_final, X_test_sel, y_test, "Test")
 
-    logging.info(f"Optimal ANFIS Parameters: {best_anfis_params}")
+    logging.info(f"Optimal ANFIS MF params (24): {optimal_mf_params.tolist()}")
     logging.info(f"Optimal SVM Parameters (C, gamma): ({best_C}, {best_gamma})")
     
     # Return model, scaler, selected features, and results

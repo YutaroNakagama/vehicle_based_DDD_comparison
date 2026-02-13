@@ -112,6 +112,55 @@ def sample_entropy(
     except Exception:
         return 0.0  # Fallback for any unexpected errors
 
+def _katz_fractal_dimension(signal: np.ndarray) -> float:
+    """Katz Fractal Dimension of a 1-D time series.
+
+    KFD = log10(L) / log10(d)
+
+    where *L* is the total path length (sum of absolute successive
+    differences) and *d* is the maximum Euclidean distance between
+    the first point and any other point (the *diameter* or *planar
+    extent*).
+
+    Reference
+    ---------
+    Katz, M. J. (1988). Fractals and the analysis of waveform
+    complexity. *Computers and Biomedical Research*, 21(2), 150–166.
+    """
+    n = len(signal)
+    if n < 2:
+        return 0.0
+    dists = np.abs(np.diff(signal))
+    L = dists.sum()
+    if L == 0:
+        return 0.0
+    # d = max distance from x[0] to any other point (time-indexed)
+    indices = np.arange(n)
+    d = np.max(np.sqrt((indices - 0) ** 2 + (signal - signal[0]) ** 2))
+    if d == 0:
+        return 0.0
+    return np.log10(L) / np.log10(d)
+
+
+def _shannon_entropy(signal: np.ndarray, n_bins: int = 50) -> float:
+    """Shannon entropy of the signal amplitude distribution.
+
+    The signal is discretised into *n_bins* equal-width bins and the
+    entropy is computed as  H = −Σ p_i log₂(p_i).
+
+    Reference
+    ---------
+    Shannon, C. E. (1948). A mathematical theory of communication.
+    *Bell System Technical Journal*, 27(3), 379–423.
+    """
+    if len(signal) < 2 or np.std(signal) == 0:
+        return 0.0
+    counts, _ = np.histogram(signal, bins=n_bins)
+    probs = counts / counts.sum()
+    probs = probs[probs > 0]
+    return -np.sum(probs * np.log2(probs))
+
+
 def extract_statistical_features(signal: np.ndarray, prefix: str = "") -> dict:
     """Extract statistical and spectral features from a 1D signal.
 
@@ -150,6 +199,8 @@ def extract_statistical_features(signal: np.ndarray, prefix: str = "") -> dict:
         f'{prefix}Quartile75': np.percentile(signal, 75),
         f'{prefix}Skewness': skew(signal) if np.std(signal) > 0 else 0,
         f'{prefix}Kurtosis': kurtosis(signal) if np.std(signal) > 0 else 0,
+        f'{prefix}KatzFractalDim': _katz_fractal_dimension(signal),
+        f'{prefix}ShannonEntropy': _shannon_entropy(signal),
         f'{prefix}FreqVar': np.var(freqs[band]),
         f'{prefix}SpectralEntropy': -np.sum((spectrum[band] / band_sum) * np.log2((spectrum[band] / band_sum) + np.finfo(float).eps)),
         f'{prefix}SpectralFlux': np.sqrt(np.sum(np.diff(spectrum) ** 2)),
