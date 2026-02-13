@@ -285,7 +285,7 @@ def load_subject_csvs(
     feature_columns = []
     if not df_all.empty:
         ranges = {
-            "Lstm": ("steering_std_dev", "lane_offset_gaussian_smooth"),
+            "Lstm": ("steering_std_dev", "lane_offset_mean"),
             "SvmA": ("Steering_Range", "LongAcc_SampleEntropy"),
             "RF":   ("Steering_Range", "LongAcc_SampleEntropy"),
             "SvmW": ("SteeringWheel_DDD", "LaneOffset_AAA"),

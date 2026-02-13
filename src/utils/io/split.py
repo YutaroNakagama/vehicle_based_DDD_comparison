@@ -17,7 +17,7 @@ from sklearn.model_selection import train_test_split
 
 # --- Model-aware feature column ranges (mirrors loaders.py) ---------------
 _MODEL_FEATURE_RANGES = {
-    "Lstm": ("steering_std_dev", "lane_offset_gaussian_smooth"),
+    "Lstm": ("steering_std_dev", "lane_offset_mean"),
     "SvmA": ("Steering_Range", "LongAcc_SampleEntropy"),
     "RF":   ("Steering_Range", "LongAcc_SampleEntropy"),
     "SvmW": ("SteeringWheel_DDD", "LaneOffset_AAA"),

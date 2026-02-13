@@ -11,7 +11,7 @@ import logging
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import KFold
+from sklearn.model_selection import StratifiedKFold
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense, Flatten, Bidirectional, LSTM, Layer, Input
 from tensorflow.keras.callbacks import EarlyStopping
@@ -111,7 +111,7 @@ def build_lstm_model(input_shape: tuple) -> Model:
         Compiled LSTM model with attention mechanism.
     """
     inputs = Input(shape=input_shape)
-    x = Bidirectional(LSTM(50, return_sequences=True))(inputs)
+    x = Bidirectional(LSTM(36, return_sequences=True))(inputs)
     x = AttentionLayer()(x)  # (batch, features)
     x = Dense(20, activation='relu')(x)
     # Flatten is technically not needed here, but keep for consistency
@@ -119,7 +119,8 @@ def build_lstm_model(input_shape: tuple) -> Model:
     outputs = Dense(1, activation='sigmoid')(x)
 
     model = Model(inputs, outputs)
-    model.compile(optimizer='adam', loss='binary_crossentropy',
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),
+                   loss='binary_crossentropy',
                    metrics=['accuracy', tf.keras.metrics.AUC(name='auc')])
 
     return model
@@ -133,17 +134,17 @@ def lstm_train(
     X_test: pd.DataFrame = None,
     y_test: pd.Series = None,
     n_splits: int = 5,
-    epochs: int = 10,
-    batch_size: int = 16,
+    epochs: int = 100,
+    batch_size: int = 32,
     use_oversampling: bool = False,
     oversample_method: str = "smote",
     target_ratio: float = 0.33,
 ) -> tuple:
     """
-    Train a Bidirectional LSTM model with an attention mechanism using k-fold cross-validation.
+    Train a Bidirectional LSTM model with an attention mechanism using stratified k-fold cross-validation.
 
     This function performs preprocessing, model construction, training, evaluation, and saving of
-    an LSTM model using a k-fold strategy. It selects numeric features, handles missing or infinite
+    an LSTM model using a stratified k-fold strategy. It selects numeric features, handles missing or infinite
     values, and standardizes input before model training. Each fold's model and scaler are saved.
 
     Parameters
@@ -163,10 +164,10 @@ def lstm_train(
     y_test : pandas.Series, optional
         Test labels for final evaluation.
     n_splits : int, default=5
-        Number of folds for K-Fold cross-validation.
-    epochs : int, default=10
+        Number of folds for Stratified K-Fold cross-validation.
+    epochs : int, default=100
         Number of training epochs for each fold.
-    batch_size : int, default=16
+    batch_size : int, default=32
         Batch size used during training.
     use_oversampling : bool, default=False
         Whether to apply oversampling to the training data.
@@ -233,14 +234,14 @@ def lstm_train(
     class_weight_dict = {int(c): float(w) for c, w in zip(classes, cw)}
     logging.info(f"[LSTM] Class weights: {class_weight_dict}")
 
-    kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+    kf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
     fold_f1_scores = []
     fold_histories = []  # Store training history for convergence visualization
     best_f1 = -1.0
     best_model = None
     best_fold = 1
 
-    for fold_no, (train_idx, test_idx) in enumerate(kf.split(X_seq_all), start=1):
+    for fold_no, (train_idx, test_idx) in enumerate(kf.split(X_seq_all, y_seq_all), start=1):
         X_train_fold = X_seq_all[train_idx]
         X_test_fold = X_seq_all[test_idx]
         y_train_fold = y_seq_all[train_idx]
