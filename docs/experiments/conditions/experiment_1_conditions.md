@@ -1,3 +1,5 @@
+> **Moved:** This file was renamed to `02-imbalance-conditions.md`. See `docs/experiments/conditions/02-imbalance-conditions.md`.
+
 # 実験1（クラス不均衡）の実験条件
 
 このファイルは「実験1：クラス不均衡対策の比較」で使用した実験条件の一覧を示します。
