@@ -209,6 +209,24 @@ Training and evaluation are performed for all combinations of training modes, di
 
 ---
 
+## Known Issues (2026-02-13)
+
+### 🔴 BalancedRF の `random_state` ハードコード問題（修正済み）
+
+**現象**: BalancedRF の 18 通り（mode×distance×level）のうち 12 通りで、seed=42 と seed=123 の F1・precision・recall が **完全に一致**。AUC のみ異なる。また、mixed と source_only で F1/precision/recall が完全一致するケースが 6 件確認された。
+
+**原因**: `model_factory.py`, `classifiers.py`, `optuna_tuning.py` の 3 箇所で `random_state=42` がハードコードされており、パイプラインの `seed` 引数がモデル本体に到達していなかった。seed が効くのは Optuna の `TPESampler(seed=seed)` のみで、Optuna が同じハイパーパラメータに収束するとモデルの木構造が完全に同一になっていた。
+
+**修正**: 全 `random_state` をパイプラインの `seed` パラメータに連動するよう修正（コミット TBD）。
+
+**影響**: 現在の BalancedRF 結果は seed 間の独立性がないため、BalancedRF の seed 平均値は実質 N=1。再実行が必要。
+
+### 🟡 BalancedRF の recall=1.0 飽和
+
+BalancedRF 36 件中 28 件で recall=1.0（precision ≈ 0.04）。ほぼ全サンプルを陽性と予測しており、有意義な判別をしていない可能性がある。ハイパーパラメータチューニングの閾値設定や class バランシング戦略の見直しが必要。
+
+---
+
 ## Output Artifacts
 
 ### CSV Files

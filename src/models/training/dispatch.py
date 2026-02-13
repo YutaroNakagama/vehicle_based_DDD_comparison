@@ -70,7 +70,7 @@ def train_model(
 
     else:
         # Tree-based / linear models (RF, XGBoost, LightGBM, etc.)
-        clf = get_classifier(model_name)
+        clf = get_classifier(model_name, seed=seed)
         best_clf, scaler, best_threshold, feature_meta, results = common_train(
             X_train_fs, X_val_fs, X_test_fs,
             y_train, y_val, y_test,
