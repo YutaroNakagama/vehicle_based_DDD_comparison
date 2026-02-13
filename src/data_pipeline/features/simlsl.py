@@ -266,7 +266,7 @@ def smooth_std_pe_features(signal: np.ndarray, model_name: str) -> dict:
     """Compute smoothed standard deviation and prediction error features.
 
     Applies a sliding window to compute the standard deviation,
-    prediction error, and Gaussian-smoothed values for each segment.
+    prediction error, and mean values for each segment.
 
     Parameters
     ----------
@@ -281,10 +281,10 @@ def smooth_std_pe_features(signal: np.ndarray, model_name: str) -> dict:
         Dictionary containing lists of:
         - ``std_dev`` : standard deviation values.
         - ``pred_error`` : prediction error values.
-        - ``gaussian_smooth`` : Gaussian-smoothed values.
+        - ``mean`` : arithmetic mean values.
     """
     window_size, step_size = get_simlsl_window_params(model_name)
-    features = {'std_dev': [], 'pred_error': [], 'gaussian_smooth': []}
+    features = {'std_dev': [], 'pred_error': [], 'mean': []}
 
     for start in range(0, len(signal) - window_size + 1, step_size):
         window = signal[start:start + window_size]
@@ -296,9 +296,7 @@ def smooth_std_pe_features(signal: np.ndarray, model_name: str) -> dict:
         else:
             features['pred_error'].append(np.nan)
 
-        weights = np.exp(-0.5 * (np.linspace(-1, 1, len(window)) ** 2))
-        weights /= weights.sum()
-        features['gaussian_smooth'].append(np.sum(window * weights))
+        features['mean'].append(np.mean(window))
 
     return features
 
