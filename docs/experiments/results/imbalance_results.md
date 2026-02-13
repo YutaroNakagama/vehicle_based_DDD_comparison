@@ -1,5 +1,7 @@
 # Imbalance Experiment Results (2026-01-10)
 
+> **Moved:** This file has been renamed to `02-imbalance-results.md`. Please see `docs/experiments/results/02-imbalance-results.md`.
+>
 > **Note:** This document records experiment results from a specific date. For method descriptions, see [Imbalance Methods](../../reference/imbalance_methods.md).
 
 ## Experiment Overview

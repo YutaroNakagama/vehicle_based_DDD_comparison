@@ -130,7 +130,7 @@ qsub -N Sv_sm_mo_s_r0.1_s42 -l select=1:ncpus=8:mem=32gb -l walltime=24:00:00 -q
 ## 関連ドキュメント
 
 - [先行研究パイプライン](../../architecture/prior_research.md)
-- [実験結果](../results/prior_research_results.md)
+- [実験結果](../results/03-prior-research-results.md)
 - [再現手順](../reproducibility.md#experiment-3-prior-research-replication-split2)
 
 ---

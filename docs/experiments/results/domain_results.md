@@ -1,5 +1,7 @@
 # Domain Shift Experiment Results
 
+> **Moved:** This file has been renamed to `01-domain-results.md`. Please see `docs/experiments/results/01-domain-results.md`.
+>
 > **Note:** For pipeline details, see [Domain Generalization Pipeline](../../architecture/domain_generalization.md).
 
 ---

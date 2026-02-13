@@ -116,7 +116,7 @@ qsub -N sm_mo_s_r0.1_s42 -l select=1:ncpus=4:mem=10gb -l walltime=08:00:00 -q SI
 ## 関連ドキュメント
 
 - [ドメイン汎化パイプライン](../../architecture/domain_generalization.md)
-- [実験結果](../results/domain_results.md)
+- [実験結果](../results/01-domain-results.md)
 - [再現手順](../reproducibility.md#experiment-2-domain-shift-rf-split2)
 
 ---

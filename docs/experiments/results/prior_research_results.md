@@ -1,5 +1,7 @@
 # Prior Research Experiment Results (2025-01-10)
 
+> **Moved:** This file has been renamed to `03-prior-research-results.md`. Please see `docs/experiments/results/03-prior-research-results.md`.
+>
 > **Note:** This document records experiment results from a specific date. For model architecture details, see [Prior Research](../../architecture/prior_research.md).
 
 ## SvmW Results (Completed)

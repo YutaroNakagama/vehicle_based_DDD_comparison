@@ -22,9 +22,9 @@ docs/
 └── experiments/                       ← Reproducibility and results
     ├── reproducibility.md               How to reproduce all experiments
     └── results/                         Historical experiment logs
-        ├── imbalance_results.md           Imbalance experiment (2026-01-10)
-        ├── domain_results.md              Domain shift experiment (2025-01-10)
-        └── prior_research_results.md      Prior research experiment (2025-01-10)
+        ├── 02-imbalance-results.md           Imbalance experiment (2026-01-10)
+        ├── 01-domain-results.md              Domain shift experiment (2025-01-10)
+        └── 03-prior-research-results.md      Prior research experiment (2025-01-10)
 ```
 
 ## 🚀 Getting Started
