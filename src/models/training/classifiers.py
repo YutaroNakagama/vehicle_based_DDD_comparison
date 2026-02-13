@@ -28,6 +28,7 @@ from src.config import RF_CLASS_WEIGHT, CV_FOLDS_CALIBRATION
 def create_classifier(
     model: str,
     best_params: Dict[str, Any],
+    seed: int = 42,
 ) -> Any:
     """Create a classifier instance with optimized hyperparameters.
 
@@ -37,6 +38,8 @@ def create_classifier(
         Model name.
     best_params : Dict[str, Any]
         Best hyperparameters from Optuna optimization.
+    seed : int, default=42
+        Random seed for reproducibility.
 
     Returns
     -------
@@ -63,37 +66,37 @@ def create_classifier(
             **params,
             class_weight=RF_CLASS_WEIGHT,
             n_jobs=1,
-            random_state=42,
+            random_state=seed,
         )
 
     elif model == "BalancedRF":
-        return BalancedRandomForestClassifier(**best_params, random_state=42)
+        return BalancedRandomForestClassifier(**best_params, random_state=seed)
 
     elif model == "EasyEnsemble":
-        return EasyEnsembleClassifier(**best_params, random_state=42)
+        return EasyEnsembleClassifier(**best_params, random_state=seed)
 
     elif model == "LogisticRegression":
         params = {k: v for k, v in best_params.items() if k != "class_weight"}
-        return LogisticRegression(**params, class_weight="balanced", random_state=42)
+        return LogisticRegression(**params, class_weight="balanced", random_state=seed)
 
     elif model in ["SVM", "SvmW"]:
-        return SVC(**best_params, probability=True, class_weight="balanced", random_state=42)
+        return SVC(**best_params, probability=True, class_weight="balanced", random_state=seed)
 
     elif model == "DecisionTree":
         params = {k: v for k, v in best_params.items() if k != "class_weight"}
-        return DecisionTreeClassifier(**params, class_weight="balanced", random_state=42)
+        return DecisionTreeClassifier(**params, class_weight="balanced", random_state=seed)
 
     elif model == "AdaBoost":
-        return AdaBoostClassifier(**best_params, random_state=42)
+        return AdaBoostClassifier(**best_params, random_state=seed)
 
     elif model == "GradientBoosting":
-        return GradientBoostingClassifier(**best_params, random_state=42)
+        return GradientBoostingClassifier(**best_params, random_state=seed)
 
     elif model == "K-Nearest Neighbors":
         return KNeighborsClassifier(**best_params)
 
     elif model == "MLP":
-        return MLPClassifier(**best_params, random_state=42)
+        return MLPClassifier(**best_params, random_state=seed)
 
     else:
         raise ValueError(f"Unknown model: {model}")

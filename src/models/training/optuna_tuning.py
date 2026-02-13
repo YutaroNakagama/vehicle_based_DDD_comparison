@@ -66,6 +66,7 @@ def create_optuna_objective(
     data_leak: bool = False,
     X_test_scaled: Optional[np.ndarray] = None,
     y_test: Optional[np.ndarray] = None,
+    seed: int = 42,
 ):
     """Create an Optuna objective function for the given model.
 
@@ -87,6 +88,8 @@ def create_optuna_objective(
         Scaled test features (used in data_leak mode).
     y_test : np.ndarray, optional
         Test labels (used in data_leak mode).
+    seed : int, default=42
+        Random seed for reproducibility.
 
     Returns
     -------
@@ -95,7 +98,7 @@ def create_optuna_objective(
     """
 
     def objective(trial):
-        clf = _suggest_hyperparameters(trial, model)
+        clf = _suggest_hyperparameters(trial, model, seed=seed)
         if clf is None:
             return 0.0
 
@@ -116,7 +119,7 @@ def create_optuna_objective(
     return objective
 
 
-def _suggest_hyperparameters(trial: optuna.Trial, model: str):
+def _suggest_hyperparameters(trial: optuna.Trial, model: str, seed: int = 42):
     """Suggest hyperparameters based on model type.
 
     Parameters
@@ -125,6 +128,8 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
         Optuna trial object.
     model : str
         Model name.
+    seed : int, default=42
+        Random seed for reproducibility.
 
     Returns
     -------
@@ -140,7 +145,7 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
             "subsample": trial.suggest_float("subsample", 0.5, 1.0),
             "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
             "class_weight": "balanced",
-            "random_state": 42,
+            "random_state": seed,
             "n_jobs": N_JOBS_OVERRIDE,
         }
         return LGBMClassifier(**params)
@@ -157,7 +162,7 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
             "reg_alpha": trial.suggest_float("reg_alpha", 1e-3, 10.0),
             "use_label_encoder": False,
             "eval_metric": "logloss",
-            "random_state": 42,
+            "random_state": seed,
             "n_jobs": N_JOBS_OVERRIDE,
             "tree_method": "hist",
         }
@@ -182,7 +187,7 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
             "max_features": trial.suggest_categorical("max_features", ["sqrt", "log2", 0.05, 0.1, 0.2, 0.3, 0.5]),
             "min_weight_fraction_leaf": trial.suggest_float("min_weight_fraction_leaf", 0.0, 0.1),
             "class_weight": trial.suggest_categorical("class_weight", ["balanced", "balanced_subsample"]),
-            "random_state": 42,
+            "random_state": seed,
             "n_jobs": N_JOBS_OVERRIDE,
             "max_samples": trial.suggest_categorical("max_samples", [None, 0.5, 0.7, 0.9]),
             "warm_start": False,
@@ -205,7 +210,7 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
             "max_features": trial.suggest_categorical("max_features", ["sqrt", "log2", 0.3, 0.5, 0.7]),
             "sampling_strategy": sampling_strategy,
             "replacement": trial.suggest_categorical("replacement", [True, False]),
-            "random_state": 42,
+            "random_state": seed,
         }
         return BalancedRandomForestClassifier(**params)
 
@@ -216,7 +221,7 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
                 "sampling_strategy", ["auto", "majority", "not majority", "all", 0.5, 0.8, 1.0]
             ),
             "replacement": trial.suggest_categorical("replacement", [False, True]),
-            "random_state": 42,
+            "random_state": seed,
             "n_jobs": N_JOBS_OVERRIDE,
         }
         return EasyEnsembleClassifier(**params)
@@ -228,7 +233,7 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
             "learning_rate": trial.suggest_float("learning_rate", 1e-3, 0.3, log=True),
             "l2_leaf_reg": trial.suggest_float("l2_leaf_reg", 1.0, 10.0),
             "border_count": trial.suggest_int("border_count", 32, 255),
-            "random_seed": 42,
+            "random_seed": seed,
             "verbose": 0,
             "eval_metric": "AUC",
             "loss_function": "Logloss",
@@ -241,7 +246,7 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
             "penalty": "l2",
             "solver": "lbfgs",
             "max_iter": 1000,
-            "random_state": 42,
+            "random_state": seed,
             "class_weight": "balanced",
         }
         return LogisticRegression(**params)
@@ -252,7 +257,7 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
             "C": trial.suggest_float("C", 1e-3, 10.0, log=True),
             "kernel": "linear",
             "probability": True,
-            "random_state": 42,
+            "random_state": seed,
             "class_weight": "balanced",
         }
         return SVC(**params)
@@ -262,7 +267,7 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
             "max_depth": trial.suggest_int("max_depth", 3, 30),
             "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
             "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 5),
-            "random_state": 42,
+            "random_state": seed,
             "class_weight": "balanced",
         }
         return DecisionTreeClassifier(**params)
@@ -271,7 +276,7 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
         params = {
             "n_estimators": trial.suggest_int("n_estimators", 50, 300),
             "learning_rate": trial.suggest_float("learning_rate", 0.01, 1.0),
-            "random_state": 42,
+            "random_state": seed,
         }
         return AdaBoostClassifier(**params)
 
@@ -280,7 +285,7 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
             "n_estimators": trial.suggest_int("n_estimators", 50, 300),
             "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3),
             "max_depth": trial.suggest_int("max_depth", 3, 10),
-            "random_state": 42,
+            "random_state": seed,
         }
         return GradientBoostingClassifier(**params)
 
@@ -297,7 +302,7 @@ def _suggest_hyperparameters(trial: optuna.Trial, model: str):
             "activation": trial.suggest_categorical("activation", ["relu", "tanh"]),
             "learning_rate_init": trial.suggest_float("learning_rate_init", 1e-4, 1e-2, log=True),
             "max_iter": 500,
-            "random_state": 42,
+            "random_state": seed,
         }
         return MLPClassifier(**params)
 

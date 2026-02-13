@@ -164,6 +164,7 @@ def common_train(
         data_leak=data_leak,
         X_test_scaled=X_test_scaled if data_leak else None,
         y_test=y_test if data_leak else None,
+        seed=seed,
     )
 
     best_params = run_optuna_optimization(
@@ -177,7 +178,7 @@ def common_train(
     logging.info(f"Selected features (from input): {selected_features}")
 
     # ====== Create and train classifier ======
-    best_clf = create_classifier(model, best_params)
+    best_clf = create_classifier(model, best_params, seed=seed)
 
     # Prepare sample weights
     sw_train = make_sample_weight(y_train)

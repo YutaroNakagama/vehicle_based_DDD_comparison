@@ -18,7 +18,7 @@ from sklearn.neural_network import MLPClassifier
 from imblearn.ensemble import BalancedRandomForestClassifier, EasyEnsembleClassifier
 
 
-def get_classifier(model_name: str):
+def get_classifier(model_name: str, seed: int = 42):
     """
     Return a classifier instance based on the given model name.
 
@@ -42,6 +42,8 @@ def get_classifier(model_name: str):
 
     model_name : str
         Identifier string for the classifier.
+    seed : int, default=42
+        Random seed for reproducibility.
 
     Returns
     -------
@@ -56,20 +58,20 @@ def get_classifier(model_name: str):
         If the given ``model_name`` is not supported.
     """
     classifiers = {
-        "RF": RandomForestClassifier(random_state=42),
-        "BalancedRF": BalancedRandomForestClassifier(random_state=42),
-        "EasyEnsemble": EasyEnsembleClassifier(random_state=42),
-        "SvmW": SVC(kernel="rbf", probability=True, random_state=42),
-        "DecisionTree": DecisionTreeClassifier(random_state=42),
-        "AdaBoost": AdaBoostClassifier(random_state=42),
-        "GradientBoosting": GradientBoostingClassifier(random_state=42),
-        "XGBoost": XGBClassifier(use_label_encoder=False, eval_metric="logloss", random_state=42),
-        "LightGBM": LGBMClassifier(random_state=42),
-        "CatBoost": CatBoostClassifier(verbose=0, random_state=42),
-        "LogisticRegression": LogisticRegression(max_iter=1000, random_state=42),
-        "SVM": SVC(kernel="linear", probability=True, random_state=42),
+        "RF": RandomForestClassifier(random_state=seed),
+        "BalancedRF": BalancedRandomForestClassifier(random_state=seed),
+        "EasyEnsemble": EasyEnsembleClassifier(random_state=seed),
+        "SvmW": SVC(kernel="rbf", probability=True, random_state=seed),
+        "DecisionTree": DecisionTreeClassifier(random_state=seed),
+        "AdaBoost": AdaBoostClassifier(random_state=seed),
+        "GradientBoosting": GradientBoostingClassifier(random_state=seed),
+        "XGBoost": XGBClassifier(use_label_encoder=False, eval_metric="logloss", random_state=seed),
+        "LightGBM": LGBMClassifier(random_state=seed),
+        "CatBoost": CatBoostClassifier(verbose=0, random_state=seed),
+        "LogisticRegression": LogisticRegression(max_iter=1000, random_state=seed),
+        "SVM": SVC(kernel="linear", probability=True, random_state=seed),
         "K-Nearest Neighbors": KNeighborsClassifier(),
-        "MLP": MLPClassifier(max_iter=500, random_state=42),
+        "MLP": MLPClassifier(max_iter=500, random_state=seed),
     }
 
     clf = classifiers.get(model_name)
