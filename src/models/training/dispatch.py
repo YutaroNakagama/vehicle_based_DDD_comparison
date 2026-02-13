@@ -51,6 +51,9 @@ def train_model(
             X_train_fs, y_train, model_name,
             X_val=X_val_fs, y_val=y_val,
             X_test=X_test_fs, y_test=y_test,
+            use_oversampling=use_oversampling,
+            oversample_method=oversample_method,
+            target_ratio=target_ratio,
         )
         logging.info("LSTM training completed.")
         return model_obj, scaler_obj, None, {"selected_features": selected_feats}, results
