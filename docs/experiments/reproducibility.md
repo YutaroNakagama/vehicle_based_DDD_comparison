@@ -44,15 +44,15 @@ bash scripts/hpc/launchers/launch_imbalance.sh
 Evaluate cross-domain generalization using 2-group domain splitting.
 
 **Launchers:**
-- Cross/Single-domain: `scripts/hpc/launchers/launch_paper_domain_split2.sh`
-- Mixed-domain: `scripts/hpc/launchers/launch_exp2_mixed.sh`
+- Cross/Within-domain: `scripts/hpc/launchers/launch_paper_domain_split2.sh`
+- Multi-domain: `scripts/hpc/launchers/launch_exp2_mixed.sh`
 
 ```bash
-# Cross/Single-domain (source_only + target_only): 192 jobs
+# Cross/Within-domain (source_only + target_only): 192 jobs
 bash scripts/hpc/launchers/launch_paper_domain_split2.sh --dry-run
 bash scripts/hpc/launchers/launch_paper_domain_split2.sh
 
-# Mixed-domain (mixed): 96 jobs
+# Multi-domain (mixed): 96 jobs
 bash scripts/hpc/launchers/launch_exp2_mixed.sh --dry-run
 bash scripts/hpc/launchers/launch_exp2_mixed.sh
 ```
@@ -74,8 +74,8 @@ bash scripts/hpc/launchers/launch_exp2_mixed.sh
 | Mode | Description | Training Data | Evaluation Data |
 |------|-------------|---------------|------------------|
 | source_only | Cross-domain | Opposite domain | Target domain |
-| target_only | Single-domain | Same domain | Same domain |
-| mixed | Mixed-domain | All 87 subjects (pooled) | Target domain |
+| target_only | Within-domain | Same domain | Same domain |
+| mixed | Multi-domain | All 87 subjects (pooled) | Target domain |
 
 **Total:** 3 × 2 × 3 × 2 × 8 conditions = **288 jobs** (192 cross/single + 96 mixed)
 

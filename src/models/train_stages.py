@@ -149,7 +149,7 @@ def load_and_filter_data(
             logging.warning("[LOAD] source_only: No target_subjects to exclude. Using all data.")
     
     elif mode == "mixed":
-        # Mixed-domain: resolve target subjects for evaluation, but keep ALL data for training
+        # Multi-domain: resolve target subjects for evaluation, but keep ALL data for training
         target_subjects_resolved = resolve_target_subjects_from_tag(
             tag=tag,
             mode=mode,
@@ -324,7 +324,7 @@ def prepare_mixed_splits(
     time_stratify_min_chunk: int,
     keep_subject_id: bool = False,
 ) -> Tuple:
-    """Prepare train/val/test splits for mixed (mixed-domain) mode.
+    """Prepare train/val/test splits for mixed (multi-domain) mode.
 
     In mixed mode:
     - Training: Use ALL subjects (87 pooled) for training
@@ -332,7 +332,7 @@ def prepare_mixed_splits(
 
     This allows evaluating how a model trained on the full population
     performs on domain-specific subsets, compared to cross-domain
-    (source_only) and single-domain (target_only) training.
+    (source_only) and within-domain (target_only) training.
 
     Parameters
     ----------
@@ -389,7 +389,7 @@ def prepare_mixed_splits(
     all_subjects = read_subject_list()
 
     logging.info(
-        f"[MIXED] Mixed-domain: training on ALL {len(all_subjects)} subjects, "
+        f"[MIXED] Multi-domain: training on ALL {len(all_subjects)} subjects, "
         f"evaluating on {target_domain} ({len(eval_subjects)} subjects)"
     )
 

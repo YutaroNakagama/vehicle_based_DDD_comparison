@@ -28,8 +28,8 @@
 | MODE | 説明 | 訓練データ | 評価データ |
 |---|---|---|---|
 | `source_only` | Cross-domain | ターゲットの逆ドメイン | 指定ドメイン |
-| `target_only` | Single-domain | 指定ドメイン内 | 指定ドメイン内 |
-| `mixed` | Mixed-domain | 全被験者（87 名） | 指定ドメイン |
+| `target_only` | Within-domain | 指定ドメイン内 | 指定ドメイン内 |
+| `mixed` | Multi-domain | 全被験者（87 名） | 指定ドメイン |
 
 ### Cross-Domain ロジック（source_only の場合）
 
@@ -38,16 +38,16 @@
 | `out_domain` | in_domain（44 名） | out_domain（43 名） |
 | `in_domain` | out_domain（43 名） | in_domain（44 名） |
 
-### Mixed-Domain ロジック（mixed の場合）
+### Multi-Domain ロジック（mixed の場合）
 
 | DOMAIN 指定 | 訓練データ | 評価データ |
 |---|---|---|
 | `out_domain` | 全被験者（87 名） | out_domain（43 名） |
 | `in_domain` | 全被験者（87 名） | in_domain（44 名） |
 
-> **Mixed-domain の目的**: ドメイン分割に依存しないモデル（全被験者プール）が、
+> **Multi-domain の目的**: ドメイン分割に依存しないモデル（全被験者プール）が、
 > 各ドメインのデータにどの程度汎化するかを評価する。Cross-domain（逆ドメイン訓練）
-> および Single-domain（同一ドメイン訓練）との比較基準として機能する。
+> および Within-domain（同一ドメイン訓練）との比較基準として機能する。
 
 ## 不均衡対策手法
 
@@ -76,8 +76,8 @@
 
 **合計: 36 × 8 = 288 ジョブ**
 
-- Cross/Single-domain（source_only + target_only）: 24 × 8 = 192 ジョブ → `launch_paper_domain_split2.sh`
-- Mixed-domain（mixed）: 12 × 8 = 96 ジョブ → `launch_exp2_mixed.sh`
+- Cross/Within-domain（source_only + target_only）: 24 × 8 = 192 ジョブ → `launch_paper_domain_split2.sh`
+- Multi-domain（mixed）: 12 × 8 = 96 ジョブ → `launch_exp2_mixed.sh`
 
 ## HPC リソース設定
 

@@ -27,7 +27,7 @@
 | MODE | 説明 | 訓練データ | 評価データ |
 |---|---|---|---|
 | `source_only` | Cross-domain | ターゲットの逆ドメイン | 指定ドメイン |
-| `target_only` | Single-domain | 指定ドメイン内 | 指定ドメイン内 |
+| `target_only` | Within-domain | 指定ドメイン内 | 指定ドメイン内 |
 
 ### Cross-Domain ロジック（source_only の場合）
 
