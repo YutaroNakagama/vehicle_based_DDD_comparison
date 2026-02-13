@@ -1,3 +1,5 @@
+> **Moved:** This file was renamed to `01-domain-conditions.md`. See `docs/experiments/conditions/01-domain-conditions.md`.
+
 # 実験2（ドメインシフト）の実験条件
 
 このファイルは「実験2：ドメインシフト (split2)」で使用した実験条件の一覧を示します。

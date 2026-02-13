@@ -1,3 +1,5 @@
+> **Moved:** This file was renamed to `03-prior-research-conditions.md`. See `docs/experiments/conditions/03-prior-research-conditions.md`.
+
 # 実験3（先行研究再現）の実験条件
 
 このファイルは「実験3：先行研究モデルの再現（split2 ドメイン分割版）」で使用した実験条件の一覧を示します。
