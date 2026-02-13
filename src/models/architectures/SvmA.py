@@ -383,10 +383,11 @@ def optimize_svm_anfis(
         })
         return fitness
 
-    # PSO: 24 MF parameters
+    # PSO: 24 MF parameters (Table 3 of Arefnezhad et al. 2019)
     optimal_mf_params, _ = pso(
         objective, ANFIS.LB, ANFIS.UB,
-        swarmsize=20, maxiter=40,
+        swarmsize=50, omega=0.95, phip=2.0, phig=2.0,
+        maxiter=100,
     )
 
     # Stage 2 – grid-search SVM (C, gamma) on selected features
