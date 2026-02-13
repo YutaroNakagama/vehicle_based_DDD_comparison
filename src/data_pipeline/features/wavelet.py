@@ -1,20 +1,25 @@
-"""Wavelet-based feature extraction for SIMlsl (vehicle dynamics) signals.
+"""GHM multiwavelet packet energy spectrum for vehicle dynamics signals.
 
-Performs multi-level GHM wavelet decomposition on steering, acceleration, and
-lane offset signals; computes mean power per decomposition path; supports
-optional jittering augmentation and sliding-window extraction.
+Implements the feature extraction from:
+    Zhao, S., Xu, G., & Tao, T. (2009). Detecting of Driver's Drowsiness
+    Using Multiwavelet Packet Energy Spectrum. IEEE APCCAS.
+
+GHM (Geronimo-Hardin-Massopust) multiwavelet with 2x2 matrix filter bank,
+3-level packet decomposition -> 8 frequency bands, relative band energy.
 
 Notes
 -----
-- Input MAT expected: SIM_lsl with time at row 0 and signals at fixed indices.
-- Eight decomposition paths produced (DDD...AAA) via coefficient combinations.
+- GHM uses multiplicity r=2 (two scaling + two wavelet functions).
+- Prefiltering converts scalar signal -> 2-component vector (even/odd split).
+- 3-level packet decomposition produces 2^3 = 8 nodes.
+- Band energy = mean squared value across both components per node.
+- Relative normalization: each band energy as fraction of total (Eq. 12).
 """
 
 import numpy as np
 import pandas as pd
 import os
 import logging
-from scipy.signal import lfilter
 from joblib import Parallel, delayed
 
 from src.utils.io.loaders import safe_load_mat, save_csv
@@ -22,8 +27,6 @@ from src.data_pipeline.augmentation.jitter import jittering
 from src.config import (
     DATASET_PATH,
     SAMPLE_RATE_SIMLSL,
-    SCALING_FILTER,
-    WAVELET_FILTER,
     WAVELET_LEV,
     MODEL_WINDOW_CONFIG,
 )
@@ -45,108 +48,137 @@ def get_simlsl_window_params(model_name: str) -> tuple[int, int]:
     return window_samples, step_samples
 
 
-def ghm_wavelet_transform(signal: np.ndarray) -> list[tuple[np.ndarray, np.ndarray]]:
-    """Apply GHM wavelet transform to a 1D signal.
+# ============================================================================
+# GHM Multiwavelet Filter Coefficients (2x2 matrix filter bank)
+# Ref: Geronimo, Hardin & Massopust (1994), SIAM J. Math. Anal. 27, 1158-1192
+# Each tap is a 2x2 matrix; 4 taps for lowpass (H) and highpass (G).
+# ============================================================================
+_S2 = np.sqrt(2)
 
-    Performs multi-level decomposition using predefined scaling and
-    wavelet filters.
+GHM_H = np.array([
+    [[ 3/(5*_S2),  4/(5*_S2)],
+     [-1/(20*_S2), -3/(20*_S2)]],
+    [[ 3/(5*_S2),  0],
+     [ 9/(20*_S2), 1/_S2]],
+    [[ 0,          0],
+     [ 9/(20*_S2), -3/(20*_S2)]],
+    [[ 0,          0],
+     [-1/(20*_S2),  0]],
+])  # shape (4, 2, 2)
+
+GHM_G = np.array([
+    [[-1/(20*_S2),  3/(20*_S2)],
+     [ 3/(5*_S2),  -4/(5*_S2)]],
+    [[ 9/(20*_S2), -1/_S2],
+     [-3/(5*_S2),   0]],
+    [[ 9/(20*_S2),  3/(20*_S2)],
+     [ 0,           0]],
+    [[-1/(20*_S2),  0],
+     [ 0,           0]],
+])  # shape (4, 2, 2)
+
+
+def _prefilter(signal: np.ndarray) -> np.ndarray:
+    """Convert scalar signal to 2-component vector via even/odd split.
 
     Parameters
     ----------
-    signal : ndarray
-        Input 1D signal.
+    signal : ndarray, shape (N,)
+        Input scalar signal.
 
     Returns
     -------
-    list of tuple of (ndarray, ndarray)
-        List of (scaling_coeffs, wavelet_coeffs) for each level.
+    ndarray, shape (2, N//2)
+        Two-component vector signal.
     """
-    coeffs = []
-    approx = signal
-    for _ in range(WAVELET_LEV):
-        scaling_coeffs = lfilter(SCALING_FILTER, [1], approx)[::2]
-        wavelet_coeffs = lfilter(WAVELET_FILTER, [1], approx)[::2]
-        approx = scaling_coeffs
-        coeffs.append((scaling_coeffs, wavelet_coeffs))
-    return coeffs
+    N = len(signal)
+    if N % 2 != 0:
+        signal = signal[:N - 1]
+    return np.array([signal[0::2], signal[1::2]])
 
 
-def adjust_and_add(coeff1: np.ndarray, coeff2: np.ndarray) -> np.ndarray:
-    """Align and sum two coefficient arrays.
+def _mw_decompose_one_level(v_signal: np.ndarray) -> tuple:
+    """One level of GHM multiwavelet decomposition.
+
+    Applies 2x2 matrix filter bank (lowpass H, highpass G)
+    and downsamples by 2.
 
     Parameters
     ----------
-    coeff1 : ndarray
-        First coefficient array.
-    coeff2 : ndarray
-        Second coefficient array.
+    v_signal : ndarray, shape (2, L)
+        Two-component vector signal.
 
     Returns
     -------
-    ndarray
-        Element-wise sum of trimmed arrays.
+    tuple of (ndarray, ndarray)
+        (low, high) each shape (2, L//2).
     """
-    min_len = min(len(coeff1), len(coeff2))
-    return coeff1[:min_len] + coeff2[:min_len]
+    L = v_signal.shape[1]
+    n_taps = GHM_H.shape[0]  # 4
+    out_len = max(L // 2, 1)
+    low = np.zeros((2, out_len))
+    high = np.zeros((2, out_len))
+    for n in range(out_len):
+        for k in range(n_taps):
+            idx = 2 * n + k
+            if idx < L:
+                low[:, n] += GHM_H[k] @ v_signal[:, idx]
+                high[:, n] += GHM_G[k] @ v_signal[:, idx]
+    return low, high
 
 
-def generate_decomposition_signals(coeffs: list[tuple[np.ndarray, np.ndarray]]) -> list[np.ndarray]:
-    """Generate 8 wavelet decomposition paths.
+def ghm_wavelet_packet(signal: np.ndarray, n_levels: int = 3) -> list:
+    """GHM multiwavelet packet decomposition.
+
+    Recursively decomposes both low-pass and high-pass nodes at each
+    level, producing 2^n_levels leaf nodes.
 
     Parameters
     ----------
-    coeffs : list of tuple of (ndarray, ndarray)
-        Wavelet coefficients per level.
+    signal : ndarray, shape (N,)
+        Input 1-D scalar signal.
+    n_levels : int, default 3
+        Number of decomposition levels.
 
     Returns
     -------
     list of ndarray
-        Eight decomposition signals (DDD, DDA, ... AAA).
+        2^n_levels coefficient arrays, each shape (2, M).
+        Ordered from lowest to highest frequency (AAA ... DDD).
     """
-    return [
-        coeffs[0][1],  # D
-        adjust_and_add(coeffs[0][1], coeffs[1][0]),  # D + A
-        adjust_and_add(coeffs[0][1], coeffs[1][1]),  # D + D
-        adjust_and_add(coeffs[0][1], coeffs[2][0]),  # D + A
-        adjust_and_add(coeffs[1][1], coeffs[2][1]),  # D + D
-        adjust_and_add(coeffs[1][0], coeffs[2][1]),  # A + D
-        adjust_and_add(coeffs[1][0], coeffs[2][0]),  # A + A
-        coeffs[2][0],  # A
-    ]
-
-
-def calculate_power(signal: np.ndarray) -> float:
-    """Calculate mean power of a 1D signal.
-
-    Parameters
-    ----------
-    signal : ndarray
-        Input signal.
-
-    Returns
-    -------
-    float
-        Mean squared value of the signal.
-    """
-    return np.mean(signal ** 2)
+    v_signal = _prefilter(signal)
+    nodes = [v_signal]
+    for _ in range(n_levels):
+        new_nodes = []
+        for node in nodes:
+            if node.shape[1] < 4:
+                new_nodes.extend([node, np.zeros_like(node)])
+            else:
+                low, high = _mw_decompose_one_level(node)
+                new_nodes.append(low)
+                new_nodes.append(high)
+        nodes = new_nodes
+    return nodes
 
 
 def process_window(signal_window: np.ndarray) -> list[float]:
-    """Apply wavelet transform to a signal window and compute powers.
+    """Compute relative band energies via GHM multiwavelet packet.
 
     Parameters
     ----------
     signal_window : ndarray
-        A 1D signal segment.
+        A 1-D signal segment.
 
     Returns
     -------
     list of float
-        Power values for 8 decomposition paths.
+        Relative energy for 8 decomposition bands (DDD ... AAA order).
     """
-    coeffs = ghm_wavelet_transform(signal_window)
-    decomposition_signals = generate_decomposition_signals(coeffs)
-    return [calculate_power(signal) for signal in decomposition_signals]
+    nodes = ghm_wavelet_packet(signal_window, n_levels=WAVELET_LEV)
+    energies = [float(np.mean(node ** 2)) for node in nodes]
+    total = sum(energies) + 1e-10
+    # Reverse: natural order is AAA->DDD; paper convention is DDD->AAA
+    return [e / total for e in reversed(energies)]
 
 
 def wavelet_process(subject: str, model_name: str, use_jittering: bool = False) -> None:
