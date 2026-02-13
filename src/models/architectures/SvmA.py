@@ -266,11 +266,14 @@ def optimize_svm_anfis(
 
         if X_train_sel.shape[1] == 0:
             fitness = 1.0  # Penalty for empty selection
+            f1_val = 0.0
         else:
-            model = SVC(kernel='rbf', C=params[4], gamma=params[5])
+            model = SVC(kernel='rbf', C=params[4], gamma=params[5],
+                        class_weight='balanced')
             model.fit(X_train_sel, y_train)
-            accuracy = accuracy_score(y_val, model.predict(X_val_sel))
-            fitness = -accuracy
+            y_pred_val = model.predict(X_val_sel)
+            f1_val = f1_score(y_val, y_pred_val, average='binary', zero_division=0)
+            fitness = -f1_val  # Maximize F1 for positive class
         
         # Record this evaluation
         pso_history.append({
@@ -284,7 +287,7 @@ def optimize_svm_anfis(
                 'gamma': float(params[5])
             },
             'fitness': float(fitness),
-            'accuracy': float(-fitness) if fitness != 1.0 else 0.0
+            'f1_pos': float(f1_val)
         })
         
         return fitness
@@ -337,6 +340,9 @@ def SvmA_train(
     y_train: pd.Series, y_val: pd.Series,
     indices_df: pd.DataFrame, model: str,
     X_test: pd.DataFrame = None, y_test: pd.Series = None,
+    use_oversampling: bool = False,
+    oversample_method: str = "smote",
+    target_ratio: float = 0.33,
 ) -> tuple:
     """
     Train SVM using ANFIS-based feature weighting and PSO optimization.
@@ -362,6 +368,12 @@ def SvmA_train(
         Test feature matrix for final evaluation.
     y_test : pandas.Series, optional
         Test labels for final evaluation.
+    use_oversampling : bool, optional
+        Whether to apply oversampling (reserved for future use).
+    oversample_method : str, optional
+        Oversampling method name (reserved for future use).
+    target_ratio : float, optional
+        Target minority ratio (reserved for future use).
 
     Returns
     -------
@@ -397,7 +409,8 @@ def SvmA_train(
         X_train_sel = X_train.copy()
         X_val_sel = X_val.copy()
 
-    svm_final = SVC(kernel='rbf', C=best_C, gamma=best_gamma, probability=True)
+    svm_final = SVC(kernel='rbf', C=best_C, gamma=best_gamma, probability=True,
+                     class_weight='balanced')
     svm_final.fit(X_train_sel, y_train)
 
     model_dir = f"{MODEL_PKL_PATH}/{model}"
