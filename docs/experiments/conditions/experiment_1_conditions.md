@@ -71,7 +71,7 @@ qsub -N smote_r0.1_s42 -l select=1:ncpus=4:mem=8gb -l walltime=08:00:00 -q SINGL
 ## 関連ドキュメント
 
 - [不均衡手法リファレンス](../../reference/imbalance_methods.md)
-- [実験結果](../results/imbalance_results.md)
+- [実験結果](../results/02-imbalance-results.md)
 - [再現手順](../reproducibility.md#experiment-1-imbalance-analysis)
 
 ---
