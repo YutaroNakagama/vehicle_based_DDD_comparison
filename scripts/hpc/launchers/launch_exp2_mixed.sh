@@ -1,9 +1,9 @@
 #!/bin/bash
 # ============================================================
-# Exp2 Mixed-domain ジョブ投入ランチャー
+# Exp2 Multi-domain ジョブ投入ランチャー
 # ============================================================
 # 全被験者（87名）で訓練し、in_domain / out_domain で評価する
-# Mixed-domain ケースの全96ジョブを投入する
+# Multi-domain ケースの全96ジョブを投入する
 #
 # ジョブ数: 3 (距離) × 2 (ドメイン) × 2 (シード) × 8 (条件) = 96
 #
@@ -45,7 +45,7 @@ JOB_COUNT=0
 FAIL_COUNT=0
 
 echo "============================================================"
-echo "  Exp2 Mixed-domain ジョブ投入"
+echo "  Exp2 Multi-domain ジョブ投入"
 echo "  $(date)"
 echo "============================================================"
 echo "  MODE: $MODE (train=ALL 87 subjects, eval=target domain)"
@@ -53,7 +53,7 @@ echo "  DRY_RUN: $DRY_RUN"
 echo ""
 
 {
-    echo "# Exp2 Mixed-domain launch: $(date)"
+    echo "# Exp2 Multi-domain launch: $(date)"
     echo "# MODE=$MODE"
     echo ""
 } > "$LOG_FILE"

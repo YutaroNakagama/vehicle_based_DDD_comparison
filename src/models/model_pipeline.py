@@ -65,9 +65,9 @@ def train_pipeline(
     mode : {"pooled", "target_only", "source_only", "mixed", "joint_train"}, optional
         Experimental mode for domain generalization.
         - pooled: use all subjects for training and evaluation
-        - target_only (Single-domain): train and evaluate within same domain
+        - target_only (Within-domain): train and evaluate within same domain
         - source_only (Cross-domain): train on opposite domain, evaluate on target
-        - mixed (Mixed-domain): train on ALL subjects, evaluate on target domain
+        - mixed (Multi-domain): train on ALL subjects, evaluate on target domain
         - joint_train: combine source and target subjects
     subject_split_strategy : {"random", "subject_time_split"}, default="random"
         Strategy for splitting subjects into train/val/test.
