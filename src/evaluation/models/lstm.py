@@ -18,6 +18,7 @@ from src.models.architectures.lstm import create_sequences
 from src.evaluation.metrics import (
     calculate_extended_metrics,
     calculate_class_specific_metrics,
+    find_optimal_threshold,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -159,13 +160,22 @@ def lstm_eval(
     )
 
     # Evaluation
-    loss, accuracy = model.evaluate(X_test_3d, y_test, verbose=0)
+    eval_scores = model.evaluate(X_test_3d, y_test, verbose=0)
+    # eval_scores may be [loss, acc] or [loss, acc, auc] depending on model
+    loss = eval_scores[0]
+    accuracy = eval_scores[1]
     logging.info(f"Evaluation Results - Loss: {loss:.4f}, Accuracy: {accuracy:.4f}")
 
     # Prediction and report
     y_pred_prob = model.predict(X_test_3d)
     y_score = y_pred_prob.flatten()           # sigmoid probabilities
-    y_pred = (y_score > 0.5).astype(int)
+
+    # --- Optimal threshold via F2-score (emphasize recall for drowsiness) ---
+    opt_threshold, opt_f2 = find_optimal_threshold(y_test, y_score, beta=2.0)
+    logging.info(
+        f"[LSTM] Optimal threshold: {opt_threshold:.4f} (F2={opt_f2:.4f})"
+    )
+    y_pred = (y_score >= opt_threshold).astype(int)
 
     report_str = classification_report(y_test, y_pred)
     report_dict = classification_report(y_test, y_pred, output_dict=True)
@@ -195,6 +205,7 @@ def lstm_eval(
         # ROC-AUC and AUPRC
         'roc_auc': ext.get('roc_auc'),
         'auc_pr':  ext.get('auc_pr'),
+        'custom_threshold': float(opt_threshold),
     }
     # Merge positive-class metrics (precision_pos, recall_pos, f1_pos, ...)
     result.update(class_metrics)

@@ -119,7 +119,8 @@ def build_lstm_model(input_shape: tuple) -> Model:
     outputs = Dense(1, activation='sigmoid')(x)
 
     model = Model(inputs, outputs)
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer='adam', loss='binary_crossentropy',
+                   metrics=['accuracy', tf.keras.metrics.AUC(name='auc')])
 
     return model
 
@@ -133,7 +134,10 @@ def lstm_train(
     y_test: pd.Series = None,
     n_splits: int = 5,
     epochs: int = 10,
-    batch_size: int = 16
+    batch_size: int = 16,
+    use_oversampling: bool = False,
+    oversample_method: str = "smote",
+    target_ratio: float = 0.33,
 ) -> tuple:
     """
     Train a Bidirectional LSTM model with an attention mechanism using k-fold cross-validation.
@@ -164,6 +168,12 @@ def lstm_train(
         Number of training epochs for each fold.
     batch_size : int, default=16
         Batch size used during training.
+    use_oversampling : bool, default=False
+        Whether to apply oversampling to the training data.
+    oversample_method : str, default="smote"
+        Oversampling method (currently unused; reserved for future use).
+    target_ratio : float, default=0.33
+        Target minority/majority ratio (currently unused; reserved for future use).
 
     Returns
     -------
@@ -216,10 +226,17 @@ def lstm_train(
         f"(seq_len={seq_len}) from {len(X_array)} samples"
     )
 
+    # --- Compute class weights for imbalanced data ---
+    from sklearn.utils.class_weight import compute_class_weight
+    classes = np.unique(y_seq_all)
+    cw = compute_class_weight('balanced', classes=classes, y=y_seq_all)
+    class_weight_dict = {int(c): float(w) for c, w in zip(classes, cw)}
+    logging.info(f"[LSTM] Class weights: {class_weight_dict}")
+
     kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
-    accuracies = []
+    fold_f1_scores = []
     fold_histories = []  # Store training history for convergence visualization
-    best_accuracy = 0.0
+    best_f1 = -1.0
     best_model = None
     best_fold = 1
 
@@ -230,7 +247,10 @@ def lstm_train(
         y_test_fold = y_seq_all[test_idx]
 
         model = build_lstm_model((seq_len, X_train_fold.shape[2]))
-        early_stopping = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
+        early_stopping = EarlyStopping(
+            monitor='val_auc', mode='max', patience=5,
+            restore_best_weights=True,
+        )
 
         logging.info(f'--- Fold {fold_no} Training Start ---')
         history = model.fit(
@@ -239,7 +259,8 @@ def lstm_train(
             batch_size=batch_size,
             validation_split=0.2,
             verbose=1,
-            callbacks=[early_stopping]
+            callbacks=[early_stopping],
+            class_weight=class_weight_dict,
         )
         
         # Save training history for convergence visualization
@@ -248,16 +269,27 @@ def lstm_train(
             'val_loss': history.history.get('val_loss', []),
             'accuracy': history.history.get('accuracy', []),
             'val_accuracy': history.history.get('val_accuracy', []),
+            'auc': history.history.get('auc', []),
+            'val_auc': history.history.get('val_auc', []),
             'epochs': list(range(1, len(history.history.get('loss', [])) + 1))
         }
         fold_histories.append({'fold': fold_no, 'history': history_dict})
 
         scores = model.evaluate(X_test_fold, y_test_fold, verbose=0)
-        accuracies.append(scores[1])
-        
-        # Keep track of the best model (highest validation accuracy)
-        if fold_no == 1 or scores[1] > best_accuracy:
-            best_accuracy = scores[1]
+        # scores: [loss, accuracy, auc]
+        fold_acc = scores[1]
+        fold_auc = scores[2] if len(scores) > 2 else 0.0
+
+        # Compute F1 for positive class on fold test set
+        y_prob_fold = model.predict(X_test_fold, verbose=0).flatten()
+        y_pred_fold = (y_prob_fold > 0.5).astype(int)
+        fold_f1 = f1_score(y_test_fold, y_pred_fold, zero_division=0)
+        fold_f1_scores.append(fold_f1)
+        logging.info(f'Fold {fold_no} - F1(pos): {fold_f1:.4f}, AUC: {fold_auc:.4f}')
+
+        # Keep track of the best model (highest F1 on positive class)
+        if fold_f1 > best_f1:
+            best_f1 = fold_f1
             best_model = model
             best_fold = fold_no
 
@@ -282,8 +314,8 @@ def lstm_train(
         logging.info(f"Artifacts for fold {fold_no} saved successfully (via unified saver).")
         logging.info(f'Fold {fold_no} - Loss: {scores[0]}, Accuracy: {scores[1]}')
 
-    logging.info(f'\nScores per fold: {accuracies}')
-    logging.info(f'Average accuracy: {np.mean(accuracies)}')
+    logging.info(f'\nF1 scores per fold: {fold_f1_scores}')
+    logging.info(f'Average F1: {np.mean(fold_f1_scores):.4f}')
     
     # Save training histories for convergence visualization
     import json
@@ -352,9 +384,10 @@ def lstm_train(
         return metrics
     
     results = {
-        "cv_accuracies": accuracies,
-        "cv_mean_accuracy": float(np.mean(accuracies)),
+        "cv_f1_scores": fold_f1_scores,
+        "cv_mean_f1": float(np.mean(fold_f1_scores)),
         "best_fold": best_fold,
+        "class_weight": class_weight_dict,
     }
     
     # Compute train metrics
