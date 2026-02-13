@@ -64,18 +64,20 @@ PNG_BASE = FIG_BASE / "png" / "split2"
 
 # Condition subdirectory naming
 # Maps internal tag names (from eval filenames) → user-facing directory names
+# Aligned with Exp2 (collect_split2_rf_metrics.py) conventions
 CONDITION_DIR_MAP = {
     "baseline":        "baseline",
-    "imbalv3":         "subject_wise_smote",   # internal tag → readable name
+    "imbalv3":         "sw_smote",              # aligned with Exp2 sw_smote
     "smote_plain":     "smote_plain",
-    "undersample_rus": "rus",                   # internal tag → readable name
+    "undersample_rus": "undersample_rus",        # aligned with Exp2
 }
 
 # Maps internal tag names → filename-safe short labels (used in PNG/CSV names)
+# Aligned with Exp2: baseline→baseline, sw_smote→sw_smote, smote_plain→smote, rus→rus
 CONDITION_FILE_LABEL = {
     "baseline":        "baseline",
-    "imbalv3":         "subject_wise_smote",
-    "smote_plain":     "smote_plain",
+    "imbalv3":         "sw_smote",
+    "smote_plain":     "smote",
     "undersample_rus": "rus",
 }
 
@@ -94,10 +96,12 @@ CONDITION_LABELS = {
 #   eval_results_Lstm_source_only_baseline_knn_dtw_in_domain_split2_s42.json
 BASELINE_PATTERN = re.compile(
     r"eval_results_(?P<model>SvmW|SvmA|Lstm)_"
-    r"(?P<mode>source_only|target_only)_"
+    r"(?P<mode>source_only|target_only|mixed)_"
+    r"(?:prior_(?:SvmW|SvmA|Lstm)_)?"
     r"baseline_knn_"
     r"(?P<distance>mmd|dtw|wasserstein)_"
     r"(?P<domain>in_domain|out_domain)"
+    r"(?:_(?:source_only|target_only|mixed))?"
     r"(?:_split2)?"
     r"_s(?P<seed>\d+)"
     r"\.json$"
@@ -109,13 +113,13 @@ BASELINE_PATTERN = re.compile(
 #   eval_results_Lstm_target_only_prior_Lstm_undersample_rus_knn_mmd_out_domain_target_only_split2_ratio0.5_s42.json
 PRIOR_PATTERN = re.compile(
     r"eval_results_(?P<model>SvmW|SvmA|Lstm)_"
-    r"(?P<mode>source_only|target_only)_"
+    r"(?P<mode>source_only|target_only|mixed)_"
     r"prior_(?:SvmW|SvmA|Lstm)_"
     r"(?P<condition>imbalv3|smote_plain|undersample_rus)_"
     r"knn_"
     r"(?P<distance>mmd|dtw|wasserstein)_"
     r"(?P<domain>in_domain|out_domain)"
-    r"(?:_(?:source_only|target_only))?"       # optional redundant mode suffix
+    r"(?:_(?:source_only|target_only|mixed))?"  # optional redundant mode suffix
     r"(?:_split2)?"
     r"(?:_subjectwise)?"                       # imbalv3 has subjectwise tag
     r"_ratio(?P<ratio>[0-9.]+)"
@@ -408,9 +412,10 @@ def generate_plots(df: pd.DataFrame, df_pooled: pd.DataFrame) -> list[Path]:
                 ratio_val = ""
                 ratio_tag = ""
 
-            # Build filename (use user-facing label, not internal tag)
-            cond_label = CONDITION_FILE_LABEL.get(cond, cond)
-            out_name = f"summary_metrics_bar_{model.lower()}_{cond_label}{ratio_tag}_v2_s{seed}.png"
+            # Build filename – Exp2-aligned short style:
+            #   {cond_short}{ratio_tag}_s{seed}.png
+            cond_short = CONDITION_FILE_LABEL.get(cond, cond)
+            out_name = f"{cond_short}{ratio_tag}_s{seed}.png"
             out_path = png_dir / out_name
 
             # --- Merge pooled reference rows for this model + seed ----
@@ -427,11 +432,11 @@ def generate_plots(df: pd.DataFrame, df_pooled: pd.DataFrame) -> list[Path]:
                         [sub, pooled_rows[common_cols]], ignore_index=True
                     )
 
-            # plot_grouped_bar_chart_raw expects modes (include pooled)
+            # plot_grouped_bar_chart_raw expects modes (include pooled + mixed)
             fig = plot_grouped_bar_chart_raw(
                 data=sub_with_pooled,
                 metrics=METRICS,
-                modes=["pooled", "source_only", "target_only"],
+                modes=["pooled", "source_only", "target_only", "mixed"],
                 distance_col="distance",
                 level_col="level",
                 baseline_rates={"auc_pr": 0.033},
