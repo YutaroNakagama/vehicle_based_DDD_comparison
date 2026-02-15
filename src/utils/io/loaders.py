@@ -288,7 +288,7 @@ def load_subject_csvs(
             "Lstm": ("speed_std_dev", "steering_speed_mean"),
             "SvmA": ("Steering_Range", "LongAcc_SampleEntropy"),
             "RF":   ("Steering_Range", "LongAcc_SampleEntropy"),
-            "SvmW": ("SteeringWheel_DDD", "LaneOffset_AAA"),
+            "SvmW": ("SteeringWheel_DDD", "SteeringWheel_AAA"),
         }
         exclude_cols = {"Timestamp", "subject_id"}
 

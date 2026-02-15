@@ -20,7 +20,7 @@ _MODEL_FEATURE_RANGES = {
     "Lstm": ("steering_std_dev", "lane_offset_mean"),
     "SvmA": ("Steering_Range", "LongAcc_SampleEntropy"),
     "RF":   ("Steering_Range", "LongAcc_SampleEntropy"),
-    "SvmW": ("SteeringWheel_DDD", "LaneOffset_AAA"),
+    "SvmW": ("SteeringWheel_DDD", "SteeringWheel_AAA"),
     # common / BalancedRF data uses this range:
     "common": ("Steering_Range", "LaneOffset_AAA"),
 }
