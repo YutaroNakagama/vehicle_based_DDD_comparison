@@ -129,6 +129,8 @@ def data_split(
     test_ratio: float = None,
     random_state: int = 42,
     keep_subject_id: bool = False,
+    kss_bin_labels=None,
+    kss_label_map=None,
 ):
     """
     Split the dataset into train, validation, and test sets.
@@ -148,6 +150,10 @@ def data_split(
         Random seed for reproducibility.
     keep_subject_id : bool, default=False
         If True, retain subject_id column in X_train for subject-wise oversampling.
+    kss_bin_labels : list, optional
+        Model-specific KSS bin labels. If None, uses config.KSS_BIN_LABELS.
+    kss_label_map : dict, optional
+        Model-specific KSS label mapping. If None, uses config.KSS_LABEL_MAP.
 
     Returns
     -------
@@ -177,7 +183,9 @@ def data_split(
     df.columns = [_normalize_col(c) for c in df.columns]
 
     # --- Step 1: Filter valid KSS labels ---
-    df = df[df["KSS_Theta_Alpha_Beta"].isin(KSS_BIN_LABELS)].copy()
+    active_kss_bins = kss_bin_labels if kss_bin_labels is not None else KSS_BIN_LABELS
+    active_kss_map = kss_label_map if kss_label_map is not None else KSS_LABEL_MAP
+    df = df[df["KSS_Theta_Alpha_Beta"].isin(active_kss_bins)].copy()
 
     # --- Step 2: Define columns ---
     exclude_cols = {
@@ -194,7 +202,7 @@ def data_split(
 
     # --- Step 3: Define X, y ---
     X = df[feature_columns].dropna()
-    y = df.loc[X.index, "KSS_Theta_Alpha_Beta"].replace(KSS_LABEL_MAP)
+    y = df.loc[X.index, "KSS_Theta_Alpha_Beta"].replace(active_kss_map)
 
     # --- Step 4: Calculate split sizes ---
     total_size = len(X)
@@ -234,6 +242,8 @@ def data_split_by_subject(
     seed: int = 42,
     val_subjects: list = None,
     test_subjects: list = None,
+    kss_bin_labels=None,
+    kss_label_map=None,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
     """
     Split the dataset by subject IDs into train, validation, and test sets.
@@ -250,6 +260,10 @@ def data_split_by_subject(
         Subject IDs used for validation. If ``None``, no validation set is created.
     test_subjects : list of str, optional
         Subject IDs used for testing. If ``None``, no test set is created.
+    kss_bin_labels : list, optional
+        Model-specific KSS labels to keep. Falls back to config default.
+    kss_label_map : dict, optional
+        Model-specific KSS→binary mapping. Falls back to config default.
 
     Returns
     -------
@@ -262,6 +276,9 @@ def data_split_by_subject(
         - ``y_val`` : Validation labels.
         - ``y_test`` : Test labels.
     """
+
+    active_kss_bins = kss_bin_labels if kss_bin_labels is not None else KSS_BIN_LABELS
+    active_kss_map = kss_label_map if kss_label_map is not None else KSS_LABEL_MAP
 
     logging.info(f"Splitting data by subject.")
     logging.info(f"  Train subjects ({len(train_subjects)}): {train_subjects}")
@@ -280,8 +297,8 @@ def data_split_by_subject(
     df.columns = [_normalize_col(c) for c in df.columns]
 
     # Step 1: Filter rows by KSS labels and create 'label' column
-    df_filtered = df[df["KSS_Theta_Alpha_Beta"].isin(KSS_BIN_LABELS)].copy()
-    df_filtered["label"] = df_filtered["KSS_Theta_Alpha_Beta"].replace(KSS_LABEL_MAP)
+    df_filtered = df[df["KSS_Theta_Alpha_Beta"].isin(active_kss_bins)].copy()
+    df_filtered["label"] = df_filtered["KSS_Theta_Alpha_Beta"].replace(active_kss_map)
     logging.info(f"Filtered data from {df.shape[0]} to {df_filtered.shape[0]} rows based on KSS labels.")
 
     # Step 2: Define feature columns (model-aware)
@@ -321,6 +338,8 @@ def data_time_split_by_subject(
     train_ratio=0.6,
     val_ratio=0.2,
     test_ratio=0.2,
+    kss_bin_labels=None,
+    kss_label_map=None,
 ):
     """
     Split data by subject while preserving temporal order within each subject.
@@ -339,6 +358,12 @@ def data_time_split_by_subject(
         Proportion of samples per subject used for validation.
     test_ratio : float, default=0.1
         Proportion of samples per subject used for testing.
+    kss_bin_labels : list, optional
+        Model-specific KSS labels to keep (e.g. SvmA includes KSS 6).
+        Falls back to ``config.KSS_BIN_LABELS`` when *None*.
+    kss_label_map : dict, optional
+        Model-specific KSS→binary mapping.
+        Falls back to ``config.KSS_LABEL_MAP`` when *None*.
 
     Returns
     -------
@@ -353,10 +378,13 @@ def data_time_split_by_subject(
     """
     from src.config import KSS_BIN_LABELS, KSS_LABEL_MAP
 
+    active_kss_bins = kss_bin_labels if kss_bin_labels is not None else KSS_BIN_LABELS
+    active_kss_map = kss_label_map if kss_label_map is not None else KSS_LABEL_MAP
+
     # 1. KSS fileter & Binary convert
     if "KSS_Theta_Alpha_Beta" in df.columns:
-        df = df[df["KSS_Theta_Alpha_Beta"].isin(KSS_BIN_LABELS)].copy()
-        df["label"] = df["KSS_Theta_Alpha_Beta"].replace(KSS_LABEL_MAP)
+        df = df[df["KSS_Theta_Alpha_Beta"].isin(active_kss_bins)].copy()
+        df["label"] = df["KSS_Theta_Alpha_Beta"].replace(active_kss_map)
     elif "KSS" in df.columns:
         df["label"] = df["KSS"]
     else:

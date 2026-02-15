@@ -28,9 +28,17 @@ from scipy import stats
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, f1_score
 from sklearn.feature_selection import mutual_info_classif
+from sklearn.preprocessing import MinMaxScaler
 from pyswarm import pso
 
 from src.config import MODEL_PKL_PATH
+
+# ---------------------------------------------------------------------------
+# SvmA-specific KSS mapping (Arefnezhad et al. 2019)
+# Paper: KSS 1-6 → Alert (0), KSS 8-9 → Drowsy (1), KSS 7 → excluded
+# ---------------------------------------------------------------------------
+SVMA_KSS_BIN_LABELS = [1, 2, 3, 4, 5, 6, 8, 9]
+SVMA_KSS_LABEL_MAP = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 8: 1, 9: 1}
 from src.utils.io.savers import save_artifacts
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -361,7 +369,7 @@ def optimize_svm_anfis(
         if n_selected == 0:
             pso_history.append({
                 'evaluation': eval_count[0],
-                'n_selected': 0, 'f1_pos': 0.0, 'fitness': 1.0,
+                'n_selected': 0, 'accuracy': 0.0, 'fitness': 1.0,
             })
             return 1.0  # penalty
 
@@ -369,16 +377,18 @@ def optimize_svm_anfis(
         X_va = X_val.iloc[:, mask]
 
         # Fixed SVM during PSO (paper: PSO trains ANFIS only)
+        # Paper Eq.(11): objective = 0.5 * (y_hat - y)^2 → equivalent to
+        # maximising classification accuracy (Arefnezhad et al. 2019)
         svm = SVC(kernel='rbf', C=1.0, gamma='scale', class_weight='balanced')
         svm.fit(X_tr, y_train)
         y_pred = svm.predict(X_va)
-        f1_val = f1_score(y_val, y_pred, average='binary', zero_division=0)
-        fitness = -f1_val
+        acc_val = accuracy_score(y_val, y_pred)
+        fitness = -acc_val
 
         pso_history.append({
             'evaluation': eval_count[0],
             'n_selected': n_selected,
-            'f1_pos': float(f1_val),
+            'accuracy': float(acc_val),
             'fitness': float(fitness),
         })
         return fitness
@@ -481,8 +491,28 @@ def SvmA_train(
     """
     logging.info("Starting SVM-ANFIS optimization...")
 
+    # ----- Min-max normalization [0, 1] (Arefnezhad et al. 2019, Sec.2.2) -----
+    # "Extracted features have been normalized between 0 and 1 using their
+    #  minimum and maximum values."
+    minmax_scaler = MinMaxScaler(feature_range=(0, 1))
+    X_train_normed = pd.DataFrame(
+        minmax_scaler.fit_transform(X_train),
+        columns=X_train.columns, index=X_train.index,
+    )
+    X_val_normed = pd.DataFrame(
+        minmax_scaler.transform(X_val),
+        columns=X_val.columns, index=X_val.index,
+    )
+    X_test_normed = None
+    if X_test is not None:
+        X_test_normed = pd.DataFrame(
+            minmax_scaler.transform(X_test),
+            columns=X_test.columns, index=X_test.index,
+        )
+    logging.info("[SvmA] Applied min-max [0,1] normalization (paper Sec.2.2)")
+
     optimal_mf_params, best_C, best_gamma, pso_history, anfis = optimize_svm_anfis(
-        X_train, y_train, X_val, y_val, indices_df,
+        X_train_normed, y_train, X_val_normed, y_val, indices_df,
     )
 
     # Save PSO optimization history + MF parameters for reproducibility
@@ -509,14 +539,14 @@ def SvmA_train(
     importance_degree = anfis.compute_importance_degree(indices_values, optimal_mf_params)
     n_selected = int((importance_degree > 0.5).sum())
     logging.info(f"[ANFIS] Selected {n_selected}/{len(importance_degree)} features (threshold=0.5)")
-    X_train_sel = select_features(X_train, importance_degree)
-    X_val_sel = select_features(X_val, importance_degree)
+    X_train_sel = select_features(X_train_normed, importance_degree)
+    X_val_sel = select_features(X_val_normed, importance_degree)
 
     # --- Safeguard: fallback if no features selected ---
     if X_train_sel.shape[1] == 0:
         logging.warning("[WARN] No features selected by ANFIS importance → using all input features instead.")
-        X_train_sel = X_train.copy()
-        X_val_sel = X_val.copy()
+        X_train_sel = X_train_normed.copy()
+        X_val_sel = X_val_normed.copy()
 
     svm_final = SVC(kernel='rbf', C=best_C, gamma=best_gamma, probability=True,
                      class_weight='balanced')
@@ -526,9 +556,15 @@ def SvmA_train(
     os.makedirs(model_dir, exist_ok=True)
     
     # --- Unified saving rules ---
-    from sklearn.preprocessing import StandardScaler
     from sklearn.metrics import roc_auc_score, average_precision_score
-    dummy_scaler = StandardScaler().fit(X_train_sel)
+    # Save a MinMaxScaler fit on the *selected* columns of the original
+    # (un-normalised) training data.  During evaluation the pipeline calls
+    # prepare_evaluation_features() which aligns to `selected_features`,
+    # then applies scaler.transform() → identical [0,1] normalisation.
+    selected_cols = X_train_sel.columns.tolist()
+    scaler_to_save = MinMaxScaler(feature_range=(0, 1)).fit(
+        X_train[selected_cols]
+    )
 
     # Get PBS job ID and array index for proper directory structure
     pbs_jobid = os.environ.get("PBS_JOBID", "local")
@@ -541,7 +577,7 @@ def SvmA_train(
 
     save_artifacts(
         model_obj=svm_final,
-        scaler_obj=dummy_scaler,
+        scaler_obj=scaler_to_save,
         selected_features=X_train_sel.columns.tolist(),
         feature_meta=None,
         model_name=model,
@@ -589,10 +625,10 @@ def SvmA_train(
     results["val"] = compute_metrics(svm_final, X_val_sel, y_val, "Validation")
     
     # Evaluate on test set if provided
-    if X_test is not None and y_test is not None:
-        X_test_sel = select_features(X_test, importance_degree)
+    if X_test_normed is not None and y_test is not None:
+        X_test_sel = select_features(X_test_normed, importance_degree)
         if X_test_sel.shape[1] == 0:
-            X_test_sel = X_test.copy()
+            X_test_sel = X_test_normed.copy()
         results["test"] = compute_metrics(svm_final, X_test_sel, y_test, "Test")
 
     logging.info(f"Optimal ANFIS MF params (24): {optimal_mf_params.tolist()}")

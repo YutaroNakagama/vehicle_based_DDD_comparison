@@ -25,10 +25,18 @@ from src.utils.io.split import (
 )
 
 # --- Local helper to avoid circular import with model_pipeline ---
-def _prepare_df_with_label_and_features(df: pd.DataFrame):
+def _prepare_df_with_label_and_features(df: pd.DataFrame, model_name: str = None):
     from src.config import KSS_BIN_LABELS, KSS_LABEL_MAP
-    d = df[df["KSS_Theta_Alpha_Beta"].isin(KSS_BIN_LABELS)].copy()
-    d["label"] = d["KSS_Theta_Alpha_Beta"].replace(KSS_LABEL_MAP).astype(int)
+    kss_bins = KSS_BIN_LABELS
+    kss_map = KSS_LABEL_MAP
+    # SvmA uses paper-specific KSS mapping: KSS 1-6→Alert, 8-9→Drowsy
+    if model_name == "SvmA":
+        from src.models.architectures.SvmA import SVMA_KSS_BIN_LABELS, SVMA_KSS_LABEL_MAP
+        kss_bins = SVMA_KSS_BIN_LABELS
+        kss_map = SVMA_KSS_LABEL_MAP
+        logging.info("[KSS] Using SvmA-specific KSS mapping (1-6=Alert, 8-9=Drowsy)")
+    d = df[df["KSS_Theta_Alpha_Beta"].isin(kss_bins)].copy()
+    d["label"] = d["KSS_Theta_Alpha_Beta"].replace(kss_map).astype(int)
     # Model-aware feature detection (supports SvmW/SvmA/Lstm/common column layouts)
     features = _resolve_feature_columns(d, include_subject_id=True)
     return d, features
@@ -124,7 +132,7 @@ def split_data(
         data, _ = _load_subjects(use_subjects)
 
         if time_stratify_labels:
-            df_lab, feature_columns = _prepare_df_with_label_and_features(data)
+            df_lab, feature_columns = _prepare_df_with_label_and_features(data, model_name=model_name)
             sort_keys = ("subject_id", "Timestamp")
             idx_tr, idx_va, idx_te = time_stratified_three_way_split(
                 df_lab,
@@ -143,8 +151,16 @@ def split_data(
             y_val   = df_lab.loc[idx_va, "label"]
             y_test  = df_lab.loc[idx_te, "label"]
         else:
+            # Resolve SvmA-specific KSS overrides for the non-stratified path
+            kss_bins_ts = None
+            kss_map_ts = None
+            if model_name == "SvmA":
+                from src.models.architectures.SvmA import SVMA_KSS_BIN_LABELS, SVMA_KSS_LABEL_MAP
+                kss_bins_ts = SVMA_KSS_BIN_LABELS
+                kss_map_ts = SVMA_KSS_LABEL_MAP
             X_train, X_val, X_test, y_train, y_val, y_test = data_time_split_by_subject(
-                data, subject_col="subject_id", time_col="Timestamp"
+                data, subject_col="subject_id", time_col="Timestamp",
+                kss_bin_labels=kss_bins_ts, kss_label_map=kss_map_ts,
             )
         # --- Fallback if any split collapses to a single class ---
         def _has_both(y: pd.Series) -> bool:
@@ -152,7 +168,17 @@ def split_data(
         if not (_has_both(y_train) and _has_both(y_val) and _has_both(y_test)):
             logging.warning("[subject_time_split] Class collapsed in a split -> fallback to random split")
             from src.utils.io import split as split_module
-            return split_module.data_split(data, random_state=seed)
+            # Preserve model-specific KSS overrides in fallback path
+            fb_bins = None
+            fb_map = None
+            if model_name == "SvmA":
+                from src.models.architectures.SvmA import SVMA_KSS_BIN_LABELS, SVMA_KSS_LABEL_MAP
+                fb_bins = SVMA_KSS_BIN_LABELS
+                fb_map = SVMA_KSS_LABEL_MAP
+            return split_module.data_split(
+                data, random_state=seed,
+                kss_bin_labels=fb_bins, kss_label_map=fb_map,
+            )
         return X_train, X_val, X_test, y_train, y_val, y_test
 
     # --- Strategy: finetune_target_subjects ---
@@ -199,10 +225,19 @@ def split_data(
 
     # Explicitly reference the module to avoid scope-shadowing issues (UnboundLocalError)
     from src.utils.io import split as split_module
+    # Resolve model-specific KSS settings for SvmA
+    kss_bins_override = None
+    kss_map_override = None
+    if model_name == "SvmA":
+        from src.models.architectures.SvmA import SVMA_KSS_BIN_LABELS, SVMA_KSS_LABEL_MAP
+        kss_bins_override = SVMA_KSS_BIN_LABELS
+        kss_map_override = SVMA_KSS_LABEL_MAP
     return split_module.data_split(
         data,
         random_state=seed,
         keep_subject_id=keep_subject_id,
+        kss_bin_labels=kss_bins_override,
+        kss_label_map=kss_map_override,
     )
 
 # ==========================================================
