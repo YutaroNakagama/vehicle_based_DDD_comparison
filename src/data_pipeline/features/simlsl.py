@@ -290,8 +290,11 @@ def smooth_std_pe_features(signal: np.ndarray, model_name: str) -> dict:
         window = signal[start:start + window_size]
         features['std_dev'].append(np.std(window))
 
-        if len(window) > 3:
-            pred_val = window[-3] + 2 * (window[-2] - window[-3])
+        if len(window) > 4:
+            # 2nd-order Taylor approximation (Atiquzzaman et al. 2018)
+            pred_val = (2.5 * window[-2]
+                        - 2.0 * window[-3]
+                        + 0.5 * window[-4])
             features['pred_error'].append(abs(pred_val - window[-1]))
         else:
             features['pred_error'].append(np.nan)
@@ -331,14 +334,29 @@ def smooth_std_pe_process(subject: str, model_name: str, use_jittering: bool = F
         logging.error(f"Invalid data structure in {file_path}")
         return
 
-    steering = np.nan_to_num(sim_data[29])
-    steering_speed = np.gradient(steering) * SAMPLE_RATE_SIMLSL
-    lat_acc = np.nan_to_num(sim_data[19])
-    long_acc = np.nan_to_num(sim_data[18])
-    lane_offset = np.nan_to_num(sim_data[27])
-    
-    signals = [steering, steering_speed, lat_acc, long_acc, lane_offset]
-    signal_names = ['steering', 'steering_speed', 'lat_acc', 'long_acc', 'lane_offset']
+    # --- Signal selection depends on model (Wang et al. 2022 vs default) ---
+    if model_name == "Lstm":
+        # Wang et al. 2022, Table 1: speed, long_acc, lat_acc, lane_offset,
+        # steering_wheel_rate.  Speed is derived from Route_Position (idx 17)
+        # because the Velocity channel (idx 30) stores cumulative distance.
+        route_pos = np.nan_to_num(sim_data[17])
+        speed = np.gradient(route_pos) * SAMPLE_RATE_SIMLSL
+        speed = np.clip(speed, 0, 50)  # cap at 50 m/s (180 km/h)
+        long_acc = np.nan_to_num(sim_data[18])
+        lat_acc = np.nan_to_num(sim_data[19])
+        lane_offset = np.nan_to_num(sim_data[27])
+        steering = np.nan_to_num(sim_data[29])
+        steering_speed = np.gradient(steering) * SAMPLE_RATE_SIMLSL
+        signals = [speed, long_acc, lat_acc, lane_offset, steering_speed]
+        signal_names = ['speed', 'long_acc', 'lat_acc', 'lane_offset', 'steering_speed']
+    else:
+        steering = np.nan_to_num(sim_data[29])
+        steering_speed = np.gradient(steering) * SAMPLE_RATE_SIMLSL
+        lat_acc = np.nan_to_num(sim_data[19])
+        long_acc = np.nan_to_num(sim_data[18])
+        lane_offset = np.nan_to_num(sim_data[27])
+        signals = [steering, steering_speed, lat_acc, long_acc, lane_offset]
+        signal_names = ['steering', 'steering_speed', 'lat_acc', 'long_acc', 'lane_offset']
 
     if use_jittering:
         signals = [jittering(sig) for sig in signals]
@@ -350,7 +368,8 @@ def smooth_std_pe_process(subject: str, model_name: str, use_jittering: bool = F
             features[f'{name}_{key}'] = result[key]
 
     window_size, step_size = get_simlsl_window_params(model_name)
-    timestamps = sim_data[0][::step_size][:len(features['steering_std_dev'])]
+    first_signal_name = signal_names[0]
+    timestamps = sim_data[0][::step_size][:len(features[f'{first_signal_name}_std_dev'])]
 
     df = pd.DataFrame(features)
     df.insert(0, 'Timestamp', timestamps)

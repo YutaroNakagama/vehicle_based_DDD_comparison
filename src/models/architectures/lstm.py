@@ -17,30 +17,48 @@ from tensorflow.keras.layers import Dense, Flatten, Bidirectional, LSTM, Layer, 
 from tensorflow.keras.callbacks import EarlyStopping
 import tensorflow as tf
 
-from src.config import MODEL_PKL_PATH, LSTM_SEQUENCE_LENGTH
+from src.config import MODEL_PKL_PATH, LSTM_SEGMENT_TIMESTEPS
 from src.utils.io.savers import save_artifacts
 
 
 class AttentionLayer(Layer):
-    """
-    Custom attention layer for sequence input.
+    """Bahdanau-style additive attention with 48-unit hidden projection.
 
-    Applies learned weights over LSTM outputs to focus on important time steps.
+    Projects each timestep through a Dense(48) layer, then computes
+    a scalar alignment score per timestep via a learned context vector.
+    Produces a weighted sum (context vector) over all timesteps.
+
+    Reference: Wang et al. (2022), Section 3.3 — 48 memory neurons.
 
     Parameters
     ----------
+    units : int, default 48
+        Dimensionality of the attention hidden projection.
     **kwargs : dict
         Additional keyword arguments passed to the base Layer class.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, units: int = 48, **kwargs):
         super().__init__(**kwargs)
+        self.units = units
 
     def build(self, input_shape):
-        """Initialize weights and biases for attention."""
-        self.W = self.add_weight(name="att_weight", shape=(input_shape[-1], 1),
-                                 initializer=tf.keras.initializers.GlorotUniform())
-        self.b = self.add_weight(name="att_bias", shape=(input_shape[1], 1), initializer="zeros")
+        """Initialize weights for attention projection and context vector."""
+        self.W = self.add_weight(
+            name="att_weight",
+            shape=(input_shape[-1], self.units),
+            initializer=tf.keras.initializers.GlorotUniform(),
+        )
+        self.b = self.add_weight(
+            name="att_bias",
+            shape=(self.units,),
+            initializer="zeros",
+        )
+        self.v = self.add_weight(
+            name="att_context",
+            shape=(self.units, 1),
+            initializer=tf.keras.initializers.GlorotUniform(),
+        )
         super().build(input_shape)
 
     def call(self, x):
@@ -56,18 +74,33 @@ class AttentionLayer(Layer):
         tensor
             Aggregated context vector (batch, features).
         """
-        e = tf.keras.backend.tanh(tf.keras.backend.dot(x, self.W) + self.b)
-        a = tf.keras.backend.softmax(e, axis=1)
+        # Hidden projection: (batch, timesteps, units)
+        e = tf.keras.backend.tanh(
+            tf.keras.backend.dot(x, self.W) + self.b
+        )
+        # Alignment scores: (batch, timesteps, 1)
+        score = tf.keras.backend.dot(e, self.v)
+        a = tf.keras.backend.softmax(score, axis=1)
+        # Weighted sum: (batch, features)
         output = x * a
         return tf.keras.backend.sum(output, axis=1)
 
+    def get_config(self):
+        config = super().get_config()
+        config.update({"units": self.units})
+        return config
 
-def create_sequences(
+
+def create_segments(
     X: np.ndarray,
     y: np.ndarray,
-    seq_len: int = LSTM_SEQUENCE_LENGTH,
+    seg_len: int = LSTM_SEGMENT_TIMESTEPS,
 ) -> tuple:
-    """Create sliding-window sequences from 2-D feature data.
+    """Create fixed-length non-overlapping segments from 2-D feature data.
+
+    Wang et al. (2022) divides time-series into 10-second segments, each
+    containing 100 data points.  This function replicates that approach
+    for the LSTM input.
 
     Parameters
     ----------
@@ -75,25 +108,29 @@ def create_sequences(
         Scaled feature matrix (2-D).
     y : np.ndarray, shape (n_samples,)
         Labels aligned with *X*.
-    seq_len : int, default=LSTM_SEQUENCE_LENGTH
-        Number of consecutive windows per sequence.
+    seg_len : int, default=LSTM_SEGMENT_TIMESTEPS
+        Number of timesteps per segment (100).
 
     Returns
     -------
-    X_seq : np.ndarray, shape (n_sequences, seq_len, n_features)
-    y_seq : np.ndarray, shape (n_sequences,)
-        Label of the last timestep in each sequence.
+    X_seg : np.ndarray, shape (n_segments, seg_len, n_features)
+    y_seg : np.ndarray, shape (n_segments,)
+        Label of the last timestep in each segment.
     """
     n = len(X)
-    if n < seq_len:
-        # Not enough data — pad with zeros and return single sequence
-        pad = np.zeros((seq_len - n, X.shape[1]), dtype=X.dtype)
+    if n < seg_len:
+        # Not enough data — pad with zeros and return single segment
+        pad = np.zeros((seg_len - n, X.shape[1]), dtype=X.dtype)
         X_padded = np.vstack([pad, X])
         return X_padded[np.newaxis, :, :], y[-1:]
 
-    X_seq = np.array([X[i : i + seq_len] for i in range(n - seq_len + 1)])
-    y_seq = y[seq_len - 1 :]  # label of last timestep in each window
-    return X_seq, y_seq
+    n_segments = n // seg_len
+    X_seg = np.array(
+        [X[i * seg_len : (i + 1) * seg_len] for i in range(n_segments)]
+    )
+    # Label = last timestep in each segment
+    y_seg = np.array([y[(i + 1) * seg_len - 1] for i in range(n_segments)])
+    return X_seg, y_seg
 
 
 def build_lstm_model(input_shape: tuple) -> Model:
@@ -219,12 +256,12 @@ def lstm_train(
     scaler = StandardScaler()
     X_scaled_all = scaler.fit_transform(X_array)
 
-    # --- Create multi-timestep sequences ---
-    seq_len = LSTM_SEQUENCE_LENGTH
-    X_seq_all, y_seq_all = create_sequences(X_scaled_all, y_cleaned.values, seq_len)
+    # --- Create fixed-length segments (Wang et al. 2022: 10-sec, 100 timesteps) ---
+    seg_len = LSTM_SEGMENT_TIMESTEPS
+    X_seq_all, y_seq_all = create_segments(X_scaled_all, y_cleaned.values, seg_len)
     logging.info(
-        f"[LSTM] Created {len(X_seq_all)} sequences "
-        f"(seq_len={seq_len}) from {len(X_array)} samples"
+        f"[LSTM] Created {len(X_seq_all)} segments "
+        f"(seg_len={seg_len}) from {len(X_array)} samples"
     )
 
     # --- Compute class weights for imbalanced data ---
@@ -347,9 +384,9 @@ def lstm_train(
         X_num = X_num.clip(lower=np.finfo(np.float32).min, upper=np.finfo(np.float32).max)
         X_arr = X_num.astype(np.float32).values
         
-        # Scale and create sequences
+        # Scale and create segments
         X_scaled = scaler_obj.transform(X_arr)
-        X_seq, y_seq = create_sequences(X_scaled, y_aligned.values, seq_len)
+        X_seq, y_seq = create_segments(X_scaled, y_aligned.values, seg_len)
         
         # Predict
         y_prob = model_obj.predict(X_seq, verbose=0).flatten()

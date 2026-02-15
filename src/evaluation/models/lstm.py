@@ -13,8 +13,8 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.layers import Layer
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
 
-from src.config import MODEL_PKL_PATH, LSTM_SEQUENCE_LENGTH
-from src.models.architectures.lstm import create_sequences
+from src.config import MODEL_PKL_PATH, LSTM_SEGMENT_TIMESTEPS
+from src.models.architectures.lstm import create_segments
 from src.evaluation.metrics import (
     calculate_extended_metrics,
     calculate_class_specific_metrics,
@@ -25,15 +25,27 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 
 class AttentionLayer(Layer):
-    """Custom attention layer for LSTM model."""
+    """Custom attention layer for LSTM model (48-unit Bahdanau attention)."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, units: int = 48, **kwargs):
         super(AttentionLayer, self).__init__(**kwargs)
+        self.units = units
 
     def build(self, input_shape):
-        """Initialize attention weights and bias."""
-        self.W = self.add_weight(name="att_weight", shape=(input_shape[-1], 1), initializer="normal")
-        self.b = self.add_weight(name="att_bias", shape=(input_shape[1], 1), initializer="zeros")
+        """Initialize attention weights, bias, and context vector."""
+        self.W = self.add_weight(
+            name="att_weight",
+            shape=(input_shape[-1], self.units),
+            initializer="glorot_uniform",
+        )
+        self.b = self.add_weight(
+            name="att_bias", shape=(self.units,), initializer="zeros"
+        )
+        self.v = self.add_weight(
+            name="att_context",
+            shape=(self.units, 1),
+            initializer="glorot_uniform",
+        )
         super(AttentionLayer, self).build(input_shape)
 
     def call(self, x):
@@ -50,9 +62,15 @@ class AttentionLayer(Layer):
             Aggregated output with attention applied
         """
         e = tf.keras.backend.tanh(tf.keras.backend.dot(x, self.W) + self.b)
-        a = tf.keras.backend.softmax(e, axis=1)
+        score = tf.keras.backend.dot(e, self.v)
+        a = tf.keras.backend.softmax(score, axis=1)
         output = x * a
         return tf.keras.backend.sum(output, axis=1)
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({"units": self.units})
+        return config
 
 
 def lstm_eval(
@@ -151,12 +169,12 @@ def lstm_eval(
     elif isinstance(y_test, np.ndarray) and y_test.ndim > 1:
         y_test = y_test.flatten()
 
-    # Create multi-timestep sequences for LSTM input
-    seq_len = LSTM_SEQUENCE_LENGTH
-    X_test_3d, y_test = create_sequences(X_scaled, y_test, seq_len)
+    # Create fixed-length segments for LSTM input
+    seg_len = LSTM_SEGMENT_TIMESTEPS
+    X_test_3d, y_test = create_segments(X_scaled, y_test, seg_len)
     logging.info(
-        f"[LSTM] Eval sequences: {X_test_3d.shape[0]} "
-        f"(seq_len={seq_len}, features={X_test_3d.shape[2]})"
+        f"[LSTM] Eval segments: {X_test_3d.shape[0]} "
+        f"(seg_len={seg_len}, features={X_test_3d.shape[2]})"
     )
 
     # Evaluation

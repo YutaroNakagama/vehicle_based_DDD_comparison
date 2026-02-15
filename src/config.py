@@ -144,12 +144,20 @@ MODEL_WINDOW_CONFIG = {
     "common": {"window_sec": 3, "step_sec": 1.5},
     "SvmA":   {"window_sec": 3, "step_sec": 1.5},
     "SvmW":   {"window_sec": 3, "step_sec": 1.5},
-    "Lstm":   {"window_sec": 5, "step_sec": 2.5},
+    "Lstm":   {"window_sec": 1, "step_sec": 0.1},
 }
-"""dict : Windowing configuration (window length and step size in seconds)."""
+"""dict : Windowing configuration (window length and step size in seconds).
 
-LSTM_SEQUENCE_LENGTH = 10
-"""int : Number of consecutive windows forming one LSTM input sequence."""
+Lstm uses a 1-second rolling window with 0.1 s step
+(matching Wang et al. 2022's 10 Hz temporal resolution).
+"""
+
+LSTM_SEGMENT_TIMESTEPS = 100
+"""int : Number of timesteps per LSTM input segment.
+
+Corresponds to 10 seconds of data at 10 Hz equivalent resolution
+(Wang et al. 2022, Section 3.2).
+"""
 
 # ---------------------------------------------------------------------
 # Sampling rates
