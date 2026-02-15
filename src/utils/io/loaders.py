@@ -286,7 +286,7 @@ def load_subject_csvs(
     if not df_all.empty:
         ranges = {
             "Lstm": ("speed_std_dev", "steering_speed_mean"),
-            "SvmA": ("Steering_Range", "LongAcc_SampleEntropy"),
+            "SvmA": ("Steering_Range", "SteeringSpeed_SampleEntropy"),
             "RF":   ("Steering_Range", "LongAcc_SampleEntropy"),
             "SvmW": ("SteeringWheel_DDD", "SteeringWheel_AAA"),
         }
