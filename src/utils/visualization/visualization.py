@@ -13,6 +13,8 @@ Key functionalities include:
 - Common figure saving utilities with consistent DPI and layout settings.
 """
 
+from __future__ import annotations
+
 import numpy as np
 import logging
 import scipy.stats

@@ -29,6 +29,8 @@ Usage:
     python scripts/python/analysis/domain/collect_split2_rf_metrics.py --condition smote_plain
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import logging
