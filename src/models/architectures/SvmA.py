@@ -635,5 +635,5 @@ def SvmA_train(
     logging.info(f"Optimal SVM Parameters (C, gamma): ({best_C}, {best_gamma})")
     
     # Return model, scaler, selected features, and results
-    return svm_final, dummy_scaler, X_train_sel.columns.tolist(), results
+    return svm_final, scaler_to_save, X_train_sel.columns.tolist(), results
 
