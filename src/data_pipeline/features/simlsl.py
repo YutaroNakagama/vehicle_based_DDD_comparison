@@ -406,9 +406,10 @@ def time_freq_domain_process(subject: str, model_name: str, use_jittering: bool 
 
     steering = np.nan_to_num(sim_data[29, :])
     steering_speed = np.gradient(steering) * SAMPLE_RATE_SIMLSL
-    
-    signals = [steering, steering_speed, sim_data[19], sim_data[27], sim_data[18]]
-    prefixes = ["Steering_", "SteeringSpeed_", "Lateral_", "LaneOffset_", "LongAcc_"]
+
+    # Arefnezhad et al. 2019: only steering wheel angle + velocity
+    signals = [steering, steering_speed]
+    prefixes = ["Steering_", "SteeringSpeed_"]
 
     if use_jittering:
         signals = [jittering(sig, sigma=0.03) for sig in signals]
