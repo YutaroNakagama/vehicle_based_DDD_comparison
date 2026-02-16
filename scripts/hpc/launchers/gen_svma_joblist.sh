@@ -1,8 +1,8 @@
 #!/bin/bash
-# Generate remaining LSTM job list for auto-resub daemon
+# Generate remaining SvmA job list for auto-resub daemon
 # Output format: MODEL|CONDITION|MODE|DISTANCE|DOMAIN|SEED|RATIO|WALLTIME|MEM|N_TRIALS
 
-OUT="/tmp/remaining_lstm_wang2022.txt"
+OUT="/tmp/remaining_svma_arefnezhad2019.txt"
 > "$OUT"
 
 SEEDS=(42 123)
@@ -17,7 +17,7 @@ for DISTANCE in "${DISTANCES[@]}"; do
     for DOMAIN in "${DOMAINS[@]}"; do
         for MODE in "${MODES[@]}"; do
             for SEED in "${SEEDS[@]}"; do
-                echo "Lstm|baseline|$MODE|$DISTANCE|$DOMAIN|$SEED||16:00:00|16gb|100" >> "$OUT"
+                echo "SvmA|baseline|$MODE|$DISTANCE|$DOMAIN|$SEED||24:00:00|32gb|100" >> "$OUT"
             done
         done
     done
@@ -32,10 +32,10 @@ for COND in "${CONDITIONS_RATIO[@]}"; do
                     for SEED in "${SEEDS[@]}"; do
                         # SMOTE conditions need more walltime than baseline/undersample
                         case "$COND" in
-                            smote|smote_plain) WT="24:00:00" ;;
-                            *)                 WT="16:00:00" ;;
+                            smote|smote_plain) WT="48:00:00" ;;
+                            *)                 WT="24:00:00" ;;
                         esac
-                        echo "Lstm|$COND|$MODE|$DISTANCE|$DOMAIN|$SEED|$RATIO|${WT}|16gb|100" >> "$OUT"
+                        echo "SvmA|$COND|$MODE|$DISTANCE|$DOMAIN|$SEED|$RATIO|${WT}|32gb|100" >> "$OUT"
                     done
                 done
             done

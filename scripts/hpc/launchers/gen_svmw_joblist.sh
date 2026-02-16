@@ -30,7 +30,12 @@ for COND in "${CONDITIONS_RATIO[@]}"; do
             for DOMAIN in "${DOMAINS[@]}"; do
                 for MODE in "${MODES[@]}"; do
                     for SEED in "${SEEDS[@]}"; do
-                        echo "SvmW|$COND|$MODE|$DISTANCE|$DOMAIN|$SEED|$RATIO|12:00:00|16gb|100" >> "$OUT"
+                        # SMOTE conditions need more walltime than baseline/undersample
+                        case "$COND" in
+                            smote|smote_plain) WT="24:00:00" ;;
+                            *)                 WT="12:00:00" ;;
+                        esac
+                        echo "SvmW|$COND|$MODE|$DISTANCE|$DOMAIN|$SEED|$RATIO|${WT}|16gb|100" >> "$OUT"
                     done
                 done
             done
