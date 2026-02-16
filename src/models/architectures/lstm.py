@@ -284,7 +284,7 @@ def lstm_train(
         y_train_fold = y_seq_all[train_idx]
         y_test_fold = y_seq_all[test_idx]
 
-        model = build_lstm_model((seq_len, X_train_fold.shape[2]))
+        model = build_lstm_model((seg_len, X_train_fold.shape[2]))
         early_stopping = EarlyStopping(
             monitor='val_auc', mode='max', patience=5,
             restore_best_weights=True,
