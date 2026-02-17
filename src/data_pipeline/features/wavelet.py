@@ -213,7 +213,9 @@ def wavelet_process(subject: str, model_name: str, use_jittering: bool = False) 
 
     window_size, step_size = get_simlsl_window_params(model_name)
 
-    # Zhao et al. 2009: decompose steering wheel angle only
+    # Zhao et al. 2009: decompose steering wheel angle only.
+    # The paper decomposes entire driving sessions; we use sliding windows
+    # (10 s, 50 % overlap) as an adaptation for continuous recordings.
     steering = np.nan_to_num(sim_data[29, :])
 
     signals = {

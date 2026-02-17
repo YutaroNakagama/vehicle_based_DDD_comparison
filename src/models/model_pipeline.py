@@ -224,10 +224,14 @@ def train_pipeline(
 
     # Stage 5: Feature selection & scaling
     # SvmA uses ANFIS for internal feature selection; skip RF pre-selection
+    # SvmW uses all 8 band energies directly (Zhao et al. 2009); skip RF pre-selection
     actual_fs_method = feature_selection_method
     if model_name == "SvmA":
         actual_fs_method = "none"
         logging.info("[TRAIN] SvmA: skipping RF pre-selection (ANFIS handles feature selection)")
+    elif model_name == "SvmW":
+        actual_fs_method = "none"
+        logging.info("[TRAIN] SvmW: skipping RF pre-selection (paper uses all 8 band energies)")
 
     selected_features, scaler, X_train_fs, X_val_fs, X_test_fs = select_features_and_scale(
         X_train=X_train,
@@ -238,6 +242,17 @@ def train_pipeline(
         top_k=TOP_K_FEATURES,
         data_leak=data_leak,
     )
+
+    # SvmW (Zhao et al. 2009): band energies are already relative (sum to 1,
+    # range [0,1]).  Paper does not apply additional normalization.  Override
+    # the fitted StandardScaler with identity parameters.
+    if model_name == "SvmW":
+        import numpy as np
+        n_feat = len(selected_features)
+        scaler.mean_ = np.zeros(n_feat)
+        scaler.scale_ = np.ones(n_feat)
+        scaler.var_ = np.ones(n_feat)
+        logging.info("[TRAIN] SvmW: disabled StandardScaler (identity) per Zhao et al. 2009")
 
     selected_features = normalize_feature_names(selected_features)
     logging.info(f"[TRAIN] Selected {len(selected_features)} features.")

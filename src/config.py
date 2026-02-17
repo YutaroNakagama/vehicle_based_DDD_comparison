@@ -143,11 +143,15 @@ MODEL_CHOICES = [
 MODEL_WINDOW_CONFIG = {
     "common": {"window_sec": 3, "step_sec": 1.5},
     "SvmA":   {"window_sec": 3, "step_sec": 1.5},
-    "SvmW":   {"window_sec": 3, "step_sec": 1.5},
+    "SvmW":   {"window_sec": 10, "step_sec": 5},
     "Lstm":   {"window_sec": 1, "step_sec": 0.1},
 }
 """dict : Windowing configuration (window length and step size in seconds).
 
+SvmA uses a 3-second window with 1.5 s step (Arefnezhad et al. 2019, Sec. 2.2).
+SvmW uses a 10-second window with 5 s step (50% overlap).  Zhao et al. (2009)
+decompose entire driving sessions; longer windows better approximate session-level
+analysis for our continuous recordings while retaining sufficient samples.
 Lstm uses a 1-second rolling window with 0.1 s step
 (matching Wang et al. 2022's 10 Hz temporal resolution).
 """
