@@ -16,7 +16,7 @@ The repository supports three main experiment types:
 
 Compare imbalance handling methods in isolation (pooled training without domain generalization).
 
-**詳細な実験条件一覧:** [conditions/02-imbalance-conditions.md](conditions/02-imbalance-conditions.md)
+**詳細な実験条件一覧:** [conditions/01-imbalance-conditions.md](conditions/01-imbalance-conditions.md)
 
 **Launcher:** `scripts/hpc/launchers/launch_imbalance.sh`
 
@@ -58,7 +58,7 @@ bash scripts/hpc/launchers/launch_exp2_mixed.sh
 ```
 
 **Experiment Matrix:**
-**詳細な実験条件一覧:** [conditions/01-domain-conditions.md](conditions/01-domain-conditions.md)
+**詳細な実験条件一覧:** [conditions/02-domain-conditions.md](conditions/02-domain-conditions.md)
 
 | Parameter | Values |
 |-----------|--------|

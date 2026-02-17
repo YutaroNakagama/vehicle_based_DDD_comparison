@@ -194,10 +194,21 @@ To evaluate generalization ability by **training/fine-tuning models** on differe
 
 ### PBS Execution
 
+**Experiment 2 (RF):**
 ```bash
 qsub -v CONDITION=baseline,MODE=source_only,DISTANCE=mmd,DOMAIN=out_domain,SEED=42 \
     scripts/hpc/jobs/domain_analysis/pbs_domain_comparison_split2.sh
 ```
+
+**Experiment 3 (SvmW / SvmA / Lstm):**
+```bash
+qsub -v MODEL=SvmW,CONDITION=baseline,MODE=source_only,DISTANCE=mmd,DOMAIN=out_domain,SEED=42 \
+    scripts/hpc/jobs/train/pbs_prior_research_split2.sh
+```
+
+> Experiment 2 は RF のみ（5 条件、288 jobs）。
+> Experiment 3 は SvmW, SvmA, Lstm（各 4 条件、合計 756 jobs）で同じドメイン分割パイプラインを使用。
+> 詳細は [Reproducibility Guide](../experiments/reproducibility.md) を参照。
 
 ### Output Artifacts
 

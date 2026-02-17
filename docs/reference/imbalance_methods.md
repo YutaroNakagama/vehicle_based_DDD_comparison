@@ -39,6 +39,34 @@ A method that generates synthetic samples by linear interpolation between minori
 
 ---
 
+### 1.5 Subject-wise SMOTE (SW-SMOTE)
+
+A variant of SMOTE that applies oversampling **per subject** rather than globally across the entire dataset.
+
+**Algorithm:**
+1. For each subject's data independently:
+   - Calculate the minority/majority class ratio
+   - Apply SMOTE to the subject's data to reach the target ratio
+2. Concatenate all (original + augmented) per-subject data
+
+**Motivation:**
+In multi-subject physiological datasets, feature distributions differ across subjects.
+Global SMOTE generates synthetic samples that may blend characteristics of different subjects,
+potentially losing subject-specific patterns. SW-SMOTE preserves per-subject data distributions
+while addressing within-subject class imbalance.
+
+**Settings in this project:**
+- Applied via `--subject_wise_oversampling` flag combined with `--oversample_method smote`
+- `target_ratio`: 0.1 or 0.5 (minority-to-majority ratio after oversampling)
+
+**Implementation:** `src/data_pipeline/augmentation.py` with `--subject_wise_oversampling` flag
+
+> **Naming convention:** In launcher scripts, this method is specified as `CONDITION=smote`.
+> The resulting evaluation files use the tag prefix `imbalv3_*` (legacy naming).
+> This is distinct from `CONDITION=smote_plain` which applies standard global SMOTE.
+
+---
+
 ### 1.2 SMOTE + Tomek Links
 
 A hybrid method that removes boundary noise with Tomek Links after oversampling with SMOTE.
