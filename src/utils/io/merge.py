@@ -39,7 +39,6 @@ FEATURES_BY_MODEL = {
     },
     'Lstm': {
         "smooth_std_pe": "Timestamp",
-        "eeg": "Timestamp"
     }
 }
 

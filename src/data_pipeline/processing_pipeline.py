@@ -33,6 +33,7 @@ from src.data_pipeline.features.wavelet import wavelet_process
 from src.data_pipeline.features.physio import perclos_process, pupil_process  # currently not invoked
 from src.data_pipeline.features.eeg import eeg_process
 from src.data_pipeline.features.kss import kss_process
+from src.data_pipeline.features.event_labels import event_label_process
 
 from src.utils.io.loaders import read_subject_list
 from src.utils.io.merge import merge_process
@@ -56,10 +57,17 @@ def main_pipeline(model_name: str, use_jittering: bool = False) -> None:
             wavelet_process(subject, model_name, use_jittering=use_jittering)
         if model_name in ["common", "Lstm"]:
             smooth_std_pe_process(subject, model_name, use_jittering=use_jittering)
-        eeg_process(subject, model_name)
+        # EEG is needed for KSS labeling (non-Lstm models) but not for
+        # Lstm which uses event-based labels from EventTimes.
+        if model_name != "Lstm":
+            eeg_process(subject, model_name)
         # Optional future steps:
         # pupil_process(subject, model_name)
         # perclos_process(subject, model_name)
         merge_process(subject, model_name)
-        kss_process(subject, model_name)
+        if model_name == "Lstm":
+            # Wang et al. 2022: event-window-based binary labeling
+            event_label_process(subject, model_name)
+        else:
+            kss_process(subject, model_name)
 
