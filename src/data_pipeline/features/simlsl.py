@@ -19,6 +19,7 @@ import pandas as pd
 import logging
 from scipy.fft import fft, fftfreq
 from scipy.stats import skew, kurtosis
+from scipy.ndimage import gaussian_filter1d
 from numba import njit
 from joblib import Parallel, delayed
 
@@ -268,6 +269,12 @@ def smooth_std_pe_features(signal: np.ndarray, model_name: str) -> dict:
     Applies a sliding window to compute the standard deviation,
     prediction error, and mean values for each segment.
 
+    For Lstm (Wang et al. 2022, Section 3.2), Gaussian smoothing is applied
+    to the raw signal before computing window features.  The paper describes:
+    "noise data were filtered by 10 data points (one second) moving window.
+    Noise elimination and data averaging were conducted in a one-second time
+    window by Gaussian smoothing method."
+
     Parameters
     ----------
     signal : ndarray
@@ -281,9 +288,19 @@ def smooth_std_pe_features(signal: np.ndarray, model_name: str) -> dict:
         Dictionary containing lists of:
         - ``std_dev`` : standard deviation values.
         - ``pred_error`` : prediction error values.
-        - ``mean`` : arithmetic mean values.
+        - ``mean`` : arithmetic mean values (of smoothed signal for Lstm).
     """
     window_size, step_size = get_simlsl_window_params(model_name)
+
+    # --- Gaussian smoothing (Wang et al. 2022, Section 3.2) ---
+    # Paper: 1-second Gaussian window at 10 Hz (10 points).
+    # Our data: 60 Hz sampling → 1-second window = 60 samples.
+    # sigma = window / 6 so that ±3σ spans the window.
+    if model_name == "Lstm":
+        gauss_window_samples = int(1.0 * SAMPLE_RATE_SIMLSL)  # 60
+        sigma = gauss_window_samples / 6.0  # 10.0
+        signal = gaussian_filter1d(signal, sigma=sigma)
+
     features = {'std_dev': [], 'pred_error': [], 'mean': []}
 
     for start in range(0, len(signal) - window_size + 1, step_size):

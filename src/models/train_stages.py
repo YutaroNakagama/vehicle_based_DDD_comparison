@@ -87,12 +87,22 @@ def load_and_filter_data(
     target_subjects_resolved = []
     
     # Load all subject CSVs
-    data, _ = load_subject_csvs(
-        subject_list=subject_list,
-        model_name=model_name,
-        base_path=cfg.PROCESS_CSV_COMMON_PATH,
-        add_subject_id=True,
-    )
+    # Lstm uses model-specific processed data (Wang et al. 2022 features)
+    if model_name == "Lstm":
+        lstm_base = os.path.join(cfg.PROCESS_CSV_PATH, "Lstm")
+        data, _ = load_subject_csvs(
+            subject_list=subject_list,
+            model_name=model_name,
+            base_path=lstm_base,
+            add_subject_id=True,
+        )
+    else:
+        data, _ = load_subject_csvs(
+            subject_list=subject_list,
+            model_name=model_name,
+            base_path=cfg.PROCESS_CSV_COMMON_PATH,
+            add_subject_id=True,
+        )
     logging.info(f"[LOAD] Loaded {len(data)} rows from all subject CSVs before filtering.")
     
     # Inject subject_id if missing
