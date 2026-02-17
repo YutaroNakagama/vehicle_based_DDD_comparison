@@ -144,11 +144,26 @@ python scripts/python/train/train.py \
 ### 4.2 HPC Execution (PBS)
 
 ```bash
-# Submit jobs for each model and seed
+# 単発投入例
 qsub -v MODEL=SvmA,SEED=42 scripts/hpc/jobs/train/pbs_prior_research.sh
 qsub -v MODEL=SvmW,SEED=42 scripts/hpc/jobs/train/pbs_prior_research.sh
 qsub -v MODEL=Lstm,SEED=42 scripts/hpc/jobs/train/pbs_prior_research.sh
 ```
+
+**大規模実行（デーモンによる自動投入）:**
+
+exp3 はモデルあたり 168 ジョブ（全 504 ジョブ）あり、キュー上限があるため、
+デーモンプロセスで残りジョブを自動投入する。
+
+```bash
+# モデルごとのデーモン起動
+nohup bash scripts/hpc/launchers/auto_resub_svmw.sh &
+nohup bash scripts/hpc/launchers/auto_resub_svma.sh &
+nohup bash scripts/hpc/launchers/auto_resub_lstm.sh &
+```
+
+デーモンは残りジョブリストから未投入分を取り出し、キュー空き状況に応じて `qsub` する。
+詳細は [reproducibility.md](../experiments/reproducibility.md#デーモンによる自動投入) を参照。
 
 ### 4.3 Domain Split Experiments (Split2)
 
@@ -166,13 +181,26 @@ bash scripts/hpc/launchers/launch_prior_research_split2.sh --dry-run
 
 ### 5.1 Model Files
 
+**SvmW / SvmA:**
 ```
 models/{MODEL}/{JOB_ID}/{JOB_ID}[1]/
-├── {MODEL}_pooled_*.pkl                    # Trained model
-├── scaler_{MODEL}_pooled_*.pkl             # Feature scaler
-├── selected_features_{MODEL}_pooled_*.pkl  # Selected features
-├── feature_meta_{MODEL}_pooled_*.json      # Feature metadata
-└── threshold_{MODEL}_pooled_*.json         # Classification threshold
+├── {MODEL}_pooled_*.pkl                    # 学習済みモデル
+├── scaler_{MODEL}_pooled_*.pkl             # 特徴量スケーラー
+├── selected_features_{MODEL}_pooled_*.pkl  # 選択特徴量情報
+├── feature_meta_{MODEL}_pooled_*.json      # 特徴量メタ情報
+└── threshold_{MODEL}_pooled_*.json         # 分類閾値
+```
+
+**Lstm:**
+```
+models/Lstm/{JOB_ID}/{JOB_ID}[1]/
+├── Lstm_pooled_*.keras                      # 最終モデル（Keras 形式）
+├── Lstm_pooled_*_fold_{0-4}.keras            # Fold 別モデル（K=5）
+├── training_history_Lstm_pooled_*.json       # 学習履歴（loss, accuracy）
+├── scaler_Lstm_pooled_*.pkl                  # 特徴量スケーラー
+├── selected_features_Lstm_pooled_*.pkl       # 選択特徴量情報
+├── feature_meta_Lstm_pooled_*.json           # 特徴量メタ情報
+└── threshold_Lstm_pooled_*.json              # 分類閾値
 ```
 
 ### 5.2 Result Files
@@ -183,13 +211,16 @@ results/outputs/training/{MODEL}/{JOB_ID}/{JOB_ID}[1]/
 └── train_results_{MODEL}_pooled_*.csv   # Detailed results
 ```
 
-### 5.3 Optuna Study (SvmW only)
+### 5.3 Optuna Study (SvmW のみ)
+
+SvmW は Optuna でハイパーパラメータチューニングを行うため、study オブジェクトが保存される。
+SvmA は PSO、Lstm は K-Fold CV を使用するため Optuna 無し。
 
 ```
-models/{MODEL}/{JOB_ID}/
-├── optuna_{MODEL}_pooled_*_study.pkl         # Optuna study object
-├── optuna_{MODEL}_pooled_*_trials.csv        # Trial history
-└── optuna_{MODEL}_pooled_*_convergence.json  # Convergence data
+models/SvmW/{JOB_ID}/
+├── optuna_SvmW_pooled_*_study.pkl         # Optuna study オブジェクト
+├── optuna_SvmW_pooled_*_trials.csv        # Trial 履歴
+└── optuna_SvmW_pooled_*_convergence.json  # 収束データ
 ```
 
 ## 6. Key Differences from Proposed Methods

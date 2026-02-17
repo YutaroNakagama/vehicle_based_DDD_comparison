@@ -66,8 +66,15 @@ bash scripts/hpc/launchers/launch_exp2_mixed.sh
 | Domain groups | in_domain (44), out_domain (43) |
 | Training modes | source_only, target_only, mixed (3) |
 | Seeds | 42, 123 (2) |
-| Imbalance methods | baseline, smote_plain, smote, undersample, balanced_rf |
+| Imbalance methods | baseline, smote_plain, smote (=sw_smote), undersample, balanced_rf |
 | Target ratios | 0.1, 0.5 (for ratio-based methods) |
+
+**Conditions per job count (8 jobs per distance×domain×mode×seed combo):**
+- baseline (1)
+- smote_plain × 2 ratios (2)
+- smote (subject-wise SMOTE) × 2 ratios (2)
+- undersample × 2 ratios (2)
+- balanced_rf (1)
 
 **Training Mode Descriptions:**
 
@@ -77,7 +84,19 @@ bash scripts/hpc/launchers/launch_exp2_mixed.sh
 | target_only | Within-domain | Same domain | Same domain |
 | mixed | Multi-domain | All 87 subjects (pooled) | Target domain |
 
-**Total:** 3 × 2 × 3 × 2 × 8 conditions = **288 jobs** (192 cross/single + 96 mixed)
+**Total:** 3 × 2 × 3 × 2 × 8 conditions = **288 jobs** (192 cross/within + 96 mixed)
+
+### Condition 命名規則
+
+実験コード内の `CONDITION` パラメータとタグ名・実際の処理の対応:
+
+| CONDITION | タグ prefix | 処理内容 |
+|-----------|-------------|----------|
+| `baseline` | `baseline_domain_*` | 不均衡対策なし（class_weight のみ） |
+| `smote_plain` | `smote_plain_*` | グローバル SMOTE（全被験者プール後に適用） |
+| `smote` | `imbalv3_*` | Subject-wise SMOTE（被験者単位で SMOTE 適用） |
+| `undersample` | `undersample_rus_*` | Random Under-Sampling |
+| `balanced_rf` | `balanced_rf_*` | BalancedRandomForestClassifier（RF のみ） |
 
 ## Experiment 3: Prior Research Replication (Split2)
 
@@ -85,14 +104,18 @@ Replicate prior research baselines with domain split2 grouping.
 
 **詳細な実験条件一覧:** [conditions/03-prior-research-conditions.md](conditions/03-prior-research-conditions.md)
 
-**Launcher:** `scripts/hpc/launchers/launch_prior_research_split2.sh`
+**Launchers:**
+- Cross/Within-domain: `scripts/hpc/launchers/launch_prior_research_split2.sh`
+- Multi-domain: `scripts/hpc/launchers/launch_prior_research_mixed.sh`
 
 ```bash
-# Dry run first
+# Cross/Within-domain (source_only + target_only): 504 jobs
 bash scripts/hpc/launchers/launch_prior_research_split2.sh --dry-run
-
-# Submit all jobs
 bash scripts/hpc/launchers/launch_prior_research_split2.sh
+
+# Multi-domain (mixed): 252 jobs
+bash scripts/hpc/launchers/launch_prior_research_mixed.sh --dry-run
+bash scripts/hpc/launchers/launch_prior_research_mixed.sh
 ```
 
 **Experiment Matrix:**
@@ -102,16 +125,49 @@ bash scripts/hpc/launchers/launch_prior_research_split2.sh
 | Models | SvmW, SvmA, Lstm (3) |
 | Distance metrics | mmd, dtw, wasserstein (3) |
 | Domain groups | in_domain, out_domain (2) |
-| Training modes | source_only, target_only (2) |
+| Training modes | source_only, target_only, mixed (3) |
 | Seeds | 42, 123 (2) |
 | Imbalance methods | model-dependent (see below) |
 
-**Methods per model:**
-- SvmW: baseline, smote_plain, smote, undersample, balanced_rf (5 methods)
-- SvmA: baseline, smote_plain, smote, undersample (4 methods)
-- Lstm: baseline, smote_plain, smote, undersample (4 methods)
+**Methods per model (all models share the same 4 conditions):**
+- SvmW: baseline, smote_plain, smote (=sw_smote), undersample (4 methods → 7 jobs/combo)
+- SvmA: baseline, smote_plain, smote (=sw_smote), undersample (4 methods → 7 jobs/combo)
+- Lstm: baseline, smote_plain, smote (=sw_smote), undersample (4 methods → 7 jobs/combo)
 
-**Total:** 552 jobs (SvmW: 216 + SvmA: 168 + Lstm: 168)
+> **Note:** `balanced_rf` は RF 専用のため exp3 では使用しない。
+
+**Total:** 3 × 2 × 3 × 2 × 7 × 3 models = **756 jobs** (504 cross/within + 252 mixed)
+
+**HPC Resources per model:**
+
+| Model | CPUs | Memory | Walltime (source/target) | Walltime (mixed) |
+|-------|------|--------|--------------------------|-------------------|
+| SvmW | 8 | 16 GB | 12h (SMOTE: 24h) | 16h (SMOTE: 24h) |
+| SvmA | 8 | 32 GB | 24h (SMOTE: 48h) | 30h (SMOTE: 48h) |
+| Lstm | 4 | 32 GB | 16h (SMOTE: 24h) | 20h (SMOTE: 24h) |
+
+> **Walltime 注記:** SMOTE 系条件（smote_plain, smote）は Optuna 100 trial の各 trial で
+> SMOTE を実行するため、baseline/undersample より大幅に時間がかかる。
+> 実験中に判明したため、walltime を増加して再投入した経緯がある。
+
+### デーモンによる自動投入
+
+実験3は全 504 ジョブ（cross/within-domain）をキュー上限内で順次投入するため、
+モデルごとにデーモンプロセスを使用している。デーモンは残りジョブリストから
+未投入分を取り出し、キュー空き状況に応じて自動的に `qsub` する。
+
+```bash
+# デーモン起動例（SvmW 用）
+nohup bash scripts/hpc/launchers/auto_resub_svmw.sh &
+
+# デーモン状態確認
+ps aux | grep auto_resub
+```
+
+デーモンスクリプトはモデルごとに以下が存在する:
+- `scripts/hpc/launchers/auto_resub_svmw.sh`
+- `scripts/hpc/launchers/auto_resub_svma.sh`
+- `scripts/hpc/launchers/auto_resub_lstm.sh`
 
 ## HPC Batch Execution
 
@@ -173,15 +229,26 @@ results/
 
 ## Saved Artifacts
 
-Each experiment saves:
+Each experiment saves (model-dependent):
 
-| File | Description |
-|------|-------------|
-| `{model}_{mode}.pkl` | Trained model |
-| `scaler_{mode}.pkl` | Feature scaler |
-| `features_{mode}.json` | Selected features |
-| `metrics_*.json` | Evaluation metrics |
-| `optuna_study_*.pkl` | Optuna study object (RF/SvmW) |
+| File | Description | Models |
+|------|-------------|--------|
+| `{model}_{mode}.pkl` | Trained model (sklearn) | RF, SvmW, SvmA |
+| `{model}_*.keras` / `.h5` | Trained model (Keras) | Lstm |
+| `scaler_{mode}.pkl` | Feature scaler | All |
+| `features_{mode}.json` | Selected features | All |
+| `eval_results_*.json` | Evaluation metrics | All |
+| `training_history_*.json` | Training history | Lstm |
+| `optuna_study_*.pkl` | Optuna study object | RF, SvmW |
+
+**Expected artifact counts per successful job:**
+
+| Model | eval JSON | Model files | Other |
+|-------|-----------|-------------|-------|
+| RF / BalancedRF | 1 | 4 pkl | scaler, features, study |
+| SvmW | 1 | 4 pkl | scaler, features, study |
+| SvmA | 1 | 4 pkl | scaler, features |
+| Lstm | 1 | ~20 (keras + pkl) | history JSON |
 
 ## Reproducibility Checklist
 
