@@ -58,6 +58,7 @@ def _resolve_feature_columns(df: pd.DataFrame, include_subject_id: bool = False)
         "Timestamp", "subject_id",
         "KSS_Theta_Alpha_Beta", "KSS_Theta_Alpha_Beta_percent",
         "theta_alpha_over_beta", "theta_alpha_over_beta_label",
+        "event_label",
         "label",
     }
     if include_subject_id:
@@ -182,10 +183,17 @@ def data_split(
 
     df.columns = [_normalize_col(c) for c in df.columns]
 
-    # --- Step 1: Filter valid KSS labels ---
-    active_kss_bins = kss_bin_labels if kss_bin_labels is not None else KSS_BIN_LABELS
-    active_kss_map = kss_label_map if kss_label_map is not None else KSS_LABEL_MAP
-    df = df[df["KSS_Theta_Alpha_Beta"].isin(active_kss_bins)].copy()
+    # --- Step 1: Filter valid labels ---
+    # Lstm uses event-based labels (Wang et al. 2022); others use KSS
+    use_event_label = "event_label" in df.columns
+    if use_event_label:
+        df = df[df["event_label"].isin([0, 1])].copy()
+        label_col = "event_label"
+    else:
+        active_kss_bins = kss_bin_labels if kss_bin_labels is not None else KSS_BIN_LABELS
+        active_kss_map = kss_label_map if kss_label_map is not None else KSS_LABEL_MAP
+        df = df[df["KSS_Theta_Alpha_Beta"].isin(active_kss_bins)].copy()
+        label_col = "KSS_Theta_Alpha_Beta"
 
     # --- Step 2: Define columns ---
     exclude_cols = {
@@ -194,6 +202,7 @@ def data_split(
         "KSS_Theta_Alpha_Beta_percent",
         "theta_alpha_over_beta",
         "theta_alpha_over_beta_label",
+        "event_label",
     }
     # Conditionally exclude subject_id based on keep_subject_id flag
     if not keep_subject_id:
@@ -202,7 +211,10 @@ def data_split(
 
     # --- Step 3: Define X, y ---
     X = df[feature_columns].dropna()
-    y = df.loc[X.index, "KSS_Theta_Alpha_Beta"].replace(active_kss_map)
+    if use_event_label:
+        y = df.loc[X.index, label_col].astype(int)
+    else:
+        y = df.loc[X.index, label_col].replace(active_kss_map)
 
     # --- Step 4: Calculate split sizes ---
     total_size = len(X)
@@ -296,10 +308,16 @@ def data_split_by_subject(
 
     df.columns = [_normalize_col(c) for c in df.columns]
 
-    # Step 1: Filter rows by KSS labels and create 'label' column
-    df_filtered = df[df["KSS_Theta_Alpha_Beta"].isin(active_kss_bins)].copy()
-    df_filtered["label"] = df_filtered["KSS_Theta_Alpha_Beta"].replace(active_kss_map)
-    logging.info(f"Filtered data from {df.shape[0]} to {df_filtered.shape[0]} rows based on KSS labels.")
+    # Step 1: Filter rows by labels and create 'label' column
+    # Lstm uses event-based labels; others use KSS
+    if "event_label" in df.columns:
+        df_filtered = df[df["event_label"].isin([0, 1])].copy()
+        df_filtered["label"] = df_filtered["event_label"].astype(int)
+        logging.info(f"Filtered data from {df.shape[0]} to {df_filtered.shape[0]} rows based on event labels.")
+    else:
+        df_filtered = df[df["KSS_Theta_Alpha_Beta"].isin(active_kss_bins)].copy()
+        df_filtered["label"] = df_filtered["KSS_Theta_Alpha_Beta"].replace(active_kss_map)
+        logging.info(f"Filtered data from {df.shape[0]} to {df_filtered.shape[0]} rows based on KSS labels.")
 
     # Step 2: Define feature columns (model-aware)
     feature_columns = _resolve_feature_columns(df_filtered, include_subject_id=True)
@@ -381,14 +399,17 @@ def data_time_split_by_subject(
     active_kss_bins = kss_bin_labels if kss_bin_labels is not None else KSS_BIN_LABELS
     active_kss_map = kss_label_map if kss_label_map is not None else KSS_LABEL_MAP
 
-    # 1. KSS fileter & Binary convert
-    if "KSS_Theta_Alpha_Beta" in df.columns:
+    # 1. Label: event-based (Lstm) or KSS-based
+    if "event_label" in df.columns:
+        df = df[df["event_label"].isin([0, 1])].copy()
+        df["label"] = df["event_label"].astype(int)
+    elif "KSS_Theta_Alpha_Beta" in df.columns:
         df = df[df["KSS_Theta_Alpha_Beta"].isin(active_kss_bins)].copy()
         df["label"] = df["KSS_Theta_Alpha_Beta"].replace(active_kss_map)
     elif "KSS" in df.columns:
         df["label"] = df["KSS"]
     else:
-        raise ValueError("KSS or KSS_Theta_Alpha_Beta column not found")
+        raise ValueError("No label column found (event_label, KSS_Theta_Alpha_Beta, or KSS)")
 
     # 2. Column define (model-aware: auto-detects feature range)
     feature_columns = _resolve_feature_columns(df, include_subject_id=(subject_col in df.columns))

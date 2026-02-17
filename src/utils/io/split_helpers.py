@@ -26,6 +26,14 @@ from src.utils.io.split import (
 
 # --- Local helper to avoid circular import with model_pipeline ---
 def _prepare_df_with_label_and_features(df: pd.DataFrame, model_name: str = None):
+    # Lstm uses event-based labels (Wang et al. 2022) instead of KSS
+    if "event_label" in df.columns:
+        d = df[df["event_label"].isin([0, 1])].copy()
+        d["label"] = d["event_label"].astype(int)
+        logging.info("[LABEL] Using event-based labels (0=baseline, 1=task)")
+        features = _resolve_feature_columns(d, include_subject_id=True)
+        return d, features
+
     from src.config import KSS_BIN_LABELS, KSS_LABEL_MAP
     kss_bins = KSS_BIN_LABELS
     kss_map = KSS_LABEL_MAP
