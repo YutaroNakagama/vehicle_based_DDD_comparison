@@ -219,6 +219,7 @@ def lstm_train(
         (best_model, scaler, selected_features, results_dict)
     """
     import joblib
+    from scipy.stats import ttest_ind
     from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
     from sklearn.metrics import confusion_matrix, roc_auc_score, average_precision_score
 
@@ -236,6 +237,24 @@ def lstm_train(
     if y_test is not None and isinstance(y_test, np.ndarray):
         y_test = pd.Series(y_test)
 
+    # --- Exclude EEG features (Wang et al. 2022 uses vehicle dynamics only) ---
+    # Keep only the 15 smooth_std_pe vehicle dynamics features.
+    # EEG band power columns match the pattern "Channel_*".
+    _vehicle_feature_pattern = r'^(speed|long_acc|lat_acc|lane_offset|steering_speed)_(std_dev|pred_error|mean)$'
+    vehicle_cols = [c for c in X.columns if pd.Series([c]).str.match(_vehicle_feature_pattern).iloc[0]]
+    if vehicle_cols:
+        logging.info(
+            f"[LSTM] Selecting {len(vehicle_cols)} vehicle dynamics features "
+            f"(excluding {len(X.columns) - len(vehicle_cols)} non-vehicle columns)"
+        )
+        X = X[vehicle_cols]
+        if X_val is not None:
+            X_val = X_val[[c for c in vehicle_cols if c in X_val.columns]]
+        if X_test is not None:
+            X_test = X_test[[c for c in vehicle_cols if c in X_test.columns]]
+    else:
+        logging.warning("[LSTM] No vehicle dynamics columns matched — using all numeric columns.")
+
     # Extract numeric columns
     X_numeric = X.select_dtypes(include=[np.number])
     
@@ -245,6 +264,31 @@ def lstm_train(
     # Drop rows with NaN and align corresponding labels
     X_numeric = X_numeric.dropna()
     y_cleaned = y.loc[X_numeric.index]
+
+    # --- t-test feature selection (Wang et al. 2022, Section 4.2) ---
+    # Remove features that do NOT significantly differ between classes (p > 0.05).
+    # In the paper, steering wheel rate mean and SD were not significant.
+    selected_cols = []
+    dropped_cols = []
+    for col in X_numeric.columns:
+        class_0 = X_numeric.loc[y_cleaned == 0, col].dropna()
+        class_1 = X_numeric.loc[y_cleaned == 1, col].dropna()
+        if len(class_0) > 1 and len(class_1) > 1:
+            _, p_value = ttest_ind(class_0, class_1, equal_var=False)
+            if p_value < 0.05:
+                selected_cols.append(col)
+            else:
+                dropped_cols.append((col, p_value))
+        else:
+            selected_cols.append(col)  # keep if insufficient data for test
+
+    if dropped_cols:
+        logging.info(
+            f"[LSTM] t-test feature selection: dropped {len(dropped_cols)} features "
+            f"(p > 0.05): {[(c, f'{p:.4f}') for c, p in dropped_cols]}"
+        )
+    logging.info(f"[LSTM] Retained {len(selected_cols)} features after t-test: {selected_cols}")
+    X_numeric = X_numeric[selected_cols]
     
     # Clip values to fit within float32 range
     X_numeric = X_numeric.clip(lower=np.finfo(np.float32).min, upper=np.finfo(np.float32).max)
@@ -370,6 +414,7 @@ def lstm_train(
     logging.info(f"Training history saved to {history_path}")
     
     # --- Compute evaluation metrics using the best model ---
+    # Use only the features selected by t-test (stored in selected_cols)
     def compute_metrics(model_obj, scaler_obj, X_data, y_data, dataset_name):
         # Convert to DataFrame if numpy array
         if isinstance(X_data, np.ndarray):
@@ -377,8 +422,9 @@ def lstm_train(
         if isinstance(y_data, np.ndarray):
             y_data = pd.Series(y_data)
         
-        # Preprocess data
-        X_num = X_data.select_dtypes(include=[np.number])
+        # Use only the t-test selected vehicle dynamics columns
+        available_cols = [c for c in selected_cols if c in X_data.columns]
+        X_num = X_data[available_cols] if available_cols else X_data.select_dtypes(include=[np.number])
         X_num = X_num.replace([np.inf, -np.inf], np.nan).dropna()
         y_aligned = y_data.loc[X_num.index]
         X_num = X_num.clip(lower=np.finfo(np.float32).min, upper=np.finfo(np.float32).max)
