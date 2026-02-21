@@ -1,36 +1,80 @@
 # 実験3（先行研究再現）の結果
 
+> **改訂**: domain_train 統一版（252 ジョブ）に移行後のステータス。
+> 旧 split2 版（source_only/target_only, 504 ジョブ）のデータは参考値として記載。
+
 ---
 
 ## 実験ステータス
 
-**状態:** 実行中（2026-02-17 時点）
+**状態:** 実行中（2026-02-20 時点）
 
-### ジョブ投入・完了状況
+### ジョブ投入・完了状況（domain_train 統一版）
 
-| モデル | 目標 | 完了(exit=0) | キュー内 | 未投入 | デーモン |
-|---|---|---|---|---|---|
-| SvmW | 168 | 92 | 34 | 0 | 完了（全件投入済） |
-| SvmA | 168 | 0 | 76 | 14 | 稼働中 |
-| Lstm | 168 | 4 | 14 | 0 | 完了（全件投入済） |
+| モデル | 目標 | 完了(exit=0) | 実行中 | キュー内 | 未投入 | デーモン |
+|---|---|---|---|---|---|---|
+| SvmW | 84 | 84 | 0 | 0 | 0 | 完了 ✅ |
+| SvmA | 84 | 0 | — | — | — | 稼働中（auto_resub_unified_v2.sh） |
+| Lstm | 84 | 0 | — | — | — | 稼働中（auto_resub_unified_v2.sh） |
 
-### 条件別完了状況（SvmW）
+> SvmA / Lstm の詳細進捗は `qstat -u $USER` で確認。
 
-| 条件 | 完了 | 目標 | 状態 |
+### SvmW 完了検証（84件 exit=0）: 全件正常 ✅
+
+検証項目:
+- モデルファイル（`SvmW_*.pkl`）: 84/84 ✅
+- Optuna study（`optuna_*.pkl`）: 84/84 ✅
+- スケーラー（`scaler_*.pkl`）: 84/84 ✅
+- 評価結果 JSON（`*_within.json` + `*_cross.json`）: 168/168 ✅（84 × 2 eval types）
+- トレーニング結果 JSON: 84/84 ✅
+
+> SvmW domain_train の平均実行時間: 約15分（旧 split2 版の約5時間から大幅短縮）
+
+---
+
+## 既知の問題
+
+### 1. Lstm `seq_len` バグ（解決済み — 旧 split2 版）
+
+- **原因:** commit 278697c で `seg_len` → `seq_len` のタイプミスが混入
+- **影響:** 修正前に投入された Lstm ジョブは全て `NameError: name 'seq_len' is not defined` で学習失敗
+- **修正:** commit 49cf96e で `seq_len` → `seg_len` に修正
+- **対処:** domain_train 統一版では修正済みコードを使用
+
+### 2. SMOTE 系条件の walltime 超過（対策済み）
+
+- **原因:** SMOTE/smote_plain 条件は計算量が大きく、元の walltime では不足
+- **修正:** walltime を増加（SvmW: 24h, SvmA: 48h, Lstm: 24h）
+
+### 3. 評価結果ファイル名の上書きバグ（解決済み）
+
+- **原因:** domain_train モードでは within と cross の2回評価が実行されるが、
+  旧 `save_eval_results` は `eval_type` をファイル名に含めなかったため、
+  cross 評価が within 評価の結果ファイルを上書きしていた
+- **修正:** `src/utils/io/savers.py` に `eval_type` サフィックスを追加
+  - `eval_results_*_within.json` / `eval_results_*_cross.json` として別ファイルに保存
+- **対処:** SvmW の 83 件は手動リネーム + 1件再評価で修復済み
+
+### 4. 旧 split2 版の訓練重複問題（domain_train で解決）
+
+- **原因:** source_only と target_only で同一のモデルが2回訓練されていた
+  （例: in_domain の target_only と out_domain の source_only は同じ in_domain データで訓練）
+- **修正:** domain_train モードに統一し、各ドメインで1回のみ訓練、2回評価
+
+---
+
+## 旧 split2 版の参考データ（2026-02-17 時点）
+
+<details>
+<summary>旧 split2 版のステータス（参考）</summary>
+
+### ジョブ投入・完了状況（旧 split2 版）
+
+| モデル | 目標 | 完了(exit=0) | 備考 |
 |---|---|---|---|
-| baseline | 24 | 24 | ✅ 完了 |
-| undersample | 48 | 48 | ✅ 完了 |
-| smote_plain | 20 | 48 | 実行中 |
-| smote | 0 | 48 | 未着手 |
-
-### 条件別完了状況（Lstm）
-
-| 条件 | 完了 | 目標 | 状態 |
-|---|---|---|---|
-| baseline | 4 | 24 | 実行中（14件キュー内） |
-| smote_plain | 0 | 48 | 未着手 |
-| smote | 0 | 48 | 未着手 |
-| undersample | 0 | 48 | 未着手 |
+| SvmW | 168 | 92 | domain_train 統一版に移行 |
+| SvmA | 168 | 0 | domain_train 統一版に移行 |
+| Lstm | 168 | 4 | domain_train 統一版に移行 |
 
 ### 蓄積 eval 結果数（split2、旧ジョブ含む）
 
@@ -41,45 +85,9 @@
 | Lstm | 323 | 168 |
 
 > 目標を超える値は、旧設定・旧コードでのジョブ結果（コード修正前）を含むため。
-> 最終分析では修正後（commit 49cf96e 以降）の結果のみを使用する。
+> 最終分析では domain_train 統一版の結果のみを使用する。
 
----
-
-## 既知の問題
-
-### 1. Lstm `seq_len` バグ（解決済み）
-
-- **原因:** commit 278697c で `seg_len` → `seq_len` のタイプミスが混入
-- **影響:** 修正前に投入された Lstm ジョブは全て `NameError: name 'seq_len' is not defined` で学習失敗
-- **修正:** commit 49cf96e で `seq_len` → `seg_len` に修正
-- **対処:** 新デーモンで全件再投入済み。旧バグジョブ3件（14849974, 14849976, 14849979）は exit=0 だがモデル未生成
-
-### 2. SMOTE 系条件の walltime 超過（解決済み）
-
-- **原因:** SMOTE/smote_plain 条件は計算量が大きく、元の walltime では不足
-- **修正:** commit 49cf96e でジョブリスト生成スクリプトの walltime を増加
-  - SvmW: 12h → 24h
-  - SvmA: 24h → 48h
-  - Lstm: 16h → 24h
-
----
-
-## 出力検証結果（2026-02-17 時点）
-
-### SvmW（92件 exit=0）: 全件正常 ✅
-
-検証項目:
-- モデルファイル（`SvmW_*.pkl`）: 92/92 ✅
-- Optuna study（`optuna_*.pkl`）: 92/92 ✅
-- スケーラー（`scaler_*.pkl`）: 92/92 ✅
-- 評価結果 JSON/CSV: 92/92 ✅
-
-### Lstm（7件 exit=0）: 4件正常 / 3件不良
-
-- 正常4件: モデル（`.keras`）+ fold別モデル×5 + training_history + eval JSON/CSV 全て揃い ✅
-- 不良3件: 旧 `seq_len` バグによる学習失敗。修正済みコードで再投入済み
-
-### SvmA: 修正後の完了ジョブなし（実行中）
+</details>
 
 ---
 

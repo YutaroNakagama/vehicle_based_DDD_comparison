@@ -175,7 +175,11 @@ To evaluate generalization ability by **training/fine-tuning models** on differe
 |------|-------------|
 | **source_only** | Cross-domain: Train on the *opposite* domain, evaluate on the target domain |
 | **target_only** | Within-domain: Train and evaluate within the *same* domain |
+| **domain_train** | Unified: Train on target domain (70/15/15 split), evaluate on both within-domain test and cross-domain test |
 | **mixed** | Multi-domain: Train on *all 87 subjects* (pooled), evaluate on the target domain |
+
+> **Note:** `domain_train` は実験3（先行研究再現）で使用。source_only/target_only を統一し、
+> 各ドメインで1回の訓練 + 2回の評価（within/cross）を行う。ジョブ数が半減する。
 
 ### Split2 Domain Logic
 
@@ -185,6 +189,8 @@ To evaluate generalization ability by **training/fine-tuning models** on differe
 | source_only | in_domain | out_domain (43 subjects) | in_domain (44 subjects) |
 | target_only | out_domain | out_domain (43 subjects) | out_domain (43 subjects) |
 | target_only | in_domain | in_domain (44 subjects) | in_domain (44 subjects) |
+| domain_train | out_domain | out_domain train (70%) | within: out_domain test (15%), cross: in_domain test (15%) |
+| domain_train | in_domain | in_domain train (70%) | within: in_domain test (15%), cross: out_domain test (15%) |
 | mixed | out_domain | All subjects (87) | out_domain (43 subjects) |
 | mixed | in_domain | All subjects (87) | in_domain (44 subjects) |
 
@@ -200,14 +206,19 @@ qsub -v CONDITION=baseline,MODE=source_only,DISTANCE=mmd,DOMAIN=out_domain,SEED=
     scripts/hpc/jobs/domain_analysis/pbs_domain_comparison_split2.sh
 ```
 
-**Experiment 3 (SvmW / SvmA / Lstm):**
+**Experiment 3 (SvmW / SvmA / Lstm — domain_train 統一版):**
 ```bash
-qsub -v MODEL=SvmW,CONDITION=baseline,MODE=source_only,DISTANCE=mmd,DOMAIN=out_domain,SEED=42 \
-    scripts/hpc/jobs/train/pbs_prior_research_split2.sh
+# CPU (SvmW/SvmA)
+qsub -v MODEL=SvmW,CONDITION=baseline,DISTANCE=mmd,DOMAIN=out_domain,SEED=42 \
+    scripts/hpc/jobs/train/pbs_prior_research_unified.sh
+
+# GPU (Lstm)
+qsub -v MODEL=Lstm,CONDITION=baseline,DISTANCE=mmd,DOMAIN=out_domain,SEED=42 \
+    scripts/hpc/jobs/train/pbs_prior_research_unified_gpu.sh
 ```
 
 > Experiment 2 は RF のみ（5 条件、288 jobs）。
-> Experiment 3 は SvmW, SvmA, Lstm（各 4 条件、合計 756 jobs）で同じドメイン分割パイプラインを使用。
+> Experiment 3 は SvmW, SvmA, Lstm（各 4 条件、合計 252 jobs）で domain_train モードを使用。
 > 詳細は [Reproducibility Guide](../experiments/reproducibility.md) を参照。
 
 ### Output Artifacts

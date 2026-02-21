@@ -144,38 +144,51 @@ python scripts/python/train/train.py \
 ### 4.2 HPC Execution (PBS)
 
 ```bash
-# 単発投入例
-qsub -v MODEL=SvmA,SEED=42 scripts/hpc/jobs/train/pbs_prior_research.sh
-qsub -v MODEL=SvmW,SEED=42 scripts/hpc/jobs/train/pbs_prior_research.sh
-qsub -v MODEL=Lstm,SEED=42 scripts/hpc/jobs/train/pbs_prior_research.sh
+# 単発投入例（CPU — SvmW/SvmA）
+qsub -N "prior_SvmW_test" \
+     -l select=1:ncpus=8:mem=16gb -l walltime=12:00:00 -q SINGLE \
+     -v MODEL=SvmW,CONDITION=baseline,DISTANCE=mmd,DOMAIN=out_domain,SEED=42 \
+     scripts/hpc/jobs/train/pbs_prior_research_unified.sh
+
+# 単発投入例（GPU — Lstm）
+qsub -N "prior_Lstm_test" \
+     -l select=1:ncpus=4:mem=16gb:ngpus=1 -l walltime=16:00:00 -q GPU-1 \
+     -v MODEL=Lstm,CONDITION=baseline,DISTANCE=mmd,DOMAIN=out_domain,SEED=42 \
+     scripts/hpc/jobs/train/pbs_prior_research_unified_gpu.sh
 ```
 
-**大規模実行（デーモンによる自動投入）:**
+**大規模実行（統一デーモンによる自動投入）:**
 
-exp3 はモデルあたり 168 ジョブ（全 504 ジョブ）あり、キュー上限があるため、
-デーモンプロセスで残りジョブを自動投入する。
+exp3 はモデルあたり 84 ジョブ（全 252 ジョブ）あり、キュー上限があるため、
+統一デーモンプロセスで残りジョブを自動投入する。
 
 ```bash
-# モデルごとのデーモン起動
-nohup bash scripts/hpc/launchers/auto_resub_svmw.sh &
-nohup bash scripts/hpc/launchers/auto_resub_svma.sh &
-nohup bash scripts/hpc/launchers/auto_resub_lstm.sh &
+# 統一デーモン起動（全モデル対応、GPU キュー自動振り分け）
+nohup bash scripts/hpc/launchers/auto_resub_unified_v2.sh &
 ```
 
 デーモンは残りジョブリストから未投入分を取り出し、キュー空き状況に応じて `qsub` する。
+Lstm は GPU キュー（GPU-1, GPU-1A, GPU-S, GPU-L, GPU-LA）に自動ルーティングされる。
 詳細は [reproducibility.md](../experiments/reproducibility.md#デーモンによる自動投入) を参照。
 
-### 4.3 Domain Split Experiments (Split2)
+### 4.3 Domain Split Experiments (domain_train)
+
+domain_train モードでは各ドメインのデータを 70/15/15（train/val/test）に分割し、
+1回の訓練（同ドメインの train/val 使用）に対して2回の評価を実行する:
+- **within**: 同ドメインの test(15%) で評価
+- **cross**: 逆ドメインの test(15%) で評価
 
 ```bash
-# Prior research models with domain-based split2 grouping
-bash scripts/hpc/launchers/launch_prior_research_split2.sh
+# 全252ジョブを一括投入
+bash scripts/hpc/launchers/launch_prior_research_unified.sh
 
 # Dry run to preview jobs
-bash scripts/hpc/launchers/launch_prior_research_split2.sh --dry-run
+bash scripts/hpc/launchers/launch_prior_research_unified.sh --dry-run
 ```
 
-**PBS Job Script:** `scripts/hpc/jobs/train/pbs_prior_research_split2.sh`
+**PBS Job Scripts:**
+- CPU (SvmW/SvmA): `scripts/hpc/jobs/train/pbs_prior_research_unified.sh`
+- GPU (Lstm): `scripts/hpc/jobs/train/pbs_prior_research_unified_gpu.sh`
 
 ## 5. Output Artifacts
 
@@ -245,7 +258,7 @@ All models show significant validation-test performance gap due to:
 
 - **Random seeds**: Set via `--seed` parameter
 - **Thread limits**: Controlled via environment variables in PBS script
-- **TensorFlow**: Forced to CPU mode for reproducibility
+- **TensorFlow**: Lstm は GPU モード（A40/A100）で実行。`configure_gpu()` で GPU メモリ成長を設定
 
 ## 8. References
 
