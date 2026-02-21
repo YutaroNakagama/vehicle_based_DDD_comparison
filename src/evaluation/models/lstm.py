@@ -14,7 +14,7 @@ from tensorflow.keras.layers import Layer
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
 
 from src.config import MODEL_PKL_PATH, LSTM_SEGMENT_TIMESTEPS
-from src.models.architectures.lstm import create_segments
+from src.models.architectures.lstm import create_segments, configure_gpu
 from src.evaluation.metrics import (
     calculate_extended_metrics,
     calculate_class_specific_metrics,
@@ -121,6 +121,11 @@ def lstm_eval(
         - ``"confusion_matrix"`` : list of list of int
             Confusion matrix as a nested list.
     """
+
+    # ------------------------------------------------------------------
+    # Configure GPU if available
+    # ------------------------------------------------------------------
+    configure_gpu()
 
     # ------------------------------------------------------------------
     # Standalone mode: load model/scaler from disk & preprocess
