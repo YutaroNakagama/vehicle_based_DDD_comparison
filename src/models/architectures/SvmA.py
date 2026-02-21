@@ -32,6 +32,7 @@ from sklearn.preprocessing import MinMaxScaler
 from pyswarm import pso
 
 from src.config import MODEL_PKL_PATH
+from src.models.sampling.oversampling import apply_oversampling
 
 # ---------------------------------------------------------------------------
 # SvmA-specific KSS mapping (Arefnezhad et al. 2019)
@@ -478,11 +479,11 @@ def SvmA_train(
     y_test : pandas.Series, optional
         Test labels for final evaluation.
     use_oversampling : bool, optional
-        Whether to apply oversampling (reserved for future use).
+        Whether to apply oversampling/undersampling to training data.
     oversample_method : str, optional
-        Oversampling method name (reserved for future use).
+        Oversampling method (e.g., "smote", "undersample_rus").
     target_ratio : float, optional
-        Target minority ratio (reserved for future use).
+        Target minority/majority ratio for sampling.
 
     Returns
     -------
@@ -510,6 +511,23 @@ def SvmA_train(
             columns=X_test.columns, index=X_test.index,
         )
     logging.info("[SvmA] Applied min-max [0,1] normalization (paper Sec.2.2)")
+
+    # --- Apply oversampling/undersampling BEFORE optimization ---
+    if use_oversampling:
+        logging.info(
+            f"[SvmA] Applying {oversample_method} (ratio={target_ratio}) "
+            f"to {len(X_train_normed)} training samples"
+        )
+        X_train_normed, y_train = apply_oversampling(
+            X_train_normed, y_train,
+            method=oversample_method,
+            target_ratio=target_ratio,
+            random_state=42,
+        )
+        logging.info(
+            f"[SvmA] After {oversample_method}: {len(X_train_normed)} samples, "
+            f"class dist: {np.bincount(y_train.values.astype(int) if hasattr(y_train, 'values') else y_train.astype(int))}"
+        )
 
     optimal_mf_params, best_C, best_gamma, pso_history, anfis = optimize_svm_anfis(
         X_train_normed, y_train, X_val_normed, y_val, indices_df,
