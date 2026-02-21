@@ -44,7 +44,7 @@ def resolve_target_subjects_from_tag(
     target_subjects = []
     
     # Only resolve for modes that use target groups
-    if mode not in ["source_only", "target_only", "mixed"]:
+    if mode not in ["source_only", "target_only", "mixed", "domain_train"]:
         logging.info(f"[TARGET] Mode '{mode}' does not require target resolution.")
         return cli_target_subjects or []
     
