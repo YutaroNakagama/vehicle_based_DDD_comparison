@@ -86,8 +86,8 @@ get_resources() {
     
     case "$model" in
         SvmA)
-            # PSO最適化で時間がかかる
-            echo "ncpus=8:mem=32gb 24:00:00 $queue"
+            # PSO最適化で時間がかかる（実測: 20-43時間）
+            echo "ncpus=8:mem=32gb 48:00:00 $queue"
             ;;
         SvmW)
             # Optuna最適化
