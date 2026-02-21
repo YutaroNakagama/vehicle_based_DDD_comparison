@@ -171,6 +171,23 @@ def load_and_filter_data(
             f"Evaluation target: {len(target_subjects_resolved)} subjects."
         )
     
+    elif mode == "domain_train":
+        # Unified domain training: restrict to domain subjects (same as target_only)
+        target_subjects_resolved = resolve_target_subjects_from_tag(
+            tag=tag,
+            mode=mode,
+            cli_target_subjects=target_subjects,
+        )
+        
+        if target_subjects_resolved:
+            data = data[data["subject_id"].isin(target_subjects_resolved)].reset_index(drop=True)
+            subject_list = list(dict.fromkeys(target_subjects_resolved))
+            logging.info(
+                f"[LOAD] domain_train: Restricted to {len(data)} samples from {len(subject_list)} subjects."
+            )
+        else:
+            logging.warning("[LOAD] domain_train: No target_subjects resolved. No filtering applied.")
+    
     elif mode == "joint_train":
         # Combine source and target subjects
         if target_subjects:

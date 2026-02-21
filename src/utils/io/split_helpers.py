@@ -293,3 +293,103 @@ def prepare_data_split(
         )
 
     return X_train, X_val, X_test, y_train, y_val, y_test
+
+# ==========================================================
+#  Domain-train split helper (unified within/cross-domain)
+# ==========================================================
+
+def split_data_domain_train(
+    subjects: List[str],
+    model_name: str,
+    seed: int,
+    train_ratio: float = 0.70,
+    val_ratio: float = 0.15,
+    test_ratio: float = 0.15,
+    time_stratify_tolerance: float = 0.02,
+    time_stratify_window: float = 0.10,
+    time_stratify_min_chunk: int = 100,
+    keep_subject_id: bool = False,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
+    """Split domain subjects' data chronologically into train/val/test.
+
+    Used for ``domain_train`` mode where all splits come from the same
+    domain group.  Default ratios: 70 / 15 / 15.
+
+    The same function is called for both **training** and **evaluation**
+    so that identical index partitions are reproduced (deterministic
+    time-sorted split, no randomness).
+
+    Parameters
+    ----------
+    subjects : list of str
+        Subject IDs belonging to a single domain group.
+    model_name : str
+        Model name (for KSS mapping and data directory selection).
+    seed : int
+        Random seed (kept for API consistency; the split itself is
+        deterministic given the sort order).
+    train_ratio : float, default=0.70
+        Fraction of data for training.
+    val_ratio : float, default=0.15
+        Fraction of data for validation.
+    test_ratio : float, default=0.15
+        Fraction of data for testing.
+    time_stratify_tolerance : float, default=0.02
+        Class-ratio tolerance for boundary search.
+    time_stratify_window : float, default=0.10
+        Window proportion for boundary search.
+    time_stratify_min_chunk : int, default=100
+        Minimum rows per split.
+    keep_subject_id : bool, default=False
+        If True, retain ``subject_id`` in X_train (for subject-wise oversampling).
+
+    Returns
+    -------
+    tuple
+        (X_train, X_val, X_test, y_train, y_val, y_test)
+    """
+    base_dir = Path("data/processed")
+    if (base_dir / model_name).exists() and os.listdir(base_dir / model_name):
+        data_dir = base_dir / model_name
+    elif (base_dir / "common").exists() and os.listdir(base_dir / "common"):
+        data_dir = base_dir / "common"
+    else:
+        raise FileNotFoundError(
+            f"No valid processed data directory for model '{model_name}'."
+        )
+
+    data, _ = load_subject_csvs(
+        subjects, model_name=None, add_subject_id=True, base_path=str(data_dir)
+    )
+
+    df_lab, feature_columns = _prepare_df_with_label_and_features(
+        data, model_name=model_name
+    )
+
+    idx_tr, idx_va, idx_te = time_stratified_three_way_split(
+        df_lab,
+        label_col="label",
+        sort_keys=("subject_id", "Timestamp"),
+        train_ratio=train_ratio,
+        val_ratio=val_ratio,
+        test_ratio=test_ratio,
+        tolerance=time_stratify_tolerance,
+        window_prop=time_stratify_window,
+        min_chunk=time_stratify_min_chunk,
+    )
+
+    drop_cols = [] if keep_subject_id else ["subject_id"]
+    X_train = df_lab.loc[idx_tr, feature_columns].drop(columns=drop_cols, errors="ignore")
+    X_val   = df_lab.loc[idx_va, feature_columns].drop(columns=["subject_id"], errors="ignore")
+    X_test  = df_lab.loc[idx_te, feature_columns].drop(columns=["subject_id"], errors="ignore")
+    y_train = df_lab.loc[idx_tr, "label"]
+    y_val   = df_lab.loc[idx_va, "label"]
+    y_test  = df_lab.loc[idx_te, "label"]
+
+    logging.info(
+        f"[DOMAIN_TRAIN] Split {len(subjects)} subjects "
+        f"({train_ratio:.0%}/{val_ratio:.0%}/{test_ratio:.0%}): "
+        f"train={len(y_train)}, val={len(y_val)}, test={len(y_test)}"
+    )
+
+    return X_train, X_val, X_test, y_train, y_val, y_test

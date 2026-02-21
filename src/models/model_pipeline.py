@@ -26,7 +26,7 @@ from src.models.train_stages import (
     prepare_source_only_splits,
     prepare_mixed_splits,
 )
-from src.utils.io.split_helpers import split_data, log_split_ratios
+from src.utils.io.split_helpers import split_data, split_data_domain_train, log_split_ratios
 from src.utils.io.feature_utils import normalize_feature_names
 from src.utils.io.preprocessing import clean_feature_dataframe, align_train_val_test_columns
 from src.utils.io.savers import save_artifacts, save_training_results
@@ -142,6 +142,22 @@ def train_pipeline(
             seed=seed,
             target_subjects=target_subjects_resolved or target_subjects or [],
             time_stratify_labels=time_stratify_labels,
+            time_stratify_tolerance=time_stratify_tolerance,
+            time_stratify_window=time_stratify_window,
+            time_stratify_min_chunk=time_stratify_min_chunk,
+            keep_subject_id=(use_oversampling and subject_wise_oversampling),
+        )
+    elif mode == "domain_train":
+        domain_subjects = target_subjects_resolved or target_subjects or []
+        if not domain_subjects:
+            raise ValueError("[DOMAIN_TRAIN] No domain subjects resolved. Cannot proceed.")
+        X_train, X_val, X_test, y_train, y_val, y_test = split_data_domain_train(
+            subjects=domain_subjects,
+            model_name=model_name,
+            seed=seed,
+            train_ratio=0.70,
+            val_ratio=0.15,
+            test_ratio=0.15,
             time_stratify_tolerance=time_stratify_tolerance,
             time_stratify_window=time_stratify_window,
             time_stratify_min_chunk=time_stratify_min_chunk,
