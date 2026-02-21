@@ -318,6 +318,12 @@ def save_eval_results(
         # Legacy format fallback
         base_name = f"eval_results_{model_name}_{mode}_rank_{dist}_mean_{level}"
 
+    # --- append eval_type suffix for domain_train mode ---
+    # Prevents cross eval from overwriting within eval (and vice versa)
+    eval_type = results.get("eval_type")
+    if eval_type:
+        base_name = f"{base_name}_{eval_type}"
+
     out_path_json = os.path.join(save_dir, f"{base_name}.json")
     out_path_csv  = os.path.join(save_dir, f"{base_name}.csv")
 

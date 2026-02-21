@@ -39,7 +39,7 @@ from src.utils.io.loaders import load_subjects_and_data, load_model_and_scaler
 from src.utils.io.savers import save_eval_results
 from src.utils.io.preprocessing import prepare_evaluation_features
 from src.utils.io.target_resolution import resolve_target_subjects_from_tag
-from src.utils.io.split_helpers import split_data, log_split_ratios
+from src.utils.io.split_helpers import split_data, split_data_domain_train, log_split_ratios
 from src.evaluation.threshold import (
     load_or_optimize_threshold,
     extract_jobid_components,
@@ -61,6 +61,7 @@ def eval_pipeline(
     jobid: Optional[str] = None,
     target_file: str = None,
     threshold: Optional[float] = None,
+    eval_type: Optional[str] = None,
     **kwargs,
 ) -> None:
     """Evaluate a trained DDD model and save metrics.
@@ -70,7 +71,7 @@ def eval_pipeline(
     model : str
         Model name (e.g., "RF", "SvmA", "Lstm").
     mode : str
-        Experiment mode (e.g., "pooled", "target_only", "source_only").
+        Experiment mode (e.g., "pooled", "target_only", "source_only", "domain_train").
     tag : str, optional
         Experiment tag (e.g., "rank_dtw_mean_high").
     sample_size : int, optional
@@ -87,13 +88,16 @@ def eval_pipeline(
         Path to target subjects file.
     threshold : float, optional
         Custom prediction threshold (0.0-1.0). If None, uses default or optimized threshold.
+    eval_type : str, optional
+        Evaluation type for domain_train mode: "within" or "cross".
+        Used for labelling results only.
 
     Returns
     -------
     None
         Evaluation metrics are saved to results/evaluation/<model>/ directory.
     """
-    logging.info(f"[EVAL] Start {model} ({mode}) | tag={tag} | threshold={threshold}")
+    logging.info(f"[EVAL] Start {model} ({mode}) | tag={tag} | threshold={threshold} | eval_type={eval_type}")
 
     # Stage 1: Load subjects and dataset
     subjects, model_name, data = load_subjects_and_data(
@@ -115,7 +119,23 @@ def eval_pipeline(
     )
 
     # Stage 4: Split data for evaluation
-    if mode in ["source_only", "target_only", "mixed"] and len(target_subjects) > 0:
+    if mode == "domain_train" and len(target_subjects) > 0:
+        # Domain-train: split target subjects with 70/15/15 ratios
+        # The same deterministic split is used in training, so val/test match
+        _, X_val, X_test, _, y_val, y_test = split_data_domain_train(
+            subjects=target_subjects,
+            model_name=model_name,
+            seed=seed,
+            train_ratio=0.70,
+            val_ratio=0.15,
+            test_ratio=0.15,
+        )
+        et = eval_type or "unknown"
+        log_split_ratios(
+            y_val, y_val, y_test,
+            tag=f"eval|domain_train|{et}|tag={tag}"
+        )
+    elif mode in ["source_only", "target_only", "mixed"] and len(target_subjects) > 0:
         X_t_tr, X_val, X_test, y_t_tr, y_val, y_test = split_data(
             subject_split_strategy="subject_time_split",
             subject_list=subjects,
@@ -256,6 +276,7 @@ def eval_pipeline(
         "tag": save_tag,  # Use save_tag with threshold suffix
         "original_tag": tag,  # Keep original tag for reference
         "custom_threshold": threshold,  # Record the custom threshold used
+        "eval_type": eval_type,  # "within" or "cross" for domain_train mode
         "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "distance": distance,
         "level": level,
@@ -272,4 +293,4 @@ def eval_pipeline(
         out_dir=cfg.RESULTS_EVALUATION_PATH
     )
 
-    logging.info(f"[EVAL DONE] {model} | n={len(subjects)} | AUC={result.get('auc')} | F1={result.get('f1')}")
+    logging.info(f"[EVAL DONE] {model} | n={len(subjects)} | AUC={result.get('roc_auc')} | F1={result.get('f1_pos')}")

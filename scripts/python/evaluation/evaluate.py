@@ -72,6 +72,14 @@ def main():
     add_common_arguments(parser)
     add_eval_arguments(parser)
 
+    # Domain-train evaluation type
+    parser.add_argument(
+        "--eval_type",
+        choices=["within", "cross"],
+        default=None,
+        help="Evaluation type for domain_train mode: 'within' (same domain test) or 'cross' (opposite domain test).",
+    )
+
     args = parser.parse_args()
     setup_logging()
 
@@ -99,6 +107,7 @@ def main():
             jobid=args.jobid,
             target_file=args.target_file,
             threshold=args.threshold,
+            eval_type=getattr(args, 'eval_type', None),
         )
     except Exception as e:
         import logging
