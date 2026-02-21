@@ -19,6 +19,7 @@ import tensorflow as tf
 
 from src.config import MODEL_PKL_PATH, LSTM_SEGMENT_TIMESTEPS
 from src.utils.io.savers import save_artifacts
+from src.models.sampling.oversampling import apply_oversampling
 
 logger = logging.getLogger(__name__)
 
@@ -230,9 +231,10 @@ def lstm_train(
     use_oversampling : bool, default=False
         Whether to apply oversampling to the training data.
     oversample_method : str, default="smote"
-        Oversampling method (currently unused; reserved for future use).
+        Oversampling method (e.g., "smote", "undersample_rus").
+        Applied per-fold on the training segments after reshaping 3D→2D.
     target_ratio : float, default=0.33
-        Target minority/majority ratio (currently unused; reserved for future use).
+        Target minority/majority ratio for oversampling.
 
     Returns
     -------
@@ -333,11 +335,17 @@ def lstm_train(
     )
 
     # --- Compute class weights for imbalanced data ---
+    # When oversampling is applied, the data distribution changes,
+    # so class_weight is computed on the original (pre-oversampling) segments.
+    # However, when oversampling IS used, we skip class_weight in model.fit()
+    # to avoid double-adjusting for imbalance.
     from sklearn.utils.class_weight import compute_class_weight
     classes = np.unique(y_seq_all)
     cw = compute_class_weight('balanced', classes=classes, y=y_seq_all)
     class_weight_dict = {int(c): float(w) for c, w in zip(classes, cw)}
     logging.info(f"[LSTM] Class weights: {class_weight_dict}")
+    # Only use class_weight during training when NOT applying oversampling
+    fit_class_weight = None if use_oversampling else class_weight_dict
 
     kf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
     fold_f1_scores = []
@@ -351,6 +359,33 @@ def lstm_train(
         X_test_fold = X_seq_all[test_idx]
         y_train_fold = y_seq_all[train_idx]
         y_test_fold = y_seq_all[test_idx]
+
+        # --- Apply oversampling/undersampling to training fold ---
+        if use_oversampling:
+            n_seg, n_ts, n_feat = X_train_fold.shape
+            logging.info(
+                f"[LSTM] Fold {fold_no}: applying {oversample_method} "
+                f"(ratio={target_ratio}) to {n_seg} training segments"
+            )
+            # Reshape 3D (segments, timesteps, features) → 2D (segments, timesteps*features)
+            X_flat = X_train_fold.reshape(n_seg, n_ts * n_feat)
+            X_flat_df = pd.DataFrame(X_flat)
+            y_series = pd.Series(y_train_fold)
+
+            X_resampled, y_resampled = apply_oversampling(
+                X_flat_df, y_series,
+                method=oversample_method,
+                target_ratio=target_ratio,
+                random_state=42 + fold_no,  # Vary seed per fold
+            )
+            # Reshape back to 3D
+            X_train_fold = X_resampled.values.reshape(-1, n_ts, n_feat).astype(np.float32)
+            y_train_fold = y_resampled.values
+            logging.info(
+                f"[LSTM] Fold {fold_no}: after {oversample_method}: "
+                f"{n_seg} → {len(X_train_fold)} segments, "
+                f"class dist: {np.bincount(y_train_fold.astype(int))}"
+            )
 
         model = build_lstm_model((seg_len, X_train_fold.shape[2]))
         early_stopping = EarlyStopping(
@@ -366,7 +401,7 @@ def lstm_train(
             validation_split=0.2,
             verbose=1,
             callbacks=[early_stopping],
-            class_weight=class_weight_dict,
+            class_weight=fit_class_weight,
         )
         
         # Save training history for convergence visualization
