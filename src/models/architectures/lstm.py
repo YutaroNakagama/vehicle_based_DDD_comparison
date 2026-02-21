@@ -20,6 +20,27 @@ import tensorflow as tf
 from src.config import MODEL_PKL_PATH, LSTM_SEGMENT_TIMESTEPS
 from src.utils.io.savers import save_artifacts
 
+logger = logging.getLogger(__name__)
+
+
+def configure_gpu():
+    """Configure GPU memory growth to avoid allocating all GPU memory at once.
+
+    When a GPU is available, enables memory growth so TensorFlow allocates
+    memory incrementally rather than grabbing the entire GPU memory.
+    Falls back gracefully to CPU if no GPU is detected.
+    """
+    gpus = tf.config.list_physical_devices("GPU")
+    if gpus:
+        try:
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+            logger.info("GPU detected: %s — memory growth enabled", gpus)
+        except RuntimeError as e:
+            logger.warning("GPU config error (must be set before init): %s", e)
+    else:
+        logger.info("No GPU detected — using CPU")
+
 
 class AttentionLayer(Layer):
     """Bahdanau-style additive attention with 48-unit hidden projection.
@@ -222,6 +243,9 @@ def lstm_train(
     from scipy.stats import ttest_ind
     from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
     from sklearn.metrics import confusion_matrix, roc_auc_score, average_precision_score
+
+    # Configure GPU if available (safe to call multiple times)
+    configure_gpu()
 
     # Convert to DataFrame if numpy array
     if isinstance(X, np.ndarray):
