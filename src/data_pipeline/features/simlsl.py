@@ -191,8 +191,12 @@ def extract_statistical_features(signal: np.ndarray, prefix: str = "") -> dict:
     band_sum = np.sum(spectrum[band]) + np.finfo(float).eps
 
     features = {
-        f'{prefix}Range': np.ptp(signal),
+        f'{prefix}Mean': np.mean(signal),
+        f'{prefix}Variance': np.var(signal),
         f'{prefix}StdDev': np.std(signal),
+        f'{prefix}Max': np.max(signal),
+        f'{prefix}Min': np.min(signal),
+        f'{prefix}Range': np.ptp(signal),
         f'{prefix}Energy': np.sum(signal ** 2),
         f'{prefix}ZeroCrossingRate': np.mean(np.diff(np.sign(signal)) != 0),
         f'{prefix}Quartile25': np.percentile(signal, 25),
