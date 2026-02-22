@@ -49,7 +49,6 @@ export BLIS_NUM_THREADS=1
 export TF_NUM_INTRAOP_THREADS=1
 export TF_NUM_INTEROP_THREADS=1
 export TF_CPP_MIN_LOG_LEVEL=2
-export CUDA_VISIBLE_DEVICES=""  # Force CPU for reproducibility
 
 # Parameters
 MODEL="${MODEL:-SvmW}"
@@ -61,6 +60,13 @@ SEED="${SEED:-42}"
 RANKING="${RANKING:-knn}"
 RUN_EVAL="${RUN_EVAL:-true}"
 export N_TRIALS_OVERRIDE="${N_TRIALS:-100}"
+
+# GPU control: Lstm uses GPU if available, others force CPU
+if [[ "$MODEL" == "Lstm" ]]; then
+    echo "[INFO] Lstm model — GPU enabled (if available)"
+else
+    export CUDA_VISIBLE_DEVICES=""  # Force CPU for SvmA/SvmW
+fi
 
 # Validate MODEL
 if [[ "$MODEL" != "SvmA" && "$MODEL" != "SvmW" && "$MODEL" != "Lstm" ]]; then

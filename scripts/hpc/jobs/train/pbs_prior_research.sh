@@ -13,9 +13,17 @@
 # PBS Job Script: Prior Research Replication (SvmA, SvmW, Lstm)
 # =============================================================================
 # Usage:
-#   qsub -v MODEL=SvmA,SEED=42 scripts/hpc/jobs/train/pbs_prior_research.sh
-#   qsub -v MODEL=SvmW,SEED=42 scripts/hpc/jobs/train/pbs_prior_research.sh
-#   qsub -v MODEL=Lstm,SEED=42 scripts/hpc/jobs/train/pbs_prior_research.sh
+#   qsub -v MODEL=SvmA,SEED=42,CONDITION=baseline scripts/hpc/jobs/train/pbs_prior_research.sh
+#   qsub -v MODEL=SvmW,SEED=42,CONDITION=smote_plain,RATIO=0.5 scripts/hpc/jobs/train/pbs_prior_research.sh
+#   qsub -v MODEL=Lstm,SEED=42,CONDITION=smote,RATIO=0.5 scripts/hpc/jobs/train/pbs_prior_research.sh
+#   qsub -v MODEL=SvmW,SEED=42,CONDITION=undersample,RATIO=0.5 scripts/hpc/jobs/train/pbs_prior_research.sh
+#
+# Environment Variables:
+#   MODEL      : SvmA | SvmW | Lstm (required)
+#   CONDITION  : baseline | smote_plain | smote (sw) | undersample (required)
+#   RATIO      : Target ratio for SMOTE/undersampling (default: 0.5)
+#   SEED       : Random seed (default: 42)
+#   RUN_EVAL   : Run evaluation after training (default: true)
 # =============================================================================
 
 set -euo pipefail
@@ -59,14 +67,20 @@ cd "$PROJECT_ROOT"
 # ===== Parameters =====
 MODEL="${MODEL:-SvmA}"
 SEED="${SEED:-42}"
+CONDITION="${CONDITION:-baseline}"
+RATIO="${RATIO:-0.5}"
+RUN_EVAL="${RUN_EVAL:-true}"
 
 echo "=============================================="
 echo "  Prior Research Replication Experiment"
 echo "=============================================="
-echo "  MODEL:   $MODEL"
-echo "  SEED:    $SEED"
-echo "  JOBID:   $PBS_JOBID"
-echo "  START:   $(date)"
+echo "  MODEL:     $MODEL"
+echo "  CONDITION: $CONDITION"
+echo "  RATIO:     $RATIO"
+echo "  SEED:      $SEED"
+echo "  RUN_EVAL:  $RUN_EVAL"
+echo "  JOBID:     $PBS_JOBID"
+echo "  START:     $(date)"
 echo "=============================================="
 
 # ===== Validate Model =====
@@ -75,31 +89,79 @@ if [[ "$MODEL" != "SvmA" && "$MODEL" != "SvmW" && "$MODEL" != "Lstm" ]]; then
     exit 1
 fi
 
-# ===== Run Training =====
-echo "[INFO] Starting training for $MODEL..."
+# ===== Build tag based on condition =====
+case "$CONDITION" in
+    baseline)
+        TAG="prior_${MODEL}_baseline_s${SEED}"
+        ;;
+    smote_plain)
+        TAG="prior_${MODEL}_smote_plain_ratio${RATIO}_s${SEED}"
+        ;;
+    smote)
+        TAG="prior_${MODEL}_imbalv3_subjectwise_ratio${RATIO}_s${SEED}"
+        ;;
+    undersample)
+        TAG="prior_${MODEL}_undersample_rus_ratio${RATIO}_s${SEED}"
+        ;;
+    *)
+        echo "[ERROR] Unknown CONDITION: $CONDITION. Must be baseline, smote_plain, smote, or undersample."
+        exit 1
+        ;;
+esac
 
-python scripts/python/train/train.py \
-    --model "$MODEL" \
+# ===== Build training command =====
+CMD="python scripts/python/train/train.py \
+    --model $MODEL \
     --mode pooled \
     --subject_wise_split \
-    --seed "$SEED" \
+    --seed $SEED \
     --time_stratify_labels \
-    --tag "prior_research_s${SEED}"
+    --tag $TAG"
+
+# Add condition-specific flags
+case "$CONDITION" in
+    baseline)
+        # No oversampling
+        ;;
+    smote_plain)
+        CMD="$CMD --use_oversampling --oversample_method smote --target_ratio $RATIO"
+        ;;
+    smote)
+        CMD="$CMD --use_oversampling --oversample_method smote --target_ratio $RATIO --subject_wise_oversampling"
+        ;;
+    undersample)
+        CMD="$CMD --use_oversampling --oversample_method undersample_rus --target_ratio $RATIO"
+        ;;
+esac
+
+# ===== Run Training =====
+echo "[INFO] Starting training for $MODEL (condition=$CONDITION)..."
+echo "[TRAIN] $CMD"
+
+eval $CMD
 
 EXIT_CODE=$?
 
+# ===== Run evaluation if requested and training succeeded =====
+if [[ "$RUN_EVAL" == "true" && $EXIT_CODE -eq 0 ]]; then
+    echo ""
+    echo "[EVAL] Running evaluation..."
+    EVAL_CMD="python scripts/python/evaluation/evaluate.py \
+        --model $MODEL \
+        --tag $TAG \
+        --mode pooled \
+        --jobid $PBS_JOBID"
+    echo "[EVAL] $EVAL_CMD"
+    eval $EVAL_CMD || echo "[WARNING] Evaluation failed but continuing..."
+fi
+
 echo "=============================================="
 echo "  JOB COMPLETED"
-echo "  MODEL:   $MODEL"
-echo "  SEED:    $SEED"
-echo "  EXIT:    $EXIT_CODE"
-echo "  END:     $(date)"
+echo "  MODEL:     $MODEL"
+echo "  CONDITION: $CONDITION"
+echo "  SEED:      $SEED"
+echo "  EXIT:      $EXIT_CODE"
+echo "  END:       $(date)"
 echo "=============================================="
-
-# ===== Save log =====
-LOG_DIR="$PROJECT_ROOT/scripts/hpc/logs/train"
-mkdir -p "$LOG_DIR"
-LOG_FILE="$LOG_DIR/${MODEL}_s${SEED}_${PBS_JOBID}.log"
-echo "Log saved to: $LOG_FILE"
 
 exit $EXIT_CODE

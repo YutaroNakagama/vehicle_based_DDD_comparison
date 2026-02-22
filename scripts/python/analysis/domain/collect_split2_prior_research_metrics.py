@@ -93,7 +93,7 @@ CONDITION_LABELS = {
 # =====================================================================
 # Filename parsing
 # =====================================================================
-# Pattern 1 – Baseline
+# Pattern 1 – Baseline (legacy: source_only/target_only/mixed)
 #   eval_results_Lstm_source_only_baseline_knn_dtw_in_domain_split2_s42.json
 BASELINE_PATTERN = re.compile(
     r"eval_results_(?P<model>SvmW|SvmA|Lstm)_"
@@ -108,10 +108,24 @@ BASELINE_PATTERN = re.compile(
     r"\.json$"
 )
 
-# Pattern 2 – Prior research (imbalv3 / smote_plain / undersample_rus)
+# Pattern 1b – Baseline (domain_train mode)
+#   eval_results_SvmW_domain_train_prior_SvmW_baseline_knn_wasserstein_in_domain_domain_train_split2_s123_within.json
+BASELINE_DT_PATTERN = re.compile(
+    r"eval_results_(?P<model>SvmW|SvmA|Lstm)_"
+    r"domain_train_"
+    r"prior_(?:SvmW|SvmA|Lstm)_"
+    r"baseline_knn_"
+    r"(?P<distance>mmd|dtw|wasserstein)_"
+    r"(?P<domain>in_domain|out_domain)"
+    r"(?:_domain_train)?"
+    r"(?:_split2)?"
+    r"_s(?P<seed>\d+)"
+    r"_(?P<eval_type>within|cross)"
+    r"\.json$"
+)
+
+# Pattern 2 – Prior research (legacy: source_only/target_only/mixed)
 #   eval_results_Lstm_source_only_prior_Lstm_imbalv3_knn_mmd_in_domain_source_only_split2_subjectwise_ratio0.5_s42.json
-#   eval_results_Lstm_source_only_prior_Lstm_smote_plain_knn_mmd_out_domain_source_only_split2_ratio0.5_s42.json
-#   eval_results_Lstm_target_only_prior_Lstm_undersample_rus_knn_mmd_out_domain_target_only_split2_ratio0.5_s42.json
 PRIOR_PATTERN = re.compile(
     r"eval_results_(?P<model>SvmW|SvmA|Lstm)_"
     r"(?P<mode>source_only|target_only|mixed)_"
@@ -128,28 +142,105 @@ PRIOR_PATTERN = re.compile(
     r"\.json$"
 )
 
+# Pattern 2b – Prior research (domain_train mode)
+#   eval_results_SvmW_domain_train_prior_SvmW_undersample_rus_knn_wasserstein_out_domain_domain_train_split2_ratio0.5_s42_within.json
+#   eval_results_SvmW_domain_train_prior_SvmW_imbalv3_knn_mmd_in_domain_domain_train_split2_subjectwise_ratio0.5_s42_within.json
+PRIOR_DT_PATTERN = re.compile(
+    r"eval_results_(?P<model>SvmW|SvmA|Lstm)_"
+    r"domain_train_"
+    r"prior_(?:SvmW|SvmA|Lstm)_"
+    r"(?P<condition>imbalv3|smote_plain|undersample_rus)_"
+    r"knn_"
+    r"(?P<distance>mmd|dtw|wasserstein)_"
+    r"(?P<domain>in_domain|out_domain)"
+    r"(?:_domain_train)?"
+    r"(?:_split2)?"
+    r"(?:_subjectwise)?"                       # imbalv3 has subjectwise tag
+    r"_ratio(?P<ratio>[0-9.]+)"
+    r"_s(?P<seed>\d+)"
+    r"_(?P<eval_type>within|cross)"
+    r"\.json$"
+)
+
 
 # Pattern 3 – Pooled (all subjects, no domain split)
+# --- Legacy baseline-only (no condition in tag) ---
 #   eval_results_Lstm_pooled_prior_research_s42.json
 #   eval_results_SvmA_pooled_prior_research_s123.json
-POOLED_PATTERN = re.compile(
+POOLED_LEGACY_PATTERN = re.compile(
     r"eval_results_(?P<model>SvmW|SvmA|Lstm)_"
     r"pooled_prior_research_"
     r"s(?P<seed>\d+)"
     r"\.json$"
 )
 
+# --- Condition-aware pooled patterns (new) ---
+# Baseline:
+#   eval_results_SvmW_pooled_prior_SvmW_baseline_s42.json
+POOLED_BASELINE_PATTERN = re.compile(
+    r"eval_results_(?P<model>SvmW|SvmA|Lstm)_"
+    r"pooled_prior_(?:SvmW|SvmA|Lstm)_"
+    r"baseline_"
+    r"s(?P<seed>\d+)"
+    r"\.json$"
+)
+
+# Imbalv3 (subject-wise SMOTE):
+#   eval_results_SvmW_pooled_prior_SvmW_imbalv3_subjectwise_ratio0.5_s42.json
+POOLED_IMBALV3_PATTERN = re.compile(
+    r"eval_results_(?P<model>SvmW|SvmA|Lstm)_"
+    r"pooled_prior_(?:SvmW|SvmA|Lstm)_"
+    r"(?P<condition>imbalv3)_"
+    r"(?:subjectwise_)?"
+    r"ratio(?P<ratio>[0-9.]+)_"
+    r"s(?P<seed>\d+)"
+    r"\.json$"
+)
+
+# SMOTE plain / undersample_rus:
+#   eval_results_SvmW_pooled_prior_SvmW_smote_plain_ratio0.5_s42.json
+#   eval_results_SvmW_pooled_prior_SvmW_undersample_rus_ratio0.5_s42.json
+POOLED_CONDITION_PATTERN = re.compile(
+    r"eval_results_(?P<model>SvmW|SvmA|Lstm)_"
+    r"pooled_prior_(?:SvmW|SvmA|Lstm)_"
+    r"(?P<condition>smote_plain|undersample_rus)_"
+    r"ratio(?P<ratio>[0-9.]+)_"
+    r"s(?P<seed>\d+)"
+    r"\.json$"
+)
+
+
+# Mapping: domain_train eval_type → legacy mode name for plot compatibility
+_EVAL_TYPE_TO_MODE = {
+    "within": "target_only",   # within-domain eval → "Within-domain" bar
+    "cross":  "source_only",   # cross-domain eval  → "Cross-domain" bar
+}
+
 
 def parse_eval_filename(name: str) -> dict | None:
     """Return parsed metadata dict or None."""
-    # Try baseline first
+    # Try domain_train baseline first (new format)
+    m = BASELINE_DT_PATTERN.match(name)
+    if m:
+        d = m.groupdict()
+        d["condition"] = "baseline"
+        d["ratio"] = ""
+        d["mode"] = _EVAL_TYPE_TO_MODE.get(d.pop("eval_type", "within"), "target_only")
+        return d
+    # Try domain_train prior-research pattern (new format)
+    m = PRIOR_DT_PATTERN.match(name)
+    if m:
+        d = m.groupdict()
+        d["mode"] = _EVAL_TYPE_TO_MODE.get(d.pop("eval_type", "within"), "target_only")
+        return d
+    # Try legacy baseline
     m = BASELINE_PATTERN.match(name)
     if m:
         d = m.groupdict()
         d["condition"] = "baseline"
         d["ratio"] = ""
         return d
-    # Try prior-research pattern
+    # Try legacy prior-research pattern
     m = PRIOR_PATTERN.match(name)
     if m:
         return m.groupdict()
@@ -249,6 +340,10 @@ def collect_all_split2(
 ) -> pd.DataFrame:
     """Scan evaluation JSONs and return a tidy DataFrame."""
     records = []
+    # Track which models have domain_train-format eval files.
+    # Only those models should have their legacy 'mixed' rows dropped,
+    # because domain_train does not produce a 'mixed' evaluation.
+    models_with_domain_train: set[str] = set()
     models_to_scan = [model_filter] if model_filter else PRIOR_MODELS
 
     for model_name in models_to_scan:
@@ -265,6 +360,12 @@ def collect_all_split2(
                 continue
             if condition_filter and meta["condition"] != condition_filter:
                 continue
+
+            # Detect domain_train-format files (they had eval_type key
+            # before it was popped by parse_eval_filename, and their
+            # filenames contain '_within.json' or '_cross.json').
+            if json_path.name.endswith(("_within.json", "_cross.json")):
+                models_with_domain_train.add(model_name)
 
             job_id = json_path.parent.parent.name
             metrics = load_eval_json(json_path)
@@ -285,9 +386,19 @@ def collect_all_split2(
     if df.empty:
         logger.warning("No split2 evaluation JSONs found!")
     else:
-        # Deduplicate: keep latest job per unique condition tuple
+        # Deduplicate: keep latest job per unique condition tuple.
+        # 'mixed' (Multi-domain) is a distinct evaluation mode from
+        # source_only (Cross-domain) and target_only (Within-domain),
+        # so it is always preserved — even for models that also have
+        # domain_train data (which maps to source_only / target_only).
         key_cols = ["model", "mode", "condition", "distance", "level", "ratio", "seed"]
         df = df.sort_values("job_id").drop_duplicates(subset=key_cols, keep="last")
+
+        # For models with domain_train data, the legacy source_only /
+        # target_only rows are superseded by the newer domain_train
+        # rows (higher job_id), so dedup already keeps the latest.
+        # No special mixed-dropping logic is needed.
+
         logger.info(
             f"Collected {len(df)} records – models={sorted(df['model'].unique())}, "
             f"conditions={sorted(df['condition'].unique())}"
@@ -303,48 +414,71 @@ def collect_pooled_data(
 ) -> pd.DataFrame:
     """Scan pooled evaluation JSONs for prior-research models.
 
-    These serve as the 'all subjects' baseline for Row 4 (Pooled) and the
-    dashed horizontal reference lines in Rows 1-3 of the bar-chart grid.
+    Supports both legacy (baseline-only) and condition-aware pooled files.
+    Each condition produces its own pooled reference for Row 4 (Pooled)
+    and dashed horizontal reference lines in Rows 1-3 of the bar-chart grid.
     """
     records = []
     models_to_scan = [model_filter] if model_filter else PRIOR_MODELS
+
+    # Ordered list of (pattern, condition_source) tuples.
+    # condition_source: "fixed_baseline" means always baseline,
+    # "from_match" means extract from regex named group.
+    _pooled_patterns = [
+        (POOLED_BASELINE_PATTERN, "fixed_baseline"),
+        (POOLED_IMBALV3_PATTERN, "from_match"),
+        (POOLED_CONDITION_PATTERN, "from_match"),
+        (POOLED_LEGACY_PATTERN, "fixed_baseline"),  # legacy fallback
+    ]
 
     for model_name in models_to_scan:
         eval_dir = EVAL_BASE / model_name
         if not eval_dir.exists():
             continue
 
-        for json_path in sorted(eval_dir.rglob("eval_results_*pooled*prior_research*.json")):
-            m = POOLED_PATTERN.match(json_path.name)
-            if m is None:
-                continue
-            if m.group("model") != model_name:
-                continue
+        for json_path in sorted(eval_dir.rglob("eval_results_*pooled*prior*.json")):
+            # Try each pattern in order; first match wins
+            matched = False
+            for pat, cond_source in _pooled_patterns:
+                m = pat.match(json_path.name)
+                if m is None:
+                    continue
+                if m.group("model") != model_name:
+                    break  # wrong model, skip file
 
-            job_id = json_path.parent.parent.name
-            metrics = load_eval_json(json_path)
-            row = {
-                "job_id":    job_id,
-                "model":     m.group("model"),
-                "mode":      "pooled",
-                "condition":  "baseline",   # pooled is the baseline reference
-                "distance":  "pooled",      # placeholder
-                "level":     "pooled",      # placeholder
-                "ratio":     "",
-                "seed":      int(m.group("seed")),
-            }
-            row.update(metrics)
-            records.append(row)
+                # Determine condition
+                if cond_source == "fixed_baseline":
+                    condition = "baseline"
+                else:
+                    condition = m.groupdict().get("condition", "baseline")
+
+                job_id = json_path.parent.parent.name
+                metrics = load_eval_json(json_path)
+                row = {
+                    "job_id":    job_id,
+                    "model":     m.group("model"),
+                    "mode":      "pooled",
+                    "condition": condition,
+                    "distance":  "pooled",      # placeholder
+                    "level":     "pooled",      # placeholder
+                    "ratio":     m.groupdict().get("ratio", ""),
+                    "seed":      int(m.group("seed")),
+                }
+                row.update(metrics)
+                records.append(row)
+                matched = True
+                break  # matched, no need to try other patterns
 
     df = pd.DataFrame(records)
     if not df.empty:
-        # Keep latest job per (model, seed)
+        # Keep latest job per (model, condition, seed)
         df = df.sort_values("job_id").drop_duplicates(
-            subset=["model", "seed"], keep="last"
+            subset=["model", "condition", "seed"], keep="last"
         )
         logger.info(
             f"Collected {len(df)} pooled records: "
             f"models={sorted(df['model'].unique())}, "
+            f"conditions={sorted(df['condition'].unique())}, "
             f"seeds={sorted(df['seed'].unique())}"
         )
     else:
@@ -419,25 +553,30 @@ def generate_plots(df: pd.DataFrame, df_pooled: pd.DataFrame) -> list[Path]:
             out_name = f"{cond_short}{ratio_tag}_s{seed}.png"
             out_path = png_dir / out_name
 
-            # --- Merge pooled reference rows for this model + seed ----
+            # --- Merge pooled reference rows for this model + condition + seed ----
             sub_with_pooled = sub
             if not df_pooled.empty:
                 pooled_rows = df_pooled[
-                    (df_pooled["model"] == model) & (df_pooled["seed"] == seed)
+                    (df_pooled["model"] == model)
+                    & (df_pooled["condition"] == cond)
+                    & (df_pooled["seed"] == seed)
                 ]
                 if not pooled_rows.empty:
                     pooled_rows = pooled_rows.copy()
-                    pooled_rows["condition"] = cond  # align condition label
                     common_cols = sub.columns.intersection(pooled_rows.columns)
                     sub_with_pooled = pd.concat(
                         [sub, pooled_rows[common_cols]], ignore_index=True
                     )
 
-            # plot_grouped_bar_chart_raw expects modes (include pooled + mixed)
+            # plot_grouped_bar_chart_raw expects modes (include pooled)
+            # Determine active comparison modes from the data
+            data_modes = sorted(sub_with_pooled["mode"].unique())
+            comparison_modes = [m for m in data_modes if m != "pooled"]
+            all_modes = ["pooled"] + comparison_modes
             fig = plot_grouped_bar_chart_raw(
                 data=sub_with_pooled,
                 metrics=METRICS,
-                modes=["pooled", "source_only", "target_only", "mixed"],
+                modes=all_modes,
                 distance_col="distance",
                 level_col="level",
                 baseline_rates={"auc_pr": 0.033},
