@@ -208,6 +208,7 @@ def common_train(
             y_test=y_test,
             sw_val=sw_val,
             sw_test=sw_test,
+            model=model,
         )
 
     # ====== Prepare feature metadata ======

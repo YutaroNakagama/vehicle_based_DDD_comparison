@@ -106,6 +106,7 @@ def create_optuna_objective(
             score = _evaluate_with_cv(
                 clf, X_train_scaled, y_train,
                 data_leak, X_test_scaled, y_test,
+                model=model,
             )
         except Exception as e:
             msg = str(e)
@@ -352,6 +353,7 @@ def _evaluate_with_cv(
     data_leak: bool = False,
     X_test_scaled: Optional[np.ndarray] = None,
     y_test: Optional[np.ndarray] = None,
+    model: str = "",
 ) -> float:
     """Evaluate classifier using cross-validation.
 
@@ -369,12 +371,17 @@ def _evaluate_with_cv(
         Test features for data_leak mode.
     y_test : np.ndarray, optional
         Test labels for data_leak mode.
+    model : str, default=""
+        Model name. Used to skip sample_weight for internally balanced
+        models (BalancedRF, EasyEnsemble).
 
     Returns
     -------
     float
         Cross-validation score (F2).
     """
+    from src.models.training.classifiers import INTERNALLY_BALANCED_MODELS
+    skip_sw = model in INTERNALLY_BALANCED_MODELS
     if data_leak and X_test_scaled is not None and y_test is not None:
         X_all = np.vstack([X_train_scaled, X_test_scaled])
         y_all = np.concatenate([y_train, y_test])
@@ -407,10 +414,13 @@ def _evaluate_with_cv(
     for i, (tr_idx, va_idx) in enumerate(cv.split(X_train_scaled, y_train)):
         y_tr = y_train[tr_idx] if isinstance(y_train, np.ndarray) else y_train.to_numpy()[tr_idx]
         y_va = y_train[va_idx] if isinstance(y_train, np.ndarray) else y_train.to_numpy()[va_idx]
-        sw_tr = _make_sample_weight(y_tr)
 
         try:
-            clf.fit(X_train_scaled[tr_idx], y_tr, sample_weight=sw_tr)
+            if skip_sw:
+                clf.fit(X_train_scaled[tr_idx], y_tr)
+            else:
+                sw_tr = _make_sample_weight(y_tr)
+                clf.fit(X_train_scaled[tr_idx], y_tr, sample_weight=sw_tr)
         except TypeError:
             clf.fit(X_train_scaled[tr_idx], y_tr)
 
