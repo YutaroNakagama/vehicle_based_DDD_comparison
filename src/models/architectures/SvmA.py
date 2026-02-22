@@ -517,6 +517,10 @@ def SvmA_train(
         X_val = X_val[[c for c in paper_cols if c in X_val.columns]]
         if X_test is not None:
             X_test = X_test[[c for c in paper_cols if c in X_test.columns]]
+        # Also filter indices_df to match the retained columns
+        indices_df = indices_df.loc[
+            indices_df.index.isin(paper_cols)
+        ]
         logging.info(
             f"[SvmA] Filtered to paper's 14 feature types: "
             f"{n_before} → {len(paper_cols)} columns"
