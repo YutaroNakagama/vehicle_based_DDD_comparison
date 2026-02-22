@@ -40,6 +40,18 @@ from src.models.sampling.oversampling import apply_oversampling
 # ---------------------------------------------------------------------------
 SVMA_KSS_BIN_LABELS = [1, 2, 3, 4, 5, 6, 8, 9]
 SVMA_KSS_LABEL_MAP = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 8: 1, 9: 1}
+
+# ---------------------------------------------------------------------------
+# Paper feature set (Arefnezhad et al. 2019, Table 1)
+# 14 features per signal × 2 signals (Steering_, SteeringSpeed_) = 28 total
+# ---------------------------------------------------------------------------
+SVMA_PAPER_FEATURE_SUFFIXES = [
+    'Mean', 'Variance', 'StdDev', 'Max', 'Min', 'Range', 'Energy',
+    'Skewness', 'Kurtosis', 'ZeroCrossingRate',
+    'DominantFreq', 'FreqCOG', 'SpectralEntropy', 'AvgPSD',
+]
+"""list : The 14 feature types used in Arefnezhad et al. (2019)."""
+
 from src.utils.io.savers import save_artifacts
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -313,7 +325,7 @@ def _grid_search_svm(
     best_C, best_gamma = 1.0, 0.1
     for C in [0.1, 1.0, 10.0, 100.0]:
         for gamma in [0.001, 0.01, 0.1, 1.0]:
-            svm = SVC(kernel='rbf', C=C, gamma=gamma, class_weight='balanced')
+            svm = SVC(kernel='rbf', C=C, gamma=gamma)
             svm.fit(X_train, y_train)
             y_pred = svm.predict(X_val)
             f1_val = f1_score(y_val, y_pred, average='binary', zero_division=0)
@@ -378,18 +390,20 @@ def optimize_svm_anfis(
         X_va = X_val.iloc[:, mask]
 
         # Fixed SVM during PSO (paper: PSO trains ANFIS only)
-        # Paper Eq.(11): objective = 0.5 * (y_hat - y)^2 → equivalent to
-        # maximising classification accuracy (Arefnezhad et al. 2019)
-        svm = SVC(kernel='rbf', C=1.0, gamma='scale', class_weight='balanced')
+        # Paper Eq.(11): E = 0.5 * Σ(ŷ - y)² (MSE objective)
+        svm = SVC(kernel='rbf', C=1.0, gamma='scale')
         svm.fit(X_tr, y_train)
         y_pred = svm.predict(X_va)
+        y_val_arr = y_val.values if hasattr(y_val, 'values') else np.asarray(y_val)
+        mse = 0.5 * np.mean((y_pred - y_val_arr) ** 2)
         acc_val = accuracy_score(y_val, y_pred)
-        fitness = -acc_val
+        fitness = mse  # minimise MSE (paper Eq.11)
 
         pso_history.append({
             'evaluation': eval_count[0],
             'n_selected': n_selected,
             'accuracy': float(acc_val),
+            'mse': float(mse),
             'fitness': float(fitness),
         })
         return fitness
@@ -492,6 +506,24 @@ def SvmA_train(
     """
     logging.info("Starting SVM-ANFIS optimization...")
 
+    # ----- Filter to paper's 14 features per signal (Arefnezhad et al. 2019) -----
+    paper_cols = [
+        col for col in X_train.columns
+        if any(col.endswith(sfx) for sfx in SVMA_PAPER_FEATURE_SUFFIXES)
+    ]
+    if paper_cols:
+        n_before = X_train.shape[1]
+        X_train = X_train[paper_cols]
+        X_val = X_val[[c for c in paper_cols if c in X_val.columns]]
+        if X_test is not None:
+            X_test = X_test[[c for c in paper_cols if c in X_test.columns]]
+        logging.info(
+            f"[SvmA] Filtered to paper's 14 feature types: "
+            f"{n_before} → {len(paper_cols)} columns"
+        )
+    else:
+        logging.warning("[SvmA] No paper feature columns matched — using all columns")
+
     # ----- Min-max normalization [0, 1] (Arefnezhad et al. 2019, Sec.2.2) -----
     # "Extracted features have been normalized between 0 and 1 using their
     #  minimum and maximum values."
@@ -566,8 +598,7 @@ def SvmA_train(
         X_train_sel = X_train_normed.copy()
         X_val_sel = X_val_normed.copy()
 
-    svm_final = SVC(kernel='rbf', C=best_C, gamma=best_gamma, probability=True,
-                     class_weight='balanced')
+    svm_final = SVC(kernel='rbf', C=best_C, gamma=best_gamma, probability=True)
     svm_final.fit(X_train_sel, y_train)
 
     model_dir = f"{MODEL_PKL_PATH}/{model}"

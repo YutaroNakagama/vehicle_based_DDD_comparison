@@ -178,7 +178,7 @@ def build_lstm_model(input_shape: tuple) -> Model:
     outputs = Dense(1, activation='sigmoid')(x)
 
     model = Model(inputs, outputs)
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
                    loss='binary_crossentropy',
                    metrics=['accuracy', tf.keras.metrics.AUC(name='auc')])
 
@@ -192,9 +192,9 @@ def lstm_train(
     y_val: pd.Series = None,
     X_test: pd.DataFrame = None,
     y_test: pd.Series = None,
-    n_splits: int = 5,
-    epochs: int = 100,
-    batch_size: int = 32,
+    n_splits: int = 10,
+    epochs: int = 50,
+    batch_size: int = 64,
     use_oversampling: bool = False,
     oversample_method: str = "smote",
     target_ratio: float = 0.33,
