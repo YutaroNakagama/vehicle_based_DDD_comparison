@@ -24,6 +24,10 @@ from imblearn.ensemble import BalancedRandomForestClassifier, EasyEnsembleClassi
 
 from src.config import RF_CLASS_WEIGHT, CV_FOLDS_CALIBRATION
 
+# Models that handle class imbalance internally via balanced bootstrap;
+# external sample_weight must NOT be applied to avoid double-balancing.
+INTERNALLY_BALANCED_MODELS = {"BalancedRF", "EasyEnsemble"}
+
 
 def create_classifier(
     model: str,
@@ -197,6 +201,7 @@ def fit_classifier(
     y_test: Optional[np.ndarray] = None,
     sw_val: Optional[np.ndarray] = None,
     sw_test: Optional[np.ndarray] = None,
+    model: str = "",
 ) -> None:
     """Fit classifier with sample weights.
 
@@ -218,15 +223,34 @@ def fit_classifier(
         Additional labels for data_leak mode.
     sw_val, sw_test : np.ndarray, optional
         Additional weights for data_leak mode.
+    model : str, default=""
+        Model name. Used to skip sample_weight for internally balanced
+        models (BalancedRF, EasyEnsemble) that already handle class
+        imbalance via balanced bootstrap sampling.
     """
+    # Skip external sample_weight for models with internal balancing
+    # to avoid double-balancing (inflated minority-class weight).
+    skip_sw = model in INTERNALLY_BALANCED_MODELS
+    if skip_sw:
+        logging.info(
+            f"[FIT] Skipping sample_weight for {model} "
+            "(internally balanced model)"
+        )
+
     try:
         if data_leak and X_val_scaled is not None and X_test_scaled is not None:
             X_all = np.vstack([X_train_scaled, X_val_scaled, X_test_scaled])
             y_all = np.concatenate([y_train, y_val, y_test])
-            sw_all = np.concatenate([sw_train, sw_val, sw_test]).astype(float)
-            clf.fit(X_all, y_all, sample_weight=sw_all)
+            if skip_sw:
+                clf.fit(X_all, y_all)
+            else:
+                sw_all = np.concatenate([sw_train, sw_val, sw_test]).astype(float)
+                clf.fit(X_all, y_all, sample_weight=sw_all)
         else:
-            clf.fit(X_train_scaled, y_train, sample_weight=sw_train)
+            if skip_sw:
+                clf.fit(X_train_scaled, y_train)
+            else:
+                clf.fit(X_train_scaled, y_train, sample_weight=sw_train)
     except TypeError:
         # Some estimators don't accept sample_weight
         if data_leak and X_val_scaled is not None and X_test_scaled is not None:
