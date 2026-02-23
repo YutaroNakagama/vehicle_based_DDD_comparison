@@ -298,15 +298,18 @@ def prepare_source_only_splits(
             f"[SOURCE_ONLY] Same-group case: train={len(y_train)}, val={len(y_val)}, test={len(y_test)} samples"
         )
     else:
-        # Cross-domain case: train on opposite domain, evaluate on target domain
+        # Cross-domain case: train+val on source domain, test on target domain
+        # This follows standard domain generalization protocol:
+        #   - Train & Val from source (hyperparameter tuning uses source only)
+        #   - Test from target (pure unseen-domain evaluation)
         source_domain = "out_domain" if target_domain == "in_domain" else "in_domain"
         logging.info(
             f"[SOURCE_ONLY] Cross-domain: target={target_domain} ({len(eval_subjects)} subjects), "
             f"source={source_domain} ({len(source_subjects)} subjects)"
         )
         
-        # Split source group (use only train partition)
-        src_train, _, _, y_src_train, _, _ = split_data(
+        # Split source group → train (80%) + val (10%) for training & tuning
+        src_train, src_val, _, y_src_train, y_src_val, _ = split_data(
             subject_split_strategy="subject_time_split",
             subject_list=source_subjects,
             target_subjects=source_subjects,
@@ -321,21 +324,46 @@ def prepare_source_only_splits(
         
         X_train = src_train
         y_train = y_src_train.astype(int)
-        logging.info(f"[SOURCE_ONLY] Training: {len(X_train)} samples from {source_domain} group")
-        
-        # Split target group (use val/test partitions)
-        _, X_val, X_test, _, y_val, y_test = split_data(
-            subject_split_strategy="subject_time_split",
-            subject_list=eval_subjects,
-            target_subjects=eval_subjects,
-            model_name=model_name,
-            seed=seed,
-            time_stratify_labels=time_stratify_labels,
-            time_stratify_tolerance=time_stratify_tolerance,
-            time_stratify_window=time_stratify_window,
-            time_stratify_min_chunk=time_stratify_min_chunk,
+        X_val = src_val
+        y_val = y_src_val.astype(int)
+        logging.info(
+            f"[SOURCE_ONLY] Source domain: train={len(X_train)}, val={len(X_val)} "
+            f"samples from {source_domain} group"
         )
-        logging.info(f"[SOURCE_ONLY] Evaluation: val={len(y_val)}, test={len(y_test)} samples from target group")
+        
+        # Target domain → ALL data used as test (no split)
+        # Load target subjects' full data as test set
+        from src.utils.io.split_helpers import _prepare_df_with_label_and_features
+        from src.utils.io.loaders import load_subject_csvs
+        from src.utils.io.split import _resolve_feature_columns
+        from pathlib import Path
+        import os
+
+        base_dir = Path("data/processed")
+        if (base_dir / model_name).exists() and os.listdir(base_dir / model_name):
+            data_dir = base_dir / model_name
+        elif (base_dir / "common").exists() and os.listdir(base_dir / "common"):
+            data_dir = base_dir / "common"
+        else:
+            raise FileNotFoundError(
+                f"No valid processed data directory for model '{model_name}'."
+            )
+
+        target_data, _ = load_subject_csvs(
+            eval_subjects, model_name=None, add_subject_id=True,
+            base_path=str(data_dir),
+        )
+        df_target, feature_columns = _prepare_df_with_label_and_features(
+            target_data, model_name=model_name,
+        )
+        X_test = df_target[feature_columns].drop(
+            columns=["subject_id"], errors="ignore",
+        )
+        y_test = df_target["label"].astype(int)
+        logging.info(
+            f"[SOURCE_ONLY] Target domain: test={len(y_test)} samples "
+            f"(ALL data from {target_domain}, {len(eval_subjects)} subjects)"
+        )
     
     return X_train, X_val, X_test, y_train, y_val, y_test
 
