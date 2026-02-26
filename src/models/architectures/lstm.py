@@ -319,12 +319,16 @@ def lstm_train(
     # Clip values to fit within float32 range
     X_numeric = X_numeric.clip(lower=np.finfo(np.float32).min, upper=np.finfo(np.float32).max)
     
-    # Convert to float32
-    X_array = X_numeric.astype(np.float32).values
+    # Convert to float32 (keep as DataFrame for scaler.feature_names_in_)
+    X_float32 = X_numeric.astype(np.float32)
 
     # --- Scale ALL training data once (shared across folds) ---
+    # Fit on DataFrame so that scaler.feature_names_in_ is populated;
+    # this allows prepare_evaluation_features() Step 4 to align columns
+    # correctly during cross-domain evaluation.
     scaler = StandardScaler()
-    X_scaled_all = scaler.fit_transform(X_array)
+    X_scaled_all = scaler.fit_transform(X_float32)
+    X_array = X_float32.values
 
     # --- Create fixed-length segments (Wang et al. 2022: 10-sec, 100 timesteps) ---
     seg_len = LSTM_SEGMENT_TIMESTEPS

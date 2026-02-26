@@ -319,6 +319,26 @@ def train_pipeline(
     except Exception as e:
         logging.error(f"[TRAIN] Exception during training: {e}. Will persist current checkpoint.")
     finally:
+        # --- Sync selected_features with model-specific feature list ---
+        # Some models (Lstm, SvmA) perform additional feature selection
+        # internally (e.g., t-test, ANFIS) and return a reduced feature list
+        # in feature_meta.  The saved selected_features must match the scaler
+        # so that evaluation aligns columns correctly.
+        if (
+            feature_meta
+            and isinstance(feature_meta, dict)
+            and "selected_features" in feature_meta
+            and len(feature_meta["selected_features"]) > 0
+        ):
+            model_feats = feature_meta["selected_features"]
+            if model_feats != selected_features:
+                logging.info(
+                    f"[TRAIN] Updating selected_features: "
+                    f"{len(selected_features)} → {len(model_feats)} "
+                    f"(model-specific feature selection)"
+                )
+                selected_features = model_feats
+
         # Stage 8: Always save final/partial artifacts
         try:
             save_artifacts(
