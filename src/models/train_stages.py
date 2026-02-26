@@ -331,38 +331,26 @@ def prepare_source_only_splits(
             f"samples from {source_domain} group"
         )
         
-        # Target domain → ALL data used as test (no split)
-        # Load target subjects' full data as test set
-        from src.utils.io.split_helpers import _prepare_df_with_label_and_features
-        from src.utils.io.loaders import load_subject_csvs
-        from src.utils.io.split import _resolve_feature_columns
-        from pathlib import Path
-        import os
-
-        base_dir = Path("data/processed")
-        if (base_dir / model_name).exists() and os.listdir(base_dir / model_name):
-            data_dir = base_dir / model_name
-        elif (base_dir / "common").exists() and os.listdir(base_dir / "common"):
-            data_dir = base_dir / "common"
-        else:
-            raise FileNotFoundError(
-                f"No valid processed data directory for model '{model_name}'."
-            )
-
-        target_data, _ = load_subject_csvs(
-            eval_subjects, model_name=None, add_subject_id=True,
-            base_path=str(data_dir),
+        # Target domain → split 80/10/10 and use only the test partition (10%)
+        # This ensures a fair comparison with target_only mode, which also
+        # evaluates on the same 10% test partition of the target domain.
+        _, _, tgt_test, _, _, y_tgt_test = split_data(
+            subject_split_strategy="subject_time_split",
+            subject_list=eval_subjects,
+            target_subjects=eval_subjects,
+            model_name=model_name,
+            seed=seed,
+            time_stratify_labels=time_stratify_labels,
+            time_stratify_tolerance=time_stratify_tolerance,
+            time_stratify_window=time_stratify_window,
+            time_stratify_min_chunk=time_stratify_min_chunk,
         )
-        df_target, feature_columns = _prepare_df_with_label_and_features(
-            target_data, model_name=model_name,
-        )
-        X_test = df_target[feature_columns].drop(
-            columns=["subject_id"], errors="ignore",
-        )
-        y_test = df_target["label"].astype(int)
+        
+        X_test = tgt_test
+        y_test = y_tgt_test.astype(int)
         logging.info(
             f"[SOURCE_ONLY] Target domain: test={len(y_test)} samples "
-            f"(ALL data from {target_domain}, {len(eval_subjects)} subjects)"
+            f"(10%% test partition from {target_domain}, {len(eval_subjects)} subjects)"
         )
     
     return X_train, X_val, X_test, y_train, y_val, y_test
