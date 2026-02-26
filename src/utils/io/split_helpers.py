@@ -146,7 +146,7 @@ def split_data(
                 df_lab,
                 label_col="label",
                 sort_keys=sort_keys,
-                train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
+                train_ratio=0.70, val_ratio=0.15, test_ratio=0.15,
                 tolerance=time_stratify_tolerance,
                 window_prop=time_stratify_window,
                 min_chunk=time_stratify_min_chunk,
