@@ -189,6 +189,27 @@ def prepare_evaluation_features(
     if hasattr(scaler, "feature_names_in_"):
         scaler_cols = list(scaler.feature_names_in_)
         df = align_feature_columns(df, scaler_cols, fill_missing=0.0, drop_extra=True)
+    elif (
+        scaler is not None
+        and hasattr(scaler, "n_features_in_")
+        and len(df.columns) != scaler.n_features_in_
+    ):
+        # Defensive guard: scaler was fitted on a numpy array (no column names)
+        # but the current DataFrame has a different number of features.
+        # This typically means selected_features is stale (e.g., Lstm t-test
+        # reduced features after RF pre-selection).
+        logging.error(
+            f"[PREPROCESS] Feature count mismatch: DataFrame has "
+            f"{len(df.columns)} columns but scaler expects "
+            f"{scaler.n_features_in_}. Scaler lacks feature_names_in_ "
+            f"so automatic alignment is not possible. "
+            f"Check that the saved selected_features matches the scaler."
+        )
+        raise ValueError(
+            f"Feature count mismatch ({len(df.columns)} vs "
+            f"{scaler.n_features_in_}) and scaler has no feature_names_in_ "
+            f"for alignment. Re-save selected_features to match the scaler."
+        )
     
     # Step 5: Transform using scaler
     if scaler is None:
