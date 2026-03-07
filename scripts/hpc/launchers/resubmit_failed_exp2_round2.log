@@ -1,0 +1,14 @@
+2026-03-04 20:52:48 === Starting round 2 resubmission of 12 failed Exp2 jobs (48h walltime) ===
+2026-03-04 20:52:48 OK: Submitted job 0 (e2_swr5_mdtwi_s2024) -> SINGLE : 14887248.spcc-adm1
+2026-03-04 20:52:49 OK: Submitted job 1 (e2_swr5_mwaso_s1) -> DEFAULT : 14887249.spcc-adm1
+2026-03-04 20:52:49 OK: Submitted job 2 (e2_swr5_mwaso_s7) -> SMALL : 14887250.spcc-adm1
+2026-03-04 20:52:50 OK: Submitted job 3 (e2_smr1_mdtwi_s7) -> SINGLE : 14887251.spcc-adm1
+2026-03-04 20:52:50 OK: Submitted job 4 (e2_smr5_mdtwi_s0) -> DEFAULT : 14887252.spcc-adm1
+2026-03-04 20:52:50 OK: Submitted job 5 (e2_smr5_mdtwi_s2024) -> SMALL : 14887253.spcc-adm1
+2026-03-04 20:52:51 OK: Submitted job 6 (e2_smr5_mdtwi_s7) -> DEFAULT : 14887254.spcc-adm1
+2026-03-04 20:52:52 OK: Submitted job 7 (e2_smr5_mdtwo_s0) -> SMALL : 14887255.spcc-adm1
+2026-03-04 20:52:52 OK: Submitted job 8 (e2_smr5_mdtwo_s1337) -> DEFAULT : 14887256.spcc-adm1
+2026-03-04 20:52:53 OK: Submitted job 9 (e2_smr5_mdtwo_s7) -> SMALL : 14887257.spcc-adm1
+2026-03-04 20:52:53 OK: Submitted job 10 (e2_smr5_mwaso_s2024) -> DEFAULT : 14887258.spcc-adm1
+2026-03-04 20:52:54 OK: Submitted job 11 (e2_smr5_mwaso_s7) -> SMALL : 14887259.spcc-adm1
+2026-03-04 20:52:54 === All 12 round 2 jobs resubmitted successfully ===
