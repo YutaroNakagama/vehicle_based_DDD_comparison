@@ -10,11 +10,13 @@
 set -euo pipefail
 
 # ===== Environment setup =====
+PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
+cd "$PROJECT_ROOT"
+
 export PATH=~/conda/bin:$PATH
 source ~/conda/etc/profile.d/conda.sh
 conda activate python310
-
-cd /home/s2240011/git/ddd/vehicle_based_DDD_comparison
+export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
 
 # ===== Evaluation commands array =====
 CMDS=(
