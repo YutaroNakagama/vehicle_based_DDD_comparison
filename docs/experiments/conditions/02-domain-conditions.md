@@ -12,6 +12,8 @@
 - **ランチャー**:
   - Cross/Within-domain: `scripts/hpc/launchers/launch_paper_domain_split2.sh`
   - Multi-domain: `scripts/hpc/launchers/launch_exp2_mixed.sh`
+  - 追加シード投入: `scripts/hpc/launchers/exp2_10seeds_submit.sh`
+  - 失敗ジョブ再投入: `scripts/hpc/launchers/resubmit_failed_exp2.sh`
 - **ジョブスクリプト**: `scripts/hpc/jobs/domain_analysis/pbs_domain_comparison_split2.sh`
 
 ## 実験パラメータ
@@ -21,11 +23,14 @@
 | Distance metrics | mmd, dtw, wasserstein (3) |
 | Domain groups | in_domain (44 名), out_domain (43 名) (2) |
 | Training modes | source_only, target_only, mixed (3) |
-| Seeds | 42, 123 (2) |
+| Seeds | 0, 1, 7, 13, 42, 123, 256, 512, 1337, 2024 (10) |
 | Ranking method | knn |
 | Optuna trials | 100 |
 | CV strategy | StratifiedKFold (3-fold) |
 | 最適化指標 | F2 score |
+
+> **Note:** 初期実験は seed=42, 123 の 2 種で実施。その後 8 シードを追加し、
+> 最終的に 10 シードでの安定性評価を完了（balanced_rf のみ 2 シード）。
 
 ## 不均衡対策条件（5 種 → 8 jobs/combo）
 
@@ -46,14 +51,21 @@
 ## ジョブ数の計算
 
 ```
-Cross/Within-domain:
-  3 dist × 2 dom × 2 mode × 2 seed × 8 cond = 192 jobs
+10 シード版（baseline, smote_plain, sw_smote, undersample_rus）:
+  Cross/Within-domain:  3 dist × 2 dom × 2 mode × 10 seed × 7 cond  = 840 jobs
+  Multi-domain (mixed): 3 dist × 2 dom × 1 mode × 10 seed × 7 cond  = 420 jobs
+  小計: 1,260 jobs
 
-Multi-domain (mixed):
-  3 dist × 2 dom × 1 mode × 2 seed × 8 cond = 96 jobs
+2 シード版（balanced_rf のみ）:
+  Cross/Within-domain:  3 dist × 2 dom × 2 mode × 2 seed × 1 cond   = 24 jobs
+  Multi-domain (mixed): 3 dist × 2 dom × 1 mode × 2 seed × 1 cond   = 12 jobs
+  小計: 36 jobs
 
-合計: 192 + 96 = 288 jobs
+合計: 1,260 + 36 = 1,296 jobs
 ```
+
+> **Note:** 初期は 2 シード (42, 123) で 288 jobs として実行。
+> 8 シード追加後に追加投入し、最終的に ~1,296 jobs を完了。
 
 ## Training Mode の定義
 
