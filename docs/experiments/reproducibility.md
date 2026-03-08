@@ -16,7 +16,7 @@ The repository supports three main experiment types:
 
 Compare imbalance handling methods in isolation (pooled training without domain generalization).
 
-**詳細な実験条件一覧:** [conditions/01-imbalance-conditions.md](conditions/01-imbalance-conditions.md)
+**Detailed experiment conditions:** [conditions/01-imbalance-conditions.md](conditions/01-imbalance-conditions.md)
 
 **Launcher:** `scripts/hpc/launchers/launch_imbalance.sh`
 
@@ -58,7 +58,7 @@ bash scripts/hpc/launchers/launch_exp2_mixed.sh
 ```
 
 **Experiment Matrix:**
-**詳細な実験条件一覧:** [conditions/02-domain-conditions.md](conditions/02-domain-conditions.md)
+**Detailed experiment conditions:** [conditions/02-domain-conditions.md](conditions/02-domain-conditions.md)
 
 | Parameter | Values |
 |-----------|--------|
@@ -86,23 +86,23 @@ bash scripts/hpc/launchers/launch_exp2_mixed.sh
 
 **Total:** 3 × 2 × 3 × 2 × 8 conditions = **288 jobs** (192 cross/within + 96 mixed)
 
-### Condition 命名規則
+### Condition Naming Convention
 
-実験コード内の `CONDITION` パラメータとタグ名・実際の処理の対応:
+Mapping between the `CONDITION` parameter in experiment code, tag names, and actual processing:
 
-| CONDITION | タグ prefix | 処理内容 |
+| CONDITION | Tag prefix | Processing |
 |-----------|-------------|----------|
-| `baseline` | `baseline_domain_*` | 不均衡対策なし（class_weight のみ） |
-| `smote_plain` | `smote_plain_*` | グローバル SMOTE（全被験者プール後に適用） |
-| `smote` | `imbalv3_*` | Subject-wise SMOTE（被験者単位で SMOTE 適用） |
+| `baseline` | `baseline_domain_*` | No imbalance handling (class_weight only) |
+| `smote_plain` | `smote_plain_*` | Global SMOTE (applied after pooling all subjects) |
+| `smote` | `imbalv3_*` | Subject-wise SMOTE (SMOTE applied per subject) |
 | `undersample` | `undersample_rus_*` | Random Under-Sampling |
-| `balanced_rf` | `balanced_rf_*` | BalancedRandomForestClassifier（RF のみ） |
+| `balanced_rf` | `balanced_rf_*` | BalancedRandomForestClassifier (RF only) |
 
 ## Experiment 3: Prior Research Replication (Split2)
 
 Replicate prior research baselines with domain split2 grouping.
 
-**詳細な実験条件一覧:** [conditions/03-prior-research-conditions.md](conditions/03-prior-research-conditions.md)
+**Detailed experiment conditions:** [conditions/03-prior-research-conditions.md](conditions/03-prior-research-conditions.md)
 
 **Launchers:**
 - Cross/Within-domain: `scripts/hpc/launchers/launch_prior_research_split2.sh`
@@ -134,7 +134,7 @@ bash scripts/hpc/launchers/launch_prior_research_mixed.sh
 - SvmA: baseline, smote_plain, smote (=sw_smote), undersample (4 methods → 7 jobs/combo)
 - Lstm: baseline, smote_plain, smote (=sw_smote), undersample (4 methods → 7 jobs/combo)
 
-> **Note:** `balanced_rf` は RF 専用のため exp3 では使用しない。
+> **Note:** `balanced_rf` is RF-specific and is not used in exp3.
 
 **Total:** 3 × 2 × 3 × 2 × 7 × 3 models = **756 jobs** (504 cross/within + 252 mixed)
 
@@ -146,25 +146,25 @@ bash scripts/hpc/launchers/launch_prior_research_mixed.sh
 | SvmA | 8 | 32 GB | 24h (SMOTE: 48h) | 30h (SMOTE: 48h) |
 | Lstm | 4 | 32 GB | 16h (SMOTE: 24h) | 20h (SMOTE: 24h) |
 
-> **Walltime 注記:** SMOTE 系条件（smote_plain, smote）は Optuna 100 trial の各 trial で
-> SMOTE を実行するため、baseline/undersample より大幅に時間がかかる。
-> 実験中に判明したため、walltime を増加して再投入した経緯がある。
+> **Walltime note:** SMOTE-based conditions (smote_plain, smote) execute SMOTE in each of the
+> 100 Optuna trials, so they take significantly longer than baseline/undersample.
+> This was discovered during experiments, so walltime was increased and jobs were resubmitted.
 
-### デーモンによる自動投入
+### Automatic Submission via Daemon
 
-実験3は全 504 ジョブ（cross/within-domain）をキュー上限内で順次投入するため、
-モデルごとにデーモンプロセスを使用している。デーモンは残りジョブリストから
-未投入分を取り出し、キュー空き状況に応じて自動的に `qsub` する。
+Experiment 3 uses daemon processes per model to sequentially submit all 504 jobs
+(cross/within-domain) within queue limits. The daemon picks unsubmitted jobs from
+the remaining job list and automatically runs `qsub` based on queue availability.
 
 ```bash
-# デーモン起動例（SvmW 用）
+# Daemon startup example (for SvmW)
 nohup bash scripts/hpc/launchers/auto_resub_svmw.sh &
 
-# デーモン状態確認
+# Check daemon status
 ps aux | grep auto_resub
 ```
 
-デーモンスクリプトはモデルごとに以下が存在する:
+Daemon scripts exist for each model:
 - `scripts/hpc/launchers/auto_resub_svmw.sh`
 - `scripts/hpc/launchers/auto_resub_svma.sh`
 - `scripts/hpc/launchers/auto_resub_lstm.sh`

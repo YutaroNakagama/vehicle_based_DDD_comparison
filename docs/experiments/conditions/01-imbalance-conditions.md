@@ -1,18 +1,18 @@
-# 実験1（クラス不均衡）の実験条件
+# Experiment 1 (Class Imbalance) Conditions
 
-このファイルは「実験1：クラス不均衡対策の比較」で使用した実験条件の一覧を示します。
+This file lists the experiment conditions used in "Experiment 1: Comparison of class imbalance strategies."
 
-(内容は `experiment_1_conditions.md` から移行されています — 旧ファイル名: `experiment_1_conditions.md`)
+(Content migrated from `experiment_1_conditions.md` — previous filename: `experiment_1_conditions.md`)
 
 ---
 
-<!-- 以下、元ファイルの内容をそのまま移行しています -->
+<!-- Content below is migrated as-is from the original file -->
 
-## 概要
+## Overview
 
-- **目的**: プール訓練（ドメイン分割なし）における不均衡対策手法の性能比較
-- **モデル**: RF（RandomForestClassifier）
-- **ランチャー**: `scripts/hpc/launchers/launch_paper_imbalance.sh`
-- **ジョブスクリプト**: `scripts/hpc/jobs/imbalance/pbs_imbalance_comparison.sh`
+- **Objective**: Compare imbalance handling methods in pooled training (without domain splitting)
+- **Model**: RF (RandomForestClassifier)
+- **Launcher**: `scripts/hpc/launchers/launch_paper_imbalance.sh`
+- **Job script**: `scripts/hpc/jobs/imbalance/pbs_imbalance_comparison.sh`
 
-...（元ファイルの詳細はそのまま移行）
+...(Details from the original file are migrated as-is)

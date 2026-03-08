@@ -1,92 +1,92 @@
-# 実験2（ドメインシフト）の実験条件
+# Experiment 2 (Domain Shift) Conditions
 
-このファイルは「実験2：ドメインシフト (split2)」で使用した実験条件の一覧を示します。
+This file lists the experiment conditions used in "Experiment 2: Domain Shift (split2)."
 
 ---
 
-## 概要
+## Overview
 
-- **目的**: split2 ドメイン分割による RF モデルのドメインシフト耐性評価
-- **モデル**: RF（BalancedRF は不均衡対策手法として含む）
-- **データ分割**: `split2`（`in_domain`: 44 名、`out_domain`: 43 名）
-- **ランチャー**:
+- **Objective**: Evaluate domain shift robustness of RF models using split2 domain splitting
+- **Model**: RF (BalancedRF included as an imbalance handling method)
+- **Data split**: `split2` (`in_domain`: 44 subjects, `out_domain`: 43 subjects)
+- **Launchers**:
   - Cross/Within-domain: `scripts/hpc/launchers/launch_paper_domain_split2.sh`
   - Multi-domain: `scripts/hpc/launchers/launch_exp2_mixed.sh`
-  - 追加シード投入: `scripts/hpc/launchers/exp2_10seeds_submit.sh`
-  - 失敗ジョブ再投入: `scripts/hpc/launchers/resubmit_failed_exp2.sh`
-- **ジョブスクリプト**: `scripts/hpc/jobs/domain_analysis/pbs_domain_comparison_split2.sh`
+  - Additional seed submission: `scripts/hpc/launchers/exp2_10seeds_submit.sh`
+  - Failed job resubmission: `scripts/hpc/launchers/resubmit_failed_exp2.sh`
+- **Job script**: `scripts/hpc/jobs/domain_analysis/pbs_domain_comparison_split2.sh`
 
-## 実験パラメータ
+## Experiment Parameters
 
-| パラメータ | 値 |
-|-----------|-----|
+| Parameter | Values |
+|-----------|--------|
 | Distance metrics | mmd, dtw, wasserstein (3) |
-| Domain groups | in_domain (44 名), out_domain (43 名) (2) |
+| Domain groups | in_domain (44 subjects), out_domain (43 subjects) (2) |
 | Training modes | source_only, target_only, mixed (3) |
 | Seeds | 0, 1, 7, 13, 42, 123, 256, 512, 1337, 2024 (10) |
 | Ranking method | knn |
 | Optuna trials | 100 |
 | CV strategy | StratifiedKFold (3-fold) |
-| 最適化指標 | F2 score |
+| Optimization metric | F2 score |
 
-> **Note:** 初期実験は seed=42, 123 の 2 種で実施。その後 8 シードを追加し、
-> 最終的に 10 シードでの安定性評価を完了（balanced_rf のみ 2 シード）。
+> **Note:** Initial experiments used 2 seeds (42, 123). Eight additional seeds were added later,
+> completing the stability evaluation with 10 seeds (balanced_rf: 2 seeds only).
 
-## 不均衡対策条件（5 種 → 8 jobs/combo）
+## Imbalance Handling Conditions (5 types -> 8 jobs/combo)
 
-| # | CONDITION | 説明 | ratio | jobs/combo |
-|---|-----------|------|-------|------------|
-| 1 | `baseline` | 不均衡対策なし（class_weight のみ） | なし | 1 |
-| 2 | `smote_plain` | グローバル SMOTE（全被験者プール後に適用） | 0.1, 0.5 | 2 |
-| 3 | `smote` | Subject-wise SMOTE（被験者単位で SMOTE 適用） | 0.1, 0.5 | 2 |
+| # | CONDITION | Description | ratio | jobs/combo |
+|---|-----------|-------------|-------|------------|
+| 1 | `baseline` | No imbalance handling (class_weight only) | N/A | 1 |
+| 2 | `smote_plain` | Global SMOTE (applied after pooling all subjects) | 0.1, 0.5 | 2 |
+| 3 | `smote` | Subject-wise SMOTE (SMOTE applied per subject) | 0.1, 0.5 | 2 |
 | 4 | `undersample` | Random Under-Sampling (RUS) | 0.1, 0.5 | 2 |
-| 5 | `balanced_rf` | BalancedRandomForestClassifier（内部バランシング） | なし | 1 |
+| 5 | `balanced_rf` | BalancedRandomForestClassifier (internal balancing) | N/A | 1 |
 
-> **smote_plain vs smote の違い:**
-> - `smote_plain`: 全被験者のデータをプールした後に SMOTE を適用（標準的な SMOTE）
-> - `smote`: 各被験者のデータに個別に SMOTE を適用してからプール（Subject-wise SMOTE）
+> **Difference between smote_plain and smote:**
+> - `smote_plain`: SMOTE applied after pooling all subjects' data (standard SMOTE)
+> - `smote`: SMOTE applied to each subject's data individually before pooling (Subject-wise SMOTE)
 >
-> Subject-wise SMOTE は被験者間のデータ分布の違いを保持する利点がある。
+> Subject-wise SMOTE has the advantage of preserving inter-subject data distribution differences.
 
-## ジョブ数の計算
+## Job Count Calculation
 
 ```
-10 シード版（baseline, smote_plain, sw_smote, undersample_rus）:
-  Cross/Within-domain:  3 dist × 2 dom × 2 mode × 10 seed × 7 cond  = 840 jobs
-  Multi-domain (mixed): 3 dist × 2 dom × 1 mode × 10 seed × 7 cond  = 420 jobs
-  小計: 1,260 jobs
+10-seed version (baseline, smote_plain, sw_smote, undersample_rus):
+  Cross/Within-domain:  3 dist x 2 dom x 2 mode x 10 seed x 7 cond  = 840 jobs
+  Multi-domain (mixed): 3 dist x 2 dom x 1 mode x 10 seed x 7 cond  = 420 jobs
+  Subtotal: 1,260 jobs
 
-2 シード版（balanced_rf のみ）:
-  Cross/Within-domain:  3 dist × 2 dom × 2 mode × 2 seed × 1 cond   = 24 jobs
-  Multi-domain (mixed): 3 dist × 2 dom × 1 mode × 2 seed × 1 cond   = 12 jobs
-  小計: 36 jobs
+2-seed version (balanced_rf only):
+  Cross/Within-domain:  3 dist x 2 dom x 2 mode x 2 seed x 1 cond   = 24 jobs
+  Multi-domain (mixed): 3 dist x 2 dom x 1 mode x 2 seed x 1 cond   = 12 jobs
+  Subtotal: 36 jobs
 
-合計: 1,260 + 36 = 1,296 jobs
+Total: 1,260 + 36 = 1,296 jobs
 ```
 
-> **Note:** 初期は 2 シード (42, 123) で 288 jobs として実行。
-> 8 シード追加後に追加投入し、最終的に ~1,296 jobs を完了。
+> **Note:** Initially executed as 288 jobs with 2 seeds (42, 123).
+> Additional seeds were submitted later, completing ~1,296 jobs in total.
 
-## Training Mode の定義
+## Training Mode Definitions
 
-| Mode | 説明 | 訓練データ | 評価データ |
-|------|------|-----------|-----------|
-| `source_only` | Cross-domain | 反対ドメイン | 対象ドメイン |
-| `target_only` | Within-domain | 同一ドメイン | 同一ドメイン |
-| `mixed` | Multi-domain | 全 87 名（プール） | 対象ドメイン |
+| Mode | Description | Training data | Evaluation data |
+|------|-------------|---------------|-----------------|
+| `source_only` | Cross-domain | Opposite domain | Target domain |
+| `target_only` | Within-domain | Same domain | Same domain |
+| `mixed` | Multi-domain | All 87 subjects (pooled) | Target domain |
 
-### split2 のデータ分割詳細
+### split2 Data Split Details
 
-| Mode | Domain | 訓練データ | 評価データ |
-|------|--------|-----------|-----------|
-| source_only | out_domain | in_domain (44 名) | out_domain (43 名) |
-| source_only | in_domain | out_domain (43 名) | in_domain (44 名) |
-| target_only | out_domain | out_domain (43 名) | out_domain (43 名) |
-| target_only | in_domain | in_domain (44 名) | in_domain (44 名) |
-| mixed | out_domain | 全 87 名 | out_domain (43 名) |
-| mixed | in_domain | 全 87 名 | in_domain (44 名) |
+| Mode | Domain | Training data | Evaluation data |
+|------|--------|---------------|-----------------|
+| source_only | out_domain | in_domain (44 subjects) | out_domain (43 subjects) |
+| source_only | in_domain | out_domain (43 subjects) | in_domain (44 subjects) |
+| target_only | out_domain | out_domain (43 subjects) | out_domain (43 subjects) |
+| target_only | in_domain | in_domain (44 subjects) | in_domain (44 subjects) |
+| mixed | out_domain | All 87 subjects | out_domain (43 subjects) |
+| mixed | in_domain | All 87 subjects | in_domain (44 subjects) |
 
-## HPC リソース設定
+## HPC Resource Settings
 
 | Condition | CPUs | Memory | Walltime | Queue |
 |-----------|------|--------|----------|-------|
@@ -94,12 +94,12 @@
 | smote / smote_plain | 4 | 10 GB | 08:00:00 | SINGLE |
 | balanced_rf | 8 | 12 GB | 08:00:00 | LONG |
 
-> **Known issue:** smote_plain の ratio=0.5 + out_domain + seed=123 設定で
-> DEFAULT queue (10h) の walltime を超過するケースがあり、LONG queue (15h) で再投入。
+> **Known issue:** smote_plain with ratio=0.5 + out_domain + seed=123 exceeded
+> the DEFAULT queue (10h) walltime, requiring resubmission to the LONG queue (15h).
 
-## 関連ドキュメント
+## Related Documents
 
-- [実験結果](../results/02-domain-results.md)
-- [再現性ガイド](../reproducibility.md)
+- [Experiment results](../results/02-domain-results.md)
+- [Reproducibility guide](../reproducibility.md)
 - [Domain Generalization Pipeline](../../architecture/domain_generalization.md)
-- [不均衡対策手法](../../reference/imbalance_methods.md)
+- [Imbalance methods](../../reference/imbalance_methods.md)

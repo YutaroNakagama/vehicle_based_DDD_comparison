@@ -144,42 +144,42 @@ python scripts/python/train/train.py \
 ### 4.2 HPC Execution (PBS)
 
 ```bash
-# 単発投入例（CPU — SvmW/SvmA）
+# Single submission example (CPU — SvmW/SvmA)
 qsub -N "prior_SvmW_test" \
      -l select=1:ncpus=8:mem=16gb -l walltime=12:00:00 -q SINGLE \
      -v MODEL=SvmW,CONDITION=baseline,DISTANCE=mmd,DOMAIN=out_domain,SEED=42 \
      scripts/hpc/jobs/train/pbs_prior_research_unified.sh
 
-# 単発投入例（GPU — Lstm）
+# Single submission example (GPU — Lstm)
 qsub -N "prior_Lstm_test" \
      -l select=1:ncpus=4:mem=16gb:ngpus=1 -l walltime=16:00:00 -q GPU-1 \
      -v MODEL=Lstm,CONDITION=baseline,DISTANCE=mmd,DOMAIN=out_domain,SEED=42 \
      scripts/hpc/jobs/train/pbs_prior_research_unified_gpu.sh
 ```
 
-**大規模実行（統一デーモンによる自動投入）:**
+**Bulk execution (automatic submission via unified daemon):**
 
-exp3 はモデルあたり 84 ジョブ（全 252 ジョブ）あり、キュー上限があるため、
-統一デーモンプロセスで残りジョブを自動投入する。
+exp3 has 84 jobs per model (252 total), and due to queue limits,
+a unified daemon process automatically submits remaining jobs.
 
 ```bash
-# 統一デーモン起動（全モデル対応、GPU キュー自動振り分け）
+# Start unified daemon (supports all models, automatic GPU queue routing)
 nohup bash scripts/hpc/launchers/auto_resub_unified_v2.sh &
 ```
 
-デーモンは残りジョブリストから未投入分を取り出し、キュー空き状況に応じて `qsub` する。
-Lstm は GPU キュー（GPU-1, GPU-1A, GPU-S, GPU-L, GPU-LA）に自動ルーティングされる。
-詳細は [reproducibility.md](../experiments/reproducibility.md#デーモンによる自動投入) を参照。
+The daemon picks unsubmitted jobs from the remaining job list and runs `qsub` based on queue availability.
+Lstm jobs are automatically routed to GPU queues (GPU-1, GPU-1A, GPU-S, GPU-L, GPU-LA).
+See [reproducibility.md](../experiments/reproducibility.md#automatic-submission-via-daemon) for details.
 
 ### 4.3 Domain Split Experiments (domain_train)
 
-domain_train モードでは各ドメインのデータを 70/15/15（train/val/test）に分割し、
-1回の訓練（同ドメインの train/val 使用）に対して2回の評価を実行する:
-- **within**: 同ドメインの test(15%) で評価
-- **cross**: 逆ドメインの test(15%) で評価
+In domain_train mode, each domain's data is split 70/15/15 (train/val/test),
+and two evaluations are performed for each training run (using same-domain train/val):
+- **within**: Evaluated on same-domain test (15%)
+- **cross**: Evaluated on opposite-domain test (15%)
 
 ```bash
-# 全252ジョブを一括投入
+# Submit all 252 jobs at once
 bash scripts/hpc/launchers/launch_prior_research_unified.sh
 
 # Dry run to preview jobs
@@ -197,23 +197,23 @@ bash scripts/hpc/launchers/launch_prior_research_unified.sh --dry-run
 **SvmW / SvmA:**
 ```
 models/{MODEL}/{JOB_ID}/{JOB_ID}[1]/
-├── {MODEL}_pooled_*.pkl                    # 学習済みモデル
-├── scaler_{MODEL}_pooled_*.pkl             # 特徴量スケーラー
-├── selected_features_{MODEL}_pooled_*.pkl  # 選択特徴量情報
-├── feature_meta_{MODEL}_pooled_*.json      # 特徴量メタ情報
-└── threshold_{MODEL}_pooled_*.json         # 分類閾値
+├── {MODEL}_pooled_*.pkl                    # Trained model
+├── scaler_{MODEL}_pooled_*.pkl             # Feature scaler
+├── selected_features_{MODEL}_pooled_*.pkl  # Selected features info
+├── feature_meta_{MODEL}_pooled_*.json      # Feature metadata
+└── threshold_{MODEL}_pooled_*.json         # Classification threshold
 ```
 
 **Lstm:**
 ```
 models/Lstm/{JOB_ID}/{JOB_ID}[1]/
-├── Lstm_pooled_*.keras                      # 最終モデル（Keras 形式）
-├── Lstm_pooled_*_fold_{0-4}.keras            # Fold 別モデル（K=5）
-├── training_history_Lstm_pooled_*.json       # 学習履歴（loss, accuracy）
-├── scaler_Lstm_pooled_*.pkl                  # 特徴量スケーラー
-├── selected_features_Lstm_pooled_*.pkl       # 選択特徴量情報
-├── feature_meta_Lstm_pooled_*.json           # 特徴量メタ情報
-└── threshold_Lstm_pooled_*.json              # 分類閾値
+├── Lstm_pooled_*.keras                      # Final model (Keras format)
+├── Lstm_pooled_*_fold_{0-4}.keras            # Per-fold models (K=5)
+├── training_history_Lstm_pooled_*.json       # Training history (loss, accuracy)
+├── scaler_Lstm_pooled_*.pkl                  # Feature scaler
+├── selected_features_Lstm_pooled_*.pkl       # Selected features info
+├── feature_meta_Lstm_pooled_*.json           # Feature metadata
+└── threshold_Lstm_pooled_*.json              # Classification threshold
 ```
 
 ### 5.2 Result Files
@@ -224,16 +224,16 @@ results/outputs/training/{MODEL}/{JOB_ID}/{JOB_ID}[1]/
 └── train_results_{MODEL}_pooled_*.csv   # Detailed results
 ```
 
-### 5.3 Optuna Study (SvmW のみ)
+### 5.3 Optuna Study (SvmW only)
 
-SvmW は Optuna でハイパーパラメータチューニングを行うため、study オブジェクトが保存される。
-SvmA は PSO、Lstm は K-Fold CV を使用するため Optuna 無し。
+SvmW uses Optuna for hyperparameter tuning, so the study object is saved.
+SvmA uses PSO and Lstm uses K-Fold CV, so no Optuna study is saved for them.
 
 ```
 models/SvmW/{JOB_ID}/
-├── optuna_SvmW_pooled_*_study.pkl         # Optuna study オブジェクト
-├── optuna_SvmW_pooled_*_trials.csv        # Trial 履歴
-└── optuna_SvmW_pooled_*_convergence.json  # 収束データ
+├── optuna_SvmW_pooled_*_study.pkl         # Optuna study object
+├── optuna_SvmW_pooled_*_trials.csv        # Trial history
+└── optuna_SvmW_pooled_*_convergence.json  # Convergence data
 ```
 
 ## 6. Key Differences from Proposed Methods
@@ -258,7 +258,7 @@ All models show significant validation-test performance gap due to:
 
 - **Random seeds**: Set via `--seed` parameter
 - **Thread limits**: Controlled via environment variables in PBS script
-- **TensorFlow**: Lstm は GPU モード（A40/A100）で実行。`configure_gpu()` で GPU メモリ成長を設定
+- **TensorFlow**: Lstm runs in GPU mode (A40/A100). `configure_gpu()` configures GPU memory growth
 
 ## 8. References
 

@@ -178,8 +178,8 @@ To evaluate generalization ability by **training/fine-tuning models** on differe
 | **domain_train** | Unified: Train on target domain (70/15/15 split), evaluate on both within-domain test and cross-domain test |
 | **mixed** | Multi-domain: Train on *all 87 subjects* (pooled), evaluate on the target domain |
 
-> **Note:** `domain_train` は実験3（先行研究再現）で使用。source_only/target_only を統一し、
-> 各ドメインで1回の訓練 + 2回の評価（within/cross）を行う。ジョブ数が半減する。
+> **Note:** `domain_train` is used in Experiment 3 (prior research replication). It unifies source_only/target_only,
+> performing one training + two evaluations (within/cross) per domain. This halves the number of jobs.
 
 ### Split2 Domain Logic
 
@@ -206,7 +206,7 @@ qsub -v CONDITION=baseline,MODE=source_only,DISTANCE=mmd,DOMAIN=out_domain,SEED=
     scripts/hpc/jobs/domain_analysis/pbs_domain_comparison_split2.sh
 ```
 
-**Experiment 3 (SvmW / SvmA / Lstm — domain_train 統一版):**
+**Experiment 3 (SvmW / SvmA / Lstm — unified domain_train):**
 ```bash
 # CPU (SvmW/SvmA)
 qsub -v MODEL=SvmW,CONDITION=baseline,DISTANCE=mmd,DOMAIN=out_domain,SEED=42 \
@@ -217,9 +217,9 @@ qsub -v MODEL=Lstm,CONDITION=baseline,DISTANCE=mmd,DOMAIN=out_domain,SEED=42 \
     scripts/hpc/jobs/train/pbs_prior_research_unified_gpu.sh
 ```
 
-> Experiment 2 は RF のみ（5 条件、288 jobs）。
-> Experiment 3 は SvmW, SvmA, Lstm（各 4 条件、合計 252 jobs）で domain_train モードを使用。
-> 詳細は [Reproducibility Guide](../experiments/reproducibility.md) を参照。
+> Experiment 2 uses RF only (5 conditions, 288 jobs).
+> Experiment 3 uses SvmW, SvmA, Lstm (4 conditions each, 252 jobs total) with domain_train mode.
+> See [Reproducibility Guide](../experiments/reproducibility.md) for details.
 
 ### Output Artifacts
 
