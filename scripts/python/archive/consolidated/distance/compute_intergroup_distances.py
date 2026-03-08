@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Inter-group距離とグループ重心を計算するスクリプト
+Script to compute inter-group distances and group centroids
 
-計算内容:
-1. Inter-group distances (グループ間距離)
-   - High ↔ Middle, High ↔ Low, Middle ↔ Low の平均距離・標準偏差
-2. Group centroids (グループ重心)
-   - MDS投影空間での各グループの重心座標
-   - 重心間のユークリッド距離
-3. Intra/Inter比率の計算
+Computations:
+1. Inter-group distances
+   - Mean distance and standard deviation for High ↔ Middle, High ↔ Low, Middle ↔ Low
+2. Group centroids
+   - Centroid coordinates of each group in MDS projection space
+   - Euclidean distances between centroids
+3. Intra/Inter ratio computation
 """
 
 import numpy as np
@@ -42,7 +42,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 from src.utils.visualization.color_palettes import DOMAIN_LEVEL_COLORS
 
-# パス設定
+# Path settings
 BASE_DIR = Path(__file__).resolve().parents[2]
 OUTPUT_DIR = DISTANCE_DIR / "group-wise" / "intergroup_analysis"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -51,8 +51,8 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 def compute_intergroup_distances(dist_matrix: np.ndarray, 
                                   indices_A: np.ndarray, 
                                   indices_B: np.ndarray) -> dict:
-    """2つのグループ間の距離統計を計算"""
-    # グループAの各要素とグループBの各要素間の距離を抽出
+    """Compute distance statistics between two groups"""
+    # Extract distances between each element of group A and group B
     inter_distances = dist_matrix[np.ix_(indices_A, indices_B)]
     
     return {
@@ -66,9 +66,9 @@ def compute_intergroup_distances(dist_matrix: np.ndarray,
 
 def compute_intragroup_distances(dist_matrix: np.ndarray, 
                                   indices: np.ndarray) -> dict:
-    """グループ内の距離統計を計算"""
+    """Compute intra-group distance statistics"""
     intra_distances = dist_matrix[np.ix_(indices, indices)]
-    # 対角成分（自己距離=0）を除外
+    # Exclude diagonal elements (self-distance=0)
     mask = ~np.eye(len(indices), dtype=bool)
     intra_distances = intra_distances[mask]
     
@@ -85,8 +85,8 @@ def compute_mds_centroids(dist_matrix: np.ndarray,
                           group_indices_dict: dict,
                           n_components: int = 2,
                           random_state: int = 42) -> dict:
-    """MDS投影してグループ重心を計算"""
-    # MDS投影
+    """Compute group centroids via MDS projection"""
+    # MDS projection
     mds = MDS(n_components=n_components, 
               dissimilarity="precomputed", 
               random_state=random_state,
@@ -94,7 +94,7 @@ def compute_mds_centroids(dist_matrix: np.ndarray,
               max_iter=1000)
     coords = mds.fit_transform(dist_matrix)
     
-    # 各グループの重心を計算
+    # Compute centroid of each group
     centroids = {}
     for level, indices in group_indices_dict.items():
         group_coords = coords[indices]
@@ -104,7 +104,7 @@ def compute_mds_centroids(dist_matrix: np.ndarray,
             "spread": float(np.mean(np.linalg.norm(group_coords - centroid, axis=1)))
         }
     
-    # 重心間の距離を計算
+    # Compute distances between centroids
     centroid_distances = {}
     for i, level1 in enumerate(LEVELS):
         for level2 in LEVELS[i+1:]:
@@ -126,27 +126,27 @@ def compute_projection_centroids(dist_matrix: np.ndarray,
                                    method: str = "mds",
                                    n_components: int = 2,
                                    random_state: int = 42) -> dict:
-    """指定した次元削減法で投影してグループ重心を計算
+    """Compute group centroids using a specified dimensionality reduction method
     
     Parameters
     ----------
     dist_matrix : np.ndarray
-        距離行列
+        Distance matrix
     group_indices_dict : dict
-        グループ名 -> インデックスリストの辞書
+        Dictionary of group name -> index list
     method : str
-        投影手法 ("mds", "tsne", "umap")
+        Projection method ("mds", "tsne", "umap")
     n_components : int
-        次元数
+        Number of dimensions
     random_state : int
-        乱数シード
+        Random seed
     
     Returns
     -------
     dict
-        重心情報、座標、メトリクス
+        Centroid information, coordinates, and metrics
     """
-    # 次元削減を実行
+    # Perform dimensionality reduction
     if method == "mds":
         reducer = MDS(n_components=n_components, 
                      dissimilarity="precomputed", 
@@ -160,7 +160,7 @@ def compute_projection_centroids(dist_matrix: np.ndarray,
     elif method == "tsne":
         reducer = TSNE(n_components=n_components,
                       metric="precomputed",
-                      init="random",  # precomputedの場合はrandomを使用
+                      init="random",  # Use random init for precomputed
                       random_state=random_state,
                       perplexity=min(30, len(dist_matrix) - 1),
                       max_iter=1000)
@@ -176,25 +176,25 @@ def compute_projection_centroids(dist_matrix: np.ndarray,
                            random_state=random_state,
                            n_neighbors=min(15, len(dist_matrix) - 1))
         coords = reducer.fit_transform(dist_matrix)
-        metric_value = None  # UMAPには単一のメトリクスがない
+        metric_value = None  # UMAP has no single metric
         metric_name = "none"
     
     else:
         raise ValueError(f"Unknown method: {method}")
     
-    # 全体の重心（ドメイン中心）を計算
+    # Compute overall centroid (domain center)
     global_centroid = np.mean(coords, axis=0)
     
-    # 各グループの重心を計算
+    # Compute centroid of each group
     centroids = {}
     for level, indices in group_indices_dict.items():
         group_coords = coords[indices]
         centroid = np.mean(group_coords, axis=0)
         
-        # グループ重心からドメイン中心までの距離
+        # Distance from group centroid to domain center
         distance_to_global = float(np.linalg.norm(centroid - global_centroid))
         
-        # グループ内の広がり
+        # Spread within the group
         spread = float(np.mean(np.linalg.norm(group_coords - centroid, axis=1)))
         
         centroids[level] = {
@@ -203,7 +203,7 @@ def compute_projection_centroids(dist_matrix: np.ndarray,
             "distance_to_global_centroid": distance_to_global
         }
     
-    # 重心間の距離を計算
+    # Compute distances between centroids
     centroid_distances = {}
     for i, level1 in enumerate(LEVELS):
         for level2 in LEVELS[i+1:]:
@@ -227,18 +227,18 @@ def visualize_projection_with_centroids(metric: str,
                                          projection_results: dict, 
                                          group_indices_dict: dict,
                                          output_suffix: str = ""):
-    """投影結果を重心付きで可視化（MDS/t-SNE/UMAP共通）
+    """Visualize projection results with centroids (common for MDS/t-SNE/UMAP)
     
     Parameters
     ----------
     metric : str
-        距離指標名
+        Distance metric name
     projection_results : dict
-        投影結果（compute_projection_centroidsの出力）
+        Projection results (output of compute_projection_centroids)
     group_indices_dict : dict
-        グループインデックス辞書
+        Group index dictionary
     output_suffix : str
-        出力ファイル名のサフィックス
+        Output filename suffix
     """
     coords = projection_results["coords"]
     centroids = projection_results["centroids"]
@@ -247,7 +247,7 @@ def visualize_projection_with_centroids(metric: str,
     
     fig, ax = plt.subplots(figsize=(14, 11))
     
-    # 各グループをプロット
+    # Plot each group
     colors = DOMAIN_LEVEL_COLORS
     markers = {"out_domain": "^", "mid_domain": "s", "in_domain": "v"}
     
@@ -258,13 +258,13 @@ def visualize_projection_with_centroids(metric: str,
                   s=100, alpha=0.6, label=f"{level.capitalize()} group",
                   edgecolors='black', linewidth=0.5)
     
-    # ドメイン中心（全体重心）をプロット
+    # Plot domain center (overall centroid)
     ax.scatter(global_centroid[0], global_centroid[1],
               c='black', marker='X', s=1000, 
               edgecolors='white', linewidth=3,
               label='Global centroid (Domain center)', zorder=15)
     
-    # 各グループの重心をプロット
+    # Plot centroid of each group
     for level, centroid_data in centroids.items():
         c = np.array(centroid_data["coordinates"])
         ax.scatter(c[0], c[1], 
@@ -272,11 +272,11 @@ def visualize_projection_with_centroids(metric: str,
                   s=800, edgecolors='black', linewidth=2,
                   label=f"{level.capitalize()} centroid", zorder=10)
         
-        # ドメイン中心からグループ重心への線を描画
+        # Draw line from domain center to group centroid
         ax.plot([global_centroid[0], c[0]], [global_centroid[1], c[1]],
                c=colors[level], linestyle='-', alpha=0.5, linewidth=2.5)
         
-        # 距離をラベル表示
+        # Display distance as label
         dist_to_center = centroid_data["distance_to_global_centroid"]
         mid_x = (global_centroid[0] + c[0]) / 2
         mid_y = (global_centroid[1] + c[1]) / 2
@@ -285,7 +285,7 @@ def visualize_projection_with_centroids(metric: str,
                bbox=dict(boxstyle='round,pad=0.4', 
                         facecolor=colors[level], alpha=0.3, edgecolor='black'))
     
-    # 軸ラベルとタイトル
+    # Axis labels and title
     method_upper = method.upper()
     ax.set_xlabel(f"{method_upper} Component 1", fontsize=14)
     ax.set_ylabel(f"{method_upper} Component 2", fontsize=14)
@@ -307,8 +307,8 @@ def visualize_projection_with_centroids(metric: str,
 
 
 def visualize_centroids(metric: str, mds_results: dict, group_indices_dict: dict):
-    """重心付きのMDS投影を可視化（後方互換性のため残す）"""
-    # 新しい関数を使用
+    """Visualize MDS projection with centroids (kept for backward compatibility)"""
+    # Use the new function
     projection_results = {
         "coords": mds_results["mds_coords"],
         "centroids": mds_results["centroids"],
@@ -317,7 +317,7 @@ def visualize_centroids(metric: str, mds_results: dict, group_indices_dict: dict
         "metric_name": "stress",
         "metric_value": mds_results["stress"]
     }
-    # global_centroidがcentroidsに含まれていない場合、追加計算
+    # If global_centroid is not in centroids, compute additionally
     for level in projection_results["centroids"]:
         if "distance_to_global_centroid" not in projection_results["centroids"][level]:
             c = np.array(projection_results["centroids"][level]["coordinates"])
@@ -336,24 +336,24 @@ def visualize_centroids(metric: str, mds_results: dict, group_indices_dict: dict
 
 
 def visualize_distance_heatmap(metric: str, results: dict):
-    """Intra/Inter距離のヒートマップを作成"""
-    # 距離行列を作成
+    """Create heatmap of intra/inter distances"""
+    # Create distance matrix
     distance_matrix = np.zeros((3, 3))
     labels = ["out_domain", "mid_domain", "in_domain"]
     
-    # Intra距離を対角成分に
+    # Set intra distances on diagonal
     for i, level in enumerate(LEVELS):
         distance_matrix[i, i] = results["intragroup"][level]["mean"]
     
-    # Inter距離を非対角成分に
+    # Set inter distances on off-diagonal
     for pair, stats in results["intergroup"].items():
         level1, level2 = pair.split("_vs_")
         i = LEVELS.index(level1)
         j = LEVELS.index(level2)
         distance_matrix[i, j] = stats["mean"]
-        distance_matrix[j, i] = stats["mean"]  # 対称行列
+        distance_matrix[j, i] = stats["mean"]  # Symmetric matrix
     
-    # ヒートマップを描画
+    # Draw heatmap
     fig, ax = plt.subplots(figsize=(10, 8))
     
     sns.heatmap(distance_matrix, 
@@ -368,7 +368,7 @@ def visualize_distance_heatmap(metric: str, results: dict):
     ax.set_xlabel("Group", fontsize=14)
     ax.set_ylabel("Group", fontsize=14)
     
-    # 対角成分（Intra）を強調
+    # Highlight diagonal (intra) elements
     for i in range(3):
         rect = plt.Rectangle((i, i), 1, 1, fill=False, 
                             edgecolor='blue', linewidth=3)
@@ -382,27 +382,27 @@ def visualize_distance_heatmap(metric: str, results: dict):
 
 
 def visualize_intra_inter_comparison(all_results: dict):
-    """全距離指標でのIntra/Inter比較"""
+    """Intra/Inter comparison across all distance metrics"""
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
     
     for idx, metric in enumerate(METRICS):
         ax = axes[idx]
         results = all_results[metric]
         
-        # データ準備
+        # Prepare data
         categories = []
         means = []
         stds = []
         types = []  # Intra or Inter
         
-        # Intra距離
+        # Intra distances
         for level in LEVELS:
             categories.append(f"{level.capitalize()}\n(Intra)")
             means.append(results["intragroup"][level]["mean"])
             stds.append(results["intragroup"][level]["std"])
             types.append("Intra")
         
-        # Inter距離
+        # Inter distances
         for pair in ["out_domain_vs_mid_domain", "out_domain_vs_in_domain", "mid_domain_vs_in_domain"]:
             level1, level2 = pair.split("_vs_")
             categories.append(f"{level1.capitalize()}\nvs\n{level2.capitalize()}")
@@ -410,13 +410,13 @@ def visualize_intra_inter_comparison(all_results: dict):
             stds.append(results["intergroup"][pair]["std"])
             types.append("Inter")
         
-        # 棒グラフ
+        # Bar chart
         colors = ['lightblue' if t == 'Intra' else 'lightcoral' for t in types]
         x = np.arange(len(categories))
         bars = ax.bar(x, means, yerr=stds, capsize=5, 
                      color=colors, edgecolor='black', linewidth=1.5)
         
-        # Intra/Interを区別
+        # Distinguish Intra/Inter
         for i, (bar, t) in enumerate(zip(bars, types)):
             if t == "Intra":
                 bar.set_hatch('//')
@@ -427,7 +427,7 @@ def visualize_intra_inter_comparison(all_results: dict):
         ax.set_title(f"{metric.upper()}", fontsize=14)
         ax.grid(axis='y', alpha=0.3)
         
-        # 凡例
+        # Legend
         from matplotlib.patches import Patch
         legend_elements = [
             Patch(facecolor='lightblue', edgecolor='black', hatch='//', label='Intra-group'),
@@ -445,13 +445,13 @@ def visualize_intra_inter_comparison(all_results: dict):
 
 
 def compute_intra_inter_ratios(results: dict) -> dict:
-    """Intra/Inter比率を計算"""
+    """Compute intra/inter ratio"""
     ratios = {}
     
     for level in LEVELS:
         intra_mean = results["intragroup"][level]["mean"]
         
-        # 他のグループとのInter距離の平均
+        # Mean inter distance with other groups
         inter_means = []
         for pair, stats in results["intergroup"].items():
             if level in pair:
@@ -471,7 +471,7 @@ def compute_intra_inter_ratios(results: dict) -> dict:
 
 def main():
     print("=" * 80)
-    print("Inter-group距離とグループ重心の計算")
+    print("Computing inter-group distances and group centroids")
     print("=" * 80)
     print()
     
@@ -482,12 +482,12 @@ def main():
         print(f"Processing: {metric.upper()}")
         print(f"{'='*60}")
         
-        # データ読み込み
+        # Load data
         print("  Loading data...")
         dist_matrix = load_distance_matrix(metric)
         all_subjects = load_all_subjects(metric)
         
-        # グループインデックスを取得
+        # Get group indices
         group_indices = {}
         group_subjects = {}
         for level in LEVELS:
@@ -506,14 +506,14 @@ def main():
             "intra_inter_ratios": {}
         }
         
-        # 1. Intra-group距離
+        # 1. Intra-group distances
         print("\n  Computing intra-group distances...")
         for level in LEVELS:
             intra = compute_intragroup_distances(dist_matrix, group_indices[level])
             results["intragroup"][level] = intra
             print(f"    {level.capitalize()}: mean={intra['mean']:.4f}, std={intra['std']:.4f}")
         
-        # 2. Inter-group距離
+        # 2. Inter-group distances
         print("\n  Computing inter-group distances...")
         for i, level1 in enumerate(LEVELS):
             for level2 in LEVELS[i+1:]:
@@ -527,7 +527,7 @@ def main():
                 print(f"    {level1.capitalize()} vs {level2.capitalize()}: "
                       f"mean={inter['mean']:.4f}, std={inter['std']:.4f}")
         
-        # 3. MDS重心分析
+        # 3. MDS centroid analysis
         print("\n  Computing MDS centroids...")
         mds_results = compute_projection_centroids(dist_matrix, group_indices, method="mds")
         results["mds_analysis"] = mds_results
@@ -537,7 +537,7 @@ def main():
             print(f"    {level.capitalize()}: spread={centroid_data['spread']:.4f}, "
                   f"dist_to_center={dist_to_center:.4f}")
         
-        # 4. t-SNE重心分析
+        # 4. t-SNE centroid analysis
         print("\n  Computing t-SNE centroids...")
         tsne_results = compute_projection_centroids(dist_matrix, group_indices, method="tsne")
         results["tsne_analysis"] = tsne_results
@@ -547,7 +547,7 @@ def main():
             print(f"    {level.capitalize()}: spread={centroid_data['spread']:.4f}, "
                   f"dist_to_center={dist_to_center:.4f}")
         
-        # 5. UMAP重心分析
+        # 5. UMAP centroid analysis
         if UMAP_AVAILABLE:
             print("\n  Computing UMAP centroids...")
             umap_results = compute_projection_centroids(dist_matrix, group_indices, method="umap")
@@ -560,18 +560,18 @@ def main():
         else:
             print("\n  Skipping UMAP (not available)")
         
-        # 6. Intra/Inter比率
+        # 6. Intra/Inter ratio
         print("\n  Computing intra/inter ratios...")
         ratios = compute_intra_inter_ratios(results)
         results["intra_inter_ratios"] = ratios
         for level, ratio_data in ratios.items():
             print(f"    {level.capitalize()}: ratio={ratio_data['intra_inter_ratio']:.4f}")
         
-        # 結果を保存（coords配列は除外して保存）
+        # Save results (excluding coords arrays)
         save_results = {k: v for k, v in results.items() 
                        if k not in ["mds_analysis", "tsne_analysis", "umap_analysis"]}
         
-        # 投影結果は座標を除いて保存
+        # Save projection results without coordinates
         for analysis_key, analysis_data in [
             ("mds_analysis", mds_results),
             ("tsne_analysis", tsne_results if "tsne_results" in locals() else None),
@@ -592,7 +592,7 @@ def main():
             json.dump(save_results, f, indent=2)
         print(f"\n  Saved: {output_json}")
         
-        # 可視化
+        # Visualization
         print("\n  Generating visualizations...")
         visualize_projection_with_centroids(metric, mds_results, group_indices)
         visualize_projection_with_centroids(metric, tsne_results, group_indices)
@@ -602,13 +602,13 @@ def main():
         
         all_results[metric] = results
     
-    # 全体比較の可視化
+    # Overall comparison visualization
     print(f"\n{'='*60}")
     print("Generating comparison visualizations...")
     print(f"{'='*60}")
     visualize_intra_inter_comparison(all_results)
     
-    # サマリーテーブルを作成
+    # Create summary table
     print("\n" + "="*80)
     print("Summary: Intra-group vs Inter-group Distances")
     print("="*80)
@@ -623,7 +623,7 @@ def main():
                 "intra_mean": results["intragroup"][level]["mean"],
                 "intra_std": results["intragroup"][level]["std"],
             }
-            # 平均Inter距離を追加
+            # Add mean inter distance
             inter_means = []
             for pair, stats in results["intergroup"].items():
                 if level in pair:

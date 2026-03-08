@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-t-SNEとUMAPを使ったグループ重心の投影計算
-（MDSより計算時間がかかるため、別スクリプトとして分離）
+Group centroid projection using t-SNE and UMAP
+(Separated as a standalone script because it takes longer than MDS)
 """
 
 import numpy as np
@@ -34,7 +34,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 from src.utils.visualization.color_palettes import DOMAIN_LEVEL_COLORS
 
-# パス設定
+# Path settings
 OUTPUT_DIR = DISTANCE_DIR / "group-wise" / "intergroup_analysis"
 
 
@@ -43,7 +43,7 @@ def compute_projection_centroids(dist_matrix: np.ndarray,
                                    method: str = "tsne",
                                    n_components: int = 2,
                                    random_state: int = 42) -> dict:
-    """指定した次元削減法で投影してグループ重心を計算"""
+    """Compute group centroids using a specified dimensionality reduction method"""
     
     if method == "tsne":
         print(f"    Running t-SNE (this may take a few minutes)...")
@@ -74,19 +74,19 @@ def compute_projection_centroids(dist_matrix: np.ndarray,
     else:
         raise ValueError(f"Unknown method: {method}. Use 'tsne' or 'umap'")
     
-    # 全体の重心（ドメイン中心）を計算
+    # Compute overall centroid (domain center)
     global_centroid = np.mean(coords, axis=0)
     
-    # 各グループの重心を計算
+    # Compute centroid of each group
     centroids = {}
     for level, indices in group_indices_dict.items():
         group_coords = coords[indices]
         centroid = np.mean(group_coords, axis=0)
         
-        # グループ重心からドメイン中心までの距離
+        # Distance from group centroid to domain center
         distance_to_global = float(np.linalg.norm(centroid - global_centroid))
         
-        # グループ内の広がり
+        # Spread within the group
         spread = float(np.mean(np.linalg.norm(group_coords - centroid, axis=1)))
         
         centroids[level] = {
@@ -95,7 +95,7 @@ def compute_projection_centroids(dist_matrix: np.ndarray,
             "distance_to_global_centroid": distance_to_global
         }
     
-    # 重心間の距離を計算
+    # Compute distances between centroids
     centroid_distances = {}
     for i, level1 in enumerate(LEVELS):
         for level2 in LEVELS[i+1:]:
@@ -118,7 +118,7 @@ def compute_projection_centroids(dist_matrix: np.ndarray,
 def visualize_projection_with_centroids(metric: str, 
                                          projection_results: dict, 
                                          group_indices_dict: dict):
-    """投影結果を重心付きで可視化"""
+    """Visualize projection results with centroids"""
     coords = projection_results["coords"]
     centroids = projection_results["centroids"]
     global_centroid = np.array(projection_results["global_centroid"])
@@ -126,7 +126,7 @@ def visualize_projection_with_centroids(metric: str,
     
     fig, ax = plt.subplots(figsize=(14, 11))
     
-    # 各グループをプロット
+    # Plot each group
     colors = DOMAIN_LEVEL_COLORS
     markers = {"out_domain": "^", "mid_domain": "s", "in_domain": "v"}
     
@@ -137,13 +137,13 @@ def visualize_projection_with_centroids(metric: str,
                   s=100, alpha=0.6, label=f"{level.capitalize()} group",
                   edgecolors='black', linewidth=0.5)
     
-    # ドメイン中心（全体重心）をプロット
+    # Plot domain center (overall centroid)
     ax.scatter(global_centroid[0], global_centroid[1],
               c='black', marker='X', s=1000, 
               edgecolors='white', linewidth=3,
               label='Global centroid (Domain center)', zorder=15)
     
-    # 各グループの重心をプロット
+    # Plot centroid of each group
     for level, centroid_data in centroids.items():
         c = np.array(centroid_data["coordinates"])
         ax.scatter(c[0], c[1], 
@@ -151,11 +151,11 @@ def visualize_projection_with_centroids(metric: str,
                   s=800, edgecolors='black', linewidth=2,
                   label=f"{level.capitalize()} centroid", zorder=10)
         
-        # ドメイン中心からグループ重心への線を描画
+        # Draw line from domain center to group centroid
         ax.plot([global_centroid[0], c[0]], [global_centroid[1], c[1]],
                c=colors[level], linestyle='-', alpha=0.5, linewidth=2.5)
         
-        # 距離をラベル表示
+        # Display distance as label
         dist_to_center = centroid_data["distance_to_global_centroid"]
         mid_x = (global_centroid[0] + c[0]) / 2
         mid_y = (global_centroid[1] + c[1]) / 2
@@ -164,7 +164,7 @@ def visualize_projection_with_centroids(metric: str,
                bbox=dict(boxstyle='round,pad=0.4', 
                         facecolor=colors[level], alpha=0.3, edgecolor='black'))
     
-    # 軸ラベルとタイトル
+    # Axis labels and title
     method_upper = method.upper()
     ax.set_xlabel(f"{method_upper} Component 1", fontsize=14)
     ax.set_ylabel(f"{method_upper} Component 2", fontsize=14)
@@ -187,10 +187,10 @@ def visualize_projection_with_centroids(metric: str,
 
 def main():
     print("=" * 80)
-    print("t-SNE/UMAP投影によるグループ重心計算")
+    print("Computing group centroids via t-SNE/UMAP projection")
     print("=" * 80)
     print()
-    print("注意: t-SNEとUMAPは計算に時間がかかります（各指標で数分）")
+    print("Note: t-SNE and UMAP computation may take several minutes per metric")
     print()
     
     methods = ["tsne"]
@@ -205,12 +205,12 @@ def main():
         print(f"Processing: {metric.upper()}")
         print(f"{'='*60}")
         
-        # データ読み込み
+        # Load data
         print("  Loading data...")
         dist_matrix = load_distance_matrix(metric)
         all_subjects = load_all_subjects(metric)
         
-        # グループインデックスを取得
+        # Get group indices
         group_indices = {}
         for level in LEVELS:
             subjects = load_group_subjects(metric, level)
@@ -236,11 +236,11 @@ def main():
                     print(f"      {level.capitalize()}: spread={centroid_data['spread']:.4f}, "
                           f"dist_to_center={dist_to_center:.4f}")
                 
-                # 可視化
+                # Visualization
                 print(f"    Generating visualization...")
                 visualize_projection_with_centroids(metric, results, group_indices)
                 
-                # 結果を保存
+                # Save results
                 save_results = {
                     "method": results["method"],
                     "global_centroid": results["global_centroid"],
@@ -261,7 +261,7 @@ def main():
                 print()
     
     print("=" * 80)
-    print("✓ t-SNE/UMAP計算完了")
+    print("✓ t-SNE/UMAP computation complete")
     print("=" * 80)
 
 

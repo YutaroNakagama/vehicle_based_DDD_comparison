@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Ranking Method Comparison - Final Visualization and Conclusion
-F2スコアを主要評価指標として使用
+Using F2 score as the primary evaluation metric
 """
 
 import json

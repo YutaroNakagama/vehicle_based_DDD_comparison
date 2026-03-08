@@ -496,7 +496,7 @@ def plot_distance_domain_gap_summary(df: pd.DataFrame):
     """
     For each distance (mmd/dtw/wasserstein), plot:
       - Bar: mean F2 (and AUC) for In/Out × Cross/Single/Mixed
-      - Line: Out−In gap for各distance, mode
+      - Line: Out−In gap for each distance, mode
     2-row subplot: F2 (top), AUC (bottom)
     """
     import matplotlib.pyplot as plt
@@ -504,7 +504,7 @@ def plot_distance_domain_gap_summary(df: pd.DataFrame):
     dist_order = ["mmd", "dtw", "wasserstein"]
     mode_order = ["source_only", "target_only", "mixed"]
     mode_labels = [MODE_LABELS[m] for m in mode_order]
-    # 色: In/Out×Modeごとに異なる色
+    # Colors: different color for each In/Out×Mode combination
     bar_colors = {
         ("in_domain", "source_only"): "#6baed6",
         ("out_domain", "source_only"): "#2171b5",
@@ -516,8 +516,8 @@ def plot_distance_domain_gap_summary(df: pd.DataFrame):
     gap_colors = {"source_only": "#6699cc", "target_only": "#ff9966", "mixed": "#cc99ff"}
     metrics = ["f2", "auc"]
     fig, axes = plt.subplots(2, 1, figsize=(13, 8), sharex=True)
-    width = 0.08  # 細く
-    group_gap = 0.10  # 各modeグループ間の間隔
+    width = 0.08  # narrow
+    group_gap = 0.10  # gap between mode groups
     x = np.arange(len(dist_order))
     for row, metric in enumerate(metrics):
         ax = axes[row]
@@ -532,7 +532,7 @@ def plot_distance_domain_gap_summary(df: pd.DataFrame):
                 out_v = sub[sub["level"]=="out_domain"][metric].mean()
                 vals_in.append(in_v)
                 vals_out.append(out_v)
-            # 各modeごとにグループ化し、間隔を広げる
+            # Group by mode with wider spacing
             base = x + (i-1)*group_gap + (i-1)*2*width
             h1 = ax.bar(base, vals_in, width, label=f"In-{mode_labels[i]}", color=bar_colors[("in_domain", mode)], edgecolor="white")
             h2 = ax.bar(base + width, vals_out, width, label=f"Out-{mode_labels[i]}", color=bar_colors[("out_domain", mode)], edgecolor="white")
@@ -540,7 +540,7 @@ def plot_distance_domain_gap_summary(df: pd.DataFrame):
                 bar_handles.append(h1[0])
                 bar_handles.append(h2[0])
             max_bar = max(max_bar, max(vals_in + vals_out))
-        # Y軸上側余白を減らす
+        # Reduce top margin of Y-axis
         ax.set_ylim(0, max_bar * 1.12)
         ax.set_ylabel(f"{metric.upper() if metric!='auc' else 'AUROC'}", fontsize=12)
         ax.set_xticks(x)

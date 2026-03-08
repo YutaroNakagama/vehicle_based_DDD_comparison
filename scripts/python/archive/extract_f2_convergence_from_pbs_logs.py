@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-PBSログファイルからOptunaのF2スコア収束状況を抽出・可視化するスクリプト
+Script to extract and visualize Optuna F2 score convergence from PBS log files
 
 Usage:
     python extract_f2_convergence_from_pbs_logs.py --log_dir PATH [--output_dir PATH]
     
-例:
-    # ランキング比較実験のログから抽出
+Examples:
+    # Extract from ranking comparison experiment logs
     python scripts/python/extract_f2_convergence_from_pbs_logs.py \
         --log_dir scripts/hpc/log \
         --pattern "rank_cmp_" \
         --output_dir results/ranking_convergence
     
-    # 不均衡対策実験のログから抽出
+    # Extract from imbalance experiment logs
     python scripts/python/extract_f2_convergence_from_pbs_logs.py \
         --log_dir scripts/hpc/log \
         --pattern "imbal_v2_" \
@@ -33,30 +33,30 @@ from collections import defaultdict
 
 def parse_pbs_log(log_path: str) -> Tuple[Optional[str], List[Tuple[int, float, float]]]:
     """
-    PBSログファイルからタグ名とトライアル情報を抽出
+    Extract tag name and trial information from a PBS log file
     
     Returns:
-        tag: 実験タグ名
+        tag: Experiment tag name
         trials: List of (trial_num, value, best_value)
     """
     tag = None
     mode = None
     trials = []
     
-    # Optunaトライアルログのパターン
+    # Optuna trial log pattern
     # [Optuna] Trial   0: value=0.4700, best=0.4700
     trial_pattern = re.compile(
         r'\[Optuna\]\s+Trial\s+(\d+):\s+value=([\d.]+),\s+best=([\d.]+)'
     )
     
-    # タグパターン (複数のフォーマットに対応)
+    # Tag patterns (supports multiple formats)
     tag_patterns = [
         re.compile(r'tag=([^\s|]+)'),
         re.compile(r'Tag:\s*([^\s]+)'),
         re.compile(r'\[START\].*tag=([^\s|]+)'),
     ]
     
-    # モードパターン
+    # Mode pattern
     mode_patterns = [
         re.compile(r'mode=(\w+)'),
         re.compile(r'Mode:\s*(\w+)'),
@@ -65,7 +65,7 @@ def parse_pbs_log(log_path: str) -> Tuple[Optional[str], List[Tuple[int, float, 
     try:
         with open(log_path, 'r', encoding='utf-8', errors='ignore') as f:
             for line in f:
-                # タグを抽出
+                # Extract tag
                 if tag is None:
                     for pattern in tag_patterns:
                         match = pattern.search(line)
@@ -73,7 +73,7 @@ def parse_pbs_log(log_path: str) -> Tuple[Optional[str], List[Tuple[int, float, 
                             tag = match.group(1)
                             break
                 
-                # モードを抽出
+                # Extract mode
                 if mode is None:
                     for pattern in mode_patterns:
                         match = pattern.search(line)
@@ -81,7 +81,7 @@ def parse_pbs_log(log_path: str) -> Tuple[Optional[str], List[Tuple[int, float, 
                             mode = match.group(1)
                             break
                 
-                # トライアル情報を抽出
+                # Extract trial info
                 match = trial_pattern.search(line)
                 if match:
                     trial_num = int(match.group(1))
@@ -93,7 +93,7 @@ def parse_pbs_log(log_path: str) -> Tuple[Optional[str], List[Tuple[int, float, 
         print(f"Error reading {log_path}: {e}")
         return None, []
     
-    # モード情報をタグに追加（同じタグでsource_only/target_onlyが区別されない問題を解決）
+    # Add mode info to tag (to distinguish source_only/target_only with the same tag)
     if tag and mode and mode not in tag:
         tag = f"{tag}_{mode}"
     
@@ -102,7 +102,7 @@ def parse_pbs_log(log_path: str) -> Tuple[Optional[str], List[Tuple[int, float, 
 
 def find_pbs_logs(log_dir: str, pattern: Optional[str] = None) -> Dict[str, str]:
     """
-    PBSログファイルを検索し、タグ名とログパスのマッピングを返す
+    Search for PBS log files and return a mapping of tag names to log paths
     """
     log_files = glob.glob(os.path.join(log_dir, "*.OU"))
     # Also search for .log files (custom log files)
@@ -115,7 +115,7 @@ def find_pbs_logs(log_dir: str, pattern: Optional[str] = None) -> Dict[str, str]
         if tag is None or len(trials) == 0:
             continue
             
-        # パターンフィルタ
+        # Pattern filter
         if pattern and pattern not in tag:
             continue
             
@@ -126,7 +126,7 @@ def find_pbs_logs(log_dir: str, pattern: Optional[str] = None) -> Dict[str, str]
 
 def extract_all_convergence_data(log_dir: str, pattern: Optional[str] = None) -> pd.DataFrame:
     """
-    全ログファイルからF2収束データを抽出してDataFrameに統合
+    Extract F2 convergence data from all log files and consolidate into a DataFrame
     """
     log_files = glob.glob(os.path.join(log_dir, "*.OU"))
     # Also search for .log files (custom log files)
@@ -140,11 +140,11 @@ def extract_all_convergence_data(log_dir: str, pattern: Optional[str] = None) ->
         if tag is None or len(trials) == 0:
             continue
             
-        # パターンフィルタ
+        # Pattern filter
         if pattern and pattern not in tag:
             continue
         
-        # タグから情報を抽出
+        # Extract info from tag
         for trial_num, value, best in trials:
             all_data.append({
                 'tag': tag,
@@ -162,12 +162,12 @@ def extract_all_convergence_data(log_dir: str, pattern: Optional[str] = None) ->
 
 def parse_ranking_tag(tag: str) -> Dict[str, str]:
     """
-    ランキング比較実験のタグをパース
-    例: rank_cmp_centroid_umap_dtw_out_domain_s42
+    Parse ranking comparison experiment tags
+    Example: rank_cmp_centroid_umap_dtw_out_domain_s42
     """
     result = {}
     
-    # パターン: rank_cmp_{method}_{metric}_out_domain_s{seed}
+    # Pattern: rank_cmp_{method}_{metric}_out_domain_s{seed}
     match = re.match(r'rank_cmp_(\w+)_(\w+)_out_domain_s(\d+)', tag)
     if match:
         result['method'] = match.group(1)
@@ -175,7 +175,7 @@ def parse_ranking_tag(tag: str) -> Dict[str, str]:
         result['seed'] = match.group(3)
         return result
     
-    # パターン: rank_cmp_{method}_{metric}_in_domain_s{seed}
+    # Pattern: rank_cmp_{method}_{metric}_in_domain_s{seed}
     match = re.match(r'rank_cmp_(\w+)_(\w+)_in_domain_s(\d+)', tag)
     if match:
         result['method'] = match.group(1)
@@ -189,12 +189,12 @@ def parse_ranking_tag(tag: str) -> Dict[str, str]:
 
 def parse_imbalance_tag(tag: str) -> Dict[str, str]:
     """
-    不均衡対策実験のタグをパース
-    例: imbal_v2_smote_balanced_rf_ratio0_1_seed42
+    Parse imbalance experiment tags
+    Example: imbal_v2_smote_balanced_rf_ratio0_1_seed42
     """
     result = {}
     
-    # パターン: imbal_v2_{method}_ratio{ratio}_seed{seed}
+    # Pattern: imbal_v2_{method}_ratio{ratio}_seed{seed}
     match = re.match(r'imbal_v2_(\w+)_ratio([\d_]+)_seed(\d+)', tag)
     if match:
         result['method'] = match.group(1)
@@ -209,18 +209,18 @@ def plot_convergence_curves(df: pd.DataFrame, output_path: str,
                             group_by: str = 'method',
                             title: str = 'F2 Score Convergence'):
     """
-    F2スコアの収束曲線をプロット
+    Plot F2 score convergence curves
     """
     if df.empty:
         print("No data to plot")
         return
     
-    # グループごとにプロット
+    # Plot per group
     groups = df.groupby('tag')
     
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
     
-    # 左: 全トライアルの値
+    # Left: all trial values
     ax1 = axes[0]
     for tag, group in groups:
         ax1.plot(group['trial'], group['f2_score'], alpha=0.3, linewidth=0.8)
@@ -229,7 +229,7 @@ def plot_convergence_curves(df: pd.DataFrame, output_path: str,
     ax1.set_title(f'{title} - All Trials')
     ax1.grid(True, alpha=0.3)
     
-    # 右: Best値の推移
+    # Right: best value progression
     ax2 = axes[1]
     colors = plt.cm.tab20(np.linspace(0, 1, len(groups)))
     for (tag, group), color in zip(groups, colors):
@@ -241,7 +241,7 @@ def plot_convergence_curves(df: pd.DataFrame, output_path: str,
     ax2.set_title(f'{title} - Best F2 Progress')
     ax2.grid(True, alpha=0.3)
     
-    # 凡例が多すぎる場合は非表示
+    # Hide legend if too many entries
     if len(groups) <= 15:
         ax2.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
     
@@ -253,17 +253,17 @@ def plot_convergence_curves(df: pd.DataFrame, output_path: str,
 
 def plot_convergence_by_method(df: pd.DataFrame, output_dir: str, experiment_type: str):
     """
-    メソッド別にF2収束をプロット
+    Plot F2 convergence by method
     """
     os.makedirs(output_dir, exist_ok=True)
     
     if experiment_type == 'ranking':
-        # タグから情報を抽出
+        # Extract info from tags
         df['method'] = df['tag'].apply(lambda x: parse_ranking_tag(x).get('method', 'unknown'))
         df['metric'] = df['tag'].apply(lambda x: parse_ranking_tag(x).get('metric', 'unknown'))
         df['seed'] = df['tag'].apply(lambda x: parse_ranking_tag(x).get('seed', '0'))
         
-        # メソッド × メトリック別にプロット
+        # Plot by method x metric
         for method in df['method'].unique():
             method_df = df[df['method'] == method]
             
@@ -296,12 +296,12 @@ def plot_convergence_by_method(df: pd.DataFrame, output_dir: str, experiment_typ
             print(f"Saved: {output_path}")
             
     elif experiment_type == 'imbalance':
-        # タグから情報を抽出
+        # Extract info from tags
         df['method'] = df['tag'].apply(lambda x: parse_imbalance_tag(x).get('method', 'unknown'))
         df['ratio'] = df['tag'].apply(lambda x: parse_imbalance_tag(x).get('ratio', '1.0'))
         df['seed'] = df['tag'].apply(lambda x: parse_imbalance_tag(x).get('seed', '0'))
         
-        # メソッド別にプロット
+        # Plot by method
         for method in df['method'].unique():
             method_df = df[df['method'] == method]
             
@@ -336,13 +336,13 @@ def plot_convergence_by_method(df: pd.DataFrame, output_dir: str, experiment_typ
 
 def create_summary_table(df: pd.DataFrame, output_path: str):
     """
-    収束状況のサマリーテーブルを作成
+    Create a convergence status summary table
     """
     if df.empty:
         print("No data for summary")
         return
     
-    # タグごとに最終的なbest_f2と収束したトライアル数を集計
+    # Aggregate final best_f2 and number of converged trials per tag
     summary = df.groupby('tag').agg({
         'trial': 'max',
         'best_f2': 'max',
@@ -352,11 +352,11 @@ def create_summary_table(df: pd.DataFrame, output_path: str):
     summary.columns = ['tag', 'n_trials', 'best_f2', 'mean_f2', 'std_f2']
     summary = summary.sort_values('best_f2', ascending=False)
     
-    # CSVとして保存
+    # Save as CSV
     summary.to_csv(output_path, index=False)
     print(f"Summary saved: {output_path}")
     
-    # 上位10件を表示
+    # Display top 10
     print("\n=== Top 10 by Best F2 ===")
     print(summary.head(10).to_string(index=False))
     
@@ -379,7 +379,7 @@ def main():
     print(f"Scanning logs in: {args.log_dir}")
     print(f"Pattern filter: {args.pattern}")
     
-    # データ抽出
+    # Data extraction
     df = extract_all_convergence_data(args.log_dir, args.pattern)
     
     if df.empty:
@@ -388,10 +388,10 @@ def main():
     
     print(f"\nFound {len(df['tag'].unique())} experiments with {len(df)} total trial records")
     
-    # 出力ディレクトリ作成
+    # Create output directory
     os.makedirs(args.output_dir, exist_ok=True)
     
-    # 実験タイプを自動判定
+    # Auto-detect experiment type
     if args.experiment_type == 'auto':
         if args.pattern and 'rank' in args.pattern.lower():
             experiment_type = 'ranking'
@@ -406,20 +406,20 @@ def main():
     
     print(f"Experiment type: {experiment_type}")
     
-    # CSVとして生データを保存
+    # Save raw data as CSV
     raw_csv_path = os.path.join(args.output_dir, 'convergence_raw.csv')
     df.to_csv(raw_csv_path, index=False)
     print(f"Raw data saved: {raw_csv_path}")
     
-    # サマリーテーブル作成
+    # Create summary table
     summary_path = os.path.join(args.output_dir, 'convergence_summary.csv')
     create_summary_table(df, summary_path)
     
-    # 全体の収束プロット
+    # Overall convergence plot
     overall_path = os.path.join(args.output_dir, 'convergence_overall.png')
     plot_convergence_curves(df, overall_path, title=f'{experiment_type.title()} Experiments')
     
-    # メソッド別プロット
+    # Per-method plot
     plot_convergence_by_method(df, args.output_dir, experiment_type)
     
     print(f"\nAll outputs saved to: {args.output_dir}")

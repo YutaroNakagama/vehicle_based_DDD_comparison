@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Ranking Method Comparison - Visualization by Mode (source_only / target_only)
-F2スコアを主要評価指標として使用
-最新のRanking V2実験結果を可視化
+Using F2 score as the primary evaluation metric
+Visualize latest Ranking V2 experiment results
 """
 
 import json
