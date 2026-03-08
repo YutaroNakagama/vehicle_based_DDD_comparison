@@ -1,13 +1,13 @@
 #!/bin/bash
 # ============================================================
-# SvmW Pooled 不足分をインタラクティブノードで順次実行
+# Run missing SvmW Pooled configs sequentially on interactive node
 # ============================================================
-# 使い方:
+# Usage:
 #   1) qsub -I -q SINGLE -l select=1:ncpus=4:mem=16gb -l walltime=06:00:00
 #   2) cd /home/s2240011/git/ddd/vehicle_based_DDD_comparison
 #   3) bash scripts/local/run_svmw_pooled_missing.sh
 #
-# 所要時間: 約 42分/件 × 5件 ≈ 3.5時間
+# Estimated time: ~42 min/run × 5 runs ≈ 3.5 hours
 # ============================================================
 
 set -euo pipefail
@@ -21,7 +21,7 @@ conda activate ddd 2>/dev/null || true
 
 PBS_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/train/pbs_prior_research.sh"
 
-# ---- 不足設定リスト: CONDITION|SEED|RATIO ----
+# ---- Missing config list: CONDITION|SEED|RATIO ----
 MISSING_CONFIGS=(
     "baseline|42|0.5"
     "smote_plain|123|0.5"
@@ -30,7 +30,7 @@ MISSING_CONFIGS=(
     "undersample|42|0.5"
 )
 
-# ---- eval結果存在チェック ----
+# ---- Check if eval results exist ----
 has_eval() {
     local cond="$1" seed="$2" ratio="$3"
     local eval_dir="results/outputs/evaluation/SvmW"
@@ -52,7 +52,7 @@ has_eval() {
     find "$eval_dir" -name "${pattern}*.json" 2>/dev/null | grep -v _invalidated | grep -q .
 }
 
-# ---- メイン実行 ----
+# ---- Main execution ----
 TOTAL=${#MISSING_CONFIGS[@]}
 DONE=0
 SKIPPED=0

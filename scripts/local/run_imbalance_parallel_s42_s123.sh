@@ -1,12 +1,12 @@
 #!/bin/bash
-# 不均衡対策単体実験 - seed 42, 123 並列実行
+# Imbalance method stand-alone experiment - parallel execution for seed 42, 123
 
 cd "$(dirname "$0")/../.." || exit 1
 
-# venv をアクティベート
+# Activate venv
 source .venv-linux/bin/activate
 
-# PYTHONPATHを設定
+# Set PYTHONPATH
 export PYTHONPATH="${PWD}:${PYTHONPATH}"
 
 LOG_DIR="scripts/local/logs/imbalance"
@@ -17,16 +17,16 @@ MODEL=RF
 export N_TRIALS_OVERRIDE=50
 
 echo "=========================================="
-echo "不均衡対策単体実験 開始: $(date)"
+echo "Imbalance method experiment started: $(date)"
 echo "Seeds: 42, 123"
 echo "=========================================="
 
-# 共通オプション
-# --subject_wise_split: subject_time_split戦略を使用
-# --time_stratify_labels: 時間層化ラベル分割を有効化
+# Common options
+# --subject_wise_split: Use subject_time_split strategy
+# --time_stratify_labels: Enable time-stratified label splitting
 COMMON_OPTS="--model $MODEL --mode pooled --subject_wise_split --time_stratify_labels"
 
-# 実験タイプの定義
+# Define experiment types
 declare -A EXP_CONFIGS=(
     ["baseline"]=""
     ["smote_ratio0.1"]="--use_oversampling --oversample_method smote --target_ratio 0.1"
@@ -39,7 +39,7 @@ SEEDS=(42 123)
 PIDS=()
 EXPERIMENTS=()
 
-# 全実験を並列起動
+# Launch all experiments in parallel
 for seed in "${SEEDS[@]}"; do
     for exp_name in baseline smote_ratio0.1 smote_ratio0.5 subjectwise_smote_ratio0.1 subjectwise_smote_ratio0.5; do
         exp_opts="${EXP_CONFIGS[$exp_name]}"
@@ -62,11 +62,11 @@ done
 
 echo ""
 echo "=========================================="
-echo "全 ${#PIDS[@]} 実験を並列起動しました"
+echo "Launched all ${#PIDS[@]} experiments in parallel"
 echo "PIDs: ${PIDS[*]}"
 echo "=========================================="
 
-# 完了待ち
+# Wait for completion
 FAILED=0
 for i in "${!PIDS[@]}"; do
     pid=${PIDS[$i]}
@@ -83,9 +83,9 @@ done
 
 echo ""
 echo "=========================================="
-echo "全実験完了: $(date)"
-echo "成功: $((${#PIDS[@]} - FAILED)) / ${#PIDS[@]}"
+echo "All experiments completed: $(date)"
+echo "Succeeded: $((${#PIDS[@]} - FAILED)) / ${#PIDS[@]}"
 if [ $FAILED -gt 0 ]; then
-    echo "失敗: $FAILED"
+    echo "Failed: $FAILED"
 fi
 echo "=========================================="
