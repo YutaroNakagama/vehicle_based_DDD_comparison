@@ -91,6 +91,8 @@ POOLED_RF_PATTERNS = [
      "undersample_rus", "ratio"),
     (re.compile(r"eval_results_RF_pooled_smote_ratio(?P<ratio>[0-9.]+)_s(?P<seed>\d+)\.json$"),
      "smote_plain", "ratio"),
+    (re.compile(r"eval_results_RF_pooled_subjectwise_smote_ratio(?P<ratio>[0-9.]+)_s(?P<seed>\d+)\.json$"),
+     "sw_smote", "ratio"),
 ]
 
 
@@ -334,6 +336,17 @@ def plot_condition_summary(
 # ---------------------------------------------------------------------------
 CONDITION_SPECS = [
     {
+        "condition": "baseline_domain",
+        "csv_dir": "baseline",
+        "csv_file": "baseline_domain_split2_metrics_v2.csv",
+        "png_dir": "baseline",
+        "ratios": [None],  # No ratio
+        "out_prefix": "baseline_summary",
+        "title_prefix": "Baseline",
+        "has_ratio_col": False,
+        "pooled_condition": "baseline_domain",
+    },
+    {
         "condition": "smote_plain",
         "csv_dir": "smote_plain",
         "csv_file": "smote_plain_split2_metrics_v2.csv",
@@ -364,7 +377,7 @@ CONDITION_SPECS = [
         "out_prefix": "sw_smote_summary",
         "title_prefix": "Subject-Wise SMOTE",
         "has_ratio_col": True,
-        "pooled_condition": None,  # No pooled data
+        "pooled_condition": "sw_smote",
     },
     {
         "condition": "balanced_rf",
