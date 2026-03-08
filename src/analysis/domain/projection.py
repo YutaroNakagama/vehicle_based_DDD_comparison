@@ -981,11 +981,11 @@ def main():
                        choices=["mean_distance", "centroid_mds", "centroid_umap", "medoid", "lof", 
                                 "knn", "median_distance", "isolation_forest", "all"],
                        default=["all"],
-                       help="Ranking methods to use. Options: mean_distance (平均距離), "
-                            "centroid_mds (MDS空間のcentroid), centroid_umap (UMAP空間のcentroid), "
-                            "medoid (medoidからの距離), lof (Local Outlier Factor), "
-                            "knn (K近傍平均距離), median_distance (中央値距離), "
-                            "isolation_forest (Isolation Forest異常スコア)")
+                       help="Ranking methods to use. Options: mean_distance (mean distance), "
+                            "centroid_mds (centroid in MDS space), centroid_umap (centroid in UMAP space), "
+                            "medoid (distance from medoid), lof (Local Outlier Factor), "
+                            "knn (K-nearest neighbor mean distance), median_distance (median distance), "
+                            "isolation_forest (Isolation Forest anomaly score)")
     args = parser.parse_args()
     
     # Determine metrics to process
