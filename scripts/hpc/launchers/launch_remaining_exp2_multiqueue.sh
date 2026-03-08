@@ -1,19 +1,19 @@
 #!/bin/bash
 # ============================================================
-# 実験2 残りジョブ — 複数キュー分散投入 (2026-02-07)
+# Experiment 2 remaining jobs — multi-queue distribution submit (2026-02-07)
 # ============================================================
-# SINGLE キューが満杯のため、DEFAULT / SMALL に分散投入する。
+# SINGLE Queue full, distributing submissions to DEFAULT / SMALL.
 #
-# キュー選択ルール:
-#   DEFAULT : max_user_queued=40, ncpus≤64, walltime≤168h  → 空き
-#   SMALL   : max_user_queued=30, ncpus≤768, walltime≤168h → 空き
-#   LONG    : max_user_queued=15, ncpus≤128, walltime≤504h → 残りがあれば
+# Queue selection rules:
+#   DEFAULT : max_user_queued=40, ncpus≤64, walltime≤168h  → available
+#   SMALL   : max_user_queued=30, ncpus≤768, walltime≤168h → available
+#   LONG    : max_user_queued=15, ncpus≤128, walltime≤504h → if remaining
 #
-# 残り 108 ジョブ:
-#   smote_plain 残り:  10 domain + 2 pooled = 12
+# remaining 108 job(s):
+#   smote_plain remaining:  10 domain + 2 pooled = 12
 #   smote:             48 domain + 2 pooled = 50
 #   undersample:       48 domain + 2 pooled = 50
-#                                       計 = 112  (4件は前回retry済)
+#                                       total = 112 (4 items retried in previous rounds)
 # ============================================================
 
 set -uo pipefail
@@ -176,7 +176,7 @@ submit_pooled() {
 
 # ============================================================
 echo "============================================================"
-echo "  実験2 残りジョブ — 複数キュー分散投入"
+echo "  Experiment 2 remaining jobs — multi-queue distribution submit"
 echo "  $(date)"
 echo "============================================================"
 echo "  Dry run : $DRY_RUN"
@@ -191,7 +191,7 @@ echo ""
 } > "$LOG_FILE"
 
 # --- smote_plain remaining (wasserstein partial + pooled) ---
-echo "--- smote_plain 残り (6 domain + 2 pooled) ---"
+echo "--- smote_plain remaining (6 domain + 2 pooled) ---"
 # wasserstein/out_domain/source_only s123 remaining (s42 already submitted in retry)
 for RATIO in "${RATIOS[@]}"; do
     submit_domain "smote_plain" "source_only" "wasserstein" "out_domain" "123" "$RATIO"
@@ -209,7 +209,7 @@ done
 
 # --- smote: all 48 domain + 2 pooled ---
 echo ""
-echo "--- smote 全 50 ジョブ ---"
+echo "--- smote all 50 jobs ---"
 for DISTANCE in "${DISTANCES[@]}"; do
     for DOMAIN in "${DOMAINS[@]}"; do
         for MODE in "${MODES[@]}"; do
@@ -227,7 +227,7 @@ done
 
 # --- undersample: all 48 domain + 2 pooled ---
 echo ""
-echo "--- undersample 全 50 ジョブ ---"
+echo "--- undersample all 50 jobs ---"
 for DISTANCE in "${DISTANCES[@]}"; do
     for DOMAIN in "${DOMAINS[@]}"; do
         for MODE in "${MODES[@]}"; do

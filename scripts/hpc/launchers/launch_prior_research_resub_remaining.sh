@@ -1,17 +1,17 @@
 #!/bin/bash
 # ============================================================
-# 先行研究実験 — 残り85件の再投入（差分投入用）
+# Prior research experiment — resubmit remaining 85 (differential submission)
 # ============================================================
-# launch_prior_research_resub_missing.sh の初回実行で74件投入済み。
-# per-user limit で投入できなかった残り85件を投入する。
+# launch_prior_research_resub_missing.sh 74 already submitted in first run.
+# per-user limit submit remaining 85 that could not be submitted with.
 #
-# 内訳:
+# Breakdown:
 #   Lstm mixed:       69 jobs
 #   SvmA mixed:       10 jobs
 #   SvmA target_only:  1 job
 #   SvmW mixed:        5 jobs
 #
-# キュー: SINGLE/LONG/DEFAULT にラウンドロビン
+# Queues: SINGLE/LONG/DEFAULT round-robin to
 # ============================================================
 
 set -uo pipefail
@@ -39,9 +39,9 @@ mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/launch_resub_remaining_${TIMESTAMP}.log"
 
 echo "============================================================"
-echo "先行研究実験 — 残り85件の再投入"
+echo "Prior research experiment — resubmit remaining 85"
 echo "============================================================"
-echo "キュー: ${QUEUES[*]}"
+echo "Queues: ${QUEUES[*]}"
 echo "Dry run: $DRY_RUN"
 echo "============================================================"
 
@@ -68,7 +68,7 @@ while IFS='|' read -r MODEL CONDITION MODE DISTANCE DOMAIN SEED RATIO WALLTIME M
     QUEUE="${QUEUES[$((QUEUE_COUNTER % 3))]}"
     ((QUEUE_COUNTER++))
 
-    # ジョブ名の生成
+    # Generate job name
     case "$MODE" in
         source_only) MODE_SHORT="s" ;;
         target_only) MODE_SHORT="t" ;;

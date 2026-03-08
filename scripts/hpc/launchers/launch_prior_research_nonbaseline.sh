@@ -1,17 +1,17 @@
 #!/bin/bash
 # ============================================================
-# 先行研究実験 非baseline条件 再投入ランチャー (2026-02-07)
+# Prior research experiment non-baseline condition resubmission launcher (2026-02-07)
 # ============================================================
-# KeyError: 'Steering_Range' バグ修正後の再投入
+# Resubmit after KeyError: 'Steering_Range' bug fix
 #
-# 対象: SvmW, SvmA, Lstm × smote, smote_plain, undersample
+# Target: SvmW, SvmA, Lstm × smote, smote_plain, undersample
 #       × mmd, dtw, wasserstein × in_domain, out_domain
 #       × source_only, target_only × seed 42, 123 × ratio 0.1, 0.5
 #
-# 合計: 3 models × 3 conditions × 3 distances × 2 domains
+# Total: 3 models × 3 conditions × 3 distances × 2 domains
 #       × 2 modes × 2 seeds × 2 ratios = 432 jobs
 #
-# キュー分散: DEFAULT, SINGLE, SMALL, LONG, SEMINAR
+# Queue distribution: DEFAULT, SINGLE, SMALL, LONG, SEMINAR
 # ============================================================
 
 set -uo pipefail
@@ -107,7 +107,7 @@ submit_job() {
 
 # ============================================================
 echo "============================================================"
-echo "  先行研究実験 非baseline再投入 (KeyError fix後)"
+echo "  Prior research experiment non-baseline resubmit (after KeyError fix)"
 echo "  $(date)"
 echo "============================================================"
 echo "  Dry run : $DRY_RUN"

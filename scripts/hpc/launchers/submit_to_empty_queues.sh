@@ -1,5 +1,5 @@
 #!/bin/bash
-# 空いているキューに積極的に投入
+# Aggressively submit to available queues
 
 set -e
 
@@ -15,11 +15,11 @@ SUBMITTED_FILE="$LOG_DIR/submitted_jobs_${TIMESTAMP}.txt"
 touch "$SUBMITTED_FILE"
 
 echo "============================================================" | tee -a "$LOG_FILE"
-echo "空キュー積極投入スクリプト" | tee -a "$LOG_FILE"
-echo "開始時刻: $(date)" | tee -a "$LOG_FILE"
+echo "Aggressive empty-queue submit script" | tee -a "$LOG_FILE"
+echo "Start time: $(date)" | tee -a "$LOG_FILE"
 echo "============================================================" | tee -a "$LOG_FILE"
 
-# 設定
+# Settings
 MODELS="SvmW SvmA Lstm"
 DISTANCES="mmd dtw wasserstein"
 DOMAINS="out_domain in_domain"
@@ -31,14 +31,14 @@ N_TRIALS=100
 
 JOB_SCRIPT="$WORKSPACE_ROOT/scripts/hpc/jobs/train/pbs_prior_research_split2.sh"
 
-# 優先的に使うキュー（空いている順）
+# Preferred queues (by availability)
 PRIORITY_QUEUES=("DEFAULT" "SMALL" "LARGE" "XLARGE" "LONG" "SINGLE")
 queue_index=0
 
 total_submitted=0
 total_failed=0
 
-# リソース取得関数
+# Resource acquisition function
 get_resources() {
     local model=$1
     
@@ -55,7 +55,7 @@ get_resources() {
     esac
 }
 
-# ジョブ投入関数
+# Job submit function
 submit_job() {
     local model=$1
     local condition=$2
@@ -65,22 +65,22 @@ submit_job() {
     local seed=$6
     local ratio=$7
     
-    # ジョブIDを生成（重複チェック用）
+    # Generate job ID (for duplicate checking)
     local job_id="${model}_${condition}_${distance}_${domain}_${mode}_${seed}"
     if [ -n "$ratio" ]; then
         job_id="${job_id}_${ratio}"
     fi
     
-    # 既に投入済みかチェック（全ログファイルを検索）
+    # Check if already submitted (search all log files)
     if grep -q "^${job_id}$" "$LOG_DIR"/submitted_jobs_*.txt 2>/dev/null; then
-        return 2  # 既に投入済み
+        return 2  # Already submitted
     fi
     
-    # キューを選択（ラウンドロビン）
+    # Select queue (round-robin)
     local queue="${PRIORITY_QUEUES[$queue_index]}"
     queue_index=$(( (queue_index + 1) % ${#PRIORITY_QUEUES[@]} ))
     
-    # ジョブ名を生成
+    # Generate job name
     local model_abbr="${model:0:2}"
     local cond_abbr="${condition:0:2}"
     local dist_abbr="${distance:0:1}"
@@ -93,18 +93,18 @@ submit_job() {
         local job_name="${model_abbr}_${cond_abbr}_${dist_abbr}${domain_abbr}_${mode_abbr}_s${seed}"
     fi
     
-    # リソース設定
+    # Resource settings
     local resources=$(get_resources "$model")
     local ncpus_mem=$(echo "$resources" | awk '{print $1}')
     local walltime=$(echo "$resources" | awk '{print $2}')
     
-    # 環境変数を準備
+    # Prepare environment variables
     local env_vars="MODEL=$model,CONDITION=$condition,MODE=$mode,DISTANCE=$distance,DOMAIN=$domain,SEED=$seed,N_TRIALS=$N_TRIALS,RANKING=$RANKING,RUN_EVAL=true"
     if [ -n "$ratio" ]; then
         env_vars="${env_vars},RATIO=$ratio"
     fi
     
-    # qsubコマンド実行
+    # qsubExecute command
     local qsub_cmd="qsub -N $job_name -l select=1:$ncpus_mem -l walltime=$walltime -q $queue -v $env_vars $JOB_SCRIPT"
     
     if output=$($qsub_cmd 2>&1); then
@@ -114,8 +114,8 @@ submit_job() {
         return 0
     else
         if [[ "$output" == *"would exceed"* ]]; then
-            echo "[$(date +%H:%M:%S)] [$queue] ✗ $job_name (上限)" >> "$LOG_FILE"
-            return 1  # 上限エラーの場合は終了
+            echo "[$(date +%H:%M:%S)] [$queue] ✗ $job_name (limit reached)" >> "$LOG_FILE"
+            return 1  # Exit on limit error
         else
             echo "[$(date +%H:%M:%S)] [$queue] ✗ $job_name ($output)" >> "$LOG_FILE"
             ((total_failed++))
@@ -124,11 +124,11 @@ submit_job() {
     fi
 }
 
-# メインループ
-echo "[$(date +%H:%M:%S)] ジョブ投入開始..." | tee -a "$LOG_FILE"
+# Main loop
+echo "[$(date +%H:%M:%S)] job(s)Starting submission..." | tee -a "$LOG_FILE"
 
 for model in $MODELS; do
-    # balanced_rfはSvmWのみ
+    # balanced_rfSvmW only
     if [ "$model" = "SvmW" ]; then
         CONDITIONS="baseline smote_plain smote undersample balanced_rf"
     else
@@ -141,22 +141,22 @@ for model in $MODELS; do
                 for mode in $MODES; do
                     for seed in $SEEDS; do
                         if [ "$condition" = "baseline" ]; then
-                            # baselineは比率なし
+                            # baselinehas no ratio
                             submit_job "$model" "$condition" "$distance" "$domain" "$mode" "$seed" "" || {
                                 ret=$?
                                 if [ $ret -eq 1 ]; then
-                                    echo "[$(date +%H:%M:%S)] ユーザー上限に到達。投入を中断します。" | tee -a "$LOG_FILE"
+                                    echo "[$(date +%H:%M:%S)] User limit reached. Stopping submission." | tee -a "$LOG_FILE"
                                     break 6
                                 fi
                             }
                             sleep 0.1
                         else
-                            # その他の条件は比率あり
+                            # Other conditions have a ratio
                             for ratio in $RATIOS; do
                                 submit_job "$model" "$condition" "$distance" "$domain" "$mode" "$seed" "$ratio" || {
                                     ret=$?
                                     if [ $ret -eq 1 ]; then
-                                        echo "[$(date +%H:%M:%S)] ユーザー上限に到達。投入を中断します。" | tee -a "$LOG_FILE"
+                                        echo "[$(date +%H:%M:%S)] User limit reached. Stopping submission." | tee -a "$LOG_FILE"
                                         break 7
                                     fi
                                 }
@@ -172,20 +172,20 @@ done
 
 echo "" | tee -a "$LOG_FILE"
 echo "============================================================" | tee -a "$LOG_FILE"
-echo "投入処理完了" | tee -a "$LOG_FILE"
-echo "投入成功: $total_submitted ジョブ" | tee -a "$LOG_FILE"
-echo "投入失敗: $total_failed ジョブ" | tee -a "$LOG_FILE"
-echo "終了時刻: $(date)" | tee -a "$LOG_FILE"
+echo "Submit processing complete" | tee -a "$LOG_FILE"
+echo "Submission succeeded: $total_submitted job(s)" | tee -a "$LOG_FILE"
+echo "Submission failed: $total_failed job(s)" | tee -a "$LOG_FILE"
+echo "End time: $(date)" | tee -a "$LOG_FILE"
 echo "============================================================" | tee -a "$LOG_FILE"
 
-# キューごとの投入数を表示
+# Display submission count per queue
 echo "" | tee -a "$LOG_FILE"
-echo "キュー別投入数:" | tee -a "$LOG_FILE"
+echo "Submissions per queue:" | tee -a "$LOG_FILE"
 for queue in "${PRIORITY_QUEUES[@]}"; do
     count=$(grep -c "\[$queue\] ✓" "$LOG_FILE" 2>/dev/null || echo "0")
-    echo "  $queue: $count ジョブ" | tee -a "$LOG_FILE"
+    echo "  $queue: $count job(s)" | tee -a "$LOG_FILE"
 done
 
 echo ""
-echo "ログファイル: $LOG_FILE"
-echo "投入済みリスト: $SUBMITTED_FILE"
+echo "Log file: $LOG_FILE"
+echo "Submitted list: $SUBMITTED_FILE"

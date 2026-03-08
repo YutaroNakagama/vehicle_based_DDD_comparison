@@ -1,29 +1,29 @@
 #!/bin/bash
 # ============================================================
-# 論文用ドメインシフト実験ランチャー（2グループ分割版）
+# Domain shift experiment launcher for paper (2-group split version)
 # ============================================================
-# 実験条件:
-#   - シード: 42, 123
-#   - ターゲット比率: 0.1, 0.5
-#   - 分類モデル: RF (BalancedRFは手法として含む)
-#   - 不均衡対策手法: baseline, plain SMOTE, subject-wise SMOTE, RUS, Balanced RF
-#   - Optuna trial数: 100
-#   - Optuna目的関数: F2 (既に実装済み)
-#   - ランキング手法: KNN
-#   - 距離指標: mmd, dtw, wasserstein
-#   - ドメイングループ: out_domain (HIGH), in_domain (LOW) ※2グループ分割
-#   - 訓練モード: 
-#       source_only (cross domain): ターゲットの逆ドメインで訓練
-#       target_only (single domain): ターゲットドメイン内で訓練
+# Experiment conditions:
+#   - seeds: 42, 123
+#   - Target ratio: 0.1, 0.5
+#   - Models: RF (BalancedRF is included as a method)
+#   - Imbalance methods: baseline, plain SMOTE, subject-wise SMOTE, RUS, Balanced RF
+#   - Optuna trials: 100
+#   - Optuna objective: F2 (already implemented)
+#   - Ranking method: KNN
+#   - Distance metrics: mmd, dtw, wasserstein
+#   - Domain groups: out_domain (HIGH), in_domain (LOW) ※2group split
+#   - Training mode: 
+#       source_only (cross domain): train on opposite target domain
+#       target_only (single domain): train within target domain
 #
-# 新しいロジック:
-#   - source_only + out_domain → in_domainで訓練、out_domainで評価
-#   - source_only + in_domain → out_domainで訓練、in_domainで評価
-#   - target_only + out_domain → out_domainで訓練・評価
-#   - target_only + in_domain → in_domainで訓練・評価
+# New logic:
+#   - source_only + out_domain → in_domaintrain with, evaluate on out_domain
+#   - source_only + in_domain → out_domaintrain with, evaluate on in_domain
+#   - target_only + out_domain → out_domaintrain and evaluate with
+#   - target_only + in_domain → in_domaintrain and evaluate with
 #
 # Total: 3 distances × 2 domains × 2 modes × 2 seeds × 8 conditions = 96 jobs
-# (mid_domainを除外したため、192→96ジョブに削減)
+# (mid_domainexcluded, so reduced from 192 to 96 jobs)
 # ============================================================
 
 set -uo pipefail  # Remove -e to continue on errors
@@ -31,22 +31,22 @@ set -uo pipefail  # Remove -e to continue on errors
 PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
 JOB_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/domain_analysis/pbs_domain_comparison_split2.sh"
 
-# 論文用設定
+# Paper settings
 SEEDS=(42 123)
 RATIOS=(0.1 0.5)
 N_TRIALS=100
 RANKING="knn"
 
-# 距離指標とドメイングループ（2グループ分割）
+# Distance metrics and domain groups（2group split）
 DISTANCES=("mmd" "dtw" "wasserstein")
-DOMAINS=("out_domain" "in_domain")  # mid_domainを除外
+DOMAINS=("out_domain" "in_domain")  # mid_domainexcluded
 
-# 訓練モード
-# source_only = cross domain (ターゲットの逆ドメインで訓練)
-# target_only = single domain (ターゲットドメイン内で訓練)
+# Training mode
+# source_only = cross domain (train on the opposite target domain)
+# target_only = single domain (train within the target domain)
 MODES=("source_only" "target_only")
 
-# 不均衡対策手法（論文用）
+# Imbalance methods (for paper)
 # Format: "CONDITION:description"
 CONDITIONS=(
     "baseline:Baseline (no handling)"
@@ -71,24 +71,24 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Resource configurations (メモリ最適化版)
+# Resource configurations (memory-optimized version)
 get_resources() {
     local condition="$1"
     case "$condition" in
         balanced_rf)
-            # BalancedRF: 8コア必要、メモリ多め
+            # BalancedRF: 8cores required, more memory
             echo "ncpus=8:mem=12gb 08:00:00 LONG"
             ;;
         smote|smote_plain)
-            # SMOTE系: 4コア、中程度のメモリ
+            # SMOTE-family: 4 cores, medium memory
             echo "ncpus=4:mem=10gb 08:00:00 SINGLE"
             ;;
         baseline|undersample)
-            # 軽量な実験: 4コア、少なめのメモリ
+            # lightweight experiment: 4cores, less memory
             echo "ncpus=4:mem=8gb 06:00:00 SINGLE"
             ;;
         *)
-            # デフォルト
+            # default
             echo "ncpus=4:mem=8gb 08:00:00 SINGLE"
             ;;
     esac
@@ -101,23 +101,23 @@ mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/launch_paper_domain_split2_${TIMESTAMP}.log"
 
 echo "============================================================"
-echo "論文用ドメインシフト実験ランチャー (2グループ分割版)"
+echo "Domain shift experiment launcher for paper (2-group split version)"
 echo "============================================================"
-echo "分割方式: split2 (in_domain=44名, out_domain=43名)"
-echo "距離指標: ${DISTANCES[*]}"
-echo "ドメイングループ: ${DOMAINS[*]} (※mid_domainなし)"
-echo "訓練モード: ${MODES[*]}"
-echo "  - source_only (cross domain): ターゲットの逆ドメインで訓練"
-echo "  - target_only (single domain): ターゲットドメイン内で訓練"
-echo "不均衡対策手法: 5種類 (baseline, plain SMOTE, subject-wise SMOTE, RUS, Balanced RF)"
-echo "シード: ${SEEDS[*]}"
-echo "ターゲット比率: ${RATIOS[*]}"
+echo "Split mode: split2 (in_domain=44 subjects, out_domain=43 subjects)"
+echo "Distance metrics: ${DISTANCES[*]}"
+echo "Domain groups: ${DOMAINS[*]} (※mid_domainnone)"
+echo "Training mode: ${MODES[*]}"
+echo "  - source_only (cross domain): train on opposite target domain"
+echo "  - target_only (single domain): train within target domain"
+echo "Imbalance methods: 5 types (baseline, plain SMOTE, subject-wise SMOTE, RUS, Balanced RF)"
+echo "seeds: ${SEEDS[*]}"
+echo "Target ratio: ${RATIOS[*]}"
 echo "Optuna trials: $N_TRIALS"
 echo "Dry run: $DRY_RUN"
 echo ""
-echo "予想ジョブ数: $((${#DISTANCES[@]} * ${#DOMAINS[@]} * ${#MODES[@]} * ${#SEEDS[@]} * 8)) jobs"
-echo "  - 各条件8ジョブ = baseline(1) + smote_plain(2) + smote(2) + undersample(2) + balanced_rf(1)"
-echo "  - 3距離 × 2ドメイン × 2モード × 2シード × 8 = 96 jobs"
+echo "Expected job count: $((${#DISTANCES[@]} * ${#DOMAINS[@]} * ${#MODES[@]} * ${#SEEDS[@]} * 8)) jobs"
+echo "  - 8 jobs per condition = baseline(1) + smote_plain(2) + smote(2) + undersample(2) + balanced_rf(1)"
+echo "  - 3 distances x 2 domains x 2 modes x 2 seeds × 8 = 96 jobs"
 echo "============================================================"
 echo ""
 

@@ -1,11 +1,11 @@
 #!/bin/bash
 # ============================================================
-# 不足している実験3 mixed ジョブの自動投入スクリプト
+# Auto-submission script for missing Experiment 3 mixed jobs
 # ============================================================
-# 評価結果が存在しないジョブのみ投入する。
-# /tmp/missing_mixed_exp3.txt にあるジョブリストを処理。
+# Submit only jobs without evaluation results.
+# /tmp/missing_mixed_exp3.txt job list processing.
 #
-# 不足数: SvmW=51, SvmA=64, Lstm=24 (合計139ジョブ)
+# missing count: SvmW=51, SvmA=64, Lstm=24 (Total139job(s))
 #
 # Usage:
 #   bash scripts/hpc/launchers/submit_missing_mixed_exp3.sh --dry-run
@@ -23,15 +23,15 @@ MODE="mixed"
 N_TRIALS=100
 RANKING="knn"
 
-# ---- 引数解析 ----
+# ---- Argument parsing ----
 DRY_RUN=false
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
 
-# ---- キュー設定 (CPU キュー、ラウンドロビン) ----
+# ---- Queue settings (CPU queues, round-robin) ----
 CPU_QUEUES=("SINGLE" "DEFAULT" "SMALL" "LONG")
 QUEUE_COUNTER=0
 
-# ---- リソース定義 (mixed 用、SMOTE 系は walltime 増量) ----
+# ---- Resource definitions (for mixed mode, SMOTE-family has increased walltime) ----
 get_resources() {
     local model="$1"
     local cond="$2"
@@ -63,7 +63,7 @@ get_resources() {
     esac
 }
 
-# ---- ジョブスクリプト確認 ----
+# ---- Job script check ----
 if [[ ! -f "$JOB_SCRIPT" ]]; then
     echo "[ERROR] Job script not found: $JOB_SCRIPT"
     exit 1
@@ -75,14 +75,14 @@ if [[ ! -f "$MISSING_LIST" ]]; then
     exit 1
 fi
 
-# ---- ログ ----
+# ---- Log ----
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 LOG_DIR="$PROJECT_ROOT/scripts/hpc/logs/train"
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/submit_missing_mixed_exp3_${TIMESTAMP}.log"
 
 echo "============================================================"
-echo "  Exp3 不足 mixed ジョブ投入"
+echo "  Exp3 missing mixed job(s)submit"
 echo "  $(date)"
 echo "  Dry run: $DRY_RUN"
 echo "============================================================"
@@ -97,25 +97,25 @@ JOB_COUNT=0
 FAIL_COUNT=0
 SKIP_COUNT=0
 
-# ---- メインループ: missing list をパース ----
+# ---- Main loop: missing list parsed ----
 while IFS='|' read -r MODEL CONDITION DISTANCE DOMAIN SEED RATIO; do
-    # コメント行・空行スキップ
+    # Skip comment and blank lines
     [[ "$MODEL" =~ ^#.*$ ]] && continue
     [[ -z "$MODEL" ]] && continue
 
-    # リソース取得
+    # Resource acquisition
     RES=$(get_resources "$MODEL" "$CONDITION")
     NCPUS_MEM=$(echo "$RES" | cut -d' ' -f1)
     WALLTIME=$(echo "$RES" | cut -d' ' -f2)
-    # ラウンドロビンでキュー選択 (inline to avoid subshell)
+    # Select queue by round-robin (inline to avoid subshell)
     QUEUE="${CPU_QUEUES[$((QUEUE_COUNTER % ${#CPU_QUEUES[@]}))]}"
     ((QUEUE_COUNTER++)) || true
 
-    # LONG queue は walltime 制限なし、他は制限あり
-    # SINGLE: 48h, SMALL: 24h, DEFAULT は制限が緩い、LONG: 制限なし
-    # SvmA smote 48h は SINGLE or DEFAULT or LONG に入れる
+    # LONG queue has no walltime limit; others have limits
+    # SINGLE: 48h, SMALL: 24h, DEFAULT has relaxed limits; LONG: no limit
+    # SvmA smote 48h goes to SINGLE, DEFAULT, or LONG
     if [[ "$QUEUE" == "SMALL" && "$WALLTIME" > "24:00:00" ]]; then
-        # SMALL queue は 24h 制限なので別キューに変更
+        # SMALL queue has 24h limit so changed to different queue
         QUEUE="${CPU_QUEUES[$((QUEUE_COUNTER % ${#CPU_QUEUES[@]}))]}"
         ((QUEUE_COUNTER++)) || true
         if [[ "$QUEUE" == "SMALL" ]]; then
@@ -123,7 +123,7 @@ while IFS='|' read -r MODEL CONDITION DISTANCE DOMAIN SEED RATIO; do
         fi
     fi
 
-    # ジョブ名生成
+    # Generate job name
     COND_SHORT="${CONDITION:0:2}"
     DIST_SHORT="${DISTANCE:0:1}"
     DOM_SHORT="${DOMAIN:0:1}"
@@ -133,7 +133,7 @@ while IFS='|' read -r MODEL CONDITION DISTANCE DOMAIN SEED RATIO; do
         JOB_NAME="${MODEL:0:2}_bs_${DIST_SHORT}${DOM_SHORT}_m_s${SEED}"
     fi
 
-    # qsub コマンド構築
+    # qsub Build command
     VARS="MODEL=$MODEL,CONDITION=$CONDITION,MODE=$MODE,DISTANCE=$DISTANCE,DOMAIN=$DOMAIN,SEED=$SEED,N_TRIALS=$N_TRIALS,RANKING=$RANKING,RUN_EVAL=true"
     if [[ -n "$RATIO" ]]; then
         VARS="$VARS,RATIO=$RATIO"
@@ -167,7 +167,7 @@ while IFS='|' read -r MODEL CONDITION DISTANCE DOMAIN SEED RATIO; do
 
 done < <(grep -v '^#' "$MISSING_LIST" | grep -v '^$')
 
-# ---- サマリー ----
+# ---- Summary ----
 {
     echo ""
     echo "# Completed at $(date)"

@@ -27,8 +27,8 @@ PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
 JOB_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/imbalance/pbs_imbalance_comparison.sh"
 
 # Defaults
-SEEDS="42 123"  # 論文用: 複数シードで統計的信頼性を確保
-TRIALS=100  # 論文用: 100 trials for statistical significance
+SEEDS="42 123"  # For paper: use multiple seeds for statistical reliability
+TRIALS=100  # For paper: 100 trials for statistical significance
 DRY_RUN=false
 RUN_EVAL=true
 

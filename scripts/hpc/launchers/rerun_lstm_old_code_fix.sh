@@ -1,22 +1,22 @@
 #!/bin/bash
 # ============================================================
-# 再実行デーモン — Lstm 旧コード結果の再投入 (baseline + smote)
+# Re-execution daemon — resubmit Lstm old code results (baseline + smote)
 # ============================================================
-# 問題: jid < 14800000 の Lstm 結果が無効:
-#   - baseline: recall=0 (全件) — コード修正前の結果
-#   - imbalv3/smote: oversampling 未適用バグ
+# Issue: jid < 14800000  Lstm results are invalid:
+#   - baseline: recall=0 (all items) — results before code fix
+#   - imbalv3/smote: oversampling not applied bug
 #
-# 重複のある 63 ディレクトリは _invalidated_old_duplicates へ移動済み。
-# 残り 72 ディレクトリは _invalidated_old_code へ移動済み。
+# 63 directories with duplicates moved to _invalidated_old_duplicates.
+# Remaining 72 directories moved to _invalidated_old_code.
 #
-# 対象:
-#   - Lstm baseline:  3モード × 3距離 × 2ドメイン × 2シード = 36 configs
-#   - Lstm smote:     3モード × 3距離 × 2ドメイン × 2シード × 2比率 = 72 configs
-#   合計: 108 configs (valid eval 既存分を除く)
+# Target:
+#   - Lstm baseline:  3mode × 3 distances x 2 domains x 2 seeds = 36 configs
+#   - Lstm smote:     3mode × 3 distances x 2 domains x 2 seeds × 2ratio = 72 configs
+#   Total: 108 configs (excluding existing valid evals)
 #
 # Usage:
 #   nohup bash scripts/hpc/launchers/rerun_lstm_old_code_fix.sh &
-#   # ログ: /tmp/rerun_lstm_old_code_fix.log
+#   # Log: /tmp/rerun_lstm_old_code_fix.log
 # ============================================================
 
 set -euo pipefail
@@ -31,18 +31,18 @@ POLL_INTERVAL=300  # 5 minutes
 N_TRIALS=100
 RANKING="knn"
 
-# ---- エラートラップ ----
+# ---- Error trap ----
 trap 'echo "[$(date +%H:%M)] TRAP: daemon exiting (line $LINENO, exit=$?)" >> "$LOG"' EXIT
 trap 'echo "[$(date +%H:%M)] TRAP: received signal, exiting" >> "$LOG"; exit 1' INT TERM HUP
 
-# ---- GPU キュー制限 ----
+# ---- GPU Queue limit ----
 declare -A GPU_QUEUE_MAX=( [GPU-1]=15 [GPU-1A]=10 [GPU-S]=10 [GPU-L]=2 [GPU-LA]=2 )
 GPU_QUEUES=("GPU-L" "GPU-LA" "GPU-1" "GPU-1A" "GPU-S")
 declare -A QUEUE_CURRENT=()
 
 touch "$SUBMITTED_KEYS"
 
-# ---- リソース定義 ----
+# ---- Resource definitions ----
 get_resources() {
     local mode="$1"
     # source_only/target_only needs ~4h train + eval → 8h
@@ -55,7 +55,7 @@ get_resources() {
     fi
 }
 
-# ---- 新しい評価結果が存在するか確認 ----
+# ---- New check if evaluation results exist ----
 has_eval_result() {
     local cond="$1" dist="$2" dom="$3" mode="$4" seed="$5" ratio="$6"
     local eval_dir="results/outputs/evaluation/Lstm"
@@ -72,7 +72,7 @@ has_eval_result() {
     find "$eval_dir" -name "$pattern" 2>/dev/null | grep -v _invalidated | grep -q .
 }
 
-# ---- キュー状態確認 ----
+# ---- Check queue status ----
 get_queue_counts() {
     local qstat_output
     qstat_output=$(qstat -u s2240011 2>/dev/null | tail -n +6 || true)
@@ -94,7 +94,7 @@ find_available_gpu_queue() {
     return 1
 }
 
-# ---- 全実験条件を列挙 ----
+# ---- Enumerate all experiment conditions ----
 ALL_JOBS=()
 DISTANCES=("mmd" "dtw" "wasserstein")
 DOMAINS=("in_domain" "out_domain")
@@ -123,7 +123,7 @@ echo "[$(date +%H:%M)] Conditions: ${CONDITIONS[*]}" >> "$LOG"
 echo "[$(date +%H:%M)] Modes: ${MODES[*]}" >> "$LOG"
 echo "[$(date +%H:%M)] Polling every ${POLL_INTERVAL}s" >> "$LOG"
 
-# ---- メインループ ----
+# ---- Main loop ----
 while true; do
     get_queue_counts || true
 

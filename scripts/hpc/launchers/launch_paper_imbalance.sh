@@ -1,14 +1,14 @@
 #!/bin/bash
 # ============================================================
-# 論文用クラス不均衡実験ランチャー
+# Class imbalance experiment launcher for paper
 # ============================================================
-# 実験条件:
-#   - シード: 42, 123
-#   - ターゲット比率: 0.1, 0.5
-#   - 分類モデル: RF (BalancedRFは手法として含む)
-#   - 不均衡対策手法: Baseline, Plain SMOTE, Subject-wise SMOTE, RUS, Balanced RF
-#   - Optuna trial数: 100
-#   - Optuna目的関数: F2 (既に実装済み)
+# Experiment conditions:
+#   - seeds: 42, 123
+#   - Target ratio: 0.1, 0.5
+#   - Models: RF (BalancedRF is included as a method)
+#   - Imbalance methods: Baseline, Plain SMOTE, Subject-wise SMOTE, RUS, Balanced RF
+#   - Optuna trials: 100
+#   - Optuna objective: F2 (already implemented)
 # ============================================================
 
 set -euo pipefail
@@ -16,14 +16,14 @@ set -euo pipefail
 PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
 JOB_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/imbalance/pbs_imbalance_comparison.sh"
 
-# 論文用設定
+# Paper settings
 SEEDS="42 123"
 RATIOS="0.1 0.5"
 N_TRIALS=100
 
-# 実験条件（論文用）
+# Experiment conditions (for paper)
 EXPERIMENTS=(
-    "baseline"           # ベースライン（オーバーサンプリングなし）
+    "baseline"           # Baseline (no oversampling)
     "smote"              # Plain SMOTE
     "smote_subjectwise"  # Subject-wise SMOTE
     "undersample_rus"    # Random Undersampling
@@ -45,25 +45,25 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Resource configurations (キュー状況に基づいて最適化)
-# TINY: 最大30分制限のため使用しない
+# Resource configurations (Optimize based on queue status)
+# TINY: not used due to max 30min limit
 get_resources() {
     local method="$1"
     case "$method" in
         balanced_rf)
-            # BalancedRF: 8コア必要、LONGキューを使用（長時間実行の可能性）
+            # BalancedRF: 8cores required, use LONG queue (may run long)
             echo "ncpus=8:mem=8gb 08:00:00 LONG"
             ;;
         smote|smote_subjectwise)
-            # SMOTE系: 4コア、SINGLEキューを使用
+            # SMOTE-family: 4 cores, use SINGLE queue
             echo "ncpus=4:mem=8gb 08:00:00 SINGLE"
             ;;
         baseline|undersample_rus)
-            # 軽量な実験: 4コア、SINGLEキューを使用（LONGは容量小さい）
+            # lightweight experiment: 4cores, use SINGLE queue (LONG has small capacity)
             echo "ncpus=4:mem=8gb 04:00:00 SINGLE"
             ;;
         *)
-            # デフォルト: SINGLEキュー
+            # default: SINGLE queue
             echo "ncpus=4:mem=8gb 06:00:00 SINGLE"
             ;;
     esac
@@ -76,16 +76,16 @@ mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/launcher_paper_${TIMESTAMP}.txt"
 
 echo "============================================================"
-echo "論文用クラス不均衡実験ランチャー"
+echo "Class imbalance experiment launcher for paper"
 echo "============================================================"
-echo "実験手法: ${EXPERIMENTS[*]}"
-echo "シード: $SEEDS"
-echo "比率: $RATIOS"
+echo "experimentmethod: ${EXPERIMENTS[*]}"
+echo "seeds: $SEEDS"
+echo "ratio: $RATIOS"
 echo "Optuna trials: $N_TRIALS"
 echo "Dry run: $DRY_RUN"
 echo "Log: $LOG_FILE"
 echo ""
-echo "キュー状態:"
+echo "Queue status:"
 qstat -Q | grep -E "Queue|TINY|SINGLE|DEFAULT|SMALL"
 echo "============================================================"
 echo ""
@@ -95,14 +95,14 @@ echo "# Launched at $(date)" > "$LOG_FILE"
 JOB_COUNT=0
 TOTAL_JOBS=0
 
-# 総ジョブ数を計算
+# Calculate total job count
 for METHOD in "${EXPERIMENTS[@]}"; do
     for SEED in $SEEDS; do
         if [[ "$METHOD" == "baseline" || "$METHOD" == "balanced_rf" ]]; then
-            # Baseline と BalancedRF は比率不要
+            # Baseline Baseline and BalancedRF do not need ratio
             TOTAL_JOBS=$((TOTAL_JOBS + 1))
         else
-            # SMOTE系とRUSは比率ごとに実行
+            # Run SMOTE-family and RUS for each ratio
             for RATIO in $RATIOS; do
                 TOTAL_JOBS=$((TOTAL_JOBS + 1))
             done
@@ -110,14 +110,14 @@ for METHOD in "${EXPERIMENTS[@]}"; do
     done
 done
 
-echo "合計 $TOTAL_JOBS ジョブを投入します"
+echo "Total $TOTAL_JOBS jobs to submit"
 echo ""
 
-# ジョブ投入
+# job(s)submit
 for METHOD in "${EXPERIMENTS[@]}"; do
     for SEED in $SEEDS; do
         if [[ "$METHOD" == "baseline" || "$METHOD" == "balanced_rf" ]]; then
-            # Baseline と BalancedRF は比率不要
+            # Baseline Baseline and BalancedRF do not need ratio
             RESOURCES=$(get_resources "$METHOD")
             NCPUS_MEM=$(echo "$RESOURCES" | cut -d' ' -f1)
             WALLTIME=$(echo "$RESOURCES" | cut -d' ' -f2)
@@ -137,7 +137,7 @@ for METHOD in "${EXPERIMENTS[@]}"; do
             fi
             JOB_COUNT=$((JOB_COUNT + 1))
         else
-            # SMOTE系とRUSは比率ごとに実行
+            # Run SMOTE-family and RUS for each ratio
             for RATIO in $RATIOS; do
                 RESOURCES=$(get_resources "$METHOD")
                 NCPUS_MEM=$(echo "$RESOURCES" | cut -d' ' -f1)
@@ -164,14 +164,14 @@ done
 
 echo ""
 echo "============================================================"
-echo "合計 $JOB_COUNT ジョブを投入しました"
+echo "Total $JOB_COUNT jobs submitted"
 if ! $DRY_RUN; then
-    echo "ログ: $LOG_FILE"
+    echo "Log: $LOG_FILE"
     echo ""
-    echo "ジョブ状態確認:"
+    echo "Job status check:"
     echo "  qstat -u s2240011"
     echo ""
-    echo "特定ジョブのログ確認:"
+    echo "Check specific job logs:"
     echo "  tail -f $LOG_DIR/\${PBS_JOBID}.o*"
 fi
 echo "============================================================"

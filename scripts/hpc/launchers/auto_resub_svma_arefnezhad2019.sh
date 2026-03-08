@@ -1,14 +1,14 @@
 #!/bin/bash
 # ============================================================
-# SvmA Arefnezhad2019対応 自動投入スクリプト
+# SvmA Arefnezhad2019 auto-submit script
 # ============================================================
-# /tmp/remaining_svma_arefnezhad2019.txt から未投入SvmAジョブを読み取り、
-# 各キューの空き枠を確認しながら投入する。
+# Read unsubmitted SvmA jobs from /tmp/remaining_svma_arefnezhad2019.txt,
+# Submits while checking available slots in each queue.
 #
-# 入力形式 (パイプ区切り, 10列):
+# Input format (pipe-delimited, 10 columns):
 #   MODEL|CONDITION|MODE|DISTANCE|DOMAIN|SEED|RATIO|WALLTIME|MEM|N_TRIALS
 #
-# 使い方:
+# Usage:
 #   nohup bash scripts/hpc/launchers/auto_resub_svma_arefnezhad2019.sh &
 # ============================================================
 
@@ -18,7 +18,7 @@ PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
 JOB_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/train/pbs_prior_research_split2.sh"
 REMAINING_FILE="/tmp/remaining_svma_arefnezhad2019.txt"
 RANKING="knn"
-SLEEP_INTERVAL=300  # 5分間隔
+SLEEP_INTERVAL=300  # 5mininterval
 MAX_RETRIES=2000
 
 USER="s2240011"
@@ -36,10 +36,10 @@ mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/auto_resub_svma_arefnezhad2019_${TIMESTAMP}.log"
 
 echo "============================================================"
-echo "SvmA Arefnezhad2019対応 自動投入 開始: $(date)"
-echo "残りジョブ: $(wc -l < "$REMAINING_FILE") 件"
-echo "リトライ間隔: ${SLEEP_INTERVAL}秒"
-echo "ログ: $LOG_FILE"
+echo "SvmA Arefnezhad2019 auto-submit started: $(date)"
+echo "remainingjob(s): $(wc -l < "$REMAINING_FILE") items"
+echo "Retry interval: ${SLEEP_INTERVAL}s"
+echo "Log: $LOG_FILE"
 echo "============================================================"
 
 echo "# SvmA Arefnezhad2019 auto resub started at $(date)" > "$LOG_FILE"
@@ -66,7 +66,7 @@ while [[ -s "$REMAINING_FILE" && $RETRY -lt $MAX_RETRIES ]]; do
     echo "[$(date +%H:%M:%S)] Round $RETRY: slots SINGLE=${AVAIL[SINGLE]} DEFAULT=${AVAIL[DEFAULT]} LONG=${AVAIL[LONG]} SMALL=${AVAIL[SMALL]} (total=$TOTAL_AVAIL)"
 
     if [[ $TOTAL_AVAIL -eq 0 ]]; then
-        echo "[$(date +%H:%M:%S)] 全キュー満杯。${SLEEP_INTERVAL}秒待機..."
+        echo "[$(date +%H:%M:%S)] All queues full. Waiting ${SLEEP_INTERVAL}s..."
         echo "# Round $RETRY: all queues full" >> "$LOG_FILE"
         sleep $SLEEP_INTERVAL
         continue
@@ -147,7 +147,7 @@ while [[ -s "$REMAINING_FILE" && $RETRY -lt $MAX_RETRIES ]]; do
     echo "# Round $RETRY at $(date): submitted=$ROUND_SUBMITTED deferred=$ROUND_DEFERRED remaining=$REMAINING" >> "$LOG_FILE"
 
     if [[ $REMAINING -eq 0 ]]; then
-        echo "[$(date +%H:%M:%S)] 全件投入完了！"
+        echo "[$(date +%H:%M:%S)] All submissions complete!"
         break
     fi
 
@@ -168,8 +168,8 @@ done
 
 echo ""
 echo "============================================================"
-echo "SvmA Arefnezhad2019 自動投入完了: $(date)"
-echo "投入済み: $TOTAL_SUBMITTED"
-echo "残り: $(wc -l < "$REMAINING_FILE")"
-echo "ログ: $LOG_FILE"
+echo "SvmA Arefnezhad2019 auto-submission complete: $(date)"
+echo "Submitted: $TOTAL_SUBMITTED"
+echo "remaining: $(wc -l < "$REMAINING_FILE")"
+echo "Log: $LOG_FILE"
 echo "============================================================"

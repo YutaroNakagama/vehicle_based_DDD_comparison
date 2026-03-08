@@ -1,13 +1,13 @@
 #!/bin/bash
 # ============================================================
-# 自動投入デーモン — Exp3 mixed ジョブの不足分を自動投入
+# Auto-submit daemon — auto-submit missing Exp3 mixed jobs
 # ============================================================
-# 評価結果が存在しない mixed ジョブを検出し、キュー空き状況に応じて
-# 自動的に qsub する。5分ごとにチェックする。
+# Detect mixed jobs without evaluation results and based on queue availability
+# Auto qsub. Check every 5 minutes.
 #
 # Usage:
 #   nohup bash scripts/hpc/launchers/auto_resub_mixed_exp3.sh &
-#   # ログ: /tmp/auto_resub_mixed_exp3.log
+#   # Log: /tmp/auto_resub_mixed_exp3.log
 # ============================================================
 
 PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
@@ -21,33 +21,33 @@ MODE="mixed"
 N_TRIALS=100
 RANKING="knn"
 
-# ---- エラートラップ: デーモン死亡時にログ出力 ----
+# ---- Error trap: output log on daemon death ----
 trap 'echo "[$(date +%H:%M)] TRAP: daemon exiting unexpectedly (line $LINENO, exit=$?)" >> "$LOG"' EXIT
 trap 'echo "[$(date +%H:%M)] TRAP: received signal, exiting" >> "$LOG"; exit 1' INT TERM HUP
 
-# ---- キュー制限 (queued per user) ----
+# ---- Queue limit (queued per user) ----
 declare -A QUEUE_MAX=( [SINGLE]=40 [DEFAULT]=40 [SMALL]=30 [LONG]=15 )
 
-# ---- グローバル配列 (関数外で宣言) ----
+# ---- Global arrays (declared outside functions) ----
 declare -A QUEUE_CURRENT=()
 
 CPU_QUEUES=("SINGLE" "DEFAULT" "SMALL" "LONG")
 
-# ---- 初期化: 既に提出済みのキー読み込み ----
+# ---- Initialization: load already-submitted keys ----
 touch "$SUBMITTED_KEYS"
 
-# 既にキューにあるジョブからキーを復元
+# Recover keys from jobs already in queue
 restore_keys_from_queue() {
     local qstat_output
     qstat_output=$(qstat -u s2240011 2>/dev/null | tail -n +6 || true)
-    # mixed ジョブの名前パターン: *_m_* (mixed mode marker)
+    # mixed job name pattern: *_m_* (mixed mode marker)
     echo "$qstat_output" | awk '{print $4}' | grep '_m_' | while read -r name; do
-        # ジョブ名からキーを推定 (name: Sv_sm_mi_m_r0.1_s42)
+        # Infer key from job name (name: Sv_sm_mi_m_r0.1_s42)
         echo "QUEUE:$name"
     done
 }
 
-# ---- リソース定義 ----
+# ---- Resource definitions ----
 get_resources() {
     local model="$1"
     local cond="$2"
@@ -67,13 +67,13 @@ get_resources() {
     esac
 }
 
-# ---- 全実験条件を列挙 ----
+# ---- Enumerate all experiment conditions ----
 ALL_JOBS=()
 DISTANCES=("mmd" "dtw" "wasserstein")
 DOMAINS=("in_domain" "out_domain")
 SEEDS=(42 123)
 RATIOS=(0.1 0.5)
-# Lstm mixed 84/84 完了 — SvmW, SvmA のみ投入対象
+# Lstm mixed 84/84 complete — SvmW, SvmA onlysubmission target
 MODELS=("SvmW" "SvmA")
 
 for MODEL in "${MODELS[@]}"; do
@@ -96,7 +96,7 @@ done
 echo "[$(date +%H:%M)] Daemon started. Total expected: ${#ALL_JOBS[@]} mixed jobs" >> "$LOG"
 echo "[$(date +%H:%M)] Polling every ${POLL_INTERVAL}s" >> "$LOG"
 
-# ---- 評価結果が存在するか確認 ----
+# ---- Check if evaluation results exist ----
 has_eval_result() {
     local model="$1" cond="$2" dist="$3" dom="$4" seed="$5" ratio="$6"
     local eval_dir="results/outputs/evaluation/$model"
@@ -114,7 +114,7 @@ has_eval_result() {
     if [[ -z "$ratio" ]]; then
         pattern="eval_results_${model}_mixed_prior_${model}_${tag}_knn_${dist}_${dom}_mixed_split2_s${seed}"
     else
-        # *ratio で subjectwise_ratio と ratio の両方にマッチ
+        # *ratio matches both subjectwise_ratio and ratio with
         pattern="eval_results_${model}_mixed_prior_${model}_${tag}_knn_${dist}_${dom}_mixed_split2_*ratio${ratio}_s${seed}"
     fi
     
@@ -122,12 +122,12 @@ has_eval_result() {
     find "$eval_dir" -name "${pattern}*.json" 2>/dev/null | grep -q .
 }
 
-# ---- キュー空き確認 ----
+# ---- Check queue availability ----
 get_queue_counts() {
     local qstat_output
     qstat_output=$(qstat -u s2240011 2>/dev/null | tail -n +6 || true)
     
-    # QUEUE_CURRENT はグローバルで宣言済み — ここでは値のみ更新
+    # QUEUE_CURRENT already declared globally — Only updating the value here
     for q in "${CPU_QUEUES[@]}"; do
         QUEUE_CURRENT[$q]=$(echo "$qstat_output" | awk -v q="$q" '$3==q' | wc -l || echo 0)
     done
@@ -145,7 +145,7 @@ find_available_queue() {
     return 1
 }
 
-# ---- メインループ ----
+# ---- Main loop ----
 while true; do
     get_queue_counts || true
     

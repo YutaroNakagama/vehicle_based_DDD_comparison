@@ -11,9 +11,9 @@
 #PBS -J 0-4
 
 # ============================================================
-# Lstm GPU 再学習: CUDAなしで失敗した5ジョブ
+# Lstm GPU retraining: 5 jobs that failed without CUDA
 # ============================================================
-# 元のジョブ:
+# Original jobs:
 #   [0] 14873005 - smote_plain / dtw / out_domain / s42
 #   [1] 14873006 - undersample / dtw / out_domain / s42
 #   [2] 14873021 - smote_plain / dtw / in_domain  / s123

@@ -1,5 +1,5 @@
 #!/bin/bash
-# シンプル継続投入スクリプト
+# Simple continuous submission script
 
 WORKSPACE_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
 cd "$WORKSPACE_ROOT"
@@ -8,8 +8,8 @@ MAX_JOBS=45
 CHECK_INTERVAL=30
 
 echo "========================================="
-echo "継続投入スクリプト起動"
-echo "開始: $(date)"
+echo "Continuous submit script started"
+echo "started: $(date)"
 echo "========================================="
 
 round=0
@@ -20,16 +20,16 @@ while true; do
     available=$((MAX_JOBS - current))
     
     echo ""
-    echo "[$(date +%H:%M:%S)] #$round 現在=$current 空き=$available"
+    echo "[$(date +%H:%M:%S)] #$round current=$current available=$available"
     
     if [ $available -le 0 ]; then
-        echo "  満杯 → 待機"
+        echo "  full → waiting"
         sleep $CHECK_INTERVAL
         continue
     fi
     
-    echo "  投入試行..."
-    bash "$WORKSPACE_ROOT/scripts/hpc/launchers/submit_to_empty_queues.sh" 2>&1 | grep -E "投入成功|投入失敗|キュー別" | head -5
+    echo "  Attempting submission..."
+    bash "$WORKSPACE_ROOT/scripts/hpc/launchers/submit_to_empty_queues.sh" 2>&1 | grep -E "Submission succeeded|Submission failed|Per queue" | head -5
     
     sleep $CHECK_INTERVAL
 done

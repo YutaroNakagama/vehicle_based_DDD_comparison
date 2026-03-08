@@ -1,18 +1,18 @@
 #!/bin/bash
 # ============================================================
-# 論文用ドメインシフト実験ランチャー
+# Domain shift experiment launcher for paper
 # ============================================================
-# 実験条件:
-#   - シード: 42, 123
-#   - ターゲット比率: 0.1, 0.5
-#   - 分類モデル: RF (BalancedRFは手法として含む)
-#   - 不均衡対策手法: baseline, plain SMOTE, subject-wise SMOTE, RUS, Balanced RF
-#   - Optuna trial数: 100
-#   - Optuna目的関数: F2 (既に実装済み)
-#   - ランキング手法: KNN
-#   - 距離指標: mmd, dtw, wasserstein
-#   - ドメイングループ: out_domain, in_domain
-#   - 訓練モード: source_only (cross domain), target_only (single domain)
+# Experiment conditions:
+#   - seeds: 42, 123
+#   - Target ratio: 0.1, 0.5
+#   - Models: RF (BalancedRF is included as a method)
+#   - Imbalance methods: baseline, plain SMOTE, subject-wise SMOTE, RUS, Balanced RF
+#   - Optuna trials: 100
+#   - Optuna objective: F2 (already implemented)
+#   - Ranking method: KNN
+#   - Distance metrics: mmd, dtw, wasserstein
+#   - Domain groups: out_domain, in_domain
+#   - Training mode: source_only (cross domain), target_only (single domain)
 #
 # Total: 3 distances × 2 domains × 2 modes × 2 seeds × 8 conditions = 192 jobs
 # ============================================================
@@ -22,22 +22,22 @@ set -euo pipefail
 PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
 JOB_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/domain_analysis/pbs_domain_comparison.sh"
 
-# 論文用設定
+# Paper settings
 SEEDS=(42 123)
 RATIOS=(0.1 0.5)
 N_TRIALS=100
 RANKING="knn"
 
-# 距離指標とドメイングループ
+# Distance metrics and domain groups
 DISTANCES=("mmd" "dtw" "wasserstein")
 DOMAINS=("out_domain" "in_domain")
 
-# 訓練モード（論文での表記に対応）
-# source_only = cross domain (ドメイン外の被験者で訓練)
-# target_only = single domain (ターゲット被験者のみで訓練)
+# Training mode (corresponding to paper notation)
+# source_only = cross domain (train on subjects outside the domain)
+# target_only = single domain (train on target subjects only)
 MODES=("source_only" "target_only")
 
-# 不均衡対策手法（論文用）
+# Imbalance methods (for paper)
 # Format: "CONDITION:description"
 CONDITIONS=(
     "baseline:Baseline (no handling)"
@@ -62,20 +62,20 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Resource configurations (キュー状況に基づいて最適化)
+# Resource configurations (Optimize based on queue status)
 get_resources() {
     local condition="$1"
     case "$condition" in
         balanced_rf)
-            # BalancedRF: 8コア必要、LONGキュー使用
+            # BalancedRF: 8 cores required, use LONG queue
             echo "ncpus=8:mem=8gb 08:00:00 LONG"
             ;;
         smote|smote_plain)
-            # SMOTE系: 4コア、SINGLEキュー使用
+            # SMOTE-family: 4 cores, use SINGLE queue
             echo "ncpus=4:mem=8gb 08:00:00 SINGLE"
             ;;
         baseline|undersample)
-            # 軽量な実験: 4コア、SINGLEキュー使用
+            # lightweight experiment: 4cores、SINGLEQueue usage
             echo "ncpus=4:mem=8gb 06:00:00 SINGLE"
             ;;
         *)
@@ -91,28 +91,28 @@ mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/launcher_paper_domain_${TIMESTAMP}.txt"
 
 echo "============================================================"
-echo "論文用ドメインシフト実験ランチャー"
+echo "Domain shift experiment launcher for paper"
 echo "============================================================"
-echo "距離指標: ${DISTANCES[*]}"
-echo "ドメイングループ: ${DOMAINS[*]}"
-echo "訓練モード: ${MODES[*]} (source_only=cross domain, target_only=single domain)"
-echo "シード: ${SEEDS[*]}"
-echo "比率: ${RATIOS[*]}"
+echo "Distance metrics: ${DISTANCES[*]}"
+echo "Domain groups: ${DOMAINS[*]}"
+echo "Training mode: ${MODES[*]} (source_only=cross domain, target_only=single domain)"
+echo "seeds: ${SEEDS[*]}"
+echo "ratio: ${RATIOS[*]}"
 echo "Optuna trials: $N_TRIALS"
-echo "ランキング手法: $RANKING"
-echo "不均衡対策手法: ${#CONDITIONS[@]}"
+echo "Ranking method: $RANKING"
+echo "Imbalance methods: ${#CONDITIONS[@]}"
 for cond in "${CONDITIONS[@]}"; do
     echo "  - ${cond##*:}"
 done
 echo "Dry run: $DRY_RUN"
 echo "Log: $LOG_FILE"
 echo ""
-echo "キュー状態:"
+echo "Queue status:"
 qstat -Q | grep -E "Queue|SINGLE|LONG|DEFAULT"
 echo "============================================================"
 echo ""
 
-# 総ジョブ数を計算
+# Calculate total job count
 TOTAL_JOBS=0
 for dist in "${DISTANCES[@]}"; do
     for domain in "${DOMAINS[@]}"; do
@@ -121,10 +121,10 @@ for dist in "${DISTANCES[@]}"; do
                 for cond_entry in "${CONDITIONS[@]}"; do
                     CONDITION="${cond_entry%%:*}"
                     if [[ "$CONDITION" == "baseline" || "$CONDITION" == "balanced_rf" ]]; then
-                        # 比率不要
+                        # ratio not needed
                         TOTAL_JOBS=$((TOTAL_JOBS + 1))
                     else
-                        # 比率ごとに実行
+                        # Run for each ratio
                         for ratio in "${RATIOS[@]}"; do
                             TOTAL_JOBS=$((TOTAL_JOBS + 1))
                         done
@@ -135,14 +135,14 @@ for dist in "${DISTANCES[@]}"; do
     done
 done
 
-echo "合計 $TOTAL_JOBS ジョブを投入します"
+echo "Total $TOTAL_JOBS jobs to submit"
 echo ""
 
 echo "# Launched at $(date)" > "$LOG_FILE"
 
 JOB_COUNT=0
 
-# ジョブ投入
+# job(s)submit
 for dist in "${DISTANCES[@]}"; do
     for domain in "${DOMAINS[@]}"; do
         for mode in "${MODES[@]}"; do
@@ -151,7 +151,7 @@ for dist in "${DISTANCES[@]}"; do
                     CONDITION="${cond_entry%%:*}"
                     
                     if [[ "$CONDITION" == "baseline" || "$CONDITION" == "balanced_rf" ]]; then
-                        # Baseline と Balanced RF は比率不要
+                        # Baseline Baseline and Balanced RF do not need ratio
                         RATIO=0
                         
                         RESOURCES=$(get_resources "$CONDITION")
@@ -159,7 +159,7 @@ for dist in "${DISTANCES[@]}"; do
                         WALLTIME=$(echo "$RESOURCES" | cut -d' ' -f2)
                         QUEUE=$(echo "$RESOURCES" | cut -d' ' -f3)
                         
-                        # ジョブ名生成（15文字制限）
+                        # Generate job name (15-char limit)
                         JOB_NAME="d_${CONDITION:0:4}_${dist:0:3}_${domain:0:3}_${mode:0:3}_s${seed}"
                         JOB_NAME="${JOB_NAME:0:15}"
                         
@@ -175,14 +175,14 @@ for dist in "${DISTANCES[@]}"; do
                         fi
                         JOB_COUNT=$((JOB_COUNT + 1))
                     else
-                        # SMOTE系とRUSは比率ごとに実行
+                        # Run SMOTE-family and RUS for each ratio
                         for ratio in "${RATIOS[@]}"; do
                             RESOURCES=$(get_resources "$CONDITION")
                             NCPUS_MEM=$(echo "$RESOURCES" | cut -d' ' -f1)
                             WALLTIME=$(echo "$RESOURCES" | cut -d' ' -f2)
                             QUEUE=$(echo "$RESOURCES" | cut -d' ' -f3)
                             
-                            # ジョブ名生成（15文字制限）
+                            # Generate job name (15-char limit)
                             JOB_NAME="d_${CONDITION:0:4}_r${ratio}_${dist:0:3}_${domain:0:3}_${mode:0:3}_s${seed}"
                             JOB_NAME="${JOB_NAME:0:15}"
                             
@@ -207,14 +207,14 @@ done
 
 echo ""
 echo "============================================================"
-echo "合計 $JOB_COUNT ジョブを投入しました"
+echo "Total $JOB_COUNT jobs submitted"
 if ! $DRY_RUN; then
-    echo "ログ: $LOG_FILE"
+    echo "Log: $LOG_FILE"
     echo ""
-    echo "ジョブ状態確認:"
+    echo "Job status check:"
     echo "  qstat -u s2240011"
     echo ""
-    echo "特定ジョブのログ確認:"
+    echo "Check specific job logs:"
     echo "  tail -f $LOG_DIR/\${PBS_JOBID}.o*"
 fi
 echo "============================================================"

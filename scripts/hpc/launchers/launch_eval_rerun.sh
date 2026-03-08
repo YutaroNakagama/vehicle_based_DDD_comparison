@@ -1,11 +1,11 @@
 #!/bin/bash
 # ============================================================
-# Eval再実行ランチャー (2026-02-10 updated)
-# training完了済み・eval失敗のSvmA(91)+SvmW(87)=178件を再評価
-# 修正内容:
-#   - .str.strip() bug (SvmA_eval) — commit 6c5f14c で修正済
-#   - glob bracket escaping [1] dirs — commit e5a499d で修正
-#   - scaler None null guard — commit e5a499d で修正
+# Eval rerunlauncher (2026-02-10 updated)
+# Re-evaluate 178 items (SvmA=91, SvmW=87) where training completed but eval failed
+# Fix details:
+#   - .str.strip() bug (SvmA_eval) — commit 6c5f14c fixed in
+#   - glob bracket escaping [1] dirs — commit e5a499d fix in
+#   - scaler None null guard — commit e5a499d fix in
 # ============================================================
 
 set -uo pipefail
@@ -26,7 +26,7 @@ JOB_COUNT=0
 FAIL_COUNT=0
 
 echo "============================================================"
-echo "  Eval再実行 — $(date)"
+echo "  Eval rerun — $(date)"
 echo "  Dry run : $DRY_RUN"
 echo "============================================================"
 

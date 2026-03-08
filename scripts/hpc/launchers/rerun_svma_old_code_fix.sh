@@ -1,25 +1,25 @@
 #!/bin/bash
 # ============================================================
-# 再実行デーモン — SvmA 旧コード修正後のジョブ再投入
+# Re-execution daemon — resubmit SvmA jobs after old code fix
 # ============================================================
-# SvmA のコードが 2026-02-14/15 に根本的に改修された:
-#   - 6bb19f3: class_weight balanced, PSO F1目的関数, F2閾値
-#   - 1c3742c: 適切なANFIS実装 (ガウスMF + 高木-菅野ルール)
-#   - 5418e47: PSOハイパーパラメータを論文Table 3に合わせ
-#   - 0152185: MinMax正規化, KSS6→Alert, PSO→accuracy
-#   - adf7802: scaler保存バグ修正
+# SvmA code from 2026-02-14/15 fundamentally revised in:
+#   - 6bb19f3: class_weight balanced, PSO F1 objective, F2 threshold
+#   - 1c3742c: proper ANFIS implementation (Gaussian MF + Takagi-Sugeno rules)
+#   - 5418e47: Align PSO hyperparameters to Table 3 in the paper
+#   - 0152185: MinMaxnormalization, KSS6→Alert, PSO→accuracy
+#   - adf7802: scaler save bug fix
 #
-# 改修前に実行された全 SvmA baseline + imbalv3 ジョブは無効。
-# (smote_plain / undersample はオーバーサンプリングデーモンが処理)
+# All SvmA baseline + imbalv3 jobs run before the fix are invalid.
+# (smote_plain / undersample  — oversampling daemon handles this)
 #
-# 対象:
-#   - SvmA baseline: 3モード × 3距離 × 2ドメイン × 2シード = 36 configs
-#   - SvmA imbalv3:  3モード × 3距離 × 2ドメイン × 2シード × 2比率 = 72 configs
-#   合計: 最大 108 configs (完了済みを除く 92 件)
+# Target:
+#   - SvmA baseline: 3mode × 3 distances x 2 domains x 2 seeds = 36 configs
+#   - SvmA imbalv3:  3mode × 3 distances x 2 domains x 2 seeds × 2ratio = 72 configs
+#   Total: max 108 configs (92 items excluding completed)
 #
 # Usage:
 #   nohup bash scripts/hpc/launchers/rerun_svma_old_code_fix.sh &
-#   # ログ: /tmp/rerun_svma_old_code_fix.log
+#   # Log: /tmp/rerun_svma_old_code_fix.log
 # ============================================================
 
 set -euo pipefail
@@ -34,18 +34,18 @@ POLL_INTERVAL=300  # 5 minutes
 N_TRIALS=100
 RANKING="knn"
 
-# ---- エラートラップ ----
+# ---- Error trap ----
 trap 'echo "[$(date +%H:%M)] TRAP: daemon exiting (line $LINENO, exit=$?)" >> "$LOG"' EXIT
 trap 'echo "[$(date +%H:%M)] TRAP: received signal, exiting" >> "$LOG"; exit 1' INT TERM HUP
 
-# ---- キュー制限 ----
+# ---- Queue limit ----
 declare -A QUEUE_MAX=( [SINGLE]=40 [DEFAULT]=40 [SMALL]=30 [LONG]=15 )
 declare -A QUEUE_CURRENT=()
 CPU_QUEUES=("SINGLE" "DEFAULT" "SMALL" "LONG")
 
 touch "$SUBMITTED_KEYS"
 
-# ---- リソース定義 ----
+# ---- Resource definitions ----
 get_resources() {
     local mode="$1" cond="$2"
 
@@ -58,7 +58,7 @@ get_resources() {
     fi
 }
 
-# ---- 新しい評価結果が存在するか確認 ----
+# ---- New check if evaluation results exist ----
 has_eval_result() {
     local cond="$1" dist="$2" dom="$3" mode="$4" seed="$5" ratio="$6"
     local eval_dir="results/outputs/evaluation/SvmA"
@@ -75,7 +75,7 @@ has_eval_result() {
     find "$eval_dir" -name "${pattern}*.json" 2>/dev/null | grep -v _invalidated | grep -q .
 }
 
-# ---- キュー状態確認 ----
+# ---- Check queue status ----
 get_queue_counts() {
     local qstat_output
     qstat_output=$(qstat -u s2240011 2>/dev/null | tail -n +6 || true)
@@ -97,7 +97,7 @@ find_available_queue() {
     return 1
 }
 
-# ---- 全実験条件を列挙 ----
+# ---- Enumerate all experiment conditions ----
 ALL_JOBS=()
 DISTANCES=("mmd" "dtw" "wasserstein")
 DOMAINS=("in_domain" "out_domain")
@@ -126,7 +126,7 @@ echo "[$(date +%H:%M)] Conditions: ${CONDITIONS[*]}" >> "$LOG"
 echo "[$(date +%H:%M)] Modes: ${MODES[*]}" >> "$LOG"
 echo "[$(date +%H:%M)] Polling every ${POLL_INTERVAL}s" >> "$LOG"
 
-# ---- メインループ ----
+# ---- Main loop ----
 while true; do
     get_queue_counts || true
 

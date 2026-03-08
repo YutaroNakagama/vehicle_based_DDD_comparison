@@ -7,10 +7,10 @@
 # Note: -N, -l select, -l walltime, -q are passed dynamically via qsub options
 
 # ============================================================
-# 先行研究実験 (SvmA, SvmW, Lstm) - 2グループ分割版
+# Prior research experiment (SvmA, SvmW, Lstm) - 2-group split version
 # ============================================================
-# split2ディレクトリを使用した2グループ分割実験
-# in_domain (44名) vs out_domain (43名)
+# 2-group split experiment using the split2 directory
+# in_domain (44 subjects) vs out_domain (43 subjects)
 #
 # Environment Variables:
 #   MODEL      : SvmA | SvmW | Lstm (required)

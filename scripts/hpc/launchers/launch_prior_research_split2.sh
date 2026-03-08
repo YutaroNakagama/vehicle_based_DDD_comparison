@@ -1,25 +1,25 @@
 #!/bin/bash
 # ============================================================
-# 論文用先行研究実験ランチャー（ドメイン分割版）
+# Prior research experiment launcher for paper (domain split version)
 # ============================================================
-# 実験条件:
-#   - モデル: SvmA, SvmW, Lstm
-#   - シード: 42, 123
-#   - ターゲット比率: 0.1, 0.5
-#   - 不均衡対策手法: baseline, plain SMOTE, subject-wise SMOTE, RUS, balanced RF (※SvmA, Lstmは該当しない場合あり)
-#   - Optuna試行回数: 100 (SvmWのみ)
-#   - Optuna目的関数: 各先行研究に準ずる
-#   - ランキング手法: knn
-#   - 距離指標: mmd, dtw, wasserstein
-#   - ドメイングループ: out_domain, in_domain (2分割)
-#   - 訓練モード: source_only (cross domain), target_only (single domain)
+# Experiment conditions:
+#   - Model: SvmA, SvmW, Lstm
+#   - seeds: 42, 123
+#   - Target ratio: 0.1, 0.5
+#   - Imbalance methods: baseline, plain SMOTE, subject-wise SMOTE, RUS, balanced RF (※SvmA, Lstmmay not be applicable)
+#   - Optuna trials: 100 (SvmW only)
+#   - Optuna objective: follows each prior study
+#   - Ranking method: knn
+#   - Distance metrics: mmd, dtw, wasserstein
+#   - Domain groups: out_domain, in_domain (2 split)
+#   - Training mode: source_only (cross domain), target_only (single domain)
 #
-# 注意:
-#   - SvmAはPSO最適化のため、不均衡対策手法の組み合わせは限定的
-#   - LstmはDeep Learningのため、Balanced RFは適用不可
-#   - SvmWのみOptunaを使用するため、N_TRIALS=100を設定
+# Note:
+#   - SvmA has limited imbalance method combinations due to PSO optimization
+#   - Lstmis Deep Learning, so Balanced RF is not applicable
+#   - SvmWsince only Optuna uses N_TRIALS=100set
 #
-# Total: 3 models × 3 distances × 2 domains × 2 modes × 2 seeds × 条件数 = 多数
+# Total: 3 models × 3 distances × 2 domains × 2 modes × 2 seeds × conditions count = many
 # ============================================================
 
 set -uo pipefail
@@ -27,29 +27,29 @@ set -uo pipefail
 PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
 JOB_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/train/pbs_prior_research_split2.sh"
 
-# 論文用設定
+# Paper settings
 SEEDS=(42 123)
 RATIOS=(0.1 0.5)
 N_TRIALS=100
 RANKING="knn"
 
-# 距離指標とドメイングループ（2分割）
+# Distance metrics and domain groups (2-way split)
 DISTANCES=("mmd" "dtw" "wasserstein")
 DOMAINS=("out_domain" "in_domain")
 
-# 訓練モード
+# Training mode
 MODES=("source_only" "target_only")
 
-# モデル
+# Model
 MODELS=("SvmW" "SvmA" "Lstm")
 
-# キュー設定（複数キューに分散投入）
+# Queue settings (distribute submissions across multiple queues)
 USE_MULTI_QUEUE=true
 
-# 不均衡対策手法（モデルごとに適用可能な手法が異なる）
-# SvmW: すべて適用可能
-# SvmA: baseline, smote, smote_plain, undersample (Balanced RFは不可)
-# Lstm: baseline, smote, smote_plain, undersample (Balanced RFは不可)
+# Imbalance methods (applicable methods differ by model)
+# SvmW: all applicable
+# SvmA: baseline, smote, smote_plain, undersample (Balanced RFnot possible)
+# Lstm: baseline, smote, smote_plain, undersample (Balanced RFnot possible)
 
 # Parse arguments
 DRY_RUN=false
@@ -75,7 +75,7 @@ get_resources() {
     local condition="$2"
     local queue
     
-    # キュー選択（ラウンドロビン方式で分散）
+    # Queue selection (round-robin distribution)
     if $USE_MULTI_QUEUE; then
         local queues=("SINGLE" "LONG" "DEFAULT")
         queue="${queues[$((QUEUE_COUNTER % 3))]}"
@@ -86,11 +86,11 @@ get_resources() {
     
     case "$model" in
         SvmA)
-            # PSO最適化で時間がかかる（実測: 20-43時間）
+            # PSO optimization takes time (measured: 20-43 hours)
             echo "ncpus=8:mem=32gb 48:00:00 $queue"
             ;;
         SvmW)
-            # Optuna最適化
+            # Optuna optimization
             echo "ncpus=8:mem=16gb 12:00:00 $queue"
             ;;
         Lstm)
@@ -107,20 +107,20 @@ mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/launch_prior_research_split2_${TIMESTAMP}.log"
 
 echo "============================================================"
-echo "論文用先行研究実験ランチャー (2グループ分割版)"
+echo "Prior research experiment launcher for paper (2-group split version)"
 echo "============================================================"
-echo "モデル: ${MODELS[*]}"
-echo "分割方式: split2 (in_domain=44名, out_domain=43名)"
-echo "距離指標: ${DISTANCES[*]}"
-echo "ドメイングループ: ${DOMAINS[*]}"
-echo "訓練モード: ${MODES[*]}"
-echo "  - source_only (cross domain): ターゲットの逆ドメインで訓練"
-echo "  - target_only (single domain): ターゲットドメイン内で訓練"
-echo "不均衡対策手法: モデルごとに異なる"
-echo "シード: ${SEEDS[*]}"
-echo "ターゲット比率: ${RATIOS[*]}"
-echo "Optuna trials (SvmWのみ): $N_TRIALS"
-echo "複数キュー使用: $USE_MULTI_QUEUE (SINGLE, LONG, DEFAULT に分散)"
+echo "Model: ${MODELS[*]}"
+echo "Split mode: split2 (in_domain=44 subjects, out_domain=43 subjects)"
+echo "Distance metrics: ${DISTANCES[*]}"
+echo "Domain groups: ${DOMAINS[*]}"
+echo "Training mode: ${MODES[*]}"
+echo "  - source_only (cross domain): train on opposite target domain"
+echo "  - target_only (single domain): train within target domain"
+echo "Imbalance methods: varies by model"
+echo "seeds: ${SEEDS[*]}"
+echo "Target ratio: ${RATIOS[*]}"
+echo "Optuna trials (SvmWonly): $N_TRIALS"
+echo "Multi-queue usage: $USE_MULTI_QUEUE (SINGLE, LONG, DEFAULT distributed to)"
 echo "Dry run: $DRY_RUN"
 echo "============================================================"
 echo ""
@@ -147,7 +147,7 @@ get_conditions() {
     local model="$1"
     case "$model" in
         SvmW)
-            # balanced_rfは別モデル(BalancedRF)であり SvmWには不要
+            # balanced_rf is a separate model (BalancedRF); not needed for SvmW
             echo "baseline smote_plain smote undersample"
             ;;
         SvmA|Lstm)
@@ -245,9 +245,9 @@ else
     echo "Log file: $LOG_FILE"
 fi
 echo ""
-echo "予想ジョブ数の計算:"
-echo "  SvmW: 3距離 × 2ドメイン × 2モード × 2シード × (1 baseline + 2×4 ratio-based) = 216 jobs"
-echo "  SvmA: 3距離 × 2ドメイン × 2モード × 2シード × (1 baseline + 2×3 ratio-based) = 168 jobs"
-echo "  Lstm: 3距離 × 2ドメイン × 2モード × 2シード × (1 baseline + 2×3 ratio-based) = 168 jobs"
-echo "  合計: 552 jobs"
+echo "Expected job count calculation:"
+echo "  SvmW: 3 distances x 2 domains x 2 modes x 2 seeds × (1 baseline + 2×4 ratio-based) = 216 jobs"
+echo "  SvmA: 3 distances x 2 domains x 2 modes x 2 seeds × (1 baseline + 2×3 ratio-based) = 168 jobs"
+echo "  Lstm: 3 distances x 2 domains x 2 modes x 2 seeds × (1 baseline + 2×3 ratio-based) = 168 jobs"
+echo "  Total: 552 jobs"
 echo "============================================================"

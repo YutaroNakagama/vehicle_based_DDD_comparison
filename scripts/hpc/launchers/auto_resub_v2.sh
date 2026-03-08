@@ -1,19 +1,19 @@
 #!/bin/bash
 # ============================================================
-# 自動再投入スクリプト V2 — N_TRIALS 対応 + モデル存在チェック
+# Auto-resubmit script V2 — N_TRIALS support + model existence check
 # ============================================================
-# /tmp/remaining_jobs_v2.txt から未投入ジョブを読み取り、
-# キューに空きがあれば投入する。
+# Read unsubmitted jobs from /tmp/remaining_jobs_v2.txt,
+# Submits if queue slots are available.
 #
-# V2 変更点:
-#   - ファイル形式に N_TRIALS 列を追加 (10列目)
-#   - 投入前にモデルファイル存在チェック (重複回避)
-#   - SvmW mixed smote r=0.5 は N_TRIALS=30 で投入
+# V2 changes:
+#   - Added N_TRIALS column to file format (10th column)
+#   - Check model file existence before submit (avoid duplicate rounds)
+#   - SvmW mixed smote r=0.5  N_TRIALS=30 submitted with
 #
-# 入力形式 (パイプ区切り, 10列):
+# Input format (pipe-delimited, 10 columns):
 #   MODEL|CONDITION|MODE|DISTANCE|DOMAIN|SEED|RATIO|WALLTIME|MEM|N_TRIALS
 #
-# 使い方:
+# Usage:
 #   nohup bash scripts/hpc/launchers/auto_resub_v2.sh &
 # ============================================================
 
@@ -25,8 +25,8 @@ REMAINING_FILE="/tmp/remaining_jobs_v2.txt"
 RANKING="knn"
 QUEUES=("SINGLE" "LONG" "DEFAULT")
 QUEUE_COUNTER=0
-SLEEP_INTERVAL=300  # 5分間隔
-MAX_RETRIES=500     # 最大500回（約42時間）
+SLEEP_INTERVAL=300  # 5mininterval
+MAX_RETRIES=500     # Max 500 rounds (approx 42 hours)
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 LOG_DIR="$PROJECT_ROOT/scripts/hpc/logs/train"
@@ -34,15 +34,15 @@ mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/auto_resub_v2_${TIMESTAMP}.log"
 
 echo "============================================================"
-echo "自動再投入スクリプト V2 開始: $(date)"
-echo "残りジョブ: $(wc -l < "$REMAINING_FILE") 件"
-echo "リトライ間隔: ${SLEEP_INTERVAL}秒"
-echo "ログ: $LOG_FILE"
+echo "Auto resubmit script V2 started: $(date)"
+echo "remainingjob(s): $(wc -l < "$REMAINING_FILE") items"
+echo "Retry interval: ${SLEEP_INTERVAL}s"
+echo "Log: $LOG_FILE"
 echo "============================================================"
 
 echo "# Auto resub V2 started at $(date)" > "$LOG_FILE"
 
-# ---- モデルファイル存在チェック関数 ----
+# ---- Model file existence check function ----
 check_model_exists() {
     local model="$1"
     local model_dir="$PROJECT_ROOT/models/$model"
@@ -53,11 +53,11 @@ check_model_exists() {
     local seed="$6"
     local ratio="$7"
 
-    # モデルディレクトリ内を走査して、該当条件のモデルが既に存在するかチェック
-    # ログファイルからメタデータを照合する完全チェックは重いため、
-    # 簡易チェック: 最新の完了ジョブのeval結果があるかで判定
-    # → ここでは完璧を求めず、重複投入のリスクを許容する
-    return 1  # モデルなし→投入対象
+    # Scan model directory to check if a model for the condition already exists
+    # Full check comparing metadata from log files is heavy, so
+    # Quick check: determine by whether eval results exist for latest completed jobs
+    # → Not aiming for perfection here; tolerating risk of duplicate submissions
+    return 1  # Modelnone→submission target
 }
 
 RETRY=0
@@ -70,12 +70,12 @@ while [[ -s "$REMAINING_FILE" && $RETRY -lt $MAX_RETRIES ]]; do
     ROUND_SKIPPED=0
     ROUND_DUPLICATE=0
 
-    # 一時ファイルに未投入分を書き出し
+    # Writing unsubmitted jobs to temp file
     cp "$REMAINING_FILE" "${REMAINING_FILE}.bak"
     > "${REMAINING_FILE}.new"
 
     while IFS='|' read -r MODEL CONDITION MODE DISTANCE DOMAIN SEED RATIO WALLTIME MEM N_TRIALS; do
-        # N_TRIALS が空の場合のフォールバック
+        # N_TRIALS fallback when empty
         N_TRIALS="${N_TRIALS:-100}"
 
         QUEUE="${QUEUES[$((QUEUE_COUNTER % 3))]}"
@@ -104,13 +104,13 @@ while [[ -s "$REMAINING_FILE" && $RETRY -lt $MAX_RETRIES ]]; do
             ((TOTAL_SUBMITTED++))
             sleep 0.2
         else
-            # 投入失敗 → 再投入リストに残す
+            # Submission failed → keep in resubmit list
             echo "$MODEL|$CONDITION|$MODE|$DISTANCE|$DOMAIN|$SEED|$RATIO|$WALLTIME|$MEM|$N_TRIALS" >> "${REMAINING_FILE}.new"
             ((ROUND_SKIPPED++))
         fi
     done < "${REMAINING_FILE}.bak"
 
-    # 残りリストを更新
+    # Update remaining list
     mv "${REMAINING_FILE}.new" "$REMAINING_FILE"
     REMAINING=$(wc -l < "$REMAINING_FILE")
 
@@ -118,15 +118,15 @@ while [[ -s "$REMAINING_FILE" && $RETRY -lt $MAX_RETRIES ]]; do
     echo "# Round $RETRY at $(date): submitted=$ROUND_SUBMITTED skipped=$ROUND_SKIPPED remaining=$REMAINING" >> "$LOG_FILE"
 
     if [[ $REMAINING -eq 0 ]]; then
-        echo "[$(date +%H:%M:%S)] 全件投入完了！"
+        echo "[$(date +%H:%M:%S)] All submissions complete!"
         break
     fi
 
     if [[ $ROUND_SUBMITTED -eq 0 ]]; then
-        echo "[$(date +%H:%M:%S)] この回は投入できず。${SLEEP_INTERVAL}秒後にリトライ..."
+        echo "[$(date +%H:%M:%S)] Could not submit in this round.${SLEEP_INTERVAL}retrying after seconds..."
         sleep $SLEEP_INTERVAL
     else
-        echo "[$(date +%H:%M:%S)] 一部投入成功。30秒後に残りをリトライ..."
+        echo "[$(date +%H:%M:%S)] Some submissions succeeded. Retrying remaining after 30s..."
         sleep 30
     fi
 done
@@ -142,9 +142,9 @@ done
 
 echo ""
 echo "============================================================"
-echo "自動再投入 V2 完了: $(date)"
-echo "投入済み: $TOTAL_SUBMITTED"
-echo "残り: $(wc -l < "$REMAINING_FILE")"
-echo "リトライ回数: $RETRY"
-echo "ログ: $LOG_FILE"
+echo "Auto resubmit V2 complete: $(date)"
+echo "Submitted: $TOTAL_SUBMITTED"
+echo "remaining: $(wc -l < "$REMAINING_FILE")"
+echo "Retry count: $RETRY"
+echo "Log: $LOG_FILE"
 echo "============================================================"

@@ -7,16 +7,16 @@
 # Note: -N, -l select, -l walltime, -q are passed dynamically via qsub options
 
 # ============================================================
-# 先行研究実験 (統一版 - GPU) - LSTM専用
+# Prior research experiment (unified version - GPU) - LSTM only
 # ============================================================
-# CPU版との違い:
-#   - GPU (A40/A100) を使用してLSTM学習・評価を高速化
-#   - CUDA_VISIBLE_DEVICES を設定しない (TFが自動検出)
-#   - TensorFlow GPU メモリ管理は configure_gpu() で制御
-#   - hpc_sdk モジュールで CUDA ライブラリをロード
+# Differences from CPU version:
+#   - Uses GPU (A40/A100) to accelerate LSTM training and evaluation
+#   - Does not set CUDA_VISIBLE_DEVICES (TF auto-detects)
+#   - TensorFlow GPU memory is managed via configure_gpu()
+#   - Loads CUDA libraries via hpc_sdk module
 #
 # Environment Variables:
-#   MODEL      : Lstm (required — GPU版はLstm専用)
+#   MODEL      : Lstm (required — GPU version is LSTM only)
 #   CONDITION  : baseline | smote | smote_plain | undersample (required)
 #   DISTANCE   : mmd | wasserstein | dtw (required)
 #   DOMAIN     : in_domain | out_domain (required)

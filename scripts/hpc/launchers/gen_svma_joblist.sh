@@ -43,8 +43,8 @@ for COND in "${CONDITIONS_RATIO[@]}"; do
     done
 done
 
-# ---- mixed (multi-domain): 全87名で訓練、各ドメインで評価 ----
-# リソース増量: 30h/48gb (source_only: 24h/32gb)
+# ---- mixed (multi-domain): train on all 87 subjects, evaluate on each domain ----
+# Increased resources: 30h/48gb (source_only: 24h/32gb)
 for DISTANCE in "${DISTANCES[@]}"; do
     for DOMAIN in "${DOMAINS[@]}"; do
         for SEED in "${SEEDS[@]}"; do

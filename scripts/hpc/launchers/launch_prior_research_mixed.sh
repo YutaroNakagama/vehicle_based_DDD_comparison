@@ -1,20 +1,20 @@
 #!/bin/bash
 # ============================================================
-# 先行研究実験ランチャー — mixed domain のみ（2グループ分割版）
+# Prior research experiment launcher — mixed domain only (2-group split version)
 # ============================================================
-# 既存の source_only / target_only に加えて mixed モードを実行する。
-# mixed モードでは全87名で訓練し、各ドメイングループで評価する。
+# Execute mixed mode in addition to existing source_only / target_only.
+# In mixed mode, train on all 87 subjects and evaluate on each domain group.
 #
-# データ量が約2倍になるため、リソースを増量している:
+# Data volume approximately doubles, so resources are increased:
 #   SvmA : 30h / 48GB   (source_only: 24h / 32GB)
 #   SvmW : 16h / 24GB   (source_only: 12h / 16GB)
 #   Lstm : 20h / 48GB   (source_only: 16h / 32GB)
 #
-# 予想ジョブ数:
-#   SvmW : 3距離 × 2ドメイン × 2シード × 9条件 = 108
-#   SvmA : 3距離 × 2ドメイン × 2シード × 7条件 =  84
-#   Lstm : 3距離 × 2ドメイン × 2シード × 7条件 =  84
-#   合計 : 276 jobs
+# Expected job count:
+#   SvmW : 3 distances x 2 domains x 2 seeds × 9conditions = 108
+#   SvmA : 3 distances x 2 domains x 2 seeds × 7conditions =  84
+#   Lstm : 3 distances x 2 domains x 2 seeds × 7conditions =  84
+#   Total : 276 jobs
 # ============================================================
 
 set -uo pipefail
@@ -22,23 +22,23 @@ set -uo pipefail
 PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
 JOB_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/train/pbs_prior_research_split2.sh"
 
-# ---- 固定パラメータ ----
+# ---- Fixed parameters ----
 SEEDS=(42 123)
 RATIOS=(0.1 0.5)
 N_TRIALS=100
 RANKING="knn"
-MODE="mixed"  # このランチャーは mixed 専用
+MODE="mixed"  # This launcher is for mixed only
 
 DISTANCES=("mmd" "dtw" "wasserstein")
 DOMAINS=("out_domain" "in_domain")
 MODELS=("SvmW" "SvmA" "Lstm")
 
-# キュー設定（SINGLE/LONG/DEFAULT にラウンドロビンで分散）
-# 注意: SEMINARキューは6h壁時間制限があるため使用不可
+# Queue settings (round-robin distribution to SINGLE/LONG/DEFAULT)
+# Note: SEMINARQueue unusable due to 6h walltime limit
 USE_MULTI_QUEUE=true
-# FIXED_QUEUE="SEMINAR"  # 6h制限のため使用禁止
+# FIXED_QUEUE="SEMINAR"  # Usage prohibited due to 6h limit
 
-# ---- 引数解析 ----
+# ---- Argument parsing ----
 DRY_RUN=false
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -47,10 +47,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# ---- キューカウンタ ----
+# ---- Queue counter ----
 QUEUE_COUNTER=0
 
-# ---- リソース定義（mixed 用に増量） ----
+# ---- Resource definitions (increased for mixed mode) ----
 get_resources() {
     local model="$1"
     local queue
@@ -70,7 +70,7 @@ get_resources() {
     esac
 }
 
-# ---- 条件リスト ----
+# ---- Conditions list ----
 get_conditions() {
     local model="$1"
     case "$model" in
@@ -79,29 +79,29 @@ get_conditions() {
     esac
 }
 
-# ---- ログ ----
+# ---- Log ----
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 LOG_DIR="$PROJECT_ROOT/scripts/hpc/logs/train"
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/launch_prior_research_mixed_${TIMESTAMP}.log"
 
 echo "============================================================"
-echo "先行研究実験ランチャー — mixed domain (2グループ分割版)"
+echo "Prior research experiment launcher — mixed domain (2group split version)"
 echo "============================================================"
-echo "モデル     : ${MODELS[*]}"
-echo "分割方式   : split2 (in_domain=44名, out_domain=43名)"
-echo "距離指標   : ${DISTANCES[*]}"
-echo "ドメイン   : ${DOMAINS[*]}"
-echo "訓練モード : $MODE (全87名で訓練、各ドメインで評価)"
-echo "シード     : ${SEEDS[*]}"
-echo "ターゲット比率 : ${RATIOS[*]}"
-echo "Optuna trials  : $N_TRIALS (SvmWのみ)"
-echo "複数キュー     : $USE_MULTI_QUEUE"
+echo "Model     : ${MODELS[*]}"
+echo "Split mode: split2 (in_domain=44 subjects, out_domain=43 subjects)"
+echo "Distance metrics: ${DISTANCES[*]}"
+echo "Domains: ${DOMAINS[*]}"
+echo "Training mode: $MODE (train on all 87 subjects, evaluate on each domain)"
+echo "seeds     : ${SEEDS[*]}"
+echo "Target ratio: ${RATIOS[*]}"
+echo "Optuna trials  : $N_TRIALS (SvmWonly)"
+echo "Multi-queue: $USE_MULTI_QUEUE"
 echo "Dry run        : $DRY_RUN"
 echo "============================================================"
 echo ""
 
-# ---- スクリプト存在チェック ----
+# ---- Script existence check ----
 if [[ ! -f "$JOB_SCRIPT" ]]; then
     echo "[ERROR] Job script not found: $JOB_SCRIPT"
     exit 1
@@ -116,7 +116,7 @@ fi
 JOB_COUNT=0
 SKIP_COUNT=0
 
-# ---- メインループ ----
+# ---- Main loop ----
 for MODEL in "${MODELS[@]}"; do
     CONDITIONS=$(get_conditions "$MODEL")
 
@@ -124,7 +124,7 @@ for MODEL in "${MODELS[@]}"; do
         for DOMAIN in "${DOMAINS[@]}"; do
             for SEED in "${SEEDS[@]}"; do
 
-                # --- baseline (ratio なし) ---
+                # --- baseline (ratio none) ---
                 if echo "$CONDITIONS" | grep -q "baseline"; then
                     CONDITION="baseline"
                     RESOURCES=$(get_resources "$MODEL" "$CONDITION")
@@ -150,7 +150,7 @@ for MODEL in "${MODELS[@]}"; do
                     fi
                 fi
 
-                # --- ratio ベース手法 ---
+                # --- ratio-based method ---
                 for RATIO in "${RATIOS[@]}"; do
                     for COND in "smote_plain" "smote" "undersample" "balanced_rf"; do
                         if ! echo "$CONDITIONS" | grep -q "$COND"; then
@@ -187,7 +187,7 @@ for MODEL in "${MODELS[@]}"; do
     done  # DISTANCE
 done  # MODEL
 
-# ---- サマリー ----
+# ---- Summary ----
 {
     echo ""
     echo "# Launch completed at $(date)"
@@ -206,9 +206,9 @@ else
     echo "Log file: $LOG_FILE"
 fi
 echo ""
-echo "予想ジョブ数:"
-echo "  SvmW : 3距離 × 2ドメイン × 2シード × (1 baseline + 2×4 ratio-based) = 108 jobs"
-echo "  SvmA : 3距離 × 2ドメイン × 2シード × (1 baseline + 2×3 ratio-based) =  84 jobs"
-echo "  Lstm : 3距離 × 2ドメイン × 2シード × (1 baseline + 2×3 ratio-based) =  84 jobs"
-echo "  合計 : 276 jobs"
+echo "Expected job count:"
+echo "  SvmW : 3 distances x 2 domains x 2 seeds × (1 baseline + 2×4 ratio-based) = 108 jobs"
+echo "  SvmA : 3 distances x 2 domains x 2 seeds × (1 baseline + 2×3 ratio-based) =  84 jobs"
+echo "  Lstm : 3 distances x 2 domains x 2 seeds × (1 baseline + 2×3 ratio-based) =  84 jobs"
+echo "  Total : 276 jobs"
 echo "============================================================"

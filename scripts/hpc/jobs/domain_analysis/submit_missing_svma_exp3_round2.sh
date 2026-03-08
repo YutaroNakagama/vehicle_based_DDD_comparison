@@ -97,5 +97,5 @@ qsub -N Sv_sp_wo_wa_r05_s42 $COMMON -q DEFAULT \
 sleep 0.3
 
 echo ""
-echo "=== 投入完了: 14 ジョブ (4 imbalv3 + 10 smote_plain) ==="
-echo "キュー分散: SINGLE=5, DEFAULT=5, LONG=4"
+echo "=== Submission complete: 14 jobs (4 imbalv3 + 10 smote_plain) ==="
+echo "Queue distribution: SINGLE=5, DEFAULT=5, LONG=4"

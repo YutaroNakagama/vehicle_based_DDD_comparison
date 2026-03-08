@@ -1,20 +1,20 @@
 #!/bin/bash
 # ============================================================
-# Experiment 2: 12-Seed 完全化ランチャー
+# Experiment 2: 12-seed completeness launcher
 # ============================================================
-# 欠損 seed の補完 + 12番目の seed (999) を全セルに追加
+# Fill missing seeds + add 12th seed (999) to all cells
 #
-# 作業内訳:
-#   1. 欠損 seed 補完 (seed 3: 78, seed 1: 1, seed 7: 1) = 80 ジョブ
-#   2. 新 seed 999 (全126セル)                            = 126 ジョブ
-#   合計: 206 ジョブ
+# Work breakdown:
+#   1. Fill missing seeds (seed 3: 78, seed 1: 1, seed 7: 1) = 80 job(s)
+#   2. New seed 999 (all 126 cells)                            = 126 job(s)
+#   Total: 206 job(s)
 #
-# 完了後の seed 構成: [0,1,3,7,13,42,123,256,512,999,1337,2024] (n=12)
+# Seed configuration after completion: [0,1,3,7,13,42,123,256,512,999,1337,2024] (n=12)
 #
-# Step 1: ジョブリスト生成
+# Step 1: Generate job list
 #   python scripts/hpc/launchers/gen_exp2_seed12_joblist.py
 #
-# Step 2: ランチャー実行
+# Step 2: Run launcher
 #   bash scripts/hpc/launchers/launch_exp2_seed12_fill.sh --dry-run
 #   nohup bash scripts/hpc/launchers/launch_exp2_seed12_fill.sh \
 #     > scripts/hpc/logs/domain/exp2_seed12_output.log 2>&1 &

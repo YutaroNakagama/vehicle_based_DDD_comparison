@@ -7,14 +7,14 @@
 # Note: -N, -l select, -l walltime, -q are passed dynamically via qsub options
 
 # ============================================================
-# 先行研究実験 (統一版) - 1回の学習 + 2回の評価
+# Prior research experiment (unified version) - 1 training + 2 evaluations
 # ============================================================
-# 変更点（split2との違い）:
-#   - 学習は各ドメインに対し1回のみ（domain_trainモード）
-#   - 分割比率: train(70%) / val(15%) / test(15%)
-#   - 評価①: within-domain → 同ドメインのtest(15%)で評価
-#   - 評価②: cross-domain  → 逆ドメインのtest(15%)で評価
-#   - ジョブ数が半分に削減（source_only/target_only の重複トレーニング解消）
+# Changes (differences from split2):
+#   - Training runs only once per domain (domain_train mode)
+#   - Split ratios: train(70%) / val(15%) / test(15%)
+#   - Eval 1: within-domain → evaluate on same-domain test(15%)
+#   - Eval 2: cross-domain → evaluate on opposite-domain test(15%)
+#   - Job count halved (eliminates duplicate source_only/target_only training)
 #
 # Environment Variables:
 #   MODEL      : SvmA | SvmW | Lstm (required)

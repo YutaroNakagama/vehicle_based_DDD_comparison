@@ -1,18 +1,18 @@
 #!/bin/bash
 # ============================================================
-# 再実行デーモン — oversampling バグ修正後のジョブ再投入
+# Re-execution daemon — resubmit jobs after oversampling bug fix
 # ============================================================
-# lstm_train() / SvmA_train() で oversampling が適用されていなかった
-# バグの修正後、smote_plain / undersample_rus 条件のジョブを再投入する。
+# lstm_train() / SvmA_train() oversampling was not applied with
+# Resubmit smote_plain / undersample_rus condition jobs after bug fix.
 #
-# 対象:
-#   - Lstm: smote_plain, undersample (全3モード × 24 configs = 144 jobs)
-#   - SvmA: smote_plain, undersample (全3モード × 24 configs = 144 jobs)
-#   合計: 最大 288 jobs
+# Target:
+#   - Lstm: smote_plain, undersample (all 3 modes x 24 configs = 144 jobs)
+#   - SvmA: smote_plain, undersample (all 3 modes x 24 configs = 144 jobs)
+#   Total: max 288 jobs
 #
 # Usage:
 #   nohup bash scripts/hpc/launchers/rerun_oversampling_fix.sh &
-#   # ログ: /tmp/rerun_oversampling_fix.log
+#   # Log: /tmp/rerun_oversampling_fix.log
 # ============================================================
 
 set -euo pipefail
@@ -28,11 +28,11 @@ POLL_INTERVAL=300  # 5 minutes
 N_TRIALS=100
 RANKING="knn"
 
-# ---- エラートラップ ----
+# ---- Error trap ----
 trap 'echo "[$(date +%H:%M)] TRAP: daemon exiting (line $LINENO, exit=$?)" >> "$LOG"' EXIT
 trap 'echo "[$(date +%H:%M)] TRAP: received signal, exiting" >> "$LOG"; exit 1' INT TERM HUP
 
-# ---- キュー制限 ----
+# ---- Queue limit ----
 declare -A QUEUE_MAX=( [SINGLE]=40 [DEFAULT]=40 [SMALL]=30 [LONG]=15 )
 declare -A QUEUE_CURRENT=()
 CPU_QUEUES=("SINGLE" "DEFAULT" "SMALL" "LONG")
@@ -40,7 +40,7 @@ CPU_QUEUES=("SINGLE" "DEFAULT" "SMALL" "LONG")
 touch "$SUBMITTED_KEYS"
 touch "$INVALIDATED_LOG"
 
-# ---- リソース定義 ----
+# ---- Resource definitions ----
 get_resources() {
     local model="$1"
     local mode="$2"
@@ -65,11 +65,11 @@ get_resources() {
     esac
 }
 
-# ---- 旧評価結果の無効化 ----
+# ---- Invalidate old evaluation results ----
 invalidate_old_eval() {
     local model="$1" tag_pattern="$2" key="$3"
 
-    # 既に無効化済みならスキップ
+    # Skip if already invalidated
     if grep -qF "$key" "$INVALIDATED_LOG" 2>/dev/null; then
         return 0
     fi
@@ -98,7 +98,7 @@ invalidate_old_eval() {
     echo "$key" >> "$INVALIDATED_LOG"
 }
 
-# ---- 新しい評価結果が存在するか確認 (旧結果無効化後) ----
+# ---- New check if evaluation results exist (after invalidating old results) ----
 has_new_eval_result() {
     local model="$1" cond="$2" dist="$3" dom="$4" mode="$5" seed="$6" ratio="$7"
     local eval_dir="results/outputs/evaluation/$model"
@@ -116,7 +116,7 @@ has_new_eval_result() {
     find "$eval_dir" -name "${pattern}*.json" 2>/dev/null | grep -v _invalidated | grep -q .
 }
 
-# ---- キュー状態確認 ----
+# ---- Check queue status ----
 get_queue_counts() {
     local qstat_output
     qstat_output=$(qstat -u s2240011 2>/dev/null | tail -n +6 || true)
@@ -138,16 +138,16 @@ find_available_queue() {
     return 1
 }
 
-# ---- 全実験条件を列挙 ----
+# ---- Enumerate all experiment conditions ----
 ALL_JOBS=()
 DISTANCES=("mmd" "dtw" "wasserstein")
 DOMAINS=("in_domain" "out_domain")
 SEEDS=(42 123)
 RATIOS=(0.1 0.5)
 MODES=("source_only" "target_only" "mixed")
-# 修正が必要な条件のみ (imbalv3 は pipeline レベルで適用済みなので不要)
+# Only conditions requiring fix (imbalv3 already applied at pipeline level, not needed)
 CONDITIONS=("smote_plain" "undersample")
-# Lstm を先に (高速), SvmA を後に
+# Lstm first (fast), SvmA after
 MODELS=("Lstm" "SvmA")
 
 for MODEL in "${MODELS[@]}"; do
@@ -172,7 +172,7 @@ echo "[$(date +%H:%M)] Conditions: ${CONDITIONS[*]}" >> "$LOG"
 echo "[$(date +%H:%M)] Modes: ${MODES[*]}" >> "$LOG"
 echo "[$(date +%H:%M)] Polling every ${POLL_INTERVAL}s" >> "$LOG"
 
-# ---- Step 1: 旧結果の無効化 (初回のみ) ----
+# ---- Step 1: Invalidate old results (first round only) ----
 echo "[$(date +%H:%M)] Invalidating old eval results..." >> "$LOG"
 for job_spec in "${ALL_JOBS[@]}"; do
     IFS='|' read -r MODEL COND DIST DOM MODE SEED RATIO <<< "$job_spec"
@@ -190,7 +190,7 @@ for job_spec in "${ALL_JOBS[@]}"; do
 done
 echo "[$(date +%H:%M)] Invalidation complete." >> "$LOG"
 
-# ---- Step 2: メインループ ----
+# ---- Step 2: Main loop ----
 while true; do
     get_queue_counts || true
     

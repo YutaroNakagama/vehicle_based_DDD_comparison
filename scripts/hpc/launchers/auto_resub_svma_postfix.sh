@@ -1,9 +1,9 @@
 #!/bin/bash
 # ============================================================
-# SvmA post-fix: 自動再投入スクリプト
+# SvmA post-fix: auto-resubmit script
 # ============================================================
-# 残りの未投入SvmAジョブをキュー空きに合わせて自動投入する。
-# 既に投入済みのジョブはスキップ (submitted.txtで管理)。
+# Auto-submit remaining unsubmitted SvmA jobs based on queue availability.
+# Already submitted jobs are skipped (managed by submitted.txt).
 #
 # Usage:
 #   nohup bash scripts/hpc/launchers/auto_resub_svma_postfix.sh &
@@ -112,8 +112,8 @@ TOTAL_JOBS=$(wc -l < "$JOB_LIST_FILE")
 ALREADY=$(wc -l < "$SUBMITTED_FILE")
 
 echo "============================================================"
-echo "SvmA post-fix 自動投入スクリプト"
-echo "  合計: $TOTAL_JOBS  既投入: $ALREADY  Dry-run: $DRY_RUN"
+echo "SvmA post-fix auto-submit script"
+echo "  Total: $TOTAL_JOBS  Already submitted: $ALREADY  Dry-run: $DRY_RUN"
 echo "============================================================"
 
 # ---- DRY-RUN mode ----
@@ -125,7 +125,7 @@ if $DRY_RUN; then
         ((COUNT++)) || true
     done < "$JOB_LIST_FILE"
     echo ""
-    echo "残りジョブ数: $COUNT"
+    echo "Remaining job count: $COUNT"
     exit 0
 fi
 
@@ -155,12 +155,12 @@ for RETRY in $(seq 1 $MAX_RETRIES); do
 
     TOTAL_AVAIL=$(( ${AVAIL[SINGLE]} + ${AVAIL[DEFAULT]} + ${AVAIL[LONG]} + ${AVAIL[SMALL]} ))
     if [[ $TOTAL_AVAIL -eq 0 ]]; then
-        echo "[$(date +%H:%M:%S)] 全キュー満杯 (remain=$REMAINING)。${SLEEP_INTERVAL}秒待機..."
+        echo "[$(date +%H:%M:%S)] All queues full (remain=$REMAINING). Waiting ${SLEEP_INTERVAL}s..."
         sleep $SLEEP_INTERVAL
         continue
     fi
 
-    echo "[$(date +%H:%M:%S)] 空きスロット: SINGLE=${AVAIL[SINGLE]} DEFAULT=${AVAIL[DEFAULT]} LONG=${AVAIL[LONG]} SMALL=${AVAIL[SMALL]}"
+    echo "[$(date +%H:%M:%S)] Available slots: SINGLE=${AVAIL[SINGLE]} DEFAULT=${AVAIL[DEFAULT]} LONG=${AVAIL[LONG]} SMALL=${AVAIL[SMALL]}"
 
     # Build queue round-robin list
     QUEUES=()
@@ -258,7 +258,7 @@ done
 
 echo ""
 echo "============================================================"
-echo "SvmA post-fix 自動投入完了: $(date)"
-echo "投入済み: $TOTAL_SUBMITTED / $TOTAL_JOBS"
-echo "ログ: $LOG_FILE"
+echo "SvmA post-fix auto-submission complete: $(date)"
+echo "Submitted: $TOTAL_SUBMITTED / $TOTAL_JOBS"
+echo "Log: $LOG_FILE"
 echo "============================================================"

@@ -1,10 +1,10 @@
 #!/bin/bash
 # ============================================================
-# SvmW 不足ジョブ再投入スクリプト (70 jobs)
+# SvmW missing jobs resubmit script (70 jobs)
 # ============================================================
 # imbalv3: 39 missing, smote_plain: 31 missing
-# 原因: 前回の投入で walltime=6h が不十分 (SvmW Optuna 100 trials は ~7h 必要)
-# 今回: walltime=12:00:00 で SEMINAR キューに投入
+# Cause: walltime=6h from previous submit is insufficient (SvmW Optuna 100 trials needs ~7h)
+# This time: walltime=12:00:00 submit to SEMINAR queue with
 # ============================================================
 set -uo pipefail
 

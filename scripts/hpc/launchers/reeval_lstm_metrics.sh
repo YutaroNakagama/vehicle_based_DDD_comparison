@@ -7,10 +7,10 @@
 #PBS -o /home/s2240011/git/ddd/vehicle_based_DDD_comparison/models/Lstm/reeval_metrics.log
 
 # ============================================================
-# Exp3 Lstm 再評価: roc_auc / auc_pr 追加 (PBS版)
+# Exp3 Lstm re-evaluation: add roc_auc / auc_pr (PBS version)
 # ============================================================
-# TensorFlow が必要なため PBS ジョブとして実行
-# 既存のeval JSONから mode/tag/seed/jobid を抽出し再評価する
+# Run as PBS jobs because TensorFlow is required
+# Extract mode/tag/seed/jobid from existing eval JSON and re-evaluate
 # ============================================================
 set -uo pipefail
 

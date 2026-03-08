@@ -1,28 +1,28 @@
 #!/bin/bash
 # ============================================================
-# SvmA + Lstm 修正版再提出スクリプト
+# SvmA + Lstm fixed version resubmitscript
 # ============================================================
-# 先行論文との乖離を修正した SvmA / Lstm のみを再提出する。
-# SvmW は変更なしのため再提出不要。
+# Resubmit only SvmA / Lstm with corrections to match the prior paper.
+# SvmW no changes, so resubmission not needed.
 #
-# 修正内容:
+# Fix details:
 #   Lstm:
 #     - learning_rate: 0.01 → 0.001 (Wang et al. 2022)
 #     - batch_size:    32   → 64
 #     - n_splits:      5    → 10
 #     - epochs:        100  → 50
 #   SvmA:
-#     - 特徴量: 22 → 14 (論文Table 1準拠、SVMA_PAPER_FEATURE_SUFFIXES)
-#     - PSO目的関数: -accuracy → MSE (論文Eq.11)
-#     - class_weight='balanced' 削除 (論文に記載なし)
+#     - Features: 22 → 14 (per paper Table 1, SVMA_PAPER_FEATURE_SUFFIXES)
+#     - PSO objective: -accuracy → MSE (paper Eq.11)
+#     - class_weight='balanced' removed (not mentioned in paper)
 #
-# 手順:
-#   1. 旧 SvmA/Lstm 評価結果を隔離
-#   2. domain_train ジョブ投入  (SvmA:84 + Lstm:84 = 168)
-#   3. mixed ジョブ投入          (SvmA:84 + Lstm:84 = 168)
-#   合計: 336 ジョブ
+# Procedure:
+#   1. Quarantine old SvmA/Lstm evaluation results
+#   2. domain_train job(s)submit  (SvmA:84 + Lstm:84 = 168)
+#   3. mixed job(s)submit          (SvmA:84 + Lstm:84 = 168)
+#   Total: 336 job(s)
 #
-# 使い方:
+# Usage:
 #   bash scripts/hpc/launchers/resubmit_svma_lstm_fixed.sh [--dry-run] [--skip-quarantine]
 #   bash scripts/hpc/launchers/resubmit_svma_lstm_fixed.sh --domain-train-only [--dry-run]
 #   bash scripts/hpc/launchers/resubmit_svma_lstm_fixed.sh --mixed-only [--dry-run]
@@ -46,7 +46,7 @@ CONDITIONS=("baseline" "smote_plain" "smote" "undersample")
 USE_MULTI_QUEUE=true
 QUARANTINE_TAG="_invalidated_paper_deviation_fix"
 
-# ---- 引数解析 ----
+# ---- Argument parsing ----
 DRY_RUN=false
 SKIP_QUARANTINE=false
 DOMAIN_TRAIN_ONLY=false
@@ -61,10 +61,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# ---- キューカウンタ ----
+# ---- Queue counter ----
 QUEUE_COUNTER=0
 
-# ---- リソース定義 ----
+# ---- Resource definitions ----
 get_resources_domain_train() {
     local model="$1"
     local queue
@@ -97,16 +97,16 @@ get_resources_mixed() {
     esac
 }
 
-# ---- ログ ----
+# ---- Log ----
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 LOG_DIR="$PROJECT_ROOT/scripts/hpc/logs/train"
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/resubmit_svma_lstm_fixed_${TIMESTAMP}.log"
 
 echo "============================================================"
-echo "SvmA + Lstm 修正版再提出"
+echo "SvmA + Lstm fixed version resubmit"
 echo "============================================================"
-echo "モデル         : ${MODELS[*]}"
+echo "Model         : ${MODELS[*]}"
 echo "Dry run        : $DRY_RUN"
 echo "Skip quarantine: $SKIP_QUARANTINE"
 echo "Domain-train   : $($MIXED_ONLY && echo 'SKIP' || echo 'YES')"
@@ -229,7 +229,7 @@ submit_job() {
     fi
 }
 
-# ---- domain_train ジョブ ----
+# ---- domain_train job(s) ----
 if ! $MIXED_ONLY; then
     echo "============================================================"
     echo "[STEP 2] Submitting domain_train jobs (SvmA + Lstm)"
@@ -264,7 +264,7 @@ if ! $MIXED_ONLY; then
     echo ""
 fi
 
-# ---- mixed ジョブ ----
+# ---- mixed job(s) ----
 DT_COUNT=$JOB_COUNT
 if ! $DOMAIN_TRAIN_ONLY; then
     echo "============================================================"
@@ -319,9 +319,9 @@ fi
 echo ""
 echo "  SvmA: 84 domain_train + 84 mixed = 168"
 echo "  Lstm: 84 domain_train + 84 mixed = 168"
-echo "  合計: 336 ジョブ"
+echo "  Total: 336 job(s)"
 echo ""
-echo "  ※ キュー上限(~156)超過の場合は分割投入が必要:"
-echo "    --domain-train-only  : domain_train のみ (168)"
-echo "    --mixed-only         : mixed のみ (168)"
+echo "  ※ If queue limit (~156) exceeded, split submission required:"
+echo "    --domain-train-only  : domain_train only (168)"
+echo "    --mixed-only         : mixed only (168)"
 echo "============================================================"

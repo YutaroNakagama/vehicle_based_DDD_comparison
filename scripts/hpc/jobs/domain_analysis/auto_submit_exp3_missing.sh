@@ -1,13 +1,13 @@
 #!/bin/bash
 # ============================================================
-# 自動投入デーモン: 実験3の未投入ジョブを空き次第投入
+# Auto-submission daemon: submit unsubmitted Experiment 3 jobs as slots become available
 # ============================================================
-# 使い方: nohup bash scripts/hpc/jobs/domain_analysis/auto_submit_exp3_missing.sh &
+# Usage: nohup bash scripts/hpc/jobs/domain_analysis/auto_submit_exp3_missing.sh &
 #
-# キューに空きができ次第、以下を順番に投入:
-#   1. SvmA 18ジョブ (CPU: SINGLE/LONG/DEFAULT)
-#   2. Lstm 38ジョブ (GPU: GPU-1A)
-#   3. Lstm eval-only 12タスク (GPU: GPU-1, PBS array)
+# Submits the following in order as queue slots open up:
+#   1. SvmA 18 jobs (CPU: SINGLE/LONG/DEFAULT)
+#   2. Lstm 38 jobs (GPU: GPU-1A)
+#   3. Lstm eval-only 12 tasks (GPU: GPU-1, PBS array)
 
 set -uo pipefail
 
@@ -26,8 +26,8 @@ log() { echo "[$(date '+%H:%M:%S')] $*" | tee -a "$LOG"; }
 get_job_count() { qstat -u s2240011 2>/dev/null | tail -n +6 | wc -l; }
 
 log "============================================================"
-log "実験3 未投入ジョブ自動投入デーモン開始"
-log "ジョブ上限: $MAX_JOBS / チェック間隔: ${CHECK_INTERVAL}秒"
+log "Experiment 3 auto-submission daemon started"
+log "Max jobs: $MAX_JOBS / Check interval: ${CHECK_INTERVAL}s"
 log "============================================================"
 
 # Extract qsub commands from the generated scripts
@@ -39,7 +39,7 @@ while IFS= read -r line; do
 done < <(grep '^qsub ' scripts/hpc/jobs/domain_analysis/submit_missing_svma_exp3.sh)
 
 SVMA_COUNT=${#QSUB_CMDS[@]}
-log "SvmA コマンド数: $SVMA_COUNT"
+log "SvmA command count: $SVMA_COUNT"
 
 # Lstm train commands
 while IFS= read -r line; do
@@ -47,10 +47,10 @@ while IFS= read -r line; do
 done < <(grep '^qsub ' scripts/hpc/jobs/domain_analysis/submit_missing_lstm_train_exp3.sh)
 
 LSTM_TRAIN_COUNT=$((${#QSUB_CMDS[@]} - SVMA_COUNT))
-log "Lstm train コマンド数: $LSTM_TRAIN_COUNT"
+log "Lstm train command count: $LSTM_TRAIN_COUNT"
 
 TOTAL=${#QSUB_CMDS[@]}
-log "合計投入予定数: $TOTAL"
+log "Total submissions planned: $TOTAL"
 
 IDX=0
 SUBMITTED=0
@@ -61,7 +61,7 @@ while [[ $IDX -lt $TOTAL ]]; do
     AVAIL=$((MAX_JOBS - CURRENT))
 
     if [[ $AVAIL -le 0 ]]; then
-        log "キュー満杯: $CURRENT/$MAX_JOBS — ${CHECK_INTERVAL}秒後に再チェック (残り: $((TOTAL - IDX)))"
+        log "Queue full: $CURRENT/$MAX_JOBS — rechecking in ${CHECK_INTERVAL}s (remaining: $((TOTAL - IDX)))"
         sleep "$CHECK_INTERVAL"
         continue
     fi
@@ -84,7 +84,7 @@ while [[ $IDX -lt $TOTAL ]]; do
             ((FAILED++))
             # If quota error, stop this batch and wait
             if echo "$JOB_ID" | grep -q "exceed"; then
-                log "  キュー制限到達 — 待機"
+                log "  Queue limit reached — waiting"
                 break
             fi
         fi
@@ -92,7 +92,7 @@ while [[ $IDX -lt $TOTAL ]]; do
         sleep 0.3
     done
 
-    log "投入: $SUBMITTED/$TOTAL, 失敗: $FAILED, バッチ: $BATCH"
+    log "Submitted: $SUBMITTED/$TOTAL, Failed: $FAILED, Batch: $BATCH"
 
     if [[ $IDX -lt $TOTAL ]]; then
         sleep "$CHECK_INTERVAL"
@@ -101,7 +101,7 @@ done
 
 # Submit Lstm eval-only PBS array
 log ""
-log "=== Lstm eval-only PBS array 投入 ==="
+log "=== Lstm eval-only PBS array submission ==="
 EVAL_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/domain_analysis/pbs_eval_missing_lstm_exp3.sh"
 if [[ -f "$EVAL_SCRIPT" ]]; then
     while true; do
@@ -117,7 +117,7 @@ if [[ -f "$EVAL_SCRIPT" ]]; then
             fi
             break
         fi
-        log "  キュー満杯 — ${CHECK_INTERVAL}秒後に再チェック"
+        log "  Queue full — rechecking in ${CHECK_INTERVAL}s"
         sleep "$CHECK_INTERVAL"
     done
 else
@@ -126,5 +126,5 @@ fi
 
 log ""
 log "============================================================"
-log "完了: 投入 $SUBMITTED, 失敗 $FAILED"
+log "Done: Submitted $SUBMITTED, Failed $FAILED"
 log "============================================================"

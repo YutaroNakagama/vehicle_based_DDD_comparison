@@ -1,5 +1,5 @@
 #!/bin/bash
-# ユーザー上限を無視して大量投入（DEFAULTとSMALLは無制限）
+# Bulk submit ignoring user limit (DEFAULT and SMALL are unlimited)
 
 WORKSPACE_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
 cd "$WORKSPACE_ROOT"
@@ -10,8 +10,8 @@ SUBMITTED_FILE="scripts/hpc/logs/train/submitted_jobs_${TIMESTAMP}.txt"
 touch "$SUBMITTED_FILE"
 
 echo "============================================================"
-echo "大量投入スクリプト (DEFAULT/SMALL優先)"
-echo "開始: $(date)"
+echo "Bulk submit script (DEFAULT/SMALL priority)"
+echo "started: $(date)"
 echo "============================================================"
 
 MODELS="SvmW SvmA Lstm"
@@ -25,7 +25,7 @@ N_TRIALS=100
 
 JOB_SCRIPT="$WORKSPACE_ROOT/scripts/hpc/jobs/train/pbs_prior_research_split2.sh"
 
-# DEFAULT/SMALL/LARGEを優先的に使用
+# DEFAULT/SMALL/LARGEpreferentially use
 QUEUES=("DEFAULT" "SMALL" "LARGE" "XLARGE" "LONG" "SINGLE")
 queue_index=0
 
@@ -44,7 +44,7 @@ submit_job() {
     local job_id="${1}_${2}_${3}_${4}_${5}_${6}"
     [ -n "$7" ] && job_id="${job_id}_${7}"
     
-    # 既投入チェック
+    # Already-submitted check
     if grep -q "^${job_id}$" scripts/hpc/logs/train/submitted_jobs_*.txt 2>/dev/null; then
         ((total_skipped++))
         return 2
@@ -76,7 +76,7 @@ submit_job() {
         ((total_submitted++))
         return 0
     else
-        # エラーを無視して継続
+        # Ignore errors and continue
         echo "[$queue] × $job_name"
         return 1
     fi
@@ -108,7 +108,7 @@ done
 
 echo ""
 echo "============================================================"
-echo "投入完了"
-echo "成功: $total_submitted, スキップ: $total_skipped"
-echo "終了: $(date)"
+echo "Submission complete"
+echo "succeeded: $total_submitted, Skipped: $total_skipped"
+echo "Ended: $(date)"
 echo "============================================================"

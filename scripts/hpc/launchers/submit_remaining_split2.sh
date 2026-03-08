@@ -1,12 +1,12 @@
 #!/bin/bash
 # ============================================================
-# 残りのsplit2ジョブを自動投入するスクリプト
+# Auto-submit remaining split2 jobs script
 # ============================================================
-# 既に29ジョブが投入済み、残り67ジョブを投入する
+# 29 jobs already submitted, remaining 67 jobs to submit
 #
-# 使い方:
-#   ./submit_remaining_split2.sh         # 通常実行
-#   ./submit_remaining_split2.sh --check  # 投入可能数のみチェック
+# Usage:
+#   ./submit_remaining_split2.sh         # Normal execution
+#   ./submit_remaining_split2.sh --check  # Only check submittable count
 # ============================================================
 
 set -uo pipefail

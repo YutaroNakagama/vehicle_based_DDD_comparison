@@ -1,22 +1,22 @@
 #!/bin/bash
 # ============================================================
-# 実験2 残りジョブ投入ランチャー (2026-02-07)
+# Experiment 2 remaining job submit launcher (2026-02-07)
 # ============================================================
-# 完了済み:
+# Completed:
 #   - baseline   domain-split 24/24, pooled 0/2
 #   - balanced_rf domain-split 24/24, pooled 2/2  ✅
 #
-# 未着手:
+# Not started:
 #   - smote_plain  domain-split 0/48, pooled 0/2
 #   - smote        domain-split 0/48, pooled 0/2
 #   - undersample  domain-split 0/48, pooled 0/2
 #
-# 投入ジョブ数:
+# Submit job count:
 #   baseline  pooled ×2 seeds                   =   2
 #   smote_plain  24 combos × 2 ratios + 2 pooled = 50
 #   smote        24 combos × 2 ratios + 2 pooled = 50
 #   undersample  24 combos × 2 ratios + 2 pooled = 50
-#                                          合計 = 152
+#                                          Total = 152
 # ============================================================
 
 set -uo pipefail
@@ -139,7 +139,7 @@ submit_pooled() {
 
 # ============================================================
 echo "============================================================"
-echo "  実験2 残りジョブ投入 ($(date))"
+echo "  experiment2 remainingjob(s)submit ($(date))"
 echo "============================================================"
 echo "  Dry run : $DRY_RUN"
 echo "  Expected: 152 jobs"

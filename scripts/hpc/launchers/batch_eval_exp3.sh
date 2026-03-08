@@ -1,9 +1,9 @@
 #!/bin/bash
 # ============================================================
-# Exp3 一括評価スクリプト (2026-02-07)
+# Exp3 batch evaluation script (2026-02-07)
 # ============================================================
-# トレーニング成功済みだがeval失敗したジョブを一括再評価
-# 各ジョブのmodel dirからtag/mode/jobidを自動抽出してevaluate.pyを実行
+# Bulk re-evaluate jobs that trained successfully but failed evaluation
+# Auto-extract tag/mode/jobid from each job model dir and run evaluate.py
 # ============================================================
 set -uo pipefail
 

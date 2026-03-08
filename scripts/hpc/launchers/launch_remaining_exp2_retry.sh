@@ -1,19 +1,19 @@
 #!/bin/bash
 # ============================================================
-# 実験2 残りジョブ再投入ランチャー (2026-02-07)
+# Experiment 2 remaining job resubmitlauncher (2026-02-07)
 # ============================================================
-# launch_remaining_exp2.sh で投入できなかった 112 ジョブを投入する。
-# キュー上限に達した場合は途中で停止し、再実行で残りを投入する。
+# launch_remaining_exp2.sh: submit 112 jobs that could not be submitted.
+# Stop midway if queue limit reached; rerun to submit remaining.
 #
-# 投入済み (40件):
+# Submitted (40 items):
 #   - baseline pooled ×2
-#   - smote_plain: mmd全16 + dtw全16 + wasserstein/in_domain/source_only×4
+#   - smote_plain: mmd all 16 + dtw all 16 + wasserstein/in_domain/source_only x4
 #     + wasserstein/in_domain/target_only×2 (r=0.1/s42, r=0.5/s42)
 #
-# 残り (112件):
-#   - smote_plain: wasserstein 残り10 + pooled 2 = 12
-#   - smote:       全48 + pooled 2 = 50
-#   - undersample: 全48 + pooled 2 = 50
+# remaining (112items):
+#   - smote_plain: wasserstein remaining10 + pooled 2 = 12
+#   - smote:       all 48 + pooled 2 = 50
+#   - undersample: all 48 + pooled 2 = 50
 # ============================================================
 
 set -uo pipefail
@@ -127,7 +127,7 @@ submit_pooled() {
 
 # ============================================================
 echo "============================================================"
-echo "  実験2 残りジョブ再投入 ($(date))"
+echo "  Experiment 2 remaining job resubmit ($(date))"
 echo "============================================================"
 echo "  Dry run : $DRY_RUN"
 echo "  Expected: 112 jobs"
@@ -139,7 +139,7 @@ echo ""
 } > "$LOG_FILE"
 
 # --- smote_plain: wasserstein remaining 10 + pooled 2 ---
-echo "--- smote_plain 残り (10 domain + 2 pooled) ---"
+echo "--- smote_plain remaining (10 domain + 2 pooled) ---"
 # wasserstein/in_domain/target_only  r=0.1,s123 and r=0.5,s123
 for RATIO in "${RATIOS[@]}"; do
     submit_domain "smote_plain" "target_only" "wasserstein" "in_domain" "123" "$RATIO"
@@ -159,7 +159,7 @@ done
 
 # --- smote: all 48 domain + 2 pooled ---
 echo ""
-echo "--- smote 全 50 ジョブ ---"
+echo "--- smote all 50 jobs ---"
 for DISTANCE in "${DISTANCES[@]}"; do
     for DOMAIN in "${DOMAINS[@]}"; do
         for MODE in "${MODES[@]}"; do
@@ -177,7 +177,7 @@ done
 
 # --- undersample: all 48 domain + 2 pooled ---
 echo ""
-echo "--- undersample 全 50 ジョブ ---"
+echo "--- undersample all 50 jobs ---"
 for DISTANCE in "${DISTANCES[@]}"; do
     for DOMAIN in "${DOMAINS[@]}"; do
         for MODE in "${MODES[@]}"; do

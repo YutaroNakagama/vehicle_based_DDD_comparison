@@ -1,17 +1,17 @@
 #!/bin/bash
 # ============================================================
-# 失敗した254ジョブ再投入ランチャー (2026-02-07)
+# Failed 254 jobs resubmit launcher (2026-02-07)
 # ============================================================
-# 原因: results/analysis/domain/ → exp2_domain_shift/ リネーム後に
-#       旧パスが見つからず "Target file not found" で失敗
-# 修正: PBSスクリプトは exp2_domain_shift パスに更新済み
+# Cause: results/analysis/domain/ → exp2_domain_shift/ after rename
+#       Old path not found, 'Target file not found' failure
+# Fix: PBS script updated to exp2_domain_shift path
 #
-# キュー分散戦略:
-#   DEFAULT  : max_queued=40/user → 現在17 → 23枠
-#   SINGLE   : max_queued=40/user → 現在20 → 20枠
-#   SMALL    : max_queued=30/user → 現在 3 → 27枠
-#   LONG     : max_queued=15/user → 現在15 →  0枠 (満杯)
-#   SEMINAR  : 上限なし          → 残り全部
+# Queue distribution strategy:
+#   DEFAULT  : max_queued=40/user → current17 → 23slots
+#   SINGLE   : max_queued=40/user → current20 → 20slots
+#   SMALL    : max_queued=30/user → current 3 → 27slots
+#   LONG     : max_queued=15/user → current15 →  0slots (full)
+#   SEMINAR  : no limit          → all remaining
 # ============================================================
 set -uo pipefail
 
@@ -73,7 +73,7 @@ JOB_COUNT=0
 FAIL_COUNT=0
 
 echo "============================================================"
-echo "  Exp3 失敗ジョブ再投入 (Target file not found fix)"
+echo "  Exp3 failed job resubmit (target file not found fix)"
 echo "  $(date)"
 echo "============================================================"
 echo "  Dry run : $DRY_RUN"

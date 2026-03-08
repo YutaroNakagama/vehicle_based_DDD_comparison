@@ -1,28 +1,28 @@
 #!/bin/bash
 # ============================================================
-# 論文用先行研究実験ランチャー（統一版 - domain_train）
+# Unified prior research experiment launcher for paper (domain_train)
 # ============================================================
-# 変更点（split2版との違い）:
-#   - source_only/target_only の重複トレーニングを解消
-#   - 1ジョブ = 1回の学習 + 2回の評価（within + cross）
-#   - 分割比率: train(70%) / val(15%) / test(15%)
-#   - ジョブ数が半分に削減（MODEループなし）
+# Changes (differences from split2 version):
+#   - source_only/target_only eliminates duplicate training
+#   - 1job(s) = 1 training + 2 evaluations (within + cross)
+#   - Split ratios: train(70%) / val(15%) / test(15%)
+#   - Job count halved (no MODE loop)
 #
-# 実験条件:
-#   - モデル: SvmA, SvmW, Lstm
-#   - シード: 42, 123
-#   - ターゲット比率: 0.1, 0.5
-#   - 不均衡対策手法: baseline, plain SMOTE, subject-wise SMOTE, RUS
-#   - Optuna試行回数: 100 (SvmWのみ)
-#   - ランキング手法: knn
-#   - 距離指標: mmd, dtw, wasserstein
-#   - ドメイングループ: out_domain, in_domain (2分割)
+# Experiment conditions:
+#   - Model: SvmA, SvmW, Lstm
+#   - seeds: 42, 123
+#   - Target ratio: 0.1, 0.5
+#   - Imbalance methods: baseline, plain SMOTE, subject-wise SMOTE, RUS
+#   - Optuna trials: 100 (SvmW only)
+#   - Ranking method: knn
+#   - Distance metrics: mmd, dtw, wasserstein
+#   - Domain groups: out_domain, in_domain (2 split)
 #
-# Total: 3 models × 3 distances × 2 domains × 2 seeds × 条件数
+# Total: 3 models × 3 distances × 2 domains × 2 seeds × conditions count
 #   SvmW: 3 × 2 × 2 × (1 + 2×3) = 84 jobs  (cf. split2: 168)
 #   SvmA: 3 × 2 × 2 × (1 + 2×3) = 84 jobs  (cf. split2: 168)
 #   Lstm: 3 × 2 × 2 × (1 + 2×3) = 84 jobs  (cf. split2: 168)
-#   合計: 252 jobs (cf. split2: 504 ← 半減)
+#   Total: 252 jobs (cf. split2: 504 ← halved)
 # ============================================================
 
 set -uo pipefail
@@ -30,20 +30,20 @@ set -uo pipefail
 PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
 JOB_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/train/pbs_prior_research_unified.sh"
 
-# 論文用設定
+# Paper settings
 SEEDS=(42 123)
 RATIOS=(0.1 0.5)
 N_TRIALS=100
 RANKING="knn"
 
-# 距離指標とドメイングループ（2分割）
+# Distance metrics and domain groups (2-way split)
 DISTANCES=("mmd" "dtw" "wasserstein")
 DOMAINS=("out_domain" "in_domain")
 
-# モデル
+# Model
 MODELS=("SvmW" "SvmA" "Lstm")
 
-# キュー設定（複数キューに分散投入）
+# Queue settings (distribute submissions across multiple queues)
 USE_MULTI_QUEUE=true
 
 # Parse arguments
@@ -70,7 +70,7 @@ get_resources() {
     local condition="$2"
     local queue
     
-    # キュー選択（ラウンドロビン方式で分散）
+    # Queue selection (round-robin distribution)
     if $USE_MULTI_QUEUE; then
         local queues=("SINGLE" "LONG" "DEFAULT")
         queue="${queues[$((QUEUE_COUNTER % 3))]}"
@@ -99,19 +99,19 @@ mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/launch_prior_research_unified_${TIMESTAMP}.log"
 
 echo "============================================================"
-echo "統一版先行研究実験ランチャー (domain_train)"
+echo "Unified prior research experiment launcher (domain_train)"
 echo "============================================================"
-echo "モデル: ${MODELS[*]}"
-echo "分割方式: split2 (in_domain=44名, out_domain=43名)"
-echo "距離指標: ${DISTANCES[*]}"
-echo "ドメイングループ: ${DOMAINS[*]}"
-echo "訓練モード: domain_train (1回学習 + within/cross 2回評価)"
-echo "分割比率: train(70%) / val(15%) / test(15%)"
-echo "不均衡対策手法: モデルごとに異なる"
-echo "シード: ${SEEDS[*]}"
-echo "ターゲット比率: ${RATIOS[*]}"
-echo "Optuna trials (SvmWのみ): $N_TRIALS"
-echo "複数キュー使用: $USE_MULTI_QUEUE (SINGLE, LONG, DEFAULT に分散)"
+echo "Model: ${MODELS[*]}"
+echo "Split mode: split2 (in_domain=44 subjects, out_domain=43 subjects)"
+echo "Distance metrics: ${DISTANCES[*]}"
+echo "Domain groups: ${DOMAINS[*]}"
+echo "Training mode: domain_train (1 training + within/cross 2 evaluations)"
+echo "Split ratios: train(70%) / val(15%) / test(15%)"
+echo "Imbalance methods: varies by model"
+echo "seeds: ${SEEDS[*]}"
+echo "Target ratio: ${RATIOS[*]}"
+echo "Optuna trials (SvmWonly): $N_TRIALS"
+echo "Multi-queue usage: $USE_MULTI_QUEUE (SINGLE, LONG, DEFAULT distributed to)"
 echo "Dry run: $DRY_RUN"
 echo "============================================================"
 echo ""
@@ -232,15 +232,15 @@ else
     echo "Log file: $LOG_FILE"
 fi
 echo ""
-echo "予想ジョブ数の計算:"
-echo "  各モデル: 3距離 × 2ドメイン × 2シード × (1 baseline + 2比率 × 3手法) = 84 jobs"
-echo "  SvmW: 84 jobs  (split2版: 168 → 50%削減)"
-echo "  SvmA: 84 jobs  (split2版: 168 → 50%削減)"
-echo "  Lstm: 84 jobs  (split2版: 168 → 50%削減)"
-echo "  合計: 252 jobs (split2版: 504 → 50%削減)"
+echo "Expected job count calculation:"
+echo "  Per model: 3 distances x 2 domains x 2 seeds x (1 baseline + 2 ratios x 3 methods) = 84 jobs"
+echo "  SvmW: 84 jobs (split2 version: 168 → 50% reduction)"
+echo "  SvmA: 84 jobs (split2 version: 168 → 50% reduction)"
+echo "  Lstm: 84 jobs (split2 version: 168 → 50% reduction)"
+echo "  Total: 252 jobs (split2 version: 504 → 50% reduction)"
 echo ""
-echo "各ジョブの構成:"
-echo "  学習: domain_train (ドメイン内 70%で学習, 15%でval)"
-echo "  評価①: within-domain (同ドメイン test 15%)"
-echo "  評価②: cross-domain  (逆ドメイン test 15%)"
+echo "Job composition:"
+echo "  Training: domain_train (train on 70% within domain, 15% val)"
+echo "  Eval 1: within-domain (same domain test 15%)"
+echo "  Eval 2: cross-domain (opposite domain test 15%)"
 echo "============================================================"

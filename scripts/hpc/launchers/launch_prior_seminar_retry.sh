@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# 残り319ジョブをSEMINARキューに投入 (per-user limit無し)
+# Submit remaining 319 jobs to SEMINAR queue (no per-user limit)
 # ============================================================
 set -uo pipefail
 
@@ -29,7 +29,7 @@ get_resources() {
 }
 
 echo "============================================================"
-echo "  SEMINAR キュー残り投入 (319 jobs)"
+echo "  SEMINAR Queue remaining submissions (319 jobs)"
 echo "  $(date)"
 echo "============================================================"
 

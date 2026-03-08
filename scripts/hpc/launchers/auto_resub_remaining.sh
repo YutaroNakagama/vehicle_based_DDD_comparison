@@ -1,12 +1,12 @@
 #!/bin/bash
 # ============================================================
-# 自動再投入スクリプト — キュー空き待ち & 差分投入
+# Auto-resubmit script — wait for queue slots & submit remaining
 # ============================================================
-# /tmp/remaining_jobs.txt から未投入ジョブを読み取り、
-# キューに空きがあれば投入する。
-# 全件投入完了するまで5分間隔でリトライする。
+# Read unsubmitted jobs from /tmp/remaining_jobs.txt,
+# Submits if queue slots are available.
+# Retries every 5 minutes until all jobs are submitted.
 #
-# 使い方:
+# Usage:
 #   nohup bash scripts/hpc/launchers/auto_resub_remaining.sh &
 # ============================================================
 
@@ -19,18 +19,18 @@ N_TRIALS=100
 RANKING="knn"
 QUEUES=("SINGLE" "LONG" "DEFAULT")
 QUEUE_COUNTER=0
-SLEEP_INTERVAL=300  # 5分間隔
-MAX_RETRIES=100     # 最大100回（約8時間）
+SLEEP_INTERVAL=300  # 5mininterval
+MAX_RETRIES=100     # Max 100 rounds (approx 8 hours)
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 LOG_DIR="$PROJECT_ROOT/scripts/hpc/logs/train"
 LOG_FILE="$LOG_DIR/auto_resub_${TIMESTAMP}.log"
 
 echo "============================================================"
-echo "自動再投入スクリプト開始: $(date)"
-echo "残りジョブ: $(wc -l < "$REMAINING_FILE") 件"
-echo "リトライ間隔: ${SLEEP_INTERVAL}秒"
-echo "ログ: $LOG_FILE"
+echo "Auto resubmit script started: $(date)"
+echo "remainingjob(s): $(wc -l < "$REMAINING_FILE") items"
+echo "Retry interval: ${SLEEP_INTERVAL}s"
+echo "Log: $LOG_FILE"
 echo "============================================================"
 
 echo "# Auto resub started at $(date)" > "$LOG_FILE"
@@ -43,7 +43,7 @@ while [[ -s "$REMAINING_FILE" && $RETRY -lt $MAX_RETRIES ]]; do
     ROUND_SUBMITTED=0
     ROUND_SKIPPED=0
 
-    # 一時ファイルに未投入分を書き出し
+    # Writing unsubmitted jobs to temp file
     cp "$REMAINING_FILE" "${REMAINING_FILE}.bak"
     > "${REMAINING_FILE}.new"
 
@@ -74,13 +74,13 @@ while [[ -s "$REMAINING_FILE" && $RETRY -lt $MAX_RETRIES ]]; do
             ((TOTAL_SUBMITTED++))
             sleep 0.2
         else
-            # 投入失敗 → 再投入リストに残す
+            # Submission failed → keep in resubmit list
             echo "$MODEL|$CONDITION|$MODE|$DISTANCE|$DOMAIN|$SEED|$RATIO|$WALLTIME|$MEM" >> "${REMAINING_FILE}.new"
             ((ROUND_SKIPPED++))
         fi
     done < "${REMAINING_FILE}.bak"
 
-    # 残りリストを更新
+    # Update remaining list
     mv "${REMAINING_FILE}.new" "$REMAINING_FILE"
     REMAINING=$(wc -l < "$REMAINING_FILE")
 
@@ -88,15 +88,15 @@ while [[ -s "$REMAINING_FILE" && $RETRY -lt $MAX_RETRIES ]]; do
     echo "# Round $RETRY at $(date): submitted=$ROUND_SUBMITTED skipped=$ROUND_SKIPPED remaining=$REMAINING" >> "$LOG_FILE"
 
     if [[ $REMAINING -eq 0 ]]; then
-        echo "[$(date +%H:%M:%S)] 全件投入完了！"
+        echo "[$(date +%H:%M:%S)] All submissions complete!"
         break
     fi
 
     if [[ $ROUND_SUBMITTED -eq 0 ]]; then
-        echo "[$(date +%H:%M:%S)] この回は投入できず。${SLEEP_INTERVAL}秒後にリトライ..."
+        echo "[$(date +%H:%M:%S)] Could not submit in this round.${SLEEP_INTERVAL}retrying after seconds..."
         sleep $SLEEP_INTERVAL
     else
-        echo "[$(date +%H:%M:%S)] 一部投入成功。30秒後に残りをリトライ..."
+        echo "[$(date +%H:%M:%S)] Some submissions succeeded. Retrying remaining after 30s..."
         sleep 30
     fi
 done
@@ -111,9 +111,9 @@ done
 
 echo ""
 echo "============================================================"
-echo "自動再投入完了: $(date)"
-echo "投入済み: $TOTAL_SUBMITTED"
-echo "残り: $(wc -l < "$REMAINING_FILE")"
-echo "リトライ回数: $RETRY"
-echo "ログ: $LOG_FILE"
+echo "Auto re-submission complete: $(date)"
+echo "Submitted: $TOTAL_SUBMITTED"
+echo "remaining: $(wc -l < "$REMAINING_FILE")"
+echo "Retry count: $RETRY"
+echo "Log: $LOG_FILE"
 echo "============================================================"

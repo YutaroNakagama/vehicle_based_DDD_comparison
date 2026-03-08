@@ -1,5 +1,5 @@
 #!/bin/bash
-# DEFAULT/SMALLキューに集中投入（無制限キュー活用）
+# DEFAULT/SMALLBulk submit to queues (utilizing unlimited queues)
 
 set -e
 
@@ -15,11 +15,11 @@ SUBMITTED_FILE="$LOG_DIR/submitted_unlimited_${TIMESTAMP}.txt"
 touch "$SUBMITTED_FILE"
 
 echo "============================================================" | tee -a "$LOG_FILE"
-echo "無制限キュー（DEFAULT/SMALL）集中投入" | tee -a "$LOG_FILE"
-echo "開始: $(date)" | tee -a "$LOG_FILE"
+echo "Bulk submit to unlimited queues (DEFAULT/SMALL)" | tee -a "$LOG_FILE"
+echo "started: $(date)" | tee -a "$LOG_FILE"
 echo "============================================================" | tee -a "$LOG_FILE"
 
-# 設定
+# Settings
 MODELS="SvmW SvmA Lstm"
 DISTANCES="mmd dtw wasserstein"
 DOMAINS="out_domain in_domain"
@@ -31,7 +31,7 @@ N_TRIALS=100
 
 JOB_SCRIPT="$WORKSPACE_ROOT/scripts/hpc/jobs/train/pbs_prior_research_split2.sh"
 
-# 無制限キューのみ使用
+# Use only unlimited queues
 QUEUES=("DEFAULT" "SMALL")
 queue_index=0
 
@@ -39,7 +39,7 @@ total_submitted=0
 total_failed=0
 total_skipped=0
 
-# リソース取得
+# Resource acquisition
 get_resources() {
     local model=$1
     case $model in
@@ -49,11 +49,11 @@ get_resources() {
     esac
 }
 
-# ジョブ投入
+# job(s)submit
 submit_job() {
     local model=$1 condition=$2 distance=$3 domain=$4 mode=$5 seed=$6 ratio=$7
     
-    # 重複チェック（全ログファイル）
+    # Duplicate check (all log files)
     local job_id="${model}_${condition}_${distance}_${domain}_${mode}_${seed}"
     [ -n "$ratio" ] && job_id="${job_id}_${ratio}"
     
@@ -62,11 +62,11 @@ submit_job() {
         return 2
     fi
     
-    # キュー選択（DEFAULT/SMALL交互）
+    # Queue selection (alternating DEFAULT/SMALL)
     local queue="${QUEUES[$queue_index]}"
     queue_index=$(( (queue_index + 1) % 2 ))
     
-    # ジョブ名
+    # job(s)subjects
     local model_abbr="${model:0:2}"
     local cond_abbr="${condition:0:2}"
     local dist_abbr="${distance:0:1}"
@@ -77,16 +77,16 @@ submit_job() {
     [ -n "$ratio" ] && job_name="${job_name}_r${ratio}" || job_name="${job_name}"
     job_name="${job_name}_s${seed}"
     
-    # リソース
+    # Resources
     local resources=$(get_resources "$model")
     local ncpus_mem=$(echo "$resources" | awk '{print $1}')
     local walltime=$(echo "$resources" | awk '{print $2}')
     
-    # 環境変数
+    # Environment variables
     local env_vars="MODEL=$model,CONDITION=$condition,MODE=$mode,DISTANCE=$distance,DOMAIN=$domain,SEED=$seed,N_TRIALS=$N_TRIALS,RANKING=$RANKING,RUN_EVAL=true"
     [ -n "$ratio" ] && env_vars="${env_vars},RATIO=$ratio"
     
-    # 投入
+    # submit
     local cmd="qsub -N $job_name -l select=1:$ncpus_mem -l walltime=$walltime -q $queue -v $env_vars $JOB_SCRIPT"
     
     if output=$($cmd 2>&1); then
@@ -96,9 +96,9 @@ submit_job() {
         return 0
     else
         if [[ "$output" == *"would exceed"* ]]; then
-            echo "[上限到達] 一時停止（60秒後に再試行）" | tee -a "$LOG_FILE"
+            echo "[Limit reached] Pausing (retrying after 60s)" | tee -a "$LOG_FILE"
             sleep 60
-            # リトライ
+            # retry
             if output=$($cmd 2>&1); then
                 echo "$job_id" >> "$SUBMITTED_FILE"
                 echo "[$(date +%H:%M:%S)] [$queue] ✓ $job_name → $output (retry)" | tee -a "$LOG_FILE"
@@ -112,8 +112,8 @@ submit_job() {
     fi
 }
 
-# メインループ
-echo "[$(date +%H:%M:%S)] 投入開始..." | tee -a "$LOG_FILE"
+# Main loop
+echo "[$(date +%H:%M:%S)] Starting submission..." | tee -a "$LOG_FILE"
 
 for model in $MODELS; do
     [ "$model" = "SvmW" ] && CONDITIONS="baseline smote_plain smote undersample balanced_rf" || CONDITIONS="baseline smote_plain smote undersample"
@@ -139,12 +139,12 @@ done
 
 echo "" | tee -a "$LOG_FILE"
 echo "============================================================" | tee -a "$LOG_FILE"
-echo "投入完了" | tee -a "$LOG_FILE"
-echo "成功: $total_submitted | 失敗: $total_failed | スキップ: $total_skipped" | tee -a "$LOG_FILE"
-echo "終了: $(date)" | tee -a "$LOG_FILE"
+echo "Submission complete" | tee -a "$LOG_FILE"
+echo "succeeded: $total_submitted | failed: $total_failed | Skipped: $total_skipped" | tee -a "$LOG_FILE"
+echo "Ended: $(date)" | tee -a "$LOG_FILE"
 echo "============================================================" | tee -a "$LOG_FILE"
 echo "" | tee -a "$LOG_FILE"
-echo "DEFAULT: $(grep -c '\[DEFAULT\] ✓' "$LOG_FILE" || echo 0) ジョブ" | tee -a "$LOG_FILE"
-echo "SMALL: $(grep -c '\[SMALL\] ✓' "$LOG_FILE" || echo 0) ジョブ" | tee -a "$LOG_FILE"
+echo "DEFAULT: $(grep -c '\[DEFAULT\] ✓' "$LOG_FILE" || echo 0) job(s)" | tee -a "$LOG_FILE"
+echo "SMALL: $(grep -c '\[SMALL\] ✓' "$LOG_FILE" || echo 0) job(s)" | tee -a "$LOG_FILE"
 echo ""
-echo "ログ: $LOG_FILE"
+echo "Log: $LOG_FILE"

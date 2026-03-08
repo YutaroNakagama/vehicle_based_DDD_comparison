@@ -1,6 +1,6 @@
 #!/bin/bash
-# 全キューを活用した先行研究実験投入スクリプト
-# SINGLE, LONG, DEFAULT キューに分散投入
+# Prior research experiment submission script utilizing all queues
+# SINGLE, LONG, DEFAULT Distribute submissions across queues
 
 set -e
 
@@ -14,12 +14,12 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 LOG_FILE="$LOG_DIR/submit_all_queues_${TIMESTAMP}.log"
 
 echo "============================================================" | tee -a "$LOG_FILE"
-echo "先行研究実験 マルチキュー投入スクリプト" | tee -a "$LOG_FILE"
-echo "開始時刻: $(date)" | tee -a "$LOG_FILE"
-echo "使用キュー: SINGLE, LONG, DEFAULT (ラウンドロビン)" | tee -a "$LOG_FILE"
+echo "Prior research experiment multi-queue submit script" | tee -a "$LOG_FILE"
+echo "Start time: $(date)" | tee -a "$LOG_FILE"
+echo "Queues used: SINGLE, LONG, DEFAULT (round-robin)" | tee -a "$LOG_FILE"
 echo "============================================================" | tee -a "$LOG_FILE"
 
-# 設定
+# Settings
 MODELS="SvmW SvmA Lstm"
 DISTANCES="mmd dtw wasserstein"
 DOMAINS="out_domain in_domain"
@@ -31,14 +31,14 @@ N_TRIALS=100
 
 JOB_SCRIPT="$WORKSPACE_ROOT/scripts/hpc/jobs/train/pbs_prior_research_split2.sh"
 
-# キューのリスト
+# Queue list
 QUEUES=("SINGLE" "LONG" "DEFAULT")
 QUEUE_INDEX=0
 
 total_submitted=0
 total_errors=0
 
-# リソース取得関数
+# Resource acquisition function
 get_resources() {
     local model=$1
     
@@ -55,7 +55,7 @@ get_resources() {
     esac
 }
 
-# ジョブ投入関数
+# Job submit function
 submit_job() {
     local model=$1
     local condition=$2
@@ -65,11 +65,11 @@ submit_job() {
     local seed=$6
     local ratio=$7
     
-    # キューを選択（ラウンドロビン）
+    # Select queue (round-robin)
     local queue="${QUEUES[$QUEUE_INDEX]}"
     QUEUE_INDEX=$(( (QUEUE_INDEX + 1) % 3 ))
     
-    # ジョブ名を生成
+    # Generate job name
     local model_abbr="${model:0:2}"
     local cond_abbr="${condition:0:2}"
     local dist_abbr="${distance:0:1}"
@@ -82,36 +82,36 @@ submit_job() {
         local job_name="${model_abbr}_${cond_abbr}_${dist_abbr}${domain_abbr}_${mode_abbr}_s${seed}"
     fi
     
-    # リソース設定
+    # Resource settings
     local resources=$(get_resources "$model")
     local ncpus_mem=$(echo "$resources" | awk '{print $1}')
     local walltime=$(echo "$resources" | awk '{print $2}')
     
-    # 環境変数を準備
+    # Prepare environment variables
     local env_vars="MODEL=$model,CONDITION=$condition,MODE=$mode,DISTANCE=$distance,DOMAIN=$domain,SEED=$seed,N_TRIALS=$N_TRIALS,RANKING=$RANKING,RUN_EVAL=true"
     if [ -n "$ratio" ]; then
         env_vars="${env_vars},RATIO=$ratio"
     fi
     
-    # qsubコマンド実行
+    # qsubExecute command
     local qsub_cmd="qsub -N $job_name -l select=1:$ncpus_mem -l walltime=$walltime -q $queue -v $env_vars $JOB_SCRIPT"
     
     if output=$($qsub_cmd 2>&1); then
-        echo "[$(date +%H:%M:%S)] [$queue] 投入成功: $job_name → $output" | tee -a "$LOG_FILE"
+        echo "[$(date +%H:%M:%S)] [$queue] Submission succeeded: $job_name → $output" | tee -a "$LOG_FILE"
         ((total_submitted++))
         return 0
     else
-        # エラーの場合、詳細を記録
-        echo "[$(date +%H:%M:%S)] [$queue] 投入失敗: $job_name" | tee -a "$LOG_FILE"
-        echo "  エラー: $output" >> "$LOG_FILE"
+        # On error, record details
+        echo "[$(date +%H:%M:%S)] [$queue] Submission failed: $job_name" | tee -a "$LOG_FILE"
+        echo "  Error: $output" >> "$LOG_FILE"
         ((total_errors++))
         return 1
     fi
 }
 
-# メインループ
+# Main loop
 for model in $MODELS; do
-    # balanced_rfはSvmWのみ
+    # balanced_rfSvmW only
     if [ "$model" = "SvmW" ]; then
         CONDITIONS="baseline smote_plain smote undersample balanced_rf"
     else
@@ -124,11 +124,11 @@ for model in $MODELS; do
                 for mode in $MODES; do
                     for seed in $SEEDS; do
                         if [ "$condition" = "baseline" ]; then
-                            # baselineは比率なし
+                            # baselinehas no ratio
                             submit_job "$model" "$condition" "$distance" "$domain" "$mode" "$seed" ""
                             sleep 0.1
                         else
-                            # その他の条件は比率あり
+                            # Other conditions have a ratio
                             for ratio in $RATIOS; do
                                 submit_job "$model" "$condition" "$distance" "$domain" "$mode" "$seed" "$ratio"
                                 sleep 0.1
@@ -143,18 +143,18 @@ done
 
 echo "" | tee -a "$LOG_FILE"
 echo "============================================================" | tee -a "$LOG_FILE"
-echo "投入処理が完了しました" | tee -a "$LOG_FILE"
-echo "投入成功: $total_submitted ジョブ" | tee -a "$LOG_FILE"
-echo "投入失敗: $total_errors ジョブ" | tee -a "$LOG_FILE"
-echo "終了時刻: $(date)" | tee -a "$LOG_FILE"
+echo "Submit processing is complete" | tee -a "$LOG_FILE"
+echo "Submission succeeded: $total_submitted job(s)" | tee -a "$LOG_FILE"
+echo "Submission failed: $total_errors job(s)" | tee -a "$LOG_FILE"
+echo "End time: $(date)" | tee -a "$LOG_FILE"
 echo "============================================================" | tee -a "$LOG_FILE"
 echo "" | tee -a "$LOG_FILE"
-echo "ログファイル: $LOG_FILE"
+echo "Log file: $LOG_FILE"
 
-# キューごとの投入数を表示
+# Display submission count per queue
 echo "" | tee -a "$LOG_FILE"
-echo "キュー別投入数:" | tee -a "$LOG_FILE"
+echo "Submissions per queue:" | tee -a "$LOG_FILE"
 for queue in "${QUEUES[@]}"; do
-    count=$(grep -c "\[$queue\] 投入成功" "$LOG_FILE" 2>/dev/null || echo "0")
-    echo "  $queue: $count ジョブ" | tee -a "$LOG_FILE"
+    count=$(grep -c "\[$queue\] Submission succeeded" "$LOG_FILE" 2>/dev/null || echo "0")
+    echo "  $queue: $count job(s)" | tee -a "$LOG_FILE"
 done

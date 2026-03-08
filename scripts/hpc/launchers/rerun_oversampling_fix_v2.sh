@@ -1,20 +1,20 @@
 #!/bin/bash
 # ============================================================
-# 再実行デーモン v2 — oversampling バグ修正後のジョブ再投入
+# Re-execution daemon v2 — resubmit jobs after oversampling bug fix
 # ============================================================
-# v1 からの変更点:
-#   - Lstm を GPU キューに投入 (GPU-1, GPU-1A, GPU-S, GPU-L, GPU-LA)
-#   - GPU 版 PBS スクリプト使用 (pbs_prior_research_unified_gpu.sh)
-#   - SvmA は引き続き CPU キューに投入
+# v1 changes from:
+#   - Lstm submit to GPU queue (GPU-1, GPU-1A, GPU-S, GPU-L, GPU-LA)
+#   - Uses GPU version PBS script (pbs_prior_research_unified_gpu.sh)
+#   - SvmA continues to be submitted to CPU queue
 #
-# 対象:
-#   - Lstm: smote_plain, undersample (全モード × 全configs)
-#   - SvmA: smote_plain, undersample (全モード × 全configs)
-#   各 144 configs = 合計最大 288 jobs
+# Target:
+#   - Lstm: smote_plain, undersample (all modes x all configs)
+#   - SvmA: smote_plain, undersample (all modes x all configs)
+#   144 configs each = max 288 jobs total
 #
 # Usage:
 #   nohup bash scripts/hpc/launchers/rerun_oversampling_fix_v2.sh &
-#   # ログ: /tmp/rerun_oversampling_fix_v2.log
+#   # Log: /tmp/rerun_oversampling_fix_v2.log
 # ============================================================
 
 set -euo pipefail
@@ -30,11 +30,11 @@ POLL_INTERVAL=300  # 5 minutes
 N_TRIALS=100
 RANKING="knn"
 
-# ---- エラートラップ ----
+# ---- Error trap ----
 trap 'echo "[$(date +%H:%M)] TRAP: daemon exiting (line $LINENO, exit=$?)" >> "$LOG"' EXIT
 trap 'echo "[$(date +%H:%M)] TRAP: received signal, exiting" >> "$LOG"; exit 1' INT TERM HUP
 
-# ---- キュー制限 ----
+# ---- Queue limit ----
 # CPU queues
 declare -A CPU_QUEUE_MAX=( [SINGLE]=40 [DEFAULT]=40 [SMALL]=30 [LONG]=15 )
 CPU_QUEUES=("SINGLE" "DEFAULT" "SMALL" "LONG")
@@ -48,7 +48,7 @@ declare -A QUEUE_CURRENT=()
 
 touch "$SUBMITTED_KEYS"
 
-# ---- リソース定義 ----
+# ---- Resource definitions ----
 get_resources() {
     local model="$1"
     local mode="$2"
@@ -75,7 +75,7 @@ get_resources() {
     esac
 }
 
-# ---- 新しい評価結果が存在するか確認 ----
+# ---- New check if evaluation results exist ----
 has_eval_result() {
     local model="$1" cond="$2" dist="$3" dom="$4" mode="$5" seed="$6" ratio="$7"
     local eval_dir="results/outputs/evaluation/$model"
@@ -102,7 +102,7 @@ has_eval_result() {
     return 1
 }
 
-# ---- キュー状態確認 ----
+# ---- Check queue status ----
 get_queue_counts() {
     local qstat_output
     qstat_output=$(qstat -u s2240011 2>/dev/null | tail -n +6 || true)
@@ -145,7 +145,7 @@ find_available_cpu_queue() {
     return 1
 }
 
-# ---- 全実験条件を列挙 ----
+# ---- Enumerate all experiment conditions ----
 ALL_JOBS=()
 DISTANCES=("mmd" "dtw" "wasserstein")
 DOMAINS=("in_domain" "out_domain")
@@ -179,7 +179,7 @@ echo "[$(date +%H:%M)] Lstm → GPU queues: ${GPU_QUEUES[*]}" >> "$LOG"
 echo "[$(date +%H:%M)] SvmA → CPU queues: ${CPU_QUEUES[*]}" >> "$LOG"
 echo "[$(date +%H:%M)] Polling every ${POLL_INTERVAL}s" >> "$LOG"
 
-# ---- メインループ ----
+# ---- Main loop ----
 while true; do
     get_queue_counts || true
 

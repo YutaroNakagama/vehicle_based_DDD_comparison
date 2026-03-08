@@ -1,10 +1,10 @@
 #!/bin/bash
 # ============================================================
-# Exp3 再評価スクリプト: roc_auc / auc_pr 追加
+# Exp3 re-evaluation script: add roc_auc / auc_pr
 # ============================================================
-# 既存の eval JSON から mode, tag, jobid, seed を抽出し、
-# 更新済みの eval コードで再評価する。
-# SvmA は login node で実行可、Lstm は TensorFlow 要（PBS推奨）。
+# Extract mode, tag, jobid, seed from existing eval JSON and
+# Re-evaluate with updated eval code.
+# SvmA can run on login node; Lstm requires TensorFlow (PBS recommended).
 #
 # Usage:
 #   bash scripts/hpc/launchers/reeval_exp3_metrics.sh SvmA

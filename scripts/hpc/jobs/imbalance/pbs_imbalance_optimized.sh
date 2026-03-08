@@ -50,7 +50,7 @@ METHOD="${METHOD:-baseline}"
 RATIO="${RATIO:-0.5}"
 SEED="${SEED:-42}"
 RUN_EVAL="${RUN_EVAL:-true}"
-export N_TRIALS_OVERRIDE="${N_TRIALS:-100}"  # 論文用: 100 trials
+export N_TRIALS_OVERRIDE="${N_TRIALS:-100}"  # For paper: 100 trials
 
 # Auto-select model based on method
 case "$METHOD" in

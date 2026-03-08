@@ -1,9 +1,9 @@
 #!/bin/bash
 # ============================================================
-# SvmW タイムアウト再投入 (walltime=12:00:00)
+# SvmW timeout resubmit (walltime=12:00:00)
 # ============================================================
-# SvmWのimbalv3/smote_plain条件が6h制限でタイムアウトしたため
-# 12時間のwalltimeでLONG/SEMINARキューに再投入する
+# SvmWimbalv3/smote_plain conditions timed out at 6h limit
+# Resubmit to LONG/SEMINAR queue with 12h walltime
 # ============================================================
 set -uo pipefail
 

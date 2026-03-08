@@ -1,19 +1,19 @@
 #!/bin/bash
 # ============================================================
-# 先行研究実験 — 欠損条件の再投入ランチャー
+# Prior research experiment — missing condition resubmission launcher
 # ============================================================
-# 検証の結果、以下の条件が未完了であることが判明:
+# Verification found the following conditions are not yet complete:
 #
-# 1. SvmW s+t baseline:  24 jobs (全baseline条件が旧PBSスクリプトで失敗)
-# 2. SvmA s+t baseline:  24 jobs (同上)
+# 1. SvmW s+t baseline:  24 jobs (all baseline conditions failed with old PBS script)
+# 2. SvmA s+t baseline:  24 jobs (same as above)
 # 3. SvmW mixed baseline: 12 jobs
 # 4. SvmA mixed:          15 jobs (12 baseline + 3 ratio-based)
-# 5. Lstm mixed ALL:      84 jobs (SEMINARキュー6h制限で全滅)
+# 5. Lstm mixed ALL:      84 jobs (SEMINARAll failed due to 6h queue limit)
 #
-# 合計: 159 jobs
+# Total: 159 jobs
 #
-# キュー戦略: SINGLE/LONG/DEFAULT にラウンドロビンで分散
-# SEMINARキューは6h制限があるため使用しない
+# Queue strategy: SINGLE/LONG/DEFAULT distributed by round-robin to
+# SEMINARNot using queue due to 6h limit
 # ============================================================
 
 set -uo pipefail
@@ -21,15 +21,15 @@ set -uo pipefail
 PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
 JOB_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/train/pbs_prior_research_split2.sh"
 
-# ---- 固定パラメータ ----
+# ---- Fixed parameters ----
 N_TRIALS=100
 RANKING="knn"
 
-# ---- キュー設定 ----
+# ---- Queue settings ----
 QUEUES=("SINGLE" "LONG" "DEFAULT")
 QUEUE_COUNTER=0
 
-# ---- 引数解析 ----
+# ---- Argument parsing ----
 DRY_RUN=false
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -38,16 +38,16 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# ---- ログ ----
+# ---- Log ----
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 LOG_DIR="$PROJECT_ROOT/scripts/hpc/logs/train"
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/launch_resub_missing_${TIMESTAMP}.log"
 
 echo "============================================================"
-echo "先行研究実験 — 欠損条件の再投入"
+echo "Prior research experiment — resubmit missing conditions"
 echo "============================================================"
-echo "キュー: ${QUEUES[*]} (ラウンドロビン)"
+echo "Queues: ${QUEUES[*]} (round-robin)"
 echo "Dry run: $DRY_RUN"
 echo "============================================================"
 echo ""
@@ -66,7 +66,7 @@ fi
 JOB_COUNT=0
 SKIP_COUNT=0
 
-# ---- ジョブ投入関数 ----
+# ---- Job submit function ----
 submit_job() {
     local MODEL="$1"
     local CONDITION="$2"
@@ -81,7 +81,7 @@ submit_job() {
     local QUEUE="${QUEUES[$((QUEUE_COUNTER % 3))]}"
     ((QUEUE_COUNTER++))
 
-    # ジョブ名の生成
+    # Generate job name
     local MODE_SHORT
     case "$MODE" in
         source_only) MODE_SHORT="s" ;;
@@ -191,7 +191,7 @@ for DISTANCE in "${DISTANCES[@]}"; do
 done
 echo ""
 
-# ---- サマリー ----
+# ---- Summary ----
 {
     echo ""
     echo "# Launch completed at $(date)"

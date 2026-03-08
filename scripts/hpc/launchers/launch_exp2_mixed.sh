@@ -1,11 +1,11 @@
 #!/bin/bash
 # ============================================================
-# Exp2 Multi-domain ジョブ投入ランチャー
+# Exp2 Multi-domain job submit launcher
 # ============================================================
-# 全被験者（87名）で訓練し、in_domain / out_domain で評価する
-# Multi-domain ケースの全96ジョブを投入する
+# Train on all subjects (87) and evaluate on in_domain / out_domain
+# All 96 multi-domain case submit jobs
 #
-# ジョブ数: 3 (距離) × 2 (ドメイン) × 2 (シード) × 8 (条件) = 96
+# Job count: 3 (distances) x 2 (domains) x 2 (seeds) x 8 (conditions) = 96
 #
 # Usage:
 #   bash scripts/hpc/launchers/launch_exp2_mixed.sh
@@ -45,7 +45,7 @@ JOB_COUNT=0
 FAIL_COUNT=0
 
 echo "============================================================"
-echo "  Exp2 Multi-domain ジョブ投入"
+echo "  Exp2 Multi-domain job(s)submit"
 echo "  $(date)"
 echo "============================================================"
 echo "  MODE: $MODE (train=ALL 87 subjects, eval=target domain)"

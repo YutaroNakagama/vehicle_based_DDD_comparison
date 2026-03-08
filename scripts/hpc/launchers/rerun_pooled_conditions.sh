@@ -1,22 +1,22 @@
 #!/bin/bash
 # ============================================================
-# 再実行デーモン — Pooled 条件別ジョブ投入
+# Re-execution daemon — submit pooled jobs by condition
 # ============================================================
-# 問題: pbs_prior_research.sh (pooled) は CONDITION パラメータがなく、
-#        常に baseline として訓練していた。そのため smote_plain,
-#        sw_smote (imbalv3), undersample_rus の pooled 結果が
-#        全て baseline と同一だった。
+# Issue: pbs_prior_research.sh (pooled) does not have CONDITION parameter,
+#        always trained as baseline. Therefore smote_plain,
+#        sw_smote (imbalv3), undersample_rus  pooled results
+#        all baseline were identical.
 #
-# 修正: pbs_prior_research.sh に CONDITION 対応追加済み。
-#        このデーモンで全モデル × 全条件 × 全シードの pooled ジョブを投入。
+# Fix: in pbs_prior_research.sh CONDITION support already added.
+#        This daemon submits pooled jobs for all models x conditions x seeds.
 #
-# 対象:
-#   - 3モデル (SvmW, SvmA, Lstm) × 4条件 × 2シード = 24 configs
-#   - baseline は新しいタグ形式で再訓練 (旧ファイルは無効化済み)
+# Target:
+#   - 3Model (SvmW, SvmA, Lstm) × 4conditions × 2seeds = 24 configs
+#   - baseline retrained with new tag format (old files have been invalidated)
 #
 # Usage:
 #   nohup bash scripts/hpc/launchers/rerun_pooled_conditions.sh &
-#   # ログ: /tmp/rerun_pooled_conditions.log
+#   # Log: /tmp/rerun_pooled_conditions.log
 # ============================================================
 
 set -euo pipefail
@@ -29,11 +29,11 @@ LOG="/tmp/rerun_pooled_conditions.log"
 SUBMITTED_KEYS="/tmp/rerun_pooled_conditions_keys.txt"
 POLL_INTERVAL=300  # 5 minutes
 
-# ---- エラートラップ ----
+# ---- Error trap ----
 trap 'echo "[$(date +%H:%M)] TRAP: daemon exiting (line $LINENO, exit=$?)" >> "$LOG"' EXIT
 trap 'echo "[$(date +%H:%M)] TRAP: received signal, exiting" >> "$LOG"; exit 1' INT TERM HUP
 
-# ---- キュー制限 ----
+# ---- Queue limit ----
 declare -A QUEUE_MAX=( [SINGLE]=40 [DEFAULT]=40 [SMALL]=30 [LONG]=15 )
 declare -A QUEUE_CURRENT=()
 CPU_QUEUES=("SINGLE" "DEFAULT" "SMALL" "LONG")
@@ -45,7 +45,7 @@ GPU_QUEUES=("GPU-1" "GPU-1A" "GPU-S" "GPU-L" "GPU-LA")
 
 touch "$SUBMITTED_KEYS"
 
-# ---- 新しい評価結果が存在するか確認 ----
+# ---- New check if evaluation results exist ----
 has_eval_result() {
     local model="$1" cond="$2" seed="$3" ratio="$4"
     local eval_dir="results/outputs/evaluation/${model}"
@@ -70,7 +70,7 @@ has_eval_result() {
     find "$eval_dir" -name "${pattern}*.json" 2>/dev/null | grep -v _invalidated | grep -q .
 }
 
-# ---- キュー状態確認 ----
+# ---- Check queue status ----
 get_queue_counts() {
     local qstat_output
     qstat_output=$(qstat -u s2240011 2>/dev/null | tail -n +6 || true)
@@ -107,7 +107,7 @@ find_available_gpu_queue() {
     return 1
 }
 
-# ---- 全実験条件を列挙 ----
+# ---- Enumerate all experiment conditions ----
 ALL_JOBS=()
 MODELS=("SvmW" "SvmA" "Lstm")
 CONDITIONS=("baseline" "smote_plain" "smote" "undersample")
@@ -128,7 +128,7 @@ echo "[$(date +%H:%M)] Conditions: ${CONDITIONS[*]}" >> "$LOG"
 echo "[$(date +%H:%M)] Seeds: ${SEEDS[*]}" >> "$LOG"
 echo "[$(date +%H:%M)] Polling every ${POLL_INTERVAL}s" >> "$LOG"
 
-# ---- メインループ ----
+# ---- Main loop ----
 while true; do
     get_queue_counts || true
 

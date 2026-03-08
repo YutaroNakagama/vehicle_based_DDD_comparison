@@ -1,15 +1,15 @@
 #!/bin/bash
 # ============================================================
-# Experiment 2: 追加3シード投入ランチャー (n=10 → n=13)
+# Experiment 2: additional 3 seeds submit launcher (n=10 → n=13)
 # ============================================================
-# 既存10シード [0,1,7,13,42,123,256,512,1337,2024] に加え、
-# 3シード [3,99,777] を追加して n=13 で Bonferroni 補正突破を目指す
+# Existing 10 seeds [0,1,7,13,42,123,256,512,1337,2024] in addition,
+# 3seeds [3,99,777] adding to n=13 aiming to pass Bonferroni correction with
 #
-# Experiment C 結果:
+# Experiment C results:
 #   n=10 → min p_perm = 1/1024 ≈ 0.00098 > Bonferroni α' = 0.00119 → FAIL
 #   n=13 → min p_perm = 1/8192 ≈ 0.00012 << Bonferroni α' = 0.00119 → PASS
 #
-# Conditions (4 base × 7 variants, balanced_rf 除外):
+# Conditions (4 base x 7 variants, excluding balanced_rf):
 #   baseline      (no ratio)   → 3 modes × 3 dists × 2 doms × 3 seeds =  54
 #   smote_plain   (r0.1, r0.5) → 3 × 3 × 2 × 2 × 3                   = 108
 #   smote/sw      (r0.1, r0.5) → 3 × 3 × 2 × 2 × 3                   = 108
