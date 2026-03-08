@@ -175,3 +175,11 @@ results/analysis/exp2_domain_shift/
 - [Reproducibility Guide](../reproducibility.md)
 - [Domain Generalization Pipeline](../../architecture/domain_generalization.md)
 - [Imbalance Methods](../../reference/imbalance_methods.md)
+
+### Statistical Analysis Reports
+
+- [Hypothesis-Driven Analysis](exp2-analysis/hypothesis_test_report.md) — Full 24-section statistical report (2292 lines)
+- [Statistical Report](exp2-analysis/statistical_report.md) — Domain shift statistical analysis
+- [Statistical Report (ratio=0.5)](exp2-analysis/statistical_report_ratio05.md) — Ratio 0.5 subset analysis
+- [Ratio Sensitivity Analysis](exp2-analysis/ratio_sensitivity_report.md) — Ranking consistency across ratios
+- [Domain Distance Analysis](exp2-analysis/domain_distances.md) — MDS/t-SNE/UMAP distance analysis

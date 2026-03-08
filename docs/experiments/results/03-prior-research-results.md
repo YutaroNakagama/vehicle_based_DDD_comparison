@@ -96,3 +96,4 @@ Verification checklist:
 - [Experiment conditions](../conditions/03-prior-research-conditions.md) — Condition matrix and HPC resource settings
 - [Reproducibility guide](../reproducibility.md) — How to reproduce experiments
 - [Prior research models](../../architecture/prior_research.md) — Model architecture details
+- [Optimization methods](exp3-analysis/optimization_methods.md) — Hyperparameter optimization summary
