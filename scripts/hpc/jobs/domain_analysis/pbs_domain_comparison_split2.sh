@@ -7,16 +7,16 @@
 # Note: -N, -l select, -l walltime, -q are passed dynamically via qsub options
 
 # ============================================================
-# Domain Analysis Comparison Script (2グループ分割版)
+# Domain Analysis Comparison Script (2-group split version)
 # ============================================================
-# split2ディレクトリを使用した2グループ分割実験
-# in_domain (44名) vs out_domain (43名)
+# 2-group split experiment using the split2 directory
+# in_domain (44 subjects) vs out_domain (43 subjects)
 #
 # Environment Variables:
 #   CONDITION : baseline | smote | smote_plain | undersample | balanced_rf (required)
 #   MODE      : source_only | target_only | mixed (required)
 #   DISTANCE  : mmd | wasserstein | dtw (required)
-#   DOMAIN    : in_domain | out_domain (required) ※mid_domainなし
+#   DOMAIN    : in_domain | out_domain (required) — no mid_domain
 #   RATIO     : Target ratio for SMOTE (default: 0.5)
 #   SEED      : Random seed (default: 42)
 #   N_TRIALS  : Optuna trials (default: 100)

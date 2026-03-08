@@ -1,16 +1,16 @@
 #!/bin/bash
 # ============================================================
-# source_only 再投入ランチャー (2026-02-07)
+# source_only resubmit launcher (2026-02-07)
 # ============================================================
-# train_stages.py の source_group_name → source_domain 修正後、
-# NameError で失敗した source_only ジョブ 51 件を再投入する。
+# train_stages.py after source_group_name → source_domain fix,
+# Resubmit 51 source_only jobs that failed with NameError.
 #
 #   smote (imbalv3):  3dist × 2dom × 2seed × 2ratio = 24
 #   smote_plain:      dtw×in(4) + mmd×in(4) + mmd×out(4) + wass×out(2) = 14
 #   undersample:      dtw×in(4) + dtw×out(1) + wass×in(4) + wass×out(4) = 13
-#                                                               合計 = 51
+#                                                               Total = 51
 #
-# キュー分散: DEFAULT (40) → SMALL (11)
+# Queue distribution: DEFAULT (40) → SMALL (11)
 # ============================================================
 
 set -uo pipefail
@@ -75,7 +75,7 @@ submit_domain() {
 }
 
 echo "============================================================"
-echo "  source_only 再投入 (NameError fix)  $(date)"
+echo "  source_only resubmit (NameError fix)  $(date)"
 echo "============================================================"
 
 # ──────────────────────────────────────────────────
@@ -120,7 +120,7 @@ for seed in 42 123; do
     done
 done
 
-# wasserstein × out_domain (2) — seed=123 のみ
+# wasserstein × out_domain (2) — seed=123 only
 for ratio in 0.1 0.5; do
     submit_domain smote_plain wasserstein out_domain 123 "$ratio"
 done

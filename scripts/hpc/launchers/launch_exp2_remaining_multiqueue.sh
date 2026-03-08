@@ -1,21 +1,21 @@
 #!/bin/bash
 # ============================================================
-# 実験2 未投入ジョブ マルチキュー分散投入 (2026-02-07)
+# Experiment 2 unsubmitted jobs — multi-queue distribution submit (2026-02-07)
 # ============================================================
-# 完了済み eval + キュー内ジョブを差し引いた、真に未投入の 62 ジョブを
-# TINY / DEFAULT / SINGLE / SEMINAR に分散して投入する。
+# Completed eval + Truly unsubmitted (after subtracting queued jobs), 62 jobs
+# TINY / DEFAULT / SINGLE / SEMINAR distribute and submit.
 #
-# 内訳:
+# Breakdown:
 #   smote_plain : 33 jobs (RF, 4cpu/10gb, 8h)
 #   undersample : 17 jobs (RF, 4cpu/8gb,  6h)
 #   smote (sw)  : 12 jobs (RF, 4cpu/10gb, 8h)
-#   合計        : 62 jobs
+#   Total        : 62 jobs
 #
-# キュー分散方針:
-#   TINY    : 15 jobs  (空いている)
-#   DEFAULT : 16 jobs  (余裕あり)
-#   SINGLE  : 16 jobs  (メインキュー)
-#   SEMINAR : 15 jobs  (空いている)
+# Queue distribution policy:
+#   TINY    : 15 jobs  (available)
+#   DEFAULT : 16 jobs  (has room)
+#   SINGLE  : 16 jobs  (main queue)
+#   SEMINAR : 15 jobs  (available)
 # ============================================================
 set -uo pipefail
 
@@ -74,7 +74,7 @@ submit_domain() {
 }
 
 echo "============================================================"
-echo "  実験2 未投入ジョブ マルチキュー分散投入"
+echo "  Experiment 2 unsubmitted jobs — multi-queue distribution submit"
 echo "  $(date)"
 echo "============================================================"
 echo "  Dry run : $DRY_RUN"

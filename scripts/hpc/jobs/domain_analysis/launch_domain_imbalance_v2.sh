@@ -56,7 +56,7 @@ CONDITIONS=(
     "undersample:0.5"
 )
 
-N_TRIALS=150  # 2026-01-10 update: 100では18.6%が未収束のため150に増加
+N_TRIALS=150  # 2026-01-10 update: increased to 150 because 18.6% did not converge with 100
 RANKING="knn"
 
 echo "============================================================"

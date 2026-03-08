@@ -32,5 +32,5 @@ while true; do
         echo "[$(date)] Queue full ($current_jobs jobs). Waiting..." >> "$LOG_FILE"
     fi
     
-    sleep 300  # 5分待機
+    sleep 300  # 5minwaiting
 done
