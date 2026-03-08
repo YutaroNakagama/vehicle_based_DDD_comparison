@@ -1,9 +1,0 @@
-/home/s2240011/git/ddd/vehicle_based_DDD_comparison/results/domain_analysis/distance/subject-wise/ranks/ranks29/knn/mmd_out_domain.txt
-/home/s2240011/git/ddd/vehicle_based_DDD_comparison/results/domain_analysis/distance/subject-wise/ranks/ranks29/knn/mmd_mid_domain.txt
-/home/s2240011/git/ddd/vehicle_based_DDD_comparison/results/domain_analysis/distance/subject-wise/ranks/ranks29/knn/mmd_in_domain.txt
-/home/s2240011/git/ddd/vehicle_based_DDD_comparison/results/domain_analysis/distance/subject-wise/ranks/ranks29/knn/wasserstein_out_domain.txt
-/home/s2240011/git/ddd/vehicle_based_DDD_comparison/results/domain_analysis/distance/subject-wise/ranks/ranks29/knn/wasserstein_mid_domain.txt
-/home/s2240011/git/ddd/vehicle_based_DDD_comparison/results/domain_analysis/distance/subject-wise/ranks/ranks29/knn/wasserstein_in_domain.txt
-/home/s2240011/git/ddd/vehicle_based_DDD_comparison/results/domain_analysis/distance/subject-wise/ranks/ranks29/knn/dtw_out_domain.txt
-/home/s2240011/git/ddd/vehicle_based_DDD_comparison/results/domain_analysis/distance/subject-wise/ranks/ranks29/knn/dtw_mid_domain.txt
-/home/s2240011/git/ddd/vehicle_based_DDD_comparison/results/domain_analysis/distance/subject-wise/ranks/ranks29/knn/dtw_in_domain.txt
