@@ -58,10 +58,10 @@ METRICS = ["f2", "recall", "precision", "f1", "auc", "auc_pr"]
 
 # Display order & labels
 COND_ORDER = [
-    "baseline", "balanced_rf",
+    "baseline",
+    "undersample_rus_r01", "undersample_rus_r05",
     "smote_plain_r01", "smote_plain_r05",
     "sw_smote_r01", "sw_smote_r05",
-    "undersample_rus_r01", "undersample_rus_r05",
 ]
 COND_LABELS = {
     "baseline":             "Baseline\n(class_weight)",
@@ -90,9 +90,9 @@ MODE_LABELS = {
 }
 MODE_ORDER = ["source_only", "target_only", "mixed"]
 MODE_COLORS = {
-    "source_only": "#e74c3c",
-    "target_only": "#2ecc71",
-    "mixed":       "#3498db",
+    "source_only": "#6699cc",   # dark blue — matches per-seed bar plots
+    "target_only": "#ff9966",   # orange
+    "mixed":       "#cc99ff",   # purple
 }
 COND_COLORS = {
     "baseline":             "#95a5a6",
@@ -178,12 +178,7 @@ def plot_overall_metric(df: pd.DataFrame, metric: str = "f2"):
     ax.set_title(f"Experiment 2: Overall {label} by Imbalance Method\n"
                  "(mean ± std across modes, distances, domains, seeds)",
                  fontsize=13, fontweight="bold")
-    # For AUC, start y-axis at 0.4 to show differences more clearly
-    if metric == "auc":
-        ymin = max(0, (agg["mean"] - agg["std"]).min() - 0.05)
-        ax.set_ylim(ymin, min(1.0, (agg["mean"] + agg["std"]).max() * 1.15))
-    else:
-        ax.set_ylim(0, max(agg["mean"] + agg["std"]) * 1.25)
+    ax.set_ylim(0, 1.0)
     ax.grid(axis="y", alpha=0.3)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
@@ -464,10 +459,10 @@ def plot_cross_domain_degradation(df: pd.DataFrame, metric: str = "f2"):
     bar_w = 0.35
 
     bars1 = ax.bar(x - bar_w / 2, delta_cross, bar_w,
-                   label="Δ Cross−Single", color="#e74c3c", alpha=0.85,
+                   label="Δ Cross−Single", color="#6699cc", alpha=0.85,
                    edgecolor="white")
     bars2 = ax.bar(x + bar_w / 2, delta_mixed, bar_w,
-                   label="Δ Mixed−Single", color="#3498db", alpha=0.85,
+                   label="Δ Mixed−Single", color="#cc99ff", alpha=0.85,
                    edgecolor="white")
 
     # Value labels
@@ -518,7 +513,7 @@ def plot_distance_domain_gap_summary(df: pd.DataFrame):
         ("in_domain", "mixed"): "#fd8d3c",
         ("out_domain", "mixed"): "#e6550d",
     }
-    gap_colors = {"source_only": "#e67e22", "target_only": "#2ecc71", "mixed": "#3498db"}
+    gap_colors = {"source_only": "#6699cc", "target_only": "#ff9966", "mixed": "#cc99ff"}
     metrics = ["f2", "auc"]
     fig, axes = plt.subplots(2, 1, figsize=(13, 8), sharex=True)
     width = 0.08  # 細く
@@ -579,23 +574,23 @@ def main():
     print("Generating plots (F2-based):")
     plot_overall_f2(df)                           # 1
     plot_mode_comparison(df, "f2")                 # 2
-    plot_mode_comparison(df, "recall")             # 3
+    # plot_mode_comparison(df, "recall")             # 3  — removed
     plot_mode_comparison(df, "f1")                 # 4
     plot_domain_gap(df, "f2")                      # 5
     plot_distance_comparison(df, "f2")              # 6
-    plot_heatmap_mode_condition(df, "f2")           # 7
-    plot_heatmap_mode_domain(df, "f2")              # 8
+    # plot_heatmap_mode_condition(df, "f2")           # 7  (removed — redundant)
+    # plot_heatmap_mode_domain(df, "f2")              # 8  (removed — redundant)
     plot_radar(df)                                 # 9
-    plot_cross_domain_degradation(df, "f2")         # 10
+    # plot_cross_domain_degradation(df, "f2")         # 10 (removed — redundant)
 
     print("\nGenerating plots (AUROC-based):")
     plot_overall_metric(df, "auc")                 # 11
     plot_mode_comparison(df, "auc")                 # 12
     plot_domain_gap(df, "auc")                      # 13
     plot_distance_comparison(df, "auc")              # 14
-    plot_heatmap_mode_condition(df, "auc")           # 15
-    plot_heatmap_mode_domain(df, "auc")              # 16
-    plot_cross_domain_degradation(df, "auc")         # 17
+    # plot_heatmap_mode_condition(df, "auc")           # 15 (removed — redundant)
+    # plot_heatmap_mode_domain(df, "auc")              # 16 (removed — redundant)
+    # plot_cross_domain_degradation(df, "auc")         # 17 (removed — redundant)
 
     print("\nGenerating plots (Domain gap per distance):")
     # Compute shared y-axis ranges across all distances + overall

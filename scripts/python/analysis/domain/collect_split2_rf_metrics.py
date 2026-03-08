@@ -107,6 +107,9 @@ POOLED_RF_PATTERNS = [
     re.compile(
         r"eval_results_RF_pooled_smote_ratio(?P<ratio>[0-9.]+)_s(?P<seed>\d+)\.json$"
     ),
+    re.compile(
+        r"eval_results_RF_pooled_subjectwise_smote_ratio(?P<ratio>[0-9.]+)_s(?P<seed>\d+)\.json$"
+    ),
 ]
 
 # --- sw_smote filename patterns (3 naming variants) --------------------
@@ -166,6 +169,7 @@ POOLED_CONDITION_MAP = {
     0: "baseline_domain",
     1: "undersample_rus",
     2: "smote_plain",
+    3: "sw_smote",
 }
 
 
@@ -349,17 +353,43 @@ def generate_plots(df: pd.DataFrame, df_pooled: pd.DataFrame) -> list[Path]:
         # --- Merge pooled reference rows ---------------------------------
         pooled_rows = pd.DataFrame()
         if not df_pooled.empty:
+            # 1) Exact match: same condition, seed, ratio
             pooled_cond = df_pooled[
                 (df_pooled["condition"] == cond)
                 & (df_pooled["seed"] == seed)
                 & (df_pooled["ratio"] == ratio)
             ]
-            # Fallback: use baseline_domain pooled as reference
+            # 2) Fallback: same condition, any seed (mean across seeds)
+            if pooled_cond.empty:
+                pooled_cond_all = df_pooled[
+                    (df_pooled["condition"] == cond)
+                    & (df_pooled["ratio"] == ratio)
+                ]
+                if not pooled_cond_all.empty:
+                    mean_row = pooled_cond_all.select_dtypes(include="number").mean()
+                    template = pooled_cond_all.iloc[[0]].copy()
+                    for col in mean_row.index:
+                        template[col] = mean_row[col]
+                    template["seed"] = seed
+                    pooled_cond = template
+            # 3) Fallback: baseline_domain pooled, same seed
             if pooled_cond.empty:
                 pooled_cond = df_pooled[
                     (df_pooled["condition"] == "baseline_domain")
                     & (df_pooled["seed"] == seed)
                 ]
+            # 4) Fallback: baseline_domain pooled, any seed (mean)
+            if pooled_cond.empty:
+                bl_all = df_pooled[
+                    df_pooled["condition"] == "baseline_domain"
+                ]
+                if not bl_all.empty:
+                    mean_row = bl_all.select_dtypes(include="number").mean()
+                    template = bl_all.iloc[[0]].copy()
+                    for col in mean_row.index:
+                        template[col] = mean_row[col]
+                    template["seed"] = seed
+                    pooled_cond = template
             if not pooled_cond.empty:
                 pooled_rows = pooled_cond.copy()
                 pooled_rows["condition"] = cond
