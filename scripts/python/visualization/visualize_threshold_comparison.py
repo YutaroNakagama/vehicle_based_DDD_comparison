@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-閾値固定 vs 閾値最適化の比較可視化スクリプト
+Fixed threshold vs optimized threshold comparison visualization script
 
-不均衡対策単体実験において、閾値の違いによるseed毎の結果変動を可視化します。
+Visualizes per-seed result variation due to threshold differences in the imbalance experiment.
 """
 
 import json
@@ -14,7 +14,7 @@ matplotlib.use('Agg')
 import numpy as np
 
 def load_results(base_dir: Path):
-    """評価結果を読み込む"""
+    """Load evaluation results"""
     methods = [
         "baseline",
         "smote_ratio0.1",
@@ -27,15 +27,15 @@ def load_results(base_dir: Path):
     results = []
     for method in methods:
         for seed in seeds:
-            # 最適化閾値
+            # Optimized threshold
             fname_opt = f"eval_results_RF_pooled_{method}_{seed}.json"
             fpath_opt = base_dir / fname_opt
             
-            # 固定閾値 (0.5) - 新形式 th50
+            # Fixed threshold (0.5) - new format th50
             fname_fix = f"eval_results_RF_pooled_{method}_{seed}_th50.json"
             fpath_fix = base_dir / fname_fix
             
-            # 旧形式 th05 もフォールバックで確認
+            # Fall back to legacy format th05
             if not fpath_fix.exists():
                 fname_fix = f"eval_results_RF_pooled_{method}_{seed}_th05.json"
                 fpath_fix = base_dir / fname_fix
@@ -44,7 +44,7 @@ def load_results(base_dir: Path):
                 with open(fpath_opt) as f:
                     d = json.load(f)
                 
-                # 閾値適用後のメトリクス (_thr サフィックス) を優先使用
+                # Prefer post-threshold metrics (_thr suffix)
                 thr = d.get("thr", 0.5)
                 acc = d.get("acc_thr", d.get("accuracy", 0))
                 prec = d.get("prec_thr", d.get("precision", 0))
@@ -52,7 +52,7 @@ def load_results(base_dir: Path):
                 f1 = d.get("f1_thr", d.get("f1", 0))
                 f2 = d.get("f2_thr", 0)
                 
-                # f2_thrがない場合はCMから計算
+                # Compute F2 from confusion matrix if f2_thr is unavailable
                 if f2 == 0:
                     cm = d.get("confusion_matrix", [[0,0],[0,0]])
                     tn, fp = cm[0]
@@ -78,7 +78,7 @@ def load_results(base_dir: Path):
                 with open(fpath_fix) as f:
                     d = json.load(f)
                 
-                # 閾値適用後のメトリクス (_thr サフィックス) を優先使用
+                # Prefer post-threshold metrics (_thr suffix)
                 thr = d.get("thr", 0.5)
                 acc = d.get("acc_thr", d.get("accuracy", 0))
                 prec = d.get("prec_thr", d.get("precision", 0))
@@ -86,7 +86,7 @@ def load_results(base_dir: Path):
                 f1 = d.get("f1_thr", d.get("f1", 0))
                 f2 = d.get("f2_thr", 0)
                 
-                # f2_thrがない場合はCMから計算
+                # Compute F2 from confusion matrix if f2_thr is unavailable
                 if f2 == 0:
                     cm = d.get("confusion_matrix", [[0,0],[0,0]])
                     tn, fp = cm[0]
@@ -111,7 +111,7 @@ def load_results(base_dir: Path):
 
 
 def plot_threshold_comparison(results, output_path: Path):
-    """閾値比較のプロット"""
+    """Plot threshold comparison"""
     
     methods = [
         ("baseline", "Baseline"),
@@ -127,17 +127,17 @@ def plot_threshold_comparison(results, output_path: Path):
     fig, axes = plt.subplots(2, 3, figsize=(15, 10))
     axes = axes.flatten()
     
-    # 5つのメトリクスをプロット
+    # Plot 5 metrics
     for idx, metric in enumerate(metrics):
         ax = axes[idx]
         
         x = np.arange(len(methods))
         width = 0.2
         
-        # 各組み合わせのデータを取得
+        # Get data for each combination
         for i, (seed, color_opt, color_fix) in enumerate([
-            ("s42", "#3498db", "#85c1e9"),  # 青系
-            ("s123", "#e74c3c", "#f1948a"),  # 赤系
+            ("s42", "#3498db", "#85c1e9"),  # Blue
+            ("s123", "#e74c3c", "#f1948a"),  # Red
         ]):
             vals_opt = []
             vals_fix = []
@@ -164,10 +164,10 @@ def plot_threshold_comparison(results, output_path: Path):
         if idx == 0:
             ax.legend(loc='upper right', fontsize=8)
     
-    # 6番目のプロットはseed間のばらつきを表示
+    # 6th plot shows inter-seed variation
     ax = axes[5]
     
-    # seed間のばらつき（標準偏差的な差分）をメトリクス毎に表示
+    # Show inter-seed variation (std-like difference) per metric
     for metric in ["f1", "f2", "recall"]:
         diffs_opt = []
         diffs_fix = []
@@ -196,11 +196,11 @@ def plot_threshold_comparison(results, output_path: Path):
             
             method_labels.append(method_label)
     
-    # 棒グラフでばらつきを表示
+    # Display variation as bar chart
     x = np.arange(len(methods))
     width = 0.35
     
-    # F2のばらつきのみ表示
+    # Show F2 variation only
     diffs_opt_f2 = []
     diffs_fix_f2 = []
     for method_key, _ in methods:
@@ -240,7 +240,7 @@ def plot_threshold_comparison(results, output_path: Path):
 
 
 def plot_seed_comparison_detail(results, output_path: Path):
-    """seed毎の詳細比較プロット"""
+    """Detailed per-seed comparison plot"""
     
     methods = [
         ("baseline", "Baseline"),
@@ -260,7 +260,7 @@ def plot_seed_comparison_detail(results, output_path: Path):
     ]
     
     for ax, (metric, metric_label) in zip(axes.flatten(), metrics_to_plot):
-        # 線グラフで seed42 → seed123 の変化を表示
+        # Line plot showing seed42 -> seed123 change
         for method_key, method_label in methods:
             vals_opt = []
             vals_fix = []
@@ -295,7 +295,7 @@ def plot_seed_comparison_detail(results, output_path: Path):
 
 
 def print_summary_table(results):
-    """結果のサマリーテーブルを出力"""
+    """Output summary table of results"""
     print("\n" + "="*100)
     print("THRESHOLD COMPARISON SUMMARY")
     print("="*100)
@@ -319,7 +319,7 @@ def print_summary_table(results):
                         print(f"{method_label:<25} | {seed:<6} | {th_type:<10} | {r['accuracy']:>6.3f} | {r['precision']:>6.3f} | {r['recall']:>6.3f} | {r['f1']:>6.3f} | {r['f2']:>6.3f}")
         print("-"*100)
     
-    # ばらつき分析
+    # Variation analysis
     print("\n" + "="*100)
     print("SEED VARIATION ANALYSIS (|s42 - s123|)")
     print("="*100)
@@ -346,10 +346,10 @@ def print_summary_table(results):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="閾値固定 vs 最適化の比較可視化")
+    parser = argparse.ArgumentParser(description="Fixed vs optimized threshold comparison visualization")
     parser.add_argument("--output-dir", type=str, 
                        default="results/analysis/exp1_imbalance/local/threshold_comparison",
-                       help="出力ディレクトリ")
+                       help="Output directory")
     args = parser.parse_args()
     
     base_dir = Path("results/outputs/evaluation/RF/local/local[1]")
@@ -360,10 +360,10 @@ def main():
     results = load_results(base_dir)
     print(f"Loaded {len(results)} results")
     
-    # サマリーテーブル出力
+    # Output summary table
     print_summary_table(results)
     
-    # 可視化
+    # Visualization
     print("\nGenerating plots...")
     plot_threshold_comparison(results, output_dir / "threshold_comparison.png")
     plot_seed_comparison_detail(results, output_dir / "seed_comparison_detail.png")

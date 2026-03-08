@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-MDS/t-SNE/UMAPを使ったドメイン中心からの距離計算と可視化
+Distance computation and visualization from domain center using MDS/t-SNE/UMAP
 
-計算内容:
-1. 各グループのドメイン中心から、そのグループの被験者それぞれの距離の平均
-2. 各グループのドメイン中心から、Middleグループのドメイン中心までの距離
+Computations:
+1. Mean distance from each group's domain center to each subject in that group
+2. Distance from each group's domain center to the Middle group's domain center
 """
 
 import numpy as np
@@ -39,7 +39,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 from src.utils.visualization.color_palettes import DOMAIN_LEVEL_COLORS
 
-# パス設定
+# Path settings
 OUTPUT_DIR = DISTANCE_DIR / "group-wise" / "intergroup_analysis"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -49,7 +49,7 @@ def compute_projection_with_domain_distances(dist_matrix: np.ndarray,
                                               method: str = "umap",
                                               n_components: int = 2,
                                               random_state: int = 42) -> dict:
-    """次元削減でドメイン中心からの距離を計算
+    """Compute distances from domain center via dimensionality reduction
     
     Parameters
     ----------
@@ -59,10 +59,10 @@ def compute_projection_with_domain_distances(dist_matrix: np.ndarray,
     Returns
     -------
     dict
-        - coords: 投影後の座標
-        - group_centroids: 各グループの重心座標とメトリクス
-        - intra_domain_distances: グループ内の被験者からグループ重心までの平均距離
-        - inter_domain_distances: 各グループ重心からMiddle重心までの距離
+        - coords: Projected coordinates
+        - group_centroids: Centroid coordinates and metrics for each group
+        - intra_domain_distances: Mean distance from subjects to group centroid within each group
+        - inter_domain_distances: Distance from each group centroid to the Middle centroid
     """
     method = method.lower()
     
@@ -108,7 +108,7 @@ def compute_projection_with_domain_distances(dist_matrix: np.ndarray,
     else:
         raise ValueError(f"Unknown method: {method}. Choose from 'mds', 'tsne', or 'umap'")
     
-    # 各グループの重心（ドメイン中心）を計算
+    # Compute centroid (domain center) of each group
     group_centroids = {}
     for level, indices in group_indices_dict.items():
         group_coords = coords[indices]
@@ -119,13 +119,13 @@ def compute_projection_with_domain_distances(dist_matrix: np.ndarray,
             "coords": group_coords
         }
     
-    # 1. グループ内距離: 各グループのドメイン中心から、そのグループの被験者それぞれの距離の平均
+    # 1. Intra-group distance: mean distance from group domain center to subjects
     intra_domain_distances = {}
     for level, data in group_centroids.items():
         centroid = data["coordinates"]
         group_coords = data["coords"]
         
-        # 各被験者からグループ重心までの距離
+        # Distance from each subject to group centroid
         distances = np.linalg.norm(group_coords - centroid, axis=1)
         
         intra_domain_distances[level] = {
@@ -136,7 +136,7 @@ def compute_projection_with_domain_distances(dist_matrix: np.ndarray,
             "distances": distances.tolist()
         }
     
-    # 2. グループ間距離: 各グループのドメイン中心から、mid_domainグループのドメイン中心までの距離
+    # 2. Inter-group distance: distance from each group domain center to mid_domain center
     middle_centroid = group_centroids["mid_domain"]["coordinates"]
     
     inter_domain_distances = {}
@@ -163,7 +163,7 @@ def visualize_projection_with_distances(metric: str,
                                          method: str,
                                          projection_results: dict, 
                                          group_indices_dict: dict):
-    """次元削減投影と距離メトリクスを可視化"""
+    """Visualize dimensionality reduction projection and distance metrics"""
     coords = projection_results["coords"]
     group_centroids = projection_results["group_centroids"]
     intra_distances = projection_results["intra_domain_distances"]
@@ -173,16 +173,16 @@ def visualize_projection_with_distances(metric: str,
     
     fig = plt.figure(figsize=(18, 12))
     
-    # レイアウト: 上段に投影プロット、下段に距離メトリクス
+    # Layout: projection plot on top, distance metrics on bottom
     gs = fig.add_gridspec(2, 2, height_ratios=[2, 1], hspace=0.3, wspace=0.3)
     
-    # === 上段: 投影プロット ===
+    # === Top: Projection plot ===
     ax_proj = fig.add_subplot(gs[0, :])
     
     colors = DOMAIN_LEVEL_COLORS
     markers = {"out_domain": "^", "mid_domain": "s", "in_domain": "v"}
     
-    # 各グループの被験者をプロット
+    # Plot subjects of each group
     for level, indices in group_indices_dict.items():
         group_coords = coords[indices]
         ax_proj.scatter(
@@ -193,7 +193,7 @@ def visualize_projection_with_distances(metric: str,
             edgecolors='black', linewidth=0.5
         )
     
-    # 各グループのドメイン中心をプロット
+    # Plot domain center of each group
     for level, centroid_data in group_centroids.items():
         c = np.array(centroid_data["coordinates"])
         ax_proj.scatter(
@@ -204,14 +204,14 @@ def visualize_projection_with_distances(metric: str,
             zorder=10
         )
         
-        # グループ名をラベル
+        # Label with group name
         ax_proj.text(
             c[0], c[1] - 0.5, level.upper(),
             fontsize=12, ha='center', fontweight='bold',
             color=colors[level]
         )
     
-    # mid_domain重心から他の重心への線を描画
+    # Draw lines from mid_domain centroid to other centroids
     middle_centroid = np.array(group_centroids["mid_domain"]["coordinates"])
     for level in ["out_domain", "in_domain"]:
         level_centroid = np.array(group_centroids[level]["coordinates"])
@@ -221,7 +221,7 @@ def visualize_projection_with_distances(metric: str,
             'k--', alpha=0.4, linewidth=2
         )
         
-        # 距離をラベル表示
+        # Display distance as label
         mid_x = (middle_centroid[0] + level_centroid[0]) / 2
         mid_y = (middle_centroid[1] + level_centroid[1]) / 2
         dist = inter_distances[level]
@@ -242,7 +242,7 @@ def visualize_projection_with_distances(metric: str,
     ax_proj.legend(loc='best', fontsize=10, framealpha=0.9, ncol=2)
     ax_proj.grid(True, alpha=0.3)
     
-    # === 下段左: グループ内距離（ドメイン中心から被験者への平均距離） ===
+    # === Bottom left: Intra-group distance (mean distance from domain center to subjects) ===
     ax_intra = fig.add_subplot(gs[1, 0])
     
     levels_list = list(LEVELS)
@@ -255,7 +255,7 @@ def visualize_projection_with_distances(metric: str,
         edgecolor='black', linewidth=2, capsize=10, alpha=0.7
     )
     
-    # 数値をバーの上に表示
+    # Display values above bars
     for i, (level, mean, std) in enumerate(zip(levels_list, intra_means, intra_stds)):
         ax_intra.text(
             i, mean + std + 0.05 * max(intra_means), 
@@ -273,7 +273,7 @@ def visualize_projection_with_distances(metric: str,
     )
     ax_intra.grid(axis='y', alpha=0.3)
     
-    # === 下段右: グループ間距離（各ドメイン中心からMiddle中心への距離） ===
+    # === Bottom right: Inter-group distance (distance from each domain center to Middle center) ===
     ax_inter = fig.add_subplot(gs[1, 1])
     
     inter_values = [inter_distances[level] for level in levels_list]
@@ -284,7 +284,7 @@ def visualize_projection_with_distances(metric: str,
         edgecolor='black', linewidth=2, alpha=0.7
     )
     
-    # 数値をバーの上に表示
+    # Display values above bars
     for i, (level, value) in enumerate(zip(levels_list, inter_values)):
         ax_inter.text(
             i, value + 0.05 * max(inter_values), 
@@ -302,7 +302,7 @@ def visualize_projection_with_distances(metric: str,
     )
     ax_inter.grid(axis='y', alpha=0.3)
     
-    # Middle自身は0なので、特別にマーク
+    # Middle itself is 0, so mark it specially
     ax_inter.text(
         1, inter_values[1] + 0.02, "Self",
         ha='center', va='bottom', fontsize=10, 
@@ -319,9 +319,9 @@ def visualize_projection_with_distances(metric: str,
 
 
 def create_summary_table(all_results: dict, method: str):
-    """全ての距離メトリクスをまとめたテーブルを作成"""
+    """Create a summary table of all distance metrics"""
     
-    # データフレーム用のデータを準備
+    # Prepare data for DataFrame
     data = []
     
     for metric in METRICS:
@@ -342,7 +342,7 @@ def create_summary_table(all_results: dict, method: str):
     df = pd.DataFrame(data)
     df = df.round(4)
     
-    # CSV保存
+    # Save as CSV
     csv_path = OUTPUT_DIR / f"{method}_domain_distances_summary.csv"
     df.to_csv(csv_path, index=False)
     print(f"\n✓ Saved summary CSV: {csv_path}")
@@ -351,7 +351,7 @@ def create_summary_table(all_results: dict, method: str):
 
 
 def visualize_comparison_across_metrics(all_results: dict, method: str):
-    """3つの距離指標を比較する可視化"""
+    """Visualization comparing three distance metrics"""
     
     method_upper = method.upper()
     
@@ -368,7 +368,7 @@ def visualize_comparison_across_metrics(all_results: dict, method: str):
         
         metric_name = metric.replace("_mean", "").upper()
         
-        # 上段: Intra-domain距離
+        # Top: Intra-domain distances
         ax_intra = axes[0, col_idx]
         levels_list = list(LEVELS)
         intra_means = [intra[level]["mean"] for level in levels_list]
@@ -392,7 +392,7 @@ def visualize_comparison_across_metrics(all_results: dict, method: str):
         ax_intra.set_ylabel("Distance" if col_idx == 0 else "")
         ax_intra.grid(axis='y', alpha=0.3)
         
-        # 下段: Inter-domain距離（to Middle）
+        # Bottom: Inter-domain distances (to Middle)
         ax_inter = axes[1, col_idx]
         inter_values = [inter[level] for level in levels_list]
         
@@ -425,15 +425,15 @@ def visualize_comparison_across_metrics(all_results: dict, method: str):
 
 def main():
     print("=" * 80)
-    print("MDS / t-SNE / UMAP ドメイン距離計算")
+    print("MDS / t-SNE / UMAP domain distance computation")
     print("=" * 80)
     print()
-    print("計算内容:")
-    print("  1. Intra-domain: 各グループのドメイン中心から被験者それぞれの距離の平均")
-    print("  2. Inter-domain: 各グループのドメイン中心からMiddleドメイン中心の距離")
+    print("Computations:")
+    print("  1. Intra-domain: mean distance from group domain center to each subject")
+    print("  2. Inter-domain: distance from each group domain center to Middle domain center")
     print()
     
-    # 使用可能なメソッドを確認
+    # Check available methods
     available_methods = ["mds", "tsne"]
     if UMAP_AVAILABLE:
         available_methods.append("umap")
@@ -457,12 +457,12 @@ def main():
             print(f"Processing: {metric.upper()} with {method.upper()}")
             print(f"{'─'*60}")
             
-            # データ読み込み
+            # Load data
             print("  Loading data...")
             dist_matrix = load_distance_matrix(metric)
             all_subjects = load_all_subjects(metric)
             
-            # グループインデックスを取得
+            # Get group indices
             group_indices = {}
             for level in LEVELS:
                 subjects = load_group_subjects(metric, level)
@@ -471,12 +471,12 @@ def main():
             
             print(f"  Matrix size: {dist_matrix.shape}")
             
-            # 次元削減計算
+            # Dimensionality reduction computation
             projection_results = compute_projection_with_domain_distances(
                 dist_matrix, group_indices, method=method
             )
             
-            # 結果表示
+            # Display results
             print("\n  Results:")
             print("  ───────────────────────────────────────")
             print("  Intra-domain distances (mean ± std):")
@@ -490,11 +490,11 @@ def main():
                 dist = projection_results["inter_domain_distances"][level]
                 print(f"    {level.capitalize():8s}: {dist:.4f}")
             
-            # 可視化
+            # Visualization
             print("\n  Generating visualization...")
             visualize_projection_with_distances(metric, method, projection_results, group_indices)
             
-            # 結果を保存
+            # Save results
             save_results = {
                 "method": method,
                 "metric": metric,
@@ -512,7 +512,7 @@ def main():
         
         all_results[method] = method_results
     
-    # サマリーテーブル作成（全メソッド）
+    # Create summary table (all methods)
     print(f"\n{'='*80}")
     print("Creating summary tables...")
     print(f"{'='*80}")
@@ -522,7 +522,7 @@ def main():
         df = create_summary_table(all_results[method], method)
         print("\n" + df.to_string(index=False))
     
-    # 比較可視化（メソッドごと）
+    # Comparison visualization (per method)
     print(f"\n{'='*80}")
     print("Creating comparison visualizations...")
     print(f"{'='*80}")
@@ -532,18 +532,18 @@ def main():
         visualize_comparison_across_metrics(all_results[method], method)
     
     print("\n" + "="*80)
-    print("✓ 全メソッドのドメイン距離計算完了")
+    print("✓ Domain distance computation complete for all methods")
     print("="*80)
     print()
-    print("生成されたファイル:")
+    print("Generated files:")
     for method in available_methods:
         print(f"\n  {method.upper()}:")
-        print(f"    - {{metric}}_{method}_domain_distances.png  : 各指標の詳細可視化")
-        print(f"    - {{metric}}_{method}_domain_distances.json : 数値データ")
-        print(f"    - {method}_domain_distances_summary.csv   : 全指標のサマリー")
-        print(f"    - {method}_domain_distances_comparison.png: 3指標の比較")
+        print(f"    - {{metric}}_{method}_domain_distances.png  : Detailed visualization per metric")
+        print(f"    - {{metric}}_{method}_domain_distances.json : Numerical data")
+        print(f"    - {method}_domain_distances_summary.csv   : Summary of all metrics")
+        print(f"    - {method}_domain_distances_comparison.png: Comparison of 3 metrics")
     print()
-    print(f"保存先: {OUTPUT_DIR}")
+    print(f"Output directory: {OUTPUT_DIR}")
     print("="*80)
 
 

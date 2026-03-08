@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ランキング手法比較実験のF2収束詳細分析スクリプト
+Detailed convergence analysis script for ranking method comparison experiments
 """
 
 import pandas as pd
@@ -9,18 +9,18 @@ import numpy as np
 import os
 import sys
 
-# 日本語フォント設定
+# Font settings
 plt.rcParams['font.family'] = ['DejaVu Sans', 'sans-serif']
 
 def load_data(csv_path: str) -> pd.DataFrame:
-    """CSVデータを読み込んでパース"""
+    """Load and parse CSV data"""
     df = pd.read_csv(csv_path)
     
-    # タグから情報を抽出
+    # Extract info from tags
     def parse_tag(tag):
         parts = tag.replace('rank_cmp_', '').split('_')
         
-        # モードを抽出
+        # Extract mode
         if 'source_only' in tag:
             mode = 'source_only'
         elif 'target_only' in tag:
@@ -28,10 +28,10 @@ def load_data(csv_path: str) -> pd.DataFrame:
         else:
             mode = 'unknown'
         
-        # s42を除去
+        # Remove s42
         tag_clean = tag.replace('_s42', '').replace('_source_only', '').replace('_target_only', '')
         
-        # メソッドとメトリックを抽出
+        # Extract method and metric
         if 'centroid_umap' in tag:
             method = 'centroid_umap'
         elif 'isolation_forest' in tag:
@@ -65,7 +65,7 @@ def load_data(csv_path: str) -> pd.DataFrame:
 
 
 def plot_metric_comparison(raw_df: pd.DataFrame, summary_df: pd.DataFrame, output_dir: str):
-    """距離メトリック別のF2比較"""
+    """F2 comparison by distance metric"""
     
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     
@@ -94,7 +94,7 @@ def plot_metric_comparison(raw_df: pd.DataFrame, summary_df: pd.DataFrame, outpu
 
 
 def plot_mode_comparison(raw_df: pd.DataFrame, summary_df: pd.DataFrame, output_dir: str):
-    """source_only vs target_onlyの比較"""
+    """source_only vs target_only comparison"""
     
     fig, axes = plt.subplots(2, 3, figsize=(15, 10))
     
@@ -134,12 +134,12 @@ def plot_mode_comparison(raw_df: pd.DataFrame, summary_df: pd.DataFrame, output_
 
 
 def plot_summary_heatmap(summary_df: pd.DataFrame, output_dir: str):
-    """メソッド×メトリックのヒートマップ"""
+    """Method x Metric heatmap"""
     
-    # データをピボット
+    # Pivot data
     summary = summary_df.copy()
     
-    # メソッド、メトリック、モード情報を抽出
+    # Extract method, metric, and mode info
     def extract_info(tag):
         if 'centroid_umap' in tag:
             method = 'centroid_umap'
@@ -187,7 +187,7 @@ def plot_summary_heatmap(summary_df: pd.DataFrame, output_dir: str):
         ax.set_yticks(range(len(pivot.index)))
         ax.set_yticklabels(pivot.index)
         
-        # 値をセルに表示
+        # Display values in cells
         for i in range(len(pivot.index)):
             for j in range(len(pivot.columns)):
                 val = pivot.iloc[i, j]
@@ -231,18 +231,18 @@ def main():
     
     print("\n=== Summary Statistics ===")
     
-    # 全体の統計
+    # Overall statistics
     print(f"\nOverall Best F2: {summary_df['best_f2'].max():.4f}")
     print(f"Overall Mean Best F2: {summary_df['best_f2'].mean():.4f}")
     print(f"Overall Std Best F2: {summary_df['best_f2'].std():.4f}")
     
-    # メトリック別
+    # By metric
     print("\n=== By Distance Metric ===")
     for metric in ['mmd', 'dtw', 'wasserstein']:
         metric_df = summary_df[summary_df['tag'].str.contains(metric)]
         print(f"{metric}: mean={metric_df['best_f2'].mean():.4f}, max={metric_df['best_f2'].max():.4f}")
     
-    # モード別
+    # By mode
     print("\n=== By Mode ===")
     for mode in ['source_only', 'target_only']:
         mode_df = summary_df[summary_df['tag'].str.contains(mode)]
