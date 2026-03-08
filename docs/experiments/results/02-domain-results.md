@@ -178,7 +178,8 @@ results/analysis/exp2_domain_shift/
 
 ### Statistical Analysis Reports
 
-- [Hypothesis-Driven Analysis](exp2-analysis/hypothesis_test_report.md) — Full 24-section statistical report (2292 lines)
+- [Hypothesis-Driven Analysis](exp2-analysis/hypothesis_test_report.md) — Full 24-section statistical report (F2-score, AUROC)
+- [Extended Hypothesis Testing](exp2-analysis/hypothesis_test_report_extended.md) — F1, AUPRC, Recall analysis with Precision–Recall trade-off
 - [Statistical Report](exp2-analysis/statistical_report.md) — Domain shift statistical analysis
 - [Statistical Report (ratio=0.5)](exp2-analysis/statistical_report_ratio05.md) — Ratio 0.5 subset analysis
 - [Ratio Sensitivity Analysis](exp2-analysis/ratio_sensitivity_report.md) — Ranking consistency across ratios
