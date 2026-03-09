@@ -1,6 +1,6 @@
 # Distance Metric Granular Analysis
 
-Records: 1306, Distances: ['mmd', 'dtw', 'wasserstein']
+Records: 1258, Distances: ['mmd', 'dtw', 'wasserstein']
 
 H₀ for each cell: performance under MMD = DTW = Wasserstein (Kruskal-Wallis)
 
@@ -13,91 +13,91 @@ H₀ for each cell: performance under MMD = DTW = Wasserstein (Kruskal-Wallis)
 
 | Mode | N | H | p | η² | Sig? |
 |------|--:|--:|--:|---:|:----:|
-| Cross-domain | 445 | 5.04 | 0.0805 | 0.0069 | ✗ |
-| Within-domain | 438 | 1.90 | 0.3877 | 0.0000 | ✗ |
-| Mixed | 423 | 0.04 | 0.9810 | 0.0000 | ✗ |
+| Cross-domain | 420 | 4.03 | 0.1335 | 0.0049 | ✗ |
+| Within-domain | 420 | 1.43 | 0.4902 | 0.0000 | ✗ |
+| Mixed | 418 | 0.05 | 0.9733 | 0.0000 | ✗ |
 
 **Mean ± SD per mode × distance:**
 
 | Mode | MMD | DTW | Wasserstein |
 |------|----:|----:|------------:|
-| Cross-domain | 0.1293±0.0440 | 0.1210±0.0420 | 0.1259±0.0430 |
-| Within-domain | 0.3648±0.1829 | 0.3501±0.1861 | 0.3743±0.1899 |
-| Mixed | 0.3703±0.1775 | 0.3723±0.1789 | 0.3768±0.1830 |
+| Cross-domain | 0.1285±0.0443 | 0.1209±0.0418 | 0.1259±0.0430 |
+| Within-domain | 0.3648±0.1829 | 0.3555±0.1868 | 0.3769±0.1916 |
+| Mixed | 0.3719±0.1772 | 0.3776±0.1786 | 0.3768±0.1830 |
 
 ### 2. Distance effect by Condition (pooling modes & levels)
 
 | Condition | N | H | p | η² | Sig? |
 |-----------|--:|--:|--:|---:|:----:|
-| baseline | 186 | 5.90 | 0.0524 | 0.0213 | ✗ |
-| rus_r01 | 190 | 1.09 | 0.5804 | 0.0000 | ✗ |
-| rus_r05 | 191 | 2.41 | 0.2997 | 0.0022 | ✗ |
-| smote_r01 | 186 | 0.62 | 0.7346 | 0.0000 | ✗ |
-| smote_r05 | 185 | 1.19 | 0.5512 | 0.0000 | ✗ |
-| sw_smote_r01 | 184 | 0.44 | 0.8036 | 0.0000 | ✗ |
-| sw_smote_r05 | 184 | 0.67 | 0.7145 | 0.0000 | ✗ |
+| baseline | 180 | 5.00 | 0.0823 | 0.0169 | ✗ |
+| rus_r01 | 180 | 1.24 | 0.5392 | 0.0000 | ✗ |
+| rus_r05 | 180 | 2.45 | 0.2940 | 0.0025 | ✗ |
+| smote_r01 | 180 | 0.46 | 0.7932 | 0.0000 | ✗ |
+| smote_r05 | 180 | 0.69 | 0.7069 | 0.0000 | ✗ |
+| sw_smote_r01 | 179 | 0.25 | 0.8823 | 0.0000 | ✗ |
+| sw_smote_r05 | 179 | 0.37 | 0.8330 | 0.0000 | ✗ |
 
 ### 3. Distance effect by Level (pooling modes & conditions)
 
 | Level | N | H | p | η² | Sig? |
 |-------|--:|--:|--:|---:|:----:|
-| In-domain | 655 | 0.57 | 0.7504 | 0.0000 | ✗ |
-| Out-domain | 651 | 3.46 | 0.1776 | 0.0022 | ✗ |
+| In-domain | 629 | 1.26 | 0.5319 | 0.0000 | ✗ |
+| Out-domain | 629 | 2.04 | 0.3610 | 0.0001 | ✗ |
 
 ### 4. Distance effect by Mode × Level (pooling conditions)
 
 | Mode | Level | N | H | p | η² | Sig? |
 |------|-------|--:|--:|--:|---:|:----:|
-| Cross-domain | In-domain | 224 | 0.27 | 0.8723 | 0.0000 | ✗ |
-| Cross-domain | Out-domain | 221 | 7.80 | 0.0202 | 0.0266 | ✓ |
-| Within-domain | In-domain | 219 | 0.63 | 0.7299 | 0.0000 | ✗ |
-| Within-domain | Out-domain | 219 | 2.53 | 0.2817 | 0.0025 | ✗ |
-| Mixed | In-domain | 212 | 0.30 | 0.8605 | 0.0000 | ✗ |
-| Mixed | Out-domain | 211 | 0.72 | 0.6993 | 0.0000 | ✗ |
+| Cross-domain | In-domain | 210 | 0.31 | 0.8557 | 0.0000 | ✗ |
+| Cross-domain | Out-domain | 210 | 5.83 | 0.0541 | 0.0185 | ✗ |
+| Within-domain | In-domain | 210 | 0.43 | 0.8073 | 0.0000 | ✗ |
+| Within-domain | Out-domain | 210 | 2.61 | 0.2706 | 0.0030 | ✗ |
+| Mixed | In-domain | 209 | 0.49 | 0.7828 | 0.0000 | ✗ |
+| Mixed | Out-domain | 209 | 0.65 | 0.7242 | 0.0000 | ✗ |
 
 ### 5. Distance effect by Condition × Level (pooling modes)
 
 | Condition | Level | N | H | p | η² | Sig? |
 |-----------|-------|--:|--:|--:|---:|:----:|
-| baseline | In-domain | 92 | 0.55 | 0.7600 | 0.0000 | ✗ |
-| baseline | Out-domain | 94 | 7.16 | 0.0278 | 0.0567 | ✓ |
-| rus_r01 | In-domain | 95 | 6.87 | 0.0323 | 0.0529 | ✓ |
-| rus_r01 | Out-domain | 95 | 1.30 | 0.5214 | 0.0000 | ✗ |
-| rus_r05 | In-domain | 96 | 14.38 | 0.0008 | 0.1331 | ✓ |
-| rus_r05 | Out-domain | 95 | 15.77 | 0.0004 | 0.1497 | ✓ |
-| smote_r01 | In-domain | 93 | 2.79 | 0.2478 | 0.0088 | ✗ |
-| smote_r01 | Out-domain | 93 | 2.03 | 0.3629 | 0.0003 | ✗ |
-| smote_r05 | In-domain | 93 | 1.63 | 0.4435 | 0.0000 | ✗ |
-| smote_r05 | Out-domain | 92 | 0.22 | 0.8945 | 0.0000 | ✗ |
-| sw_smote_r01 | In-domain | 93 | 0.73 | 0.6946 | 0.0000 | ✗ |
-| sw_smote_r01 | Out-domain | 91 | 0.01 | 0.9949 | 0.0000 | ✗ |
-| sw_smote_r05 | In-domain | 93 | 1.04 | 0.5953 | 0.0000 | ✗ |
-| sw_smote_r05 | Out-domain | 91 | 0.30 | 0.8603 | 0.0000 | ✗ |
+| baseline | In-domain | 90 | 0.57 | 0.7529 | 0.0000 | ✗ |
+| baseline | Out-domain | 90 | 5.70 | 0.0577 | 0.0426 | ✗ |
+| rus_r01 | In-domain | 90 | 5.94 | 0.0514 | 0.0452 | ✗ |
+| rus_r01 | Out-domain | 90 | 0.93 | 0.6290 | 0.0000 | ✗ |
+| rus_r05 | In-domain | 90 | 13.78 | 0.0010 | 0.1354 | ✓ |
+| rus_r05 | Out-domain | 90 | 13.91 | 0.0010 | 0.1369 | ✓ |
+| smote_r01 | In-domain | 90 | 3.10 | 0.2125 | 0.0126 | ✗ |
+| smote_r01 | Out-domain | 90 | 1.84 | 0.3983 | 0.0000 | ✗ |
+| smote_r05 | In-domain | 90 | 1.38 | 0.5006 | 0.0000 | ✗ |
+| smote_r05 | Out-domain | 90 | 0.07 | 0.9670 | 0.0000 | ✗ |
+| sw_smote_r01 | In-domain | 90 | 0.60 | 0.7405 | 0.0000 | ✗ |
+| sw_smote_r01 | Out-domain | 89 | 0.00 | 0.9981 | 0.0000 | ✗ |
+| sw_smote_r05 | In-domain | 89 | 0.66 | 0.7205 | 0.0000 | ✗ |
+| sw_smote_r05 | Out-domain | 90 | 0.20 | 0.9033 | 0.0000 | ✗ |
 
 ### 6. Distance effect by Condition × Mode (pooling levels)
 
 | Condition | Mode | N | H | p | η² | Sig? |
 |-----------|------|--:|--:|--:|---:|:----:|
-| baseline | Cross-domain | 64 | 6.08 | 0.0478 | 0.0669 | ✓ |
-| baseline | Within-domain | 62 | 29.41 | 0.0000 | 0.4646 | ✓ |
+| baseline | Cross-domain | 60 | 7.33 | 0.0256 | 0.0935 | ✓ |
+| baseline | Within-domain | 60 | 31.23 | 0.0000 | 0.5129 | ✓ |
 | baseline | Mixed | 60 | 2.51 | 0.2856 | 0.0089 | ✗ |
-| rus_r01 | Cross-domain | 64 | 2.54 | 0.2806 | 0.0089 | ✗ |
-| rus_r01 | Within-domain | 64 | 4.17 | 0.1246 | 0.0355 | ✗ |
-| rus_r01 | Mixed | 62 | 1.96 | 0.3745 | 0.0000 | ✗ |
-| rus_r05 | Cross-domain | 64 | 0.11 | 0.9464 | 0.0000 | ✗ |
-| rus_r05 | Within-domain | 64 | 0.43 | 0.8051 | 0.0000 | ✗ |
-| rus_r05 | Mixed | 63 | 1.51 | 0.4694 | 0.0000 | ✗ |
-| smote_r01 | Cross-domain | 64 | 18.21 | 0.0001 | 0.2657 | ✓ |
-| smote_r01 | Within-domain | 62 | 0.21 | 0.9026 | 0.0000 | ✗ |
+| rus_r01 | Cross-domain | 60 | 2.69 | 0.2609 | 0.0121 | ✗ |
+| rus_r01 | Within-domain | 60 | 4.75 | 0.0931 | 0.0482 | ✗ |
+| rus_r01 | Mixed | 60 | 1.99 | 0.3695 | 0.0000 | ✗ |
+| rus_r05 | Cross-domain | 60 | 0.12 | 0.9421 | 0.0000 | ✗ |
+| rus_r05 | Within-domain | 60 | 0.16 | 0.9242 | 0.0000 | ✗ |
+| rus_r05 | Mixed | 60 | 1.68 | 0.4312 | 0.0000 | ✗ |
+| smote_r01 | Cross-domain | 60 | 15.84 | 0.0004 | 0.2428 | ✓ |
+| smote_r01 | Within-domain | 60 | 0.06 | 0.9727 | 0.0000 | ✗ |
 | smote_r01 | Mixed | 60 | 0.46 | 0.7940 | 0.0000 | ✗ |
-| smote_r05 | Cross-domain | 63 | 17.82 | 0.0001 | 0.2636 | ✓ |
-| smote_r05 | Within-domain | 62 | 0.71 | 0.7018 | 0.0000 | ✗ |
+| smote_r05 | Cross-domain | 60 | 14.08 | 0.0009 | 0.2119 | ✓ |
+| smote_r05 | Within-domain | 60 | 0.81 | 0.6671 | 0.0000 | ✗ |
 | smote_r05 | Mixed | 60 | 0.14 | 0.9310 | 0.0000 | ✗ |
-| sw_smote_r01 | Cross-domain | 63 | 5.01 | 0.0818 | 0.0501 | ✗ |
-| sw_smote_r01 | Within-domain | 62 | 4.08 | 0.1300 | 0.0353 | ✗ |
+| sw_smote_r01 | Cross-domain | 60 | 6.66 | 0.0358 | 0.0817 | ✓ |
+| sw_smote_r01 | Within-domain | 60 | 3.70 | 0.1573 | 0.0298 | ✗ |
 | sw_smote_r01 | Mixed | 59 | 0.06 | 0.9713 | 0.0000 | ✗ |
-| sw_smote_r05 | Cross-domain | 63 | 7.84 | 0.0199 | 0.0973 | ✓ |
-| sw_smote_r05 | Within-domain | 62 | 1.42 | 0.4905 | 0.0000 | ✗ |
+| sw_smote_r05 | Cross-domain | 60 | 7.64 | 0.0219 | 0.0990 | ✓ |
+| sw_smote_r05 | Within-domain | 60 | 1.15 | 0.5622 | 0.0000 | ✗ |
 | sw_smote_r05 | Mixed | 59 | 0.04 | 0.9815 | 0.0000 | ✗ |
 
 
@@ -107,91 +107,91 @@ H₀ for each cell: performance under MMD = DTW = Wasserstein (Kruskal-Wallis)
 
 | Mode | N | H | p | η² | Sig? |
 |------|--:|--:|--:|---:|:----:|
-| Cross-domain | 445 | 22.09 | 0.0000 | 0.0454 | ✓ |
-| Within-domain | 438 | 4.55 | 0.1027 | 0.0059 | ✗ |
-| Mixed | 423 | 0.46 | 0.7939 | 0.0000 | ✗ |
+| Cross-domain | 420 | 21.64 | 0.0000 | 0.0471 | ✓ |
+| Within-domain | 420 | 4.11 | 0.1282 | 0.0051 | ✗ |
+| Mixed | 418 | 0.14 | 0.9303 | 0.0000 | ✗ |
 
 **Mean ± SD per mode × distance:**
 
 | Mode | MMD | DTW | Wasserstein |
 |------|----:|----:|------------:|
-| Cross-domain | 0.5227±0.0143 | 0.5154±0.0086 | 0.5228±0.0188 |
-| Within-domain | 0.7709±0.1481 | 0.7596±0.1567 | 0.7893±0.1422 |
-| Mixed | 0.7710±0.1441 | 0.7699±0.1408 | 0.7775±0.1389 |
+| Cross-domain | 0.5229±0.0142 | 0.5155±0.0086 | 0.5228±0.0188 |
+| Within-domain | 0.7709±0.1481 | 0.7607±0.1586 | 0.7898±0.1427 |
+| Mixed | 0.7729±0.1428 | 0.7760±0.1380 | 0.7775±0.1389 |
 
 ### 2. Distance effect by Condition (pooling modes & levels)
 
 | Condition | N | H | p | η² | Sig? |
 |-----------|--:|--:|--:|---:|:----:|
-| baseline | 186 | 6.56 | 0.0376 | 0.0249 | ✓ |
-| rus_r01 | 190 | 2.66 | 0.2640 | 0.0035 | ✗ |
-| rus_r05 | 191 | 5.40 | 0.0671 | 0.0181 | ✗ |
-| smote_r01 | 186 | 0.83 | 0.6616 | 0.0000 | ✗ |
-| smote_r05 | 185 | 1.95 | 0.3770 | 0.0000 | ✗ |
-| sw_smote_r01 | 184 | 2.69 | 0.2607 | 0.0038 | ✗ |
-| sw_smote_r05 | 184 | 0.82 | 0.6650 | 0.0000 | ✗ |
+| baseline | 180 | 5.51 | 0.0635 | 0.0198 | ✗ |
+| rus_r01 | 180 | 1.70 | 0.4270 | 0.0000 | ✗ |
+| rus_r05 | 180 | 6.23 | 0.0444 | 0.0239 | ✓ |
+| smote_r01 | 180 | 0.81 | 0.6667 | 0.0000 | ✗ |
+| smote_r05 | 180 | 1.30 | 0.5221 | 0.0000 | ✗ |
+| sw_smote_r01 | 179 | 1.96 | 0.3744 | 0.0000 | ✗ |
+| sw_smote_r05 | 179 | 0.39 | 0.8241 | 0.0000 | ✗ |
 
 ### 3. Distance effect by Level (pooling modes & conditions)
 
 | Level | N | H | p | η² | Sig? |
 |-------|--:|--:|--:|---:|:----:|
-| In-domain | 655 | 11.08 | 0.0039 | 0.0139 | ✓ |
-| Out-domain | 651 | 2.35 | 0.3091 | 0.0005 | ✗ |
+| In-domain | 629 | 6.70 | 0.0351 | 0.0075 | ✓ |
+| Out-domain | 629 | 1.64 | 0.4413 | 0.0000 | ✗ |
 
 ### 4. Distance effect by Mode × Level (pooling conditions)
 
 | Mode | Level | N | H | p | η² | Sig? |
 |------|-------|--:|--:|--:|---:|:----:|
-| Cross-domain | In-domain | 224 | 38.65 | 0.0000 | 0.1658 | ✓ |
-| Cross-domain | Out-domain | 221 | 78.93 | 0.0000 | 0.3529 | ✓ |
-| Within-domain | In-domain | 219 | 3.92 | 0.1407 | 0.0089 | ✗ |
-| Within-domain | Out-domain | 219 | 3.08 | 0.2144 | 0.0050 | ✗ |
-| Mixed | In-domain | 212 | 0.77 | 0.6791 | 0.0000 | ✗ |
-| Mixed | Out-domain | 211 | 0.77 | 0.6815 | 0.0000 | ✗ |
+| Cross-domain | In-domain | 210 | 36.71 | 0.0000 | 0.1677 | ✓ |
+| Cross-domain | Out-domain | 210 | 73.82 | 0.0000 | 0.3470 | ✓ |
+| Within-domain | In-domain | 210 | 3.21 | 0.2005 | 0.0059 | ✗ |
+| Within-domain | Out-domain | 210 | 3.20 | 0.2022 | 0.0058 | ✗ |
+| Mixed | In-domain | 209 | 0.55 | 0.7611 | 0.0000 | ✗ |
+| Mixed | Out-domain | 209 | 0.74 | 0.6916 | 0.0000 | ✗ |
 
 ### 5. Distance effect by Condition × Level (pooling modes)
 
 | Condition | Level | N | H | p | η² | Sig? |
 |-----------|-------|--:|--:|--:|---:|:----:|
-| baseline | In-domain | 92 | 7.67 | 0.0216 | 0.0637 | ✓ |
-| baseline | Out-domain | 94 | 2.08 | 0.3531 | 0.0009 | ✗ |
-| rus_r01 | In-domain | 95 | 4.49 | 0.1061 | 0.0270 | ✗ |
-| rus_r01 | Out-domain | 95 | 1.00 | 0.6065 | 0.0000 | ✗ |
-| rus_r05 | In-domain | 96 | 8.31 | 0.0156 | 0.0679 | ✓ |
-| rus_r05 | Out-domain | 95 | 7.72 | 0.0211 | 0.0621 | ✓ |
-| smote_r01 | In-domain | 93 | 1.33 | 0.5137 | 0.0000 | ✗ |
-| smote_r01 | Out-domain | 93 | 0.23 | 0.8898 | 0.0000 | ✗ |
-| smote_r05 | In-domain | 93 | 3.28 | 0.1942 | 0.0142 | ✗ |
-| smote_r05 | Out-domain | 92 | 0.29 | 0.8653 | 0.0000 | ✗ |
-| sw_smote_r01 | In-domain | 93 | 3.40 | 0.1826 | 0.0156 | ✗ |
-| sw_smote_r01 | Out-domain | 91 | 1.65 | 0.4379 | 0.0000 | ✗ |
-| sw_smote_r05 | In-domain | 93 | 1.39 | 0.4998 | 0.0000 | ✗ |
-| sw_smote_r05 | Out-domain | 91 | 0.62 | 0.7343 | 0.0000 | ✗ |
+| baseline | In-domain | 90 | 6.73 | 0.0346 | 0.0544 | ✓ |
+| baseline | Out-domain | 90 | 1.50 | 0.4720 | 0.0000 | ✗ |
+| rus_r01 | In-domain | 90 | 3.46 | 0.1777 | 0.0167 | ✗ |
+| rus_r01 | Out-domain | 90 | 0.81 | 0.6685 | 0.0000 | ✗ |
+| rus_r05 | In-domain | 90 | 7.37 | 0.0251 | 0.0617 | ✓ |
+| rus_r05 | Out-domain | 90 | 8.96 | 0.0113 | 0.0800 | ✓ |
+| smote_r01 | In-domain | 90 | 1.46 | 0.4823 | 0.0000 | ✗ |
+| smote_r01 | Out-domain | 90 | 0.14 | 0.9312 | 0.0000 | ✗ |
+| smote_r05 | In-domain | 90 | 2.83 | 0.2426 | 0.0096 | ✗ |
+| smote_r05 | Out-domain | 90 | 0.09 | 0.9562 | 0.0000 | ✗ |
+| sw_smote_r01 | In-domain | 90 | 2.24 | 0.3268 | 0.0027 | ✗ |
+| sw_smote_r01 | Out-domain | 89 | 1.35 | 0.5086 | 0.0000 | ✗ |
+| sw_smote_r05 | In-domain | 89 | 0.75 | 0.6867 | 0.0000 | ✗ |
+| sw_smote_r05 | Out-domain | 90 | 0.41 | 0.8134 | 0.0000 | ✗ |
 
 ### 6. Distance effect by Condition × Mode (pooling levels)
 
 | Condition | Mode | N | H | p | η² | Sig? |
 |-----------|------|--:|--:|--:|---:|:----:|
-| baseline | Cross-domain | 64 | 19.04 | 0.0001 | 0.2793 | ✓ |
-| baseline | Within-domain | 62 | 27.35 | 0.0000 | 0.4297 | ✓ |
+| baseline | Cross-domain | 60 | 17.02 | 0.0002 | 0.2635 | ✓ |
+| baseline | Within-domain | 60 | 28.52 | 0.0000 | 0.4653 | ✓ |
 | baseline | Mixed | 60 | 1.04 | 0.5936 | 0.0000 | ✗ |
-| rus_r01 | Cross-domain | 64 | 2.64 | 0.2671 | 0.0105 | ✗ |
-| rus_r01 | Within-domain | 64 | 3.80 | 0.1498 | 0.0295 | ✗ |
-| rus_r01 | Mixed | 62 | 0.32 | 0.8541 | 0.0000 | ✗ |
-| rus_r05 | Cross-domain | 64 | 1.77 | 0.4134 | 0.0000 | ✗ |
-| rus_r05 | Within-domain | 64 | 4.40 | 0.1109 | 0.0393 | ✗ |
-| rus_r05 | Mixed | 63 | 1.36 | 0.5055 | 0.0000 | ✗ |
-| smote_r01 | Cross-domain | 64 | 13.79 | 0.0010 | 0.1933 | ✓ |
-| smote_r01 | Within-domain | 62 | 0.40 | 0.8180 | 0.0000 | ✗ |
+| rus_r01 | Cross-domain | 60 | 2.62 | 0.2694 | 0.0109 | ✗ |
+| rus_r01 | Within-domain | 60 | 3.24 | 0.1984 | 0.0217 | ✗ |
+| rus_r01 | Mixed | 60 | 0.50 | 0.7793 | 0.0000 | ✗ |
+| rus_r05 | Cross-domain | 60 | 2.31 | 0.3144 | 0.0055 | ✗ |
+| rus_r05 | Within-domain | 60 | 5.50 | 0.0640 | 0.0614 | ✗ |
+| rus_r05 | Mixed | 60 | 1.19 | 0.5509 | 0.0000 | ✗ |
+| smote_r01 | Cross-domain | 60 | 14.69 | 0.0006 | 0.2226 | ✓ |
+| smote_r01 | Within-domain | 60 | 0.19 | 0.9080 | 0.0000 | ✗ |
 | smote_r01 | Mixed | 60 | 0.58 | 0.7465 | 0.0000 | ✗ |
-| smote_r05 | Cross-domain | 63 | 28.55 | 0.0000 | 0.4425 | ✓ |
-| smote_r05 | Within-domain | 62 | 0.66 | 0.7195 | 0.0000 | ✗ |
+| smote_r05 | Cross-domain | 60 | 25.72 | 0.0000 | 0.4162 | ✓ |
+| smote_r05 | Within-domain | 60 | 0.67 | 0.7161 | 0.0000 | ✗ |
 | smote_r05 | Mixed | 60 | 0.53 | 0.7689 | 0.0000 | ✗ |
-| sw_smote_r01 | Cross-domain | 63 | 7.22 | 0.0271 | 0.0870 | ✓ |
-| sw_smote_r01 | Within-domain | 62 | 6.50 | 0.0388 | 0.0762 | ✓ |
+| sw_smote_r01 | Cross-domain | 60 | 7.92 | 0.0191 | 0.1038 | ✓ |
+| sw_smote_r01 | Within-domain | 60 | 6.60 | 0.0368 | 0.0807 | ✓ |
 | sw_smote_r01 | Mixed | 59 | 0.45 | 0.7967 | 0.0000 | ✗ |
-| sw_smote_r05 | Cross-domain | 63 | 1.33 | 0.5134 | 0.0000 | ✗ |
-| sw_smote_r05 | Within-domain | 62 | 1.44 | 0.4873 | 0.0000 | ✗ |
+| sw_smote_r05 | Cross-domain | 60 | 1.02 | 0.6016 | 0.0000 | ✗ |
+| sw_smote_r05 | Within-domain | 60 | 1.01 | 0.6028 | 0.0000 | ✗ |
 | sw_smote_r05 | Mixed | 59 | 0.01 | 0.9937 | 0.0000 | ✗ |
 
 
@@ -201,91 +201,91 @@ H₀ for each cell: performance under MMD = DTW = Wasserstein (Kruskal-Wallis)
 
 | Mode | N | H | p | η² | Sig? |
 |------|--:|--:|--:|---:|:----:|
-| Cross-domain | 445 | 17.38 | 0.0002 | 0.0348 | ✓ |
-| Within-domain | 438 | 1.28 | 0.5265 | 0.0000 | ✗ |
-| Mixed | 423 | 0.12 | 0.9429 | 0.0000 | ✗ |
+| Cross-domain | 420 | 15.12 | 0.0005 | 0.0315 | ✓ |
+| Within-domain | 420 | 0.87 | 0.6472 | 0.0000 | ✗ |
+| Mixed | 418 | 0.12 | 0.9416 | 0.0000 | ✗ |
 
 **Mean ± SD per mode × distance:**
 
 | Mode | MMD | DTW | Wasserstein |
 |------|----:|----:|------------:|
-| Cross-domain | 0.0741±0.0169 | 0.0698±0.0147 | 0.0722±0.0157 |
-| Within-domain | 0.2441±0.1634 | 0.2343±0.1611 | 0.2503±0.1694 |
-| Mixed | 0.2580±0.1686 | 0.2590±0.1715 | 0.2650±0.1747 |
+| Cross-domain | 0.0739±0.0170 | 0.0698±0.0145 | 0.0722±0.0157 |
+| Within-domain | 0.2441±0.1634 | 0.2388±0.1626 | 0.2528±0.1718 |
+| Mixed | 0.2593±0.1685 | 0.2637±0.1717 | 0.2650±0.1747 |
 
 ### 2. Distance effect by Condition (pooling modes & levels)
 
 | Condition | N | H | p | η² | Sig? |
 |-----------|--:|--:|--:|---:|:----:|
-| baseline | 186 | 3.61 | 0.1642 | 0.0088 | ✗ |
-| rus_r01 | 190 | 0.50 | 0.7796 | 0.0000 | ✗ |
-| rus_r05 | 191 | 1.92 | 0.3825 | 0.0000 | ✗ |
-| smote_r01 | 186 | 0.80 | 0.6715 | 0.0000 | ✗ |
-| smote_r05 | 185 | 1.34 | 0.5128 | 0.0000 | ✗ |
-| sw_smote_r01 | 184 | 0.21 | 0.9017 | 0.0000 | ✗ |
-| sw_smote_r05 | 184 | 0.58 | 0.7478 | 0.0000 | ✗ |
+| baseline | 180 | 2.96 | 0.2276 | 0.0054 | ✗ |
+| rus_r01 | 180 | 0.59 | 0.7447 | 0.0000 | ✗ |
+| rus_r05 | 180 | 1.97 | 0.3740 | 0.0000 | ✗ |
+| smote_r01 | 180 | 0.60 | 0.7407 | 0.0000 | ✗ |
+| smote_r05 | 180 | 0.78 | 0.6760 | 0.0000 | ✗ |
+| sw_smote_r01 | 179 | 0.17 | 0.9162 | 0.0000 | ✗ |
+| sw_smote_r05 | 179 | 0.33 | 0.8494 | 0.0000 | ✗ |
 
 ### 3. Distance effect by Level (pooling modes & conditions)
 
 | Level | N | H | p | η² | Sig? |
 |-------|--:|--:|--:|---:|:----:|
-| In-domain | 655 | 3.04 | 0.2189 | 0.0016 | ✗ |
-| Out-domain | 651 | 5.89 | 0.0527 | 0.0060 | ✗ |
+| In-domain | 629 | 4.25 | 0.1192 | 0.0036 | ✗ |
+| Out-domain | 629 | 3.92 | 0.1408 | 0.0031 | ✗ |
 
 ### 4. Distance effect by Mode × Level (pooling conditions)
 
 | Mode | Level | N | H | p | η² | Sig? |
 |------|-------|--:|--:|--:|---:|:----:|
-| Cross-domain | In-domain | 224 | 10.45 | 0.0054 | 0.0382 | ✓ |
-| Cross-domain | Out-domain | 221 | 19.46 | 0.0001 | 0.0801 | ✓ |
-| Within-domain | In-domain | 219 | 0.60 | 0.7406 | 0.0000 | ✗ |
-| Within-domain | Out-domain | 219 | 2.45 | 0.2941 | 0.0021 | ✗ |
-| Mixed | In-domain | 212 | 0.37 | 0.8329 | 0.0000 | ✗ |
-| Mixed | Out-domain | 211 | 1.28 | 0.5284 | 0.0000 | ✗ |
+| Cross-domain | In-domain | 210 | 10.44 | 0.0054 | 0.0408 | ✓ |
+| Cross-domain | Out-domain | 210 | 17.00 | 0.0002 | 0.0725 | ✓ |
+| Within-domain | In-domain | 210 | 0.48 | 0.7848 | 0.0000 | ✗ |
+| Within-domain | Out-domain | 210 | 2.52 | 0.2832 | 0.0025 | ✗ |
+| Mixed | In-domain | 209 | 0.56 | 0.7541 | 0.0000 | ✗ |
+| Mixed | Out-domain | 209 | 1.22 | 0.5446 | 0.0000 | ✗ |
 
 ### 5. Distance effect by Condition × Level (pooling modes)
 
 | Condition | Level | N | H | p | η² | Sig? |
 |-----------|-------|--:|--:|--:|---:|:----:|
-| baseline | In-domain | 92 | 0.20 | 0.9037 | 0.0000 | ✗ |
-| baseline | Out-domain | 94 | 5.76 | 0.0562 | 0.0413 | ✗ |
-| rus_r01 | In-domain | 95 | 8.05 | 0.0179 | 0.0657 | ✓ |
-| rus_r01 | Out-domain | 95 | 3.90 | 0.1423 | 0.0206 | ✗ |
-| rus_r05 | In-domain | 96 | 17.73 | 0.0001 | 0.1691 | ✓ |
-| rus_r05 | Out-domain | 95 | 15.28 | 0.0005 | 0.1443 | ✓ |
-| smote_r01 | In-domain | 93 | 2.79 | 0.2477 | 0.0088 | ✗ |
-| smote_r01 | Out-domain | 93 | 2.47 | 0.2911 | 0.0052 | ✗ |
-| smote_r05 | In-domain | 93 | 1.98 | 0.3717 | 0.0000 | ✗ |
-| smote_r05 | Out-domain | 92 | 0.74 | 0.6893 | 0.0000 | ✗ |
-| sw_smote_r01 | In-domain | 93 | 0.30 | 0.8598 | 0.0000 | ✗ |
-| sw_smote_r01 | Out-domain | 91 | 0.01 | 0.9949 | 0.0000 | ✗ |
-| sw_smote_r05 | In-domain | 93 | 0.68 | 0.7115 | 0.0000 | ✗ |
-| sw_smote_r05 | Out-domain | 91 | 0.41 | 0.8150 | 0.0000 | ✗ |
+| baseline | In-domain | 90 | 0.30 | 0.8625 | 0.0000 | ✗ |
+| baseline | Out-domain | 90 | 4.54 | 0.1031 | 0.0292 | ✗ |
+| rus_r01 | In-domain | 90 | 7.05 | 0.0295 | 0.0580 | ✓ |
+| rus_r01 | Out-domain | 90 | 3.40 | 0.1827 | 0.0161 | ✗ |
+| rus_r05 | In-domain | 90 | 16.99 | 0.0002 | 0.1723 | ✓ |
+| rus_r05 | Out-domain | 90 | 13.15 | 0.0014 | 0.1281 | ✓ |
+| smote_r01 | In-domain | 90 | 3.10 | 0.2118 | 0.0127 | ✗ |
+| smote_r01 | Out-domain | 90 | 2.02 | 0.3638 | 0.0003 | ✗ |
+| smote_r05 | In-domain | 90 | 1.82 | 0.4024 | 0.0000 | ✗ |
+| smote_r05 | Out-domain | 90 | 0.52 | 0.7716 | 0.0000 | ✗ |
+| sw_smote_r01 | In-domain | 90 | 0.36 | 0.8344 | 0.0000 | ✗ |
+| sw_smote_r01 | Out-domain | 89 | 0.01 | 0.9944 | 0.0000 | ✗ |
+| sw_smote_r05 | In-domain | 89 | 0.46 | 0.7965 | 0.0000 | ✗ |
+| sw_smote_r05 | Out-domain | 90 | 0.32 | 0.8529 | 0.0000 | ✗ |
 
 ### 6. Distance effect by Condition × Mode (pooling levels)
 
 | Condition | Mode | N | H | p | η² | Sig? |
 |-----------|------|--:|--:|--:|---:|:----:|
-| baseline | Cross-domain | 64 | 9.52 | 0.0086 | 0.1233 | ✓ |
-| baseline | Within-domain | 62 | 28.51 | 0.0000 | 0.4493 | ✓ |
+| baseline | Cross-domain | 60 | 10.48 | 0.0053 | 0.1487 | ✓ |
+| baseline | Within-domain | 60 | 29.83 | 0.0000 | 0.4882 | ✓ |
 | baseline | Mixed | 60 | 2.06 | 0.3570 | 0.0011 | ✗ |
-| rus_r01 | Cross-domain | 64 | 2.53 | 0.2823 | 0.0087 | ✗ |
-| rus_r01 | Within-domain | 64 | 2.89 | 0.2357 | 0.0146 | ✗ |
-| rus_r01 | Mixed | 62 | 0.93 | 0.6276 | 0.0000 | ✗ |
-| rus_r05 | Cross-domain | 64 | 0.83 | 0.6614 | 0.0000 | ✗ |
-| rus_r05 | Within-domain | 64 | 0.40 | 0.8170 | 0.0000 | ✗ |
-| rus_r05 | Mixed | 63 | 0.39 | 0.8232 | 0.0000 | ✗ |
-| smote_r01 | Cross-domain | 64 | 20.27 | 0.0000 | 0.2995 | ✓ |
-| smote_r01 | Within-domain | 62 | 0.23 | 0.8935 | 0.0000 | ✗ |
+| rus_r01 | Cross-domain | 60 | 2.70 | 0.2589 | 0.0123 | ✗ |
+| rus_r01 | Within-domain | 60 | 3.27 | 0.1949 | 0.0223 | ✗ |
+| rus_r01 | Mixed | 60 | 1.03 | 0.5980 | 0.0000 | ✗ |
+| rus_r05 | Cross-domain | 60 | 0.95 | 0.6217 | 0.0000 | ✗ |
+| rus_r05 | Within-domain | 60 | 0.06 | 0.9724 | 0.0000 | ✗ |
+| rus_r05 | Mixed | 60 | 0.36 | 0.8372 | 0.0000 | ✗ |
+| smote_r01 | Cross-domain | 60 | 17.78 | 0.0001 | 0.2768 | ✓ |
+| smote_r01 | Within-domain | 60 | 0.07 | 0.9641 | 0.0000 | ✗ |
 | smote_r01 | Mixed | 60 | 0.26 | 0.8790 | 0.0000 | ✗ |
-| smote_r05 | Cross-domain | 63 | 22.52 | 0.0000 | 0.3420 | ✓ |
-| smote_r05 | Within-domain | 62 | 0.73 | 0.6933 | 0.0000 | ✗ |
+| smote_r05 | Cross-domain | 60 | 19.07 | 0.0001 | 0.2995 | ✓ |
+| smote_r05 | Within-domain | 60 | 0.80 | 0.6691 | 0.0000 | ✗ |
 | smote_r05 | Mixed | 60 | 0.08 | 0.9632 | 0.0000 | ✗ |
-| sw_smote_r01 | Cross-domain | 63 | 10.58 | 0.0050 | 0.1430 | ✓ |
-| sw_smote_r01 | Within-domain | 62 | 3.95 | 0.1385 | 0.0331 | ✗ |
+| sw_smote_r01 | Cross-domain | 60 | 11.96 | 0.0025 | 0.1747 | ✓ |
+| sw_smote_r01 | Within-domain | 60 | 3.57 | 0.1675 | 0.0276 | ✗ |
 | sw_smote_r01 | Mixed | 59 | 0.11 | 0.9461 | 0.0000 | ✗ |
-| sw_smote_r05 | Cross-domain | 63 | 8.54 | 0.0140 | 0.1089 | ✓ |
-| sw_smote_r05 | Within-domain | 62 | 1.03 | 0.5969 | 0.0000 | ✗ |
+| sw_smote_r05 | Cross-domain | 60 | 8.21 | 0.0165 | 0.1089 | ✓ |
+| sw_smote_r05 | Within-domain | 60 | 0.79 | 0.6734 | 0.0000 | ✗ |
 | sw_smote_r05 | Mixed | 59 | 0.05 | 0.9749 | 0.0000 | ✗ |
 
 
@@ -295,91 +295,91 @@ H₀ for each cell: performance under MMD = DTW = Wasserstein (Kruskal-Wallis)
 
 | Mode | N | H | p | η² | Sig? |
 |------|--:|--:|--:|---:|:----:|
-| Cross-domain | 445 | 7.12 | 0.0284 | 0.0116 | ✓ |
-| Within-domain | 438 | 2.60 | 0.2722 | 0.0014 | ✗ |
-| Mixed | 423 | 0.04 | 0.9810 | 0.0000 | ✗ |
+| Cross-domain | 420 | 7.42 | 0.0245 | 0.0130 | ✓ |
+| Within-domain | 420 | 2.16 | 0.3393 | 0.0004 | ✗ |
+| Mixed | 418 | 0.03 | 0.9871 | 0.0000 | ✗ |
 
 **Mean ± SD per mode × distance:**
 
 | Mode | MMD | DTW | Wasserstein |
 |------|----:|----:|------------:|
-| Cross-domain | 0.0485±0.0049 | 0.0487±0.0063 | 0.0516±0.0101 |
-| Within-domain | 0.3595±0.2734 | 0.3562±0.2766 | 0.3890±0.2810 |
-| Mixed | 0.3792±0.2814 | 0.3782±0.2835 | 0.3835±0.2840 |
+| Cross-domain | 0.0485±0.0051 | 0.0485±0.0058 | 0.0516±0.0101 |
+| Within-domain | 0.3595±0.2734 | 0.3619±0.2803 | 0.3899±0.2819 |
+| Mixed | 0.3815±0.2810 | 0.3873±0.2823 | 0.3835±0.2840 |
 
 ### 2. Distance effect by Condition (pooling modes & levels)
 
 | Condition | N | H | p | η² | Sig? |
 |-----------|--:|--:|--:|---:|:----:|
-| baseline | 186 | 2.86 | 0.2396 | 0.0047 | ✗ |
-| rus_r01 | 190 | 1.67 | 0.4341 | 0.0000 | ✗ |
-| rus_r05 | 191 | 1.71 | 0.4253 | 0.0000 | ✗ |
-| smote_r01 | 186 | 0.14 | 0.9317 | 0.0000 | ✗ |
-| smote_r05 | 185 | 0.32 | 0.8506 | 0.0000 | ✗ |
-| sw_smote_r01 | 184 | 1.72 | 0.4224 | 0.0000 | ✗ |
-| sw_smote_r05 | 184 | 1.19 | 0.5515 | 0.0000 | ✗ |
+| baseline | 180 | 2.16 | 0.3388 | 0.0009 | ✗ |
+| rus_r01 | 180 | 0.95 | 0.6232 | 0.0000 | ✗ |
+| rus_r05 | 180 | 1.88 | 0.3907 | 0.0000 | ✗ |
+| smote_r01 | 180 | 0.01 | 0.9949 | 0.0000 | ✗ |
+| smote_r05 | 180 | 0.06 | 0.9695 | 0.0000 | ✗ |
+| sw_smote_r01 | 179 | 1.07 | 0.5858 | 0.0000 | ✗ |
+| sw_smote_r05 | 179 | 0.74 | 0.6922 | 0.0000 | ✗ |
 
 ### 3. Distance effect by Level (pooling modes & conditions)
 
 | Level | N | H | p | η² | Sig? |
 |-------|--:|--:|--:|---:|:----:|
-| In-domain | 655 | 4.21 | 0.1219 | 0.0034 | ✗ |
-| Out-domain | 651 | 2.66 | 0.2646 | 0.0010 | ✗ |
+| In-domain | 629 | 1.78 | 0.4107 | 0.0000 | ✗ |
+| Out-domain | 629 | 1.51 | 0.4696 | 0.0000 | ✗ |
 
 ### 4. Distance effect by Mode × Level (pooling conditions)
 
 | Mode | Level | N | H | p | η² | Sig? |
 |------|-------|--:|--:|--:|---:|:----:|
-| Cross-domain | In-domain | 224 | 28.51 | 0.0000 | 0.1199 | ✓ |
-| Cross-domain | Out-domain | 221 | 24.66 | 0.0000 | 0.1040 | ✓ |
-| Within-domain | In-domain | 219 | 3.98 | 0.1364 | 0.0092 | ✗ |
-| Within-domain | Out-domain | 219 | 1.91 | 0.3840 | 0.0000 | ✗ |
-| Mixed | In-domain | 212 | 0.03 | 0.9836 | 0.0000 | ✗ |
-| Mixed | Out-domain | 211 | 0.13 | 0.9363 | 0.0000 | ✗ |
+| Cross-domain | In-domain | 210 | 25.25 | 0.0000 | 0.1123 | ✓ |
+| Cross-domain | Out-domain | 210 | 23.18 | 0.0000 | 0.1023 | ✓ |
+| Within-domain | In-domain | 210 | 3.13 | 0.2094 | 0.0054 | ✗ |
+| Within-domain | Out-domain | 210 | 1.90 | 0.3870 | 0.0000 | ✗ |
+| Mixed | In-domain | 209 | 0.10 | 0.9519 | 0.0000 | ✗ |
+| Mixed | Out-domain | 209 | 0.03 | 0.9830 | 0.0000 | ✗ |
 
 ### 5. Distance effect by Condition × Level (pooling modes)
 
 | Condition | Level | N | H | p | η² | Sig? |
 |-----------|-------|--:|--:|--:|---:|:----:|
-| baseline | In-domain | 92 | 0.73 | 0.6944 | 0.0000 | ✗ |
-| baseline | Out-domain | 94 | 2.37 | 0.3056 | 0.0041 | ✗ |
-| rus_r01 | In-domain | 95 | 1.91 | 0.3840 | 0.0000 | ✗ |
-| rus_r01 | Out-domain | 95 | 1.16 | 0.5599 | 0.0000 | ✗ |
-| rus_r05 | In-domain | 96 | 3.79 | 0.1500 | 0.0193 | ✗ |
-| rus_r05 | Out-domain | 95 | 1.33 | 0.5149 | 0.0000 | ✗ |
-| smote_r01 | In-domain | 93 | 0.58 | 0.7493 | 0.0000 | ✗ |
-| smote_r01 | Out-domain | 93 | 1.73 | 0.4215 | 0.0000 | ✗ |
-| smote_r05 | In-domain | 93 | 0.46 | 0.7944 | 0.0000 | ✗ |
-| smote_r05 | Out-domain | 92 | 0.33 | 0.8461 | 0.0000 | ✗ |
-| sw_smote_r01 | In-domain | 93 | 3.34 | 0.1878 | 0.0149 | ✗ |
-| sw_smote_r01 | Out-domain | 91 | 1.09 | 0.5802 | 0.0000 | ✗ |
-| sw_smote_r05 | In-domain | 93 | 1.56 | 0.4592 | 0.0000 | ✗ |
-| sw_smote_r05 | Out-domain | 91 | 1.56 | 0.4573 | 0.0000 | ✗ |
+| baseline | In-domain | 90 | 0.70 | 0.7039 | 0.0000 | ✗ |
+| baseline | Out-domain | 90 | 1.60 | 0.4490 | 0.0000 | ✗ |
+| rus_r01 | In-domain | 90 | 1.48 | 0.4764 | 0.0000 | ✗ |
+| rus_r01 | Out-domain | 90 | 0.90 | 0.6375 | 0.0000 | ✗ |
+| rus_r05 | In-domain | 90 | 2.98 | 0.2253 | 0.0113 | ✗ |
+| rus_r05 | Out-domain | 90 | 2.33 | 0.3121 | 0.0038 | ✗ |
+| smote_r01 | In-domain | 90 | 1.00 | 0.6058 | 0.0000 | ✗ |
+| smote_r01 | Out-domain | 90 | 1.17 | 0.5581 | 0.0000 | ✗ |
+| smote_r05 | In-domain | 90 | 0.62 | 0.7338 | 0.0000 | ✗ |
+| smote_r05 | Out-domain | 90 | 0.26 | 0.8768 | 0.0000 | ✗ |
+| sw_smote_r01 | In-domain | 90 | 2.15 | 0.3421 | 0.0017 | ✗ |
+| sw_smote_r01 | Out-domain | 89 | 0.76 | 0.6856 | 0.0000 | ✗ |
+| sw_smote_r05 | In-domain | 89 | 1.03 | 0.5972 | 0.0000 | ✗ |
+| sw_smote_r05 | Out-domain | 90 | 1.41 | 0.4949 | 0.0000 | ✗ |
 
 ### 6. Distance effect by Condition × Mode (pooling levels)
 
 | Condition | Mode | N | H | p | η² | Sig? |
 |-----------|------|--:|--:|--:|---:|:----:|
-| baseline | Cross-domain | 64 | 1.38 | 0.5023 | 0.0000 | ✗ |
-| baseline | Within-domain | 62 | 18.59 | 0.0001 | 0.2813 | ✓ |
+| baseline | Cross-domain | 60 | 1.50 | 0.4726 | 0.0000 | ✗ |
+| baseline | Within-domain | 60 | 19.06 | 0.0001 | 0.2994 | ✓ |
 | baseline | Mixed | 60 | 0.04 | 0.9825 | 0.0000 | ✗ |
-| rus_r01 | Cross-domain | 64 | 1.35 | 0.5094 | 0.0000 | ✗ |
-| rus_r01 | Within-domain | 64 | 0.66 | 0.7182 | 0.0000 | ✗ |
-| rus_r01 | Mixed | 62 | 0.02 | 0.9898 | 0.0000 | ✗ |
-| rus_r05 | Cross-domain | 64 | 1.68 | 0.4321 | 0.0000 | ✗ |
-| rus_r05 | Within-domain | 64 | 2.80 | 0.2466 | 0.0131 | ✗ |
-| rus_r05 | Mixed | 63 | 0.63 | 0.7298 | 0.0000 | ✗ |
-| smote_r01 | Cross-domain | 64 | 1.35 | 0.5081 | 0.0000 | ✗ |
-| smote_r01 | Within-domain | 62 | 0.21 | 0.8990 | 0.0000 | ✗ |
+| rus_r01 | Cross-domain | 60 | 1.48 | 0.4767 | 0.0000 | ✗ |
+| rus_r01 | Within-domain | 60 | 0.54 | 0.7641 | 0.0000 | ✗ |
+| rus_r01 | Mixed | 60 | 0.05 | 0.9775 | 0.0000 | ✗ |
+| rus_r05 | Cross-domain | 60 | 0.87 | 0.6473 | 0.0000 | ✗ |
+| rus_r05 | Within-domain | 60 | 4.26 | 0.1188 | 0.0397 | ✗ |
+| rus_r05 | Mixed | 60 | 0.47 | 0.7893 | 0.0000 | ✗ |
+| smote_r01 | Cross-domain | 60 | 1.13 | 0.5672 | 0.0000 | ✗ |
+| smote_r01 | Within-domain | 60 | 0.36 | 0.8365 | 0.0000 | ✗ |
 | smote_r01 | Mixed | 60 | 0.13 | 0.9367 | 0.0000 | ✗ |
-| smote_r05 | Cross-domain | 63 | 7.04 | 0.0296 | 0.0840 | ✓ |
-| smote_r05 | Within-domain | 62 | 0.33 | 0.8480 | 0.0000 | ✗ |
+| smote_r05 | Cross-domain | 60 | 6.43 | 0.0401 | 0.0778 | ✓ |
+| smote_r05 | Within-domain | 60 | 0.33 | 0.8489 | 0.0000 | ✗ |
 | smote_r05 | Mixed | 60 | 0.04 | 0.9818 | 0.0000 | ✗ |
-| sw_smote_r01 | Cross-domain | 63 | 3.89 | 0.1427 | 0.0316 | ✗ |
-| sw_smote_r01 | Within-domain | 62 | 4.75 | 0.0929 | 0.0466 | ✗ |
+| sw_smote_r01 | Cross-domain | 60 | 4.29 | 0.1173 | 0.0401 | ✗ |
+| sw_smote_r01 | Within-domain | 60 | 3.74 | 0.1542 | 0.0305 | ✗ |
 | sw_smote_r01 | Mixed | 59 | 0.06 | 0.9710 | 0.0000 | ✗ |
-| sw_smote_r05 | Cross-domain | 63 | 4.62 | 0.0991 | 0.0437 | ✗ |
-| sw_smote_r05 | Within-domain | 62 | 1.13 | 0.5686 | 0.0000 | ✗ |
+| sw_smote_r05 | Cross-domain | 60 | 5.11 | 0.0775 | 0.0546 | ✗ |
+| sw_smote_r05 | Within-domain | 60 | 0.87 | 0.6473 | 0.0000 | ✗ |
 | sw_smote_r05 | Mixed | 59 | 0.03 | 0.9863 | 0.0000 | ✗ |
 
 
@@ -389,91 +389,91 @@ H₀ for each cell: performance under MMD = DTW = Wasserstein (Kruskal-Wallis)
 
 | Mode | N | H | p | η² | Sig? |
 |------|--:|--:|--:|---:|:----:|
-| Cross-domain | 445 | 2.15 | 0.3405 | 0.0003 | ✗ |
-| Within-domain | 438 | 4.44 | 0.1088 | 0.0056 | ✗ |
-| Mixed | 423 | 0.08 | 0.9614 | 0.0000 | ✗ |
+| Cross-domain | 420 | 1.86 | 0.3954 | 0.0000 | ✗ |
+| Within-domain | 420 | 4.23 | 0.1204 | 0.0054 | ✗ |
+| Mixed | 418 | 0.18 | 0.9140 | 0.0000 | ✗ |
 
 **Mean ± SD per mode × distance:**
 
 | Mode | MMD | DTW | Wasserstein |
 |------|----:|----:|------------:|
-| Cross-domain | 0.3050±0.1724 | 0.2820±0.1664 | 0.3033±0.1824 |
-| Within-domain | 0.6804±0.1933 | 0.6327±0.2163 | 0.6725±0.2217 |
-| Mixed | 0.6567±0.1941 | 0.6568±0.1902 | 0.6464±0.2033 |
+| Cross-domain | 0.3024±0.1740 | 0.2820±0.1664 | 0.3033±0.1824 |
+| Within-domain | 0.6804±0.1933 | 0.6362±0.2122 | 0.6747±0.2209 |
+| Mixed | 0.6586±0.1934 | 0.6612±0.1909 | 0.6464±0.2033 |
 
 ### 2. Distance effect by Condition (pooling modes & levels)
 
 | Condition | N | H | p | η² | Sig? |
 |-----------|--:|--:|--:|---:|:----:|
-| baseline | 186 | 12.28 | 0.0022 | 0.0562 | ✓ |
-| rus_r01 | 190 | 3.26 | 0.1958 | 0.0067 | ✗ |
-| rus_r05 | 191 | 1.99 | 0.3695 | 0.0000 | ✗ |
-| smote_r01 | 186 | 0.59 | 0.7438 | 0.0000 | ✗ |
-| smote_r05 | 185 | 1.24 | 0.5377 | 0.0000 | ✗ |
-| sw_smote_r01 | 184 | 2.24 | 0.3262 | 0.0013 | ✗ |
-| sw_smote_r05 | 184 | 0.80 | 0.6687 | 0.0000 | ✗ |
+| baseline | 180 | 11.05 | 0.0040 | 0.0511 | ✓ |
+| rus_r01 | 180 | 3.56 | 0.1688 | 0.0088 | ✗ |
+| rus_r05 | 180 | 2.32 | 0.3134 | 0.0018 | ✗ |
+| smote_r01 | 180 | 0.39 | 0.8221 | 0.0000 | ✗ |
+| smote_r05 | 180 | 0.63 | 0.7284 | 0.0000 | ✗ |
+| sw_smote_r01 | 179 | 1.63 | 0.4418 | 0.0000 | ✗ |
+| sw_smote_r05 | 179 | 0.45 | 0.8002 | 0.0000 | ✗ |
 
 ### 3. Distance effect by Level (pooling modes & conditions)
 
 | Level | N | H | p | η² | Sig? |
 |-------|--:|--:|--:|---:|:----:|
-| In-domain | 655 | 0.42 | 0.8096 | 0.0000 | ✗ |
-| Out-domain | 651 | 3.55 | 0.1692 | 0.0024 | ✗ |
+| In-domain | 629 | 0.02 | 0.9902 | 0.0000 | ✗ |
+| Out-domain | 629 | 2.63 | 0.2690 | 0.0010 | ✗ |
 
 ### 4. Distance effect by Mode × Level (pooling conditions)
 
 | Mode | Level | N | H | p | η² | Sig? |
 |------|-------|--:|--:|--:|---:|:----:|
-| Cross-domain | In-domain | 224 | 1.40 | 0.4959 | 0.0000 | ✗ |
-| Cross-domain | Out-domain | 221 | 3.79 | 0.1501 | 0.0082 | ✗ |
-| Within-domain | In-domain | 219 | 2.16 | 0.3391 | 0.0008 | ✗ |
-| Within-domain | Out-domain | 219 | 4.74 | 0.0934 | 0.0127 | ✗ |
-| Mixed | In-domain | 212 | 0.35 | 0.8412 | 0.0000 | ✗ |
-| Mixed | Out-domain | 211 | 0.28 | 0.8705 | 0.0000 | ✗ |
+| Cross-domain | In-domain | 210 | 1.32 | 0.5163 | 0.0000 | ✗ |
+| Cross-domain | Out-domain | 210 | 2.70 | 0.2592 | 0.0034 | ✗ |
+| Within-domain | In-domain | 210 | 1.48 | 0.4770 | 0.0000 | ✗ |
+| Within-domain | Out-domain | 210 | 5.21 | 0.0738 | 0.0155 | ✗ |
+| Mixed | In-domain | 209 | 0.39 | 0.8236 | 0.0000 | ✗ |
+| Mixed | Out-domain | 209 | 0.14 | 0.9324 | 0.0000 | ✗ |
 
 ### 5. Distance effect by Condition × Level (pooling modes)
 
 | Condition | Level | N | H | p | η² | Sig? |
 |-----------|-------|--:|--:|--:|---:|:----:|
-| baseline | In-domain | 92 | 4.10 | 0.1290 | 0.0235 | ✗ |
-| baseline | Out-domain | 94 | 9.18 | 0.0101 | 0.0789 | ✓ |
-| rus_r01 | In-domain | 95 | 2.73 | 0.2557 | 0.0079 | ✗ |
-| rus_r01 | Out-domain | 95 | 0.62 | 0.7334 | 0.0000 | ✗ |
-| rus_r05 | In-domain | 96 | 9.41 | 0.0091 | 0.0796 | ✓ |
-| rus_r05 | Out-domain | 95 | 26.22 | 0.0000 | 0.2632 | ✓ |
-| smote_r01 | In-domain | 93 | 1.30 | 0.5226 | 0.0000 | ✗ |
-| smote_r01 | Out-domain | 93 | 2.72 | 0.2570 | 0.0080 | ✗ |
-| smote_r05 | In-domain | 93 | 2.13 | 0.3450 | 0.0014 | ✗ |
-| smote_r05 | Out-domain | 92 | 0.00 | 0.9975 | 0.0000 | ✗ |
-| sw_smote_r01 | In-domain | 93 | 1.88 | 0.3915 | 0.0000 | ✗ |
-| sw_smote_r01 | Out-domain | 91 | 2.39 | 0.3029 | 0.0044 | ✗ |
-| sw_smote_r05 | In-domain | 93 | 1.26 | 0.5324 | 0.0000 | ✗ |
-| sw_smote_r05 | Out-domain | 91 | 0.29 | 0.8658 | 0.0000 | ✗ |
+| baseline | In-domain | 90 | 3.67 | 0.1598 | 0.0192 | ✗ |
+| baseline | Out-domain | 90 | 8.13 | 0.0172 | 0.0704 | ✓ |
+| rus_r01 | In-domain | 90 | 2.14 | 0.3426 | 0.0016 | ✗ |
+| rus_r01 | Out-domain | 90 | 1.11 | 0.5752 | 0.0000 | ✗ |
+| rus_r05 | In-domain | 90 | 9.13 | 0.0104 | 0.0819 | ✓ |
+| rus_r05 | Out-domain | 90 | 26.40 | 0.0000 | 0.2804 | ✓ |
+| smote_r01 | In-domain | 90 | 1.29 | 0.5235 | 0.0000 | ✗ |
+| smote_r01 | Out-domain | 90 | 2.71 | 0.2580 | 0.0082 | ✗ |
+| smote_r05 | In-domain | 90 | 1.61 | 0.4473 | 0.0000 | ✗ |
+| smote_r05 | Out-domain | 90 | 0.03 | 0.9853 | 0.0000 | ✗ |
+| sw_smote_r01 | In-domain | 90 | 1.15 | 0.5616 | 0.0000 | ✗ |
+| sw_smote_r01 | Out-domain | 89 | 2.43 | 0.2964 | 0.0050 | ✗ |
+| sw_smote_r05 | In-domain | 89 | 0.77 | 0.6810 | 0.0000 | ✗ |
+| sw_smote_r05 | Out-domain | 90 | 0.20 | 0.9055 | 0.0000 | ✗ |
 
 ### 6. Distance effect by Condition × Mode (pooling levels)
 
 | Condition | Mode | N | H | p | η² | Sig? |
 |-----------|------|--:|--:|--:|---:|:----:|
-| baseline | Cross-domain | 64 | 11.69 | 0.0029 | 0.1588 | ✓ |
-| baseline | Within-domain | 62 | 30.01 | 0.0000 | 0.4747 | ✓ |
+| baseline | Cross-domain | 60 | 11.61 | 0.0030 | 0.1686 | ✓ |
+| baseline | Within-domain | 60 | 32.74 | 0.0000 | 0.5392 | ✓ |
 | baseline | Mixed | 60 | 1.54 | 0.4640 | 0.0000 | ✗ |
-| rus_r01 | Cross-domain | 64 | 2.53 | 0.2828 | 0.0086 | ✗ |
-| rus_r01 | Within-domain | 64 | 7.40 | 0.0247 | 0.0886 | ✓ |
-| rus_r01 | Mixed | 62 | 3.51 | 0.1726 | 0.0257 | ✗ |
-| rus_r05 | Cross-domain | 64 | 1.78 | 0.4108 | 0.0000 | ✗ |
-| rus_r05 | Within-domain | 64 | 1.91 | 0.3844 | 0.0000 | ✗ |
-| rus_r05 | Mixed | 63 | 4.58 | 0.1011 | 0.0431 | ✗ |
-| smote_r01 | Cross-domain | 64 | 5.81 | 0.0547 | 0.0625 | ✗ |
-| smote_r01 | Within-domain | 62 | 1.60 | 0.4493 | 0.0000 | ✗ |
+| rus_r01 | Cross-domain | 60 | 2.20 | 0.3335 | 0.0034 | ✗ |
+| rus_r01 | Within-domain | 60 | 7.36 | 0.0252 | 0.0940 | ✓ |
+| rus_r01 | Mixed | 60 | 3.60 | 0.1654 | 0.0280 | ✗ |
+| rus_r05 | Cross-domain | 60 | 1.46 | 0.4828 | 0.0000 | ✗ |
+| rus_r05 | Within-domain | 60 | 1.72 | 0.4235 | 0.0000 | ✗ |
+| rus_r05 | Mixed | 60 | 5.16 | 0.0758 | 0.0554 | ✗ |
+| smote_r01 | Cross-domain | 60 | 4.43 | 0.1093 | 0.0426 | ✗ |
+| smote_r01 | Within-domain | 60 | 1.48 | 0.4769 | 0.0000 | ✗ |
 | smote_r01 | Mixed | 60 | 0.92 | 0.6304 | 0.0000 | ✗ |
-| smote_r05 | Cross-domain | 63 | 7.81 | 0.0202 | 0.0968 | ✓ |
-| smote_r05 | Within-domain | 62 | 0.34 | 0.8456 | 0.0000 | ✗ |
+| smote_r05 | Cross-domain | 60 | 5.76 | 0.0561 | 0.0660 | ✗ |
+| smote_r05 | Within-domain | 60 | 0.27 | 0.8729 | 0.0000 | ✗ |
 | smote_r05 | Mixed | 60 | 1.29 | 0.5249 | 0.0000 | ✗ |
-| sw_smote_r01 | Cross-domain | 63 | 2.85 | 0.2400 | 0.0142 | ✗ |
-| sw_smote_r01 | Within-domain | 62 | 9.33 | 0.0094 | 0.1243 | ✓ |
+| sw_smote_r01 | Cross-domain | 60 | 3.73 | 0.1548 | 0.0304 | ✗ |
+| sw_smote_r01 | Within-domain | 60 | 9.59 | 0.0083 | 0.1332 | ✓ |
 | sw_smote_r01 | Mixed | 59 | 0.15 | 0.9258 | 0.0000 | ✗ |
-| sw_smote_r05 | Cross-domain | 63 | 7.40 | 0.0247 | 0.0900 | ✓ |
-| sw_smote_r05 | Within-domain | 62 | 1.64 | 0.4411 | 0.0000 | ✗ |
+| sw_smote_r05 | Cross-domain | 60 | 7.21 | 0.0272 | 0.0914 | ✓ |
+| sw_smote_r05 | Within-domain | 60 | 1.31 | 0.5193 | 0.0000 | ✗ |
 | sw_smote_r05 | Mixed | 59 | 0.05 | 0.9731 | 0.0000 | ✗ |
 
 

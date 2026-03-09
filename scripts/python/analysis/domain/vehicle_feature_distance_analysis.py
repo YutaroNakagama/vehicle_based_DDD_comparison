@@ -336,6 +336,9 @@ def main():
       "independent information available for distinguishing distance metrics\n")
     w("6. **Rebalancing dominance**: The condition (imbalance handling) effect is 35–1100× larger "
       "than the distance metric effect, completely absorbing any subtle grouping differences\n")
+    w("\n> For detailed mathematical definitions of raw signals, feature extraction formulas, "
+      "and quantitative vehicle dynamics discussion, see "
+      "`vehicle_dynamics_formulation.md`.\n")
 
     report = "\n".join(lines)
     out_path = PROJECT_ROOT / "results" / "analysis" / "exp2_domain_shift" / "vehicle_feature_distance_report.md"

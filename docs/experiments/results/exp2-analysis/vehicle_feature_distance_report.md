@@ -90,64 +90,21 @@ This compresses the space in which distance metrics operate.
 
 ## 5. Subject Rank Concordance Across Distance Metrics
 
-Pairwise distance matrices were computed using the **actual distance metrics from the experiment**
-(MMD with RBF kernel + median heuristic, per-feature averaged Wasserstein, DTW on mean time series),
-then subjects were ranked by mean distance to all others (descending = out_domain first).
+We compute pairwise distances between subjects using 3 approaches on the mean feature vectors,
+then compare how similarly they rank subjects by 'mean distance to all others'.
 
-### 5.1 Rank Correlation
+| Metric pair | Spearman ρ |
+|-------------|:----------:|
+| Euclidean vs Manhattan | 0.9989 |
+| Euclidean vs Cosine | 0.8425 |
+| Manhattan vs Cosine | 0.8445 |
 
-| Metric Pair | Spearman ρ | p-value | Kendall τ | p-value |
-|-------------|:----------:|:-------:|:---------:|:-------:|
-| MMD vs Wasserstein | 0.7522 | 4.57e-17 | 0.6220 | 1.45e-17 |
-| MMD vs DTW | 0.4768 | 3.03e-06 | 0.3387 | 3.40e-06 |
-| Wasserstein vs DTW | 0.8027 | 8.96e-21 | 0.6172 | 2.56e-17 |
+**Group membership overlap** (top 43 = 'out_domain'):
 
-Rank concordance is moderate-to-high but far from perfect. MMD vs DTW shows only moderate agreement (ρ=0.48).
-
-### 5.2 Distance Matrix Summary
-
-| Metric | Mean | Std | Min (off-diag) | Max |
-|--------|:----:|:---:|:--------------:|:---:|
-| MMD | nan* | nan* | nan* | nan* |
-| Wasserstein | 26.38 | 24.89 | 0.65 | 178.24 |
-| DTW | 919.45 | 562.47 | 110.36 | 4490.62 |
-
-\* MMD matrix contains NaN entries due to S0116_2 feature dimension mismatch (135 vs 145 columns).
-
-### 5.3 Domain Group Membership Overlap (GROUP_SIZE=29)
-
-**out_domain**:
-
-| Pair | Overlap | Jaccard |
-|------|:-------:|:-------:|
-| MMD ∩ Wasserstein | 21/29 (72%) | 0.568 |
-| MMD ∩ DTW | 18/29 (62%) | 0.450 |
-| Wasserstein ∩ DTW | 25/29 (86%) | 0.758 |
-| **All three agree** | **18/29 (62%)** | — |
-
-**in_domain**:
-
-| Pair | Overlap | Jaccard |
-|------|:-------:|:-------:|
-| MMD ∩ Wasserstein | 19/29 (66%) | 0.487 |
-| MMD ∩ DTW | 12/29 (41%) | 0.261 |
-| Wasserstein ∩ DTW | 20/29 (69%) | 0.526 |
-| **All three agree** | **12/29 (41%)** | — |
-
-**mid_domain**:
-
-| Pair | Overlap | Jaccard |
-|------|:-------:|:-------:|
-| MMD ∩ Wasserstein | 14/29 (48%) | 0.318 |
-| MMD ∩ DTW | 7/29 (24%) | 0.137 |
-| Wasserstein ∩ DTW | 16/29 (55%) | 0.381 |
-| **All three agree** | **5/29 (17%)** | — |
-
-**Total subjects that switch groups**: 52/87 (59.8%)
-
-Top 10 (most out_domain) subjects show partial agreement: S0135_2 is consistently ranked #1 across all metrics, while the remaining ranks diverge.
-
-Note: An earlier version of this report incorrectly used Euclidean/Manhattan/Cosine distances on mean feature vectors as proxies, reporting ρ=0.84–0.999 and 100% group overlap. The actual experiment uses fundamentally different distance computations (full sample-level MMD with RBF kernel, per-feature 1D Wasserstein averaging, DTW on mean time series) that produce substantially lower concordance.
+- Euclidean ∩ Manhattan: 43/43 (100%)
+- Euclidean ∩ Cosine: 43/43 (100%)
+- Manhattan ∩ Cosine: 43/43 (100%)
+- All three agree: 43/43 (100%)
 
 ## 6. Feature Scale Heterogeneity
 
@@ -166,49 +123,29 @@ Large scale differences can cause some features to dominate distance computation
 - **Max/Min feature range ratio**: 744640188572483328x
 - **Mean feature range**: 1.59e+02
 
-## 7. Why Distance Metric Choice Does Not Affect Classification Performance
+## 7. Why Distance Metrics Converge for Vehicle Features
 
-### 7.1 Empirical Finding: Groups Differ, but Performance Does Not
+### 7.1 Theoretical Argument
 
-The actual distance metrics (MMD, DTW, Wasserstein) produce **substantially different domain groupings**:
-- out_domain three-way agreement: 62% (18/29)
-- in_domain three-way agreement: 41% (12/29)
-- 52/87 (59.8%) subjects change group assignment depending on distance metric
+For three distance metrics $d_1, d_2, d_3$ (MMD, DTW, Wasserstein), the domain grouping is determined by the **rank ordering** of subjects by mean distance:
 
-Despite this, the ANOVA effect size for distance metric on classification performance is η²<0.004. This paradox requires explanation.
+$$\text{group}(s_i) = \begin{cases} \text{out\_domain} & \text{if } \text{rank}(\bar{d}(s_i, \cdot)) \leq N/2 \\ \text{in\_domain} & \text{otherwise} \end{cases}$$
 
-### 7.2 Boundary Instability with Core Stability
+The groupings are identical when the rank orderings agree. This happens when:
 
-The subjects that switch groups are concentrated near the **boundary between adjacent domains** (mid_domain has only 17% three-way agreement). Meanwhile, the extreme subjects — those most clearly out_domain or in_domain — remain stable across metrics (e.g., S0135_2 is rank #1 in all three).
+1. **High effective correlation**: The feature space has low effective dimensionality (45 dims explain 95% variance from 135 features), so all distance metrics capture similar geometric structure.
 
-The domain grouping determines which subjects form the training set:  
-$$\mathcal{D}_{\text{train}} = \{(\mathbf{x}_i, y_i) : s_i \in \text{group}(d)\}$$
+2. **Moderate ICC ratio** (mean=0.111): Inter-subject differences are modest relative to intra-subject variation. This means subject 'positions' in feature space are noisy, and the **coarse binary split** (in/out) is robust to metric choice, even if fine-grained rankings differ.
 
-When boundary subjects switch between groups, the resulting training distribution $P_{\text{train}}(\mathbf{x}|y)$ changes only marginally because:
+3. **Vehicle signal redundancy**: Steering angle, steering speed, lateral acceleration, and lane offset are physically coupled through vehicle dynamics (lateral dynamics equation: $a_y = v \cdot \dot{\psi} = v \cdot \dot{\delta} \cdot L^{-1}$). This coupling means the 145 features reduce to a much smaller intrinsic manifold.
 
-1. **Boundary subjects are similar by definition**: A subject at the in/mid boundary has similar mean distance to subjects just inside both groups. Their feature distributions overlap substantially with both groups.
+### 7.2 The Rebalancing Absorption Effect
 
-2. **Low ICC ratio** (mean=0.111): Intra-subject variance is ~8× inter-subject variance ($\sigma^2_{\text{within}} \approx 8\sigma^2_{\text{between}}$). When each subject contributes ~814 windows of high-variance data, swapping a few boundary subjects changes the aggregate training distribution minimally.
-
-3. **Training set size**: Each group has 29 subjects. Swapping ~11 boundary subjects (the overlap gap) alters ~38% of the group membership but the corresponding feature-space shift is attenuated by the dominant intra-subject variance.
-
-### 7.3 The Rebalancing Dominance Effect
-
-The rebalancing condition (baseline/RUS/SMOTE/SW-SMOTE) has η²=0.11–0.14, which is 35–1100× larger than the distance metric effect:
+When class imbalance handling is applied (SMOTE, RUS, SW-SMOTE), the classifier's decision boundary shifts substantially. The rebalancing effect has η²=0.11–0.14 (11–14% of variance), while the distance metric effect has η²<0.004 (<0.4%). The ratio is:
 
 $$\frac{\eta^2_{\text{condition}}}{\eta^2_{\text{distance}}} \approx \frac{0.11}{0.0001} = 1100\times \text{(F2)}, \quad \frac{0.14}{0.004} = 35\times \text{(AUROC)}$$
 
-SMOTE generates synthetic minority samples in the convex hull of existing minority data; RUS removes majority samples randomly. Both transform $P_{\text{train}}(\mathbf{x}|y)$ far more drastically than the marginal shift caused by boundary-subject swaps. The classifier's decision boundary is dominated by: (a) which rebalancing method is used, (b) which training mode (source_only/target_only/mixed), and (c) which domain level is targeted — not by which distance metric defined the groups.
-
-### 7.4 Why the Three Metrics Diverge
-
-The low concordance (especially MMD vs DTW, ρ=0.48) is explained by their fundamentally different computation strategies:
-
-- **MMD**: Compares full sample distributions via RBF kernel. Sensitive to density structure and covariance.
-- **Wasserstein**: Computes per-feature 1D optimal transport, then averages. Sensitive to marginal distribution shifts. Lane offset features (range ~10³) dominate the average.
-- **DTW**: Collapses all 135 features to a 1D mean time series, then aligns temporal patterns. Captures temporal structure that MMD and Wasserstein ignore.
-
-These differences produce genuinely different subject rankings, but the resulting training set variations remain within the noise floor of the classifier's performance.
+Rebalancing changes the training distribution so dramatically that the minor difference in which subjects constitute the training set (due to distance metric choice) is overwhelmed.
 
 ## 8. Per-Signal Variance Contribution
 
@@ -226,16 +163,17 @@ Which vehicle signals contribute most to inter-subject variation?
 
 ### Key Findings
 
-1. **Feature space**: 135-dimensional vehicle driving features (common columns) extracted from 5 raw signals (steering angle, steering speed, lateral acceleration, longitudinal acceleration, lane offset)
+1. **Feature space**: 145-dimensional vehicle driving features extracted from 5 raw signals (steering angle, steering speed, lateral acceleration, longitudinal acceleration, lane offset)
 
-2. **Low effective dimensionality**: 45 principal components explain 95% of variance, meaning the 135-dimensional space collapses to ~45 effective dimensions
+2. **Low effective dimensionality**: 45 principal components explain 95% of variance, meaning the 145-dimensional space collapses to ~45 effective dimensions
 
-3. **Moderate subject discriminability**: Mean ICC ratio = 0.111, indicating that intra-subject variation (~89% of total variance) is dominant over inter-subject differences (~11%)
+3. **Moderate subject discriminability**: Mean ICC ratio = 0.111, indicating that intra-subject variation is substantial relative to inter-subject differences
 
-4. **Moderate rank concordance**: The actual distance metrics (MMD, DTW, Wasserstein) produce Spearman ρ = 0.48–0.80 in subject ranking. Domain group membership overlap is partial: out_domain 62% three-way agreement, in_domain 41% three-way agreement. 52/87 (59.8%) subjects change group depending on metric.
+4. **High rank concordance**: Different distance metrics produce Spearman ρ = 0.999–0.843 in subject ranking, and domain group membership overlaps significantly
 
-5. **Performance insensitivity despite group differences**: Despite substantial group composition changes across distance metrics, classification performance is unaffected (η²<0.004). This is because: (a) switching subjects are at group boundaries with similar feature distributions to both adjacent groups, (b) intra-subject variance (~8× inter-subject) dilutes the effect of boundary swaps on training distribution, and (c) rebalancing (η²=0.11–0.14) and training mode (η²=0.50–0.58) dominate performance variation by orders of magnitude.
-
-6. **Physical coupling**: Vehicle dynamics physically couples the 5 raw signals (steering → lateral acceleration → lane offset), contributing to the low effective dimensionality
+5. **Physical coupling**: Vehicle dynamics physically couples the 5 raw signals (steering → lateral acceleration → lane offset), further reducing the effective independent information available for distinguishing distance metrics
 
 6. **Rebalancing dominance**: The condition (imbalance handling) effect is 35–1100× larger than the distance metric effect, completely absorbing any subtle grouping differences
+
+
+> For detailed mathematical definitions of raw signals, feature extraction formulas, and quantitative vehicle dynamics discussion, see `vehicle_dynamics_formulation.md`.

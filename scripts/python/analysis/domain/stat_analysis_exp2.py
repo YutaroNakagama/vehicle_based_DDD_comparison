@@ -46,12 +46,19 @@ REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 CSV_BASE = REPORT_DIR / "figures" / "csv" / "split2"
 
+# Official experiment seeds (n=10).  Seed 3 appeared in some CSV files
+# from early exploratory runs and must be excluded from the analysis.
+OFFICIAL_SEEDS = {0, 1, 7, 13, 42, 123, 256, 512, 1337, 2024}
+
 # ---------------------------------------------------------------------------
 # 1. Load data
 # ---------------------------------------------------------------------------
 def load_data(ratio: float = 0.1) -> pd.DataFrame:
     """Load & merge all condition CSVs, keeping only the specified ratio for
-    methods that have ratios (to ensure fair comparison with baseline)."""
+    methods that have ratios (to ensure fair comparison with baseline).
+
+    Only official seeds are retained (see ``OFFICIAL_SEEDS``).
+    """
     files = {
         "baseline": CSV_BASE / "baseline" / "baseline_domain_split2_metrics_v2.csv",
         "smote":    CSV_BASE / "smote_plain" / "smote_plain_split2_metrics_v2.csv",
@@ -67,6 +74,8 @@ def load_data(ratio: float = 0.1) -> pd.DataFrame:
             df = df[df["ratio"] == ratio].copy()
         dfs.append(df)
     merged = pd.concat(dfs, ignore_index=True)
+    # Filter to official seeds only
+    merged = merged[merged["seed"].isin(OFFICIAL_SEEDS)].copy()
     return merged
 
 

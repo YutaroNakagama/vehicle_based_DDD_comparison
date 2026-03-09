@@ -68,13 +68,20 @@ METRICS_EXTRA = [
     ("accuracy", "Accuracy"),
 ]
 
+# Official experiment seeds (n=10).  Seed 3 appeared in some CSV files
+# from early exploratory runs and must be excluded from the analysis.
+OFFICIAL_SEEDS = {0, 1, 7, 13, 42, 123, 256, 512, 1337, 2024}
+
 
 # ---------------------------------------------------------------------------
 # Data loading
 # ---------------------------------------------------------------------------
 def load_all_data() -> pd.DataFrame:
     """Load all condition CSVs, expanding (method, ratio) into a single
-    condition label like 'smote_r01'."""
+    condition label like 'smote_r01'.
+
+    Only official seeds are retained (see ``OFFICIAL_SEEDS``).
+    """
     files = {
         "baseline":  CSV_BASE / "baseline"        / "baseline_domain_split2_metrics_v2.csv",
         "smote":     CSV_BASE / "smote_plain"      / "smote_plain_split2_metrics_v2.csv",
@@ -94,6 +101,8 @@ def load_all_data() -> pd.DataFrame:
     merged = pd.concat(dfs, ignore_index=True)
     # Keep only our 7 conditions
     merged = merged[merged["condition"].isin(CONDITIONS_7)].copy()
+    # Filter to official seeds only
+    merged = merged[merged["seed"].isin(OFFICIAL_SEEDS)].copy()
     return merged
 
 
@@ -1246,9 +1255,11 @@ def generate_report(df: pd.DataFrame) -> str:
       f"→ {'paired tests cannot reach Bonferroni significance' if 1/(2**(n_seeds-1)) > alpha_bon else 'paired tests can reach significance'}\n")
 
     w("### 12.2 Detectable Effect Sizes\n")
-    w("For Mann-Whitney U with current sample sizes (n ≈ 33 per cell for pooled, 11 per distance):\n")
+    n_per_dist = n_seeds  # samples per distance cell
+    n_pooled = n_seeds * 3  # pooled across 3 distances
+    w(f"For Mann-Whitney U with current sample sizes (n ≈ {n_pooled} per cell for pooled, {n_per_dist} per distance):\n")
     w("$$|\\delta_{\\min}| \\approx \\frac{z_{\\alpha'/2}}{\\sqrt{n}}$$\n")
-    for n_eff, desc in [(11, "per distance cell"), (33, "pooled across distances")]:
+    for n_eff, desc in [(n_per_dist, "per distance cell"), (n_pooled, "pooled across distances")]:
         z = stats.norm.ppf(1 - 0.05 / (2 * n_pw))
         d_min = z / np.sqrt(n_eff)
         w(f"- {desc} (n={n_eff}): |δ_min| ≈ {d_min:.3f} → only **{'large' if d_min > 0.474 else 'medium+' if d_min > 0.33 else 'small+'}** effects detectable")
@@ -1675,7 +1686,7 @@ def generate_report(df: pd.DataFrame) -> str:
     # 17. Seed Count Convergence Analysis
     # ===================================================================
     w("---\n## 17. Seed Count Convergence Analysis\n")
-    w("**Motivation**: Determine if n=11 seeds is sufficient for stable condition rankings.\n")
+    w(f"**Motivation**: Determine if n={n_seeds} seeds is sufficient for stable condition rankings.\n")
     w("**Method**: Subsampling analysis — for $k \\in \\{3, 5, 7, 9, 11\\}$, "
       "compute condition rankings from $k$ randomly chosen seeds and measure "
       "ranking variance:\n")
@@ -1856,7 +1867,7 @@ def generate_report(df: pd.DataFrame) -> str:
     w("\\begin{table}[htbp]")
     w("\\centering")
     w("\\caption{Descriptive statistics by condition, mode, and evaluation level. "
-      "Values represent mean $\\pm$ SD across 11 seeds and 3 distance metrics.}")
+      f"Values represent mean $\\pm$ SD across {n_seeds} seeds and 3 distance metrics.}}")
     w("\\label{tab:descriptive}")
     w("\\footnotesize")
     for metric, mlabel in METRICS:
@@ -2437,7 +2448,7 @@ def generate_report(df: pd.DataFrame) -> str:
     w("")
 
     # --- Finding 6: Seed convergence ---
-    w("### Finding 6: Results are reproducible with 11 seeds\n")
+    w(f"### Finding 6: Results are reproducible with {n_seeds} seeds\n")
     w(f"Seed convergence analysis (§ 17) confirms that ranking stability is achieved "
       f"well before n={n_seeds} seeds for both F2-score and AUROC.\n")
     w("> **Implication**: The experimental design provides sufficient statistical power "
@@ -2467,7 +2478,8 @@ def generate_report(df: pd.DataFrame) -> str:
       "(Cliff's δ > 0.5, large effect), confirming the importance of domain-specific data.\n")
     w("4. Random undersampling (RUS) consistently underperforms oversampling methods "
       "(Mann-Whitney U, Bonferroni-corrected), particularly at higher sampling ratios.\n")
-    w("5. Results are robust: consistent across 3 distance metrics, 11 random seeds, "
+    w("5. Results are robust: consistent across 3 distance metrics, "
+      f"{n_seeds} random seeds, "
       f"and {k_w} evaluation metrics (Kendall's W = {W_kendall:.3f}).\n")
     w("")
 
