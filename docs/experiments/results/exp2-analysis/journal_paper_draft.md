@@ -4,7 +4,7 @@
 
 ## Abstract
 
-Drowsy driving detection (DDD) using vehicle dynamics signals faces two practical challenges: severe class imbalance between alert and drowsy states, and domain shift across individual drivers. This study systematically evaluates the relative importance of class imbalance handling methods and domain grouping strategies through a 4-factor factorial experiment (7 conditions × 3 training modes × 3 distance metrics × 2 domain levels) with 87 driving simulator subjects and 10 random seeds (1,258 total observations). We test 14 hypotheses using non-parametric statistical methods with Bonferroni correction, permutation tests, and bootstrap confidence intervals. Results reveal that the choice of imbalance handling method has a dominant effect ($\eta^2 = 0.57$–$0.78$, large) while the choice of distance metric for domain grouping is negligible ($\eta^2 < 0.004$). SMOTE-based oversampling improves F2-score from 0.16 (baseline) to 0.56 in within-domain settings and AUROC from 0.59 to 0.91. We provide a vehicle dynamics explanation for the distance metric irrelevance: the bicycle model coupling $a_y = v \cdot \dot{\delta}/L$ reduces the 135-dimensional feature space to approximately 45 effective dimensions, with lane offset features ($O(10^3)$) dominating all metrics equally. These findings demonstrate that for practical DDD deployment, investing in appropriate class rebalancing yields far greater returns than optimizing domain partition strategies.
+Drowsy driving detection (DDD) using vehicle dynamics signals faces two practical challenges: severe class imbalance between alert and drowsy states, and domain shift across individual drivers. This study systematically evaluates the relative importance of class imbalance handling methods and domain grouping strategies through a 4-factor factorial experiment (7 conditions × 3 training modes × 3 distance metrics × 2 domain levels) with 87 driving simulator subjects and 10 random seeds (1,258 total observations). We test 14 hypotheses using non-parametric statistical methods with Bonferroni correction, permutation tests, and bootstrap confidence intervals. Results reveal that the choice of imbalance handling method has a dominant effect ($\eta^2 = 0.57$–$0.78$, large) while the choice of distance metric for domain grouping is negligible ($\eta^2 < 0.004$). SMOTE-based oversampling improves F2-score from 0.16 (baseline) to 0.56 in within-domain settings, AUROC from 0.59 to 0.91, and AUPRC from 0.09 to 0.65 — a 640% relative improvement on the imbalance-sensitive precision–recall metric. We provide a vehicle dynamics explanation for the distance metric irrelevance: the bicycle model coupling $a_y = v \cdot \dot{\delta}/L$ reduces the 135-dimensional feature space to approximately 45 effective dimensions, with lane offset features ($O(10^3)$) dominating all metrics equally. These findings demonstrate that for practical DDD deployment, investing in appropriate class rebalancing yields far greater returns than optimizing domain partition strategies.
 
 **Keywords**: drowsy driving detection, class imbalance, domain shift, vehicle dynamics, SMOTE, distance metric, non-parametric statistics
 
@@ -129,7 +129,7 @@ The experiment follows a 4-factor factorial design:
 
 **Training modes (3)**: Cross-domain (train on source domain, 58 subjects, only), within-domain (train on target domain, 29 subjects, only), mixed (train on combined source + target data).
 
-**Evaluation metrics**: F2-score and AUROC (primary), with F1-score, AUPRC, and Recall as supplementary metrics.
+**Evaluation metrics**: F2-score, AUROC, and AUPRC (primary). F2-score emphasizes recall for safety-critical detection; AUROC measures overall discrimination; AUPRC evaluates precision–recall trade-offs under class imbalance, avoiding the optimistic bias of AUROC when the negative class dominates (Saito & Rehmsmeier, 2015). F1-score and Recall serve as supplementary metrics.
 
 **Reproducibility**: 10 random seeds $\times$ 18 cells (3 modes × 3 distances × 2 levels) per condition = 1,258 total observations ($-2$ pending records in the sw\_smote condition).
 
@@ -154,7 +154,7 @@ All test families are Bonferroni-corrected ($\alpha' = \alpha/m$, $\alpha = 0.05
 
 ### 4.1 Overview
 
-A total of 1,258 observations across 7 conditions, 3 training modes, 3 distance metrics, 2 domain levels, and 10 random seeds were analyzed. The permutation test confirms a significant global condition effect for both F2-score ($T_{\text{obs}} = 13.71$, $p < 0.001$) and AUROC ($T_{\text{obs}} = 10.51$, $p < 0.001$).
+A total of 1,258 observations across 7 conditions, 3 training modes, 3 distance metrics, 2 domain levels, and 10 random seeds were analyzed. The permutation test confirms a significant global condition effect for F2-score ($T_{\text{obs}} = 13.71$, $p < 0.001$), AUROC ($T_{\text{obs}} = 10.51$, $p < 0.001$), and AUPRC ($T_{\text{obs}} = 17.67$, $p < 0.001$).
 
 ### 4.2 Condition Effect (H1–H4)
 
@@ -164,8 +164,9 @@ The Kruskal-Wallis test reveals a significant condition effect across all 18 exp
 
 - **F2-score**: 18/18 cells significant at Bonferroni $\alpha' = 0.0028$; mean $\eta^2 = 0.784$ (large); $H = 48.92$–$62.54$, all $p < 0.0001$.
 - **AUROC**: 17/18 cells significant; mean $\eta^2 = 0.570$ (large); $H = 25.33$–$53.34$.
+- **AUPRC**: 18/18 cells significant; mean $\eta^2 = 0.616$ (large); $H = 30.86$–$53.26$, all $p < 0.0001$.
 
-Extended metrics confirm universality: F1-score (18/18 significant, $\eta^2 = 0.769$), AUPRC (18/18, $\eta^2 = 0.616$), Recall (18/18, $\eta^2 = 0.755$).
+Extended metrics confirm universality: F1-score (18/18 significant, $\eta^2 = 0.769$), Recall (18/18, $\eta^2 = 0.755$).
 
 #### 4.2.2 Pairwise Comparisons (H1: Rebalancing vs. Baseline)
 
@@ -179,7 +180,7 @@ Mann-Whitney $U$ tests with Cliff's $\delta$ effect sizes:
 | AUPRC | 21/36 | 21 (58%) | 3 (8%) | 7 (19%) | 5 (14%) |
 | Recall | 24/36 | 24 (67%) | 3 (8%) | 5 (14%) | 4 (11%) |
 
-Within-domain SMOTE/SW-SMOTE vs. baseline: $\delta = +1.000$ (F2, AUROC, F1), confirming complete performance separation.
+Within-domain SMOTE/SW-SMOTE vs. baseline: $\delta = +0.98$–$1.00$ (F2, AUROC, AUPRC, F1), confirming near-complete performance separation.
 
 #### 4.2.3 SMOTE vs. SW-SMOTE (H2)
 
@@ -189,7 +190,7 @@ Within-domain SMOTE/SW-SMOTE vs. baseline: $\delta = +1.000$ (F2, AUROC, F1), co
 
 #### 4.2.4 Oversampling vs. RUS (H3)
 
-Oversampling methods consistently outperform RUS: F2-score 16/24 cells oversampling wins, all with large Cliff's $\delta$; AUROC 20/24 cells. **H3 is fully supported** — RUS degrades performance relative to oversampling across all evaluation metrics.
+Oversampling methods consistently outperform RUS: F2-score 16/24 cells oversampling wins, all with large Cliff's $\delta$; AUROC 20/24 cells; AUPRC 17/24 cells (18/24 large effects). **H3 is fully supported** — RUS degrades performance relative to oversampling across all primary evaluation metrics.
 
 #### 4.2.5 Sampling Ratio Effect (H4: $r=0.1$ vs. $r=0.5$)
 
@@ -231,7 +232,19 @@ Key differences (F2-score):
 | 6 | rus\_r01 | 4.89 | 1 |
 | 7 | rus\_r05 | 5.61 | 1 |
 
-Nemenyi post-hoc test (Friedman $\chi^2 = 48.73$–$49.67$, $p < 0.0001$; CD = 2.848) confirms 8–10/21 pairwise comparisons significant.
+**AUPRC** (mean rank across 18 cells, 1 = best):
+
+| Rank | Condition | Mean Rank | Wins |
+|:----:|-----------|:---------:|:----:|
+| 1 | sw\_smote\_r01 | 2.61 | 7 |
+| 2 | smote\_r01 | 2.67 | 5 |
+| 3 | smote\_r05 | 3.39 | 1 |
+| 4 | sw\_smote\_r05 | 4.22 | 0 |
+| 5 | rus\_r01 | 4.56 | 3 |
+| 6 | baseline | 5.17 | 0 |
+| 7 | rus\_r05 | 5.39 | 2 |
+
+Nemenyi post-hoc test (Friedman $\chi^2 = 47.91$–$50.49$, $p < 0.0001$; CD = 2.848) confirms 8–10/21 pairwise comparisons significant across all three primary metrics. AUPRC rankings closely mirror F2 rankings ($\rho = 0.821$) but differ from AUROC (sw\_smote\_r01 ranks 1st on F2/AUPRC vs. smote\_r01 on AUROC), reflecting AUPRC's sensitivity to the precision–recall balance under imbalance.
 
 ### 4.3 Distance Metric Effect (H5–H6)
 
@@ -253,6 +266,7 @@ Pooled performance across all conditions:
 |--------|:---:|:---:|:-----------:|:--------------:|
 | F2-score | 0.289 ± 0.187 | 0.284 ± 0.190 | 0.293 ± 0.195 | 0.023 |
 | AUROC | 0.689 ± 0.167 | 0.684 ± 0.170 | 0.697 ± 0.169 | 0.080 |
+| AUPRC | 0.264 ± 0.261 | 0.266 ± 0.264 | 0.275 ± 0.266 | — |
 
 All pairwise Cliff's $\delta$ values are negligible ($|\delta| < 0.147$).
 
@@ -284,6 +298,7 @@ The training mode has a massive impact on performance:
 |--------|:------------:|:-------------:|:-----:|:---------------------------:|
 | F2-score | 0.125 ± 0.043 | 0.366 ± 0.187 | 0.375 ± 0.179 | +0.830 (large) |
 | AUROC | 0.520 ± 0.015 | 0.774 ± 0.150 | 0.776 ± 0.140 | +0.945 (large) |
+| AUPRC | 0.050 ± 0.007 | 0.370 ± 0.273 | 0.384 ± 0.281 | +0.946 (large) |
 
 All 14 Friedman tests across conditions are significant (14/14, $p < 0.0001$), with Kendall's W ranging from 0.375 to 0.976.
 
@@ -389,9 +404,10 @@ Our results provide a clear hierarchy of optimization priorities: **rebalancing 
 
 - SMOTE-based oversampling transforms within-domain F2 from 0.205 (baseline) to 0.556 (sw\_smote\_r01) — a 171% improvement.
 - AUROC improves from 0.59 (baseline) to 0.91 (smote\_r01) in within-domain settings.
+- AUPRC — the metric most sensitive to class imbalance — improves from 0.09 (baseline) to 0.65 (smote\_r01), a 640% relative improvement. This confirms that rebalancing produces genuine minority-class precision gains, not merely threshold-shifted recall.
 - These gains require no additional data collection, no domain distance computation, and no subject grouping strategy — only a preprocessing step.
 
-In contrast, switching from Wasserstein to MMD for domain grouping yields $|\Delta\text{F2}| < 0.01$ and $|\Delta\text{AUROC}| < 0.02$.
+In contrast, switching from Wasserstein to MMD for domain grouping yields $|\Delta\text{F2}| < 0.01$, $|\Delta\text{AUROC}| < 0.02$, and $|\Delta\text{AUPRC}| < 0.01$.
 
 ### 5.3 The Domain Gap Reversal Phenomenon
 
@@ -428,11 +444,11 @@ This study systematically evaluates the interplay between class imbalance handli
 
 The key findings are:
 
-1. **Class imbalance handling dominates** ($\eta^2 = 0.57$–$0.78$): SMOTE-based oversampling dramatically improves detection performance across all metrics. SW-SMOTE with $r = 0.1$ achieves the highest F2-score (0.556, within-domain); plain SMOTE with $r = 0.1$ achieves the highest AUROC (0.91).
+1. **Class imbalance handling dominates** ($\eta^2 = 0.57$–$0.78$): SMOTE-based oversampling dramatically improves detection performance across all metrics. SW-SMOTE with $r = 0.1$ achieves the highest F2-score (0.556) and AUPRC (0.654) in within-domain settings; plain SMOTE with $r = 0.1$ achieves the highest AUROC (0.91). The AUPRC improvement from baseline (0.09 → 0.65, +640%) confirms that gains are genuine under class imbalance, not artifacts of threshold-insensitive metrics.
 
 2. **Distance metric choice is irrelevant** ($\eta^2 < 0.004$): MMD, DTW, and Wasserstein produce statistically indistinguishable downstream performance despite 59.8% of subjects switching domain groups. Vehicle dynamics coupling and feature scale heterogeneity provide a physics-grounded explanation.
 
-3. **Training mode hierarchy is clear**: Within-domain $\approx$ mixed >> cross-domain (F2: 0.37 vs. 0.13; AUROC: 0.77 vs. 0.52), with Cliff's $\delta = 0.83$–$0.95$ (large).
+3. **Training mode hierarchy is clear**: Within-domain $\approx$ mixed >> cross-domain (F2: 0.37 vs. 0.13; AUROC: 0.77 vs. 0.52; AUPRC: 0.37 vs. 0.05), with Cliff's $\delta = 0.83$–$0.95$ (large).
 
 4. **Results are robust**: Consistent across 10 random seeds ($\sigma_{\text{rank}} \to 0$ at $k = 9$), 5 evaluation metrics (Kendall's $W = 0.618$), 2 sampling ratios (91% directional agreement), and confirmed by permutation test ($p < 0.001$).
 
@@ -455,7 +471,9 @@ For practitioners, these results prescribe a clear strategy: apply SMOTE-based c
 - Nemenyi, P. (1963). *Distribution-free multiple comparisons*. PhD thesis, Princeton University.
 - Pan, S. J., & Yang, Q. (2010). A survey on transfer learning. *IEEE TKDE*, 22(10), 1345–1359.
 - Rajamani, R. (2012). *Vehicle Dynamics and Control* (2nd ed.). Springer.
+- Saito, T., & Rehmsmeier, M. (2015). The precision–recall plot is more informative than the ROC plot when evaluating binary classifiers on imbalanced datasets. *PLOS ONE*, 10(3), e0118432.
 - Shannon, C. E. (1948). A mathematical theory of communication. *Bell System Technical Journal*, 27(3), 379–423.
+- Saito, T., & Rehmsmeier, M. (2015). The precision–recall plot is more informative than the ROC plot when evaluating binary classifiers on imbalanced datasets. *PLOS ONE*, 10(3), e0118432.
 - Villani, C. (2009). *Optimal Transport: Old and New*. Springer.
 - Wang, X., et al. (2022). Real-time detection of driver drowsiness using LSTM. *Sensors*, 22(13), 4904.
 - Wilcoxon, F. (1945). Individual comparisons by ranking methods. *Biometrics Bulletin*, 1(6), 80–83.
