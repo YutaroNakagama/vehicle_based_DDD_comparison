@@ -112,7 +112,7 @@ Complexity features: Sample Entropy (template matching with tolerance $r = 0.2\s
 
 ### 3.4 Domain Grouping
 
-Pairwise distances between all 87 subjects are computed using their mean feature vectors with three metrics (MMD, DTW, Wasserstein). For each metric, subjects are ranked by mean distance to all others and partitioned into three groups of 29: **out-domain** (highest distances, most dissimilar), **mid-domain** (intermediate), and **in-domain** (lowest distances, most typical).
+Pairwise distances between all 87 subjects are computed using their mean feature vectors with three metrics (MMD, DTW, Wasserstein). For each metric, subjects are ranked by mean distance to all others and partitioned into three groups of 29: **out-domain** (highest distances, most dissimilar), **mid-domain** (intermediate), and **in-domain** (lowest distances, most typical). In the training and evaluation protocol ("split2"), only the two extreme groups are used as target domains: **in-domain** and **out-domain** (29 subjects each). The remaining 58 subjects (mid-domain + the other extreme group) serve as the source/general training pool. Mid-domain is used only for concordance validation and is excluded from the classification experiments.
 
 ### 3.5 Experimental Design
 
@@ -127,7 +127,7 @@ The experiment follows a 4-factor factorial design:
 
 **Conditions (7)**: baseline (no rebalancing), RUS ($r=0.1$, $r=0.5$), SMOTE ($r=0.1$, $r=0.5$), SW-SMOTE ($r=0.1$, $r=0.5$).
 
-**Training modes (3)**: Cross-domain (train on source domain only), within-domain (train on target domain only), mixed (train on combined source + target data).
+**Training modes (3)**: Cross-domain (train on source domain, 58 subjects, only), within-domain (train on target domain, 29 subjects, only), mixed (train on combined source + target data).
 
 **Evaluation metrics**: F2-score and AUROC (primary), with F1-score, AUPRC, and Recall as supplementary metrics.
 
@@ -270,9 +270,9 @@ Subject rankings by mean distance across the three metrics show moderate-to-stro
 | MMD vs. DTW | 0.477 | $3.0 \times 10^{-6}$ | 0.339 |
 | Wasserstein vs. DTW | 0.803 | $9.0 \times 10^{-21}$ | 0.617 |
 
-Despite this, 52/87 (59.8%) subjects switch domain groups across metrics. Group membership overlap is highest for out-domain (18/29 = 62% three-way agreement) and lowest for mid-domain (5/29 = 17%).
+Despite this, 52/87 (59.8%) subjects switch domain groups across metrics in the full three-way ranking. Group membership overlap is highest for out-domain (18/29 = 62% three-way agreement) and lowest for mid-domain (5/29 = 17%). Since only the two extreme groups (in-domain and out-domain) enter the classification experiments, the relevant question is whether these extreme assignments change — and the high out-domain overlap (62%) indicates relative stability at the tails.
 
-**Key finding**: Even though subjects switch groups, the downstream classification performance is indistinguishable ($\eta^2 < 0.004$). This demonstrates that the distance metric–performance pathway is effectively decoupled.
+**Key finding**: Even though subjects switch groups in ranking, the downstream classification performance is indistinguishable ($\eta^2 < 0.004$). This demonstrates that the distance metric–performance pathway is effectively decoupled.
 
 ### 4.4 Training Mode Effect (H7–H9)
 
@@ -375,7 +375,7 @@ The central unexpected finding — that three fundamentally different distance m
 
 **Feature scale heterogeneity causes lane offset dominance.** Lane offset features have ranges of $O(10^3)$ while all other features are $O(10^{-1})$–$O(10^0)$. Since the distance metrics operate on unnormalized features, the domain grouping is effectively determined by lane offset behavior alone, regardless of which metric is used. The variance decomposition confirms this: lane offset contributes approximately 100% of total inter-subject variance.
 
-**Inter-subject discrimination is inherently weak.** The overall ICC ratio (inter-subject / total variance) is only 0.111, meaning 88.9% of feature variance is intra-subject (within-session variability). When subject positions in feature space are this "blurred," the coarse three-way partition (in/mid/out domain) is robust to metric choice, even though fine-grained subject rankings differ ($\rho = 0.48$–$0.80$).
+**Inter-subject discrimination is inherently weak.** The overall ICC ratio (inter-subject / total variance) is only 0.111, meaning 88.9% of feature variance is intra-subject (within-session variability). When subject positions in feature space are this "blurred," the coarse two-way partition into extreme groups (in-domain and out-domain, each 29 of 87 subjects) is robust to metric choice, even though fine-grained subject rankings differ ($\rho = 0.48$–$0.80$).
 
 **Rebalancing absorption.** The condition effect is 35–1,100× larger than the distance metric effect:
 
