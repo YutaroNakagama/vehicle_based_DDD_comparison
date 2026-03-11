@@ -84,10 +84,10 @@ def create_classifier(
         return LogisticRegression(**params, class_weight="balanced", random_state=seed)
 
     elif model == "SvmW":
-        # Zhao et al. 2009: RBF kernel, C=300 fixed
+        # Zhao et al. 2009: RBF kernel (C now tuned by Optuna)
         params = {k: v for k, v in best_params.items()
-                  if k not in ("kernel", "C")}
-        return SVC(**params, kernel="rbf", C=300.0, probability=True,
+                  if k not in ("kernel",)}
+        return SVC(**params, kernel="rbf", probability=True,
                    class_weight="balanced", random_state=seed)
 
     elif model == "SVM":
