@@ -259,16 +259,12 @@ def train_pipeline(
         data_leak=data_leak,
     )
 
-    # SvmW (Zhao et al. 2009): band energies are already relative (sum to 1,
-    # range [0,1]).  Paper does not apply additional normalization.  Override
-    # the fitted StandardScaler with identity parameters.
+    # SvmW: StandardScaler enabled to allow RBF kernel to generalise on
+    # unseen data.  The original Zhao et al. 2009 paper did not normalise,
+    # but identity scaling causes TN=0 degenerate predictions on our dataset.
+    # Keeping the fitted StandardScaler as-is for SvmW.
     if model_name == "SvmW":
-        import numpy as np
-        n_feat = len(selected_features)
-        scaler.mean_ = np.zeros(n_feat)
-        scaler.scale_ = np.ones(n_feat)
-        scaler.var_ = np.ones(n_feat)
-        logging.info("[TRAIN] SvmW: disabled StandardScaler (identity) per Zhao et al. 2009")
+        logging.info("[TRAIN] SvmW: StandardScaler kept (identity override removed)")
 
     selected_features = normalize_feature_names(selected_features)
     logging.info(f"[TRAIN] Selected {len(selected_features)} features.")
