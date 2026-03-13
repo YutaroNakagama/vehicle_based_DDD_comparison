@@ -156,6 +156,11 @@ All test families are Bonferroni-corrected ($\alpha' = \alpha/m$, $\alpha = 0.05
 
 A total of 1,512 observations across 7 conditions, 3 training modes, 3 distance metrics, 2 domain levels, and 12 random seeds were analyzed. The permutation test confirms a significant global condition effect for F2-score ($T_{\text{obs}} = 13.41$, $p < 0.001$) and AUROC ($T_{\text{obs}} = 10.35$, $p < 0.001$).
 
+Fig. 2 summarizes the relative importance of each experimental factor. The three-panel effect size hierarchy (F2-score, AUROC, AUPRC) immediately reveals that **Mode** ($\eta^2 > 0.6$) and **Condition** ($\eta^2 = 0.1$–$0.8$) account for nearly all systematic variance, while the **Distance** factor contributes negligibly ($\eta^2 < 0.004$). This visual establishes the central narrative of the paper: rebalancing and training regime matter; domain grouping strategy does not.
+
+![Effect Size Hierarchy](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig2_effect_hierarchy.png)
+*Fig. 2. Effect size hierarchy ($\eta^2$) for the three experimental factors across F2-score, AUROC, and AUPRC. Mode dominates, followed by Condition; Distance is negligible.*
+
 ### 4.2 Condition Effect (H1, H3)
 
 #### 4.2.1 Global Test
@@ -225,7 +230,10 @@ Oversampling methods consistently outperform RUS: F2-score 16/24 cells oversampl
 | 7 | rus\_r05 | 5.44 | 2 |
 
 Nemenyi post-hoc test (Friedman $\chi^2 = 57.93$–$60.43$, $p < 0.0001$; CD = 2.600) confirms 9–10/21 pairwise comparisons significant across all three primary metrics. AUPRC rankings closely mirror F2 rankings ($\rho = 0.821$) but differ from AUROC (sw\_smote\_r01 ranks 1st on F2/AUPRC vs. smote\_r01 on AUROC), reflecting AUPRC’s sensitivity to the precision–recall balance under imbalance.
+These ranking structures are visualized in Fig. 4, which presents Critical Difference (CD) diagrams for all three primary metrics. Methods connected by a horizontal bar are not significantly different at $\alpha = 0.05$. Across all three panels, oversampling methods (SMOTE, SW-SMOTE) cluster on the left (best ranks), while baseline and RUS occupy the right. The CD value of 2.600 indicates that a mean rank difference exceeding this threshold is required for statistical significance, providing a clear threshold for interpreting the separation between method groups.
 
+![Critical Difference Diagrams](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig4_cd_diagrams.png)
+*Fig. 4. Nemenyi post-hoc Critical Difference diagrams for F2-score, AUROC, and AUPRC. Methods connected by a bar are not significantly different ($\alpha = 0.05$). Oversampling methods consistently rank left (better); the top-ranked method differs between F2/AUPRC (sw\_smote\_r01) and AUROC (smote\_r01).*
 ### 4.3 Distance Metric Effect (H5)
 
 #### 4.3.1 Performance Independence
@@ -248,6 +256,11 @@ Pooled performance across all conditions:
 | AUROC | 0.687 ± 0.166 | 0.683 ± 0.169 | 0.696 ± 0.167 | 0.090 |
 
 All pairwise Cliff's $\delta$ values are negligible ($|\delta| < 0.147$).
+
+Fig. 5 provides a visual confirmation of this statistical equivalence. The violin plots for Within-domain and Mixed modes show that performance distributions for MMD, DTW, and Wasserstein overlap almost completely across all three metrics. The near-identical shape and central tendency of each violin — despite the metrics capturing fundamentally different notions of distributional distance — reinforces that the domain grouping pathway is decoupled from downstream classification performance.
+
+![Distance Metric Violin](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig5_distance_violin.png)
+*Fig. 5. Performance distributions by distance metric (Within-domain and Mixed modes). F2-score, AUROC, and AUPRC distributions are virtually indistinguishable across MMD, DTW, and Wasserstein, consistent with $|\delta| < 0.15$ for all pairwise comparisons.*
 
 #### 4.3.2 Granular Analysis
 
@@ -279,6 +292,11 @@ The training mode has a massive impact on performance:
 | AUROC | 0.520 ± 0.015 | 0.773 ± 0.148 | 0.773 ± 0.140 | +0.945 (large) |
 
 All 14 Friedman tests across conditions are significant (14/14, $p < 0.0001$), with Kendall's W ranging from 0.455 to 0.969. Mixed training performs equivalently to within-domain and substantially better than cross-domain (F2: $0.372$ vs. $0.125$; AUROC: $0.773$ vs. $0.520$), confirming the supplementary H8 finding (see Appendix C).
+
+Fig. 6 makes this mode separation visually striking. The box plots show that Cross-domain performance is compressed into a narrow, low-performance band for all three metrics, clearly separated from Within-domain and Mixed. The annotated Cliff's $\delta$ values quantify the gap: Cross-domain vs. Within/Mixed yields $\delta > 0.8$ (large effect), while Within-domain vs. Mixed is negligible ($\delta < 0.05$). This dichotomy — large separation from Cross-domain but equivalence between Within-domain and Mixed — has direct practical significance: mixing data from other vehicles into training does not degrade performance relative to using only matched-vehicle data.
+
+![Training Mode Box Plot](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig6_mode_boxplot.png)
+*Fig. 6. Performance distributions by training mode with Cliff's $\delta$ annotations. Cross-domain is clearly separated from Within-domain and Mixed ($\delta > 0.8$, large), while Within-domain and Mixed are statistically equivalent.*
 
 #### 4.4.2 Descriptive Statistics by Condition × Mode
 
@@ -313,6 +331,11 @@ Notably, within-domain and mixed training often show **positive** $\Delta$ (out-
 
 **Strongly supported.** The optimal condition varies by mode — RUS performs best in cross-domain (rank 1–2 by F2); SMOTE/SW-SMOTE dominate in within-domain and mixed settings. This interaction indicates that practitioners cannot choose a single rebalancing strategy without considering the training mode.
 
+Fig. 3 captures this interaction structure as a heatmap of mean performance across 7 conditions × 3 modes. The Cross-domain column is uniformly dark (low performance) regardless of condition, while the Within-domain and Mixed columns reveal large inter-condition variation with SMOTE/SW-SMOTE methods showing the highest values. This visual pattern explains why H12 is significant: the condition effect is mode-dependent because Cross-domain training compresses all methods into a uniformly poor performance regime.
+
+![Condition × Mode Heatmap](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig3_condition_mode_heatmap.png)
+*Fig. 3. Mean performance heatmap (7 conditions × 3 modes) for F2-score, AUROC, and AUPRC. Cross-domain performance is uniformly low regardless of rebalancing method, while Within-domain and Mixed reveal strong condition differentiation — visually confirming the Condition × Mode interaction (H12).*
+
 *Supplementary findings*: Condition × distance interaction (H13) is weak (12/18 consistent, 6/18 minor swaps; see Appendix C). Level × mode interaction (H14) confirms that within-domain training eliminates or reverses the domain gap (see Appendix C). The domain gap in cross-domain settings (H9) and the effect of oversampling on domain gap (H11) show mixed, context-dependent results (see Appendix C).
 
 ### 4.6 Robustness Validation
@@ -327,6 +350,11 @@ Subsampling analysis confirms ranking stability:
 | AUROC | 0.501 | 0.333 | 0.242 | 0.154 | 0.147 |
 
 By $k=11$ (of 12 seeds), F2 rankings are perfectly stable; AUROC rankings stabilize with $\sigma = 0.147$.
+
+Fig. 8 visualizes these convergence trajectories. The monotonically decreasing $\sigma_{\text{rank}}(k)$ curves across all three metrics (F2-score, AUROC, AUPRC) confirm that 12 seeds provide sufficient statistical power for stable condition rankings. Per-condition traces reveal that oversampling methods (SMOTE, SW-SMOTE) converge more slowly than RUS and baseline — reflecting the tighter ranking competition among the top-performing methods — but all converge well before the full seed count.
+
+![Seed Convergence](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig8_seed_convergence.png)
+*Fig. 8. Ranking stability ($\sigma_{\text{rank}}$) as a function of seed subset size $k$. All three primary metrics show monotonic convergence. F2-score achieves $\sigma = 0$ by $k = 9$; AUROC and AUPRC stabilize below the $\sigma = 0.5$ threshold, confirming that $n = 12$ seeds is sufficient.*
 
 #### 4.6.2 Cross-Metric Concordance
 
@@ -383,7 +411,12 @@ In contrast, switching from Wasserstein to MMD for domain grouping yields $|\Del
 
 ### 5.3 The Domain Gap Reversal Phenomenon
 
-An unexpected finding is that the domain gap reverses in within-domain and mixed training: out-domain subjects sometimes outperform in-domain subjects ($\Delta > 0$). This may be because:
+An unexpected finding is that the domain gap reverses in within-domain and mixed training: out-domain subjects sometimes outperform in-domain subjects ($\Delta > 0$). Fig. 7 visualizes this pattern through diverging horizontal bars for each Condition × Mode cell. Green bars (positive $\Delta$) indicate that out-domain performance exceeds in-domain. Across all three metrics (F2-score, AUROC, AUPRC), the majority of bars point green — especially in the Mixed mode panel — demonstrating that domain shift does not systematically degrade performance. This visual is consistent with the Wilcoxon test results (H10: 0/63 to 12/63 significant) and provides direct evidence that the domain split does not introduce a meaningful performance penalty.
+
+![Domain Shift Direction](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig7_domain_shift_reversal.png)
+*Fig. 7. Domain gap direction ($\Delta = \text{out} - \text{in}$) by Condition × Mode. Green = out-domain outperforms in-domain (gap reversal). The prevalence of green bars, especially in Mixed mode, demonstrates that domain shift does not cause systematic performance degradation.*
+
+This may be because:
 
 1. Out-domain subjects exhibit more diverse driving patterns, providing richer training signal when their own data is included (within-domain setting).
 2. The diversity of out-domain data acts as implicit regularization, improving generalization.
