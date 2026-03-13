@@ -252,8 +252,8 @@ The elevated AUROC $\eta^2$ is driven entirely by the two cross-domain cells (so
 
 Pooled performance across all conditions:
 
-| Metric | MMD | DTW | Wasserstein | Max $|\delta|$ |
-|--------|:---:|:---:|:-----------:|:--------------:|
+| Metric | MMD | DTW | Wasserstein | Max $\lvert\delta\rvert$ |
+|--------|:---:|:---:|:-----------:|:--------------------------:|
 | F2-score | 0.286 ± 0.185 | 0.281 ± 0.187 | 0.290 ± 0.192 | 0.044 |
 | AUROC | 0.687 ± 0.166 | 0.683 ± 0.169 | 0.696 ± 0.167 | 0.086 |
 
