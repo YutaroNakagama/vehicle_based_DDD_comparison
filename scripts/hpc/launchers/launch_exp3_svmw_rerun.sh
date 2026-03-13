@@ -215,10 +215,10 @@ for job_spec in "${PENDING_JOBS[@]}"; do
     local_dom_short="${DOMAIN:0:1}"
     JOB_NAME="Sw_${local_cond_short}_${local_dist_short}_${local_dom_short}_s${SEED}"
 
-    # SvmW: CPU queue, 8 cores, 32GB RAM, 48h walltime
+    # SvmW: CPU queue, 8 cores, 32GB RAM, 72h walltime
     SCRIPT="$CPU_SCRIPT"
     NCPUS_MEM="ncpus=8:mem=32gb"
-    WALLTIME="48:00:00"
+    WALLTIME="72:00:00"
     if $DRY_RUN; then
         QUEUE="CPU-auto"
     else

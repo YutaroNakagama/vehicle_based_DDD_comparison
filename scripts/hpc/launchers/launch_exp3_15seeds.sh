@@ -252,10 +252,10 @@ for job_spec in "${PENDING_JOBS[@]}"; do
             QUEUE=$(get_queue_gpu)
         fi
     else
-        # SvmA
+        # SvmA (72h: smote/smote_plain + mmd + ratio=0.5 can exceed 48h)
         SCRIPT="$CPU_SCRIPT"
         NCPUS_MEM="ncpus=8:mem=32gb"
-        WALLTIME="48:00:00"
+        WALLTIME="72:00:00"
         if $DRY_RUN; then
             QUEUE="CPU-auto"
         else
