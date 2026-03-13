@@ -68,9 +68,8 @@ METRICS_EXTRA = [
     ("accuracy", "Accuracy"),
 ]
 
-# Official experiment seeds (n=10).  Seed 3 appeared in some CSV files
-# from early exploratory runs and must be excluded from the analysis.
-OFFICIAL_SEEDS = {0, 1, 7, 13, 42, 123, 256, 512, 1337, 2024}
+# Official experiment seeds (n=12).
+OFFICIAL_SEEDS = {0, 1, 3, 7, 13, 42, 123, 256, 512, 999, 1337, 2024}
 
 
 # ---------------------------------------------------------------------------
