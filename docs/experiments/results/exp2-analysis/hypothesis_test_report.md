@@ -1,5 +1,10 @@
 # Experiment 2 — Hypothesis-Driven Domain Shift Analysis
 
+> **Note**: This report was generated with the v1 seed set (n=10, 1,258 records). The journal paper uses v2
+> (n=12, 1,512 records; seeds 3 and 999 added). Qualitative conclusions are unchanged; exact p-values,
+> η², and summary statistics in the paper supersede this report. To regenerate, run
+> `scripts/python/analysis/domain/stat_analysis_exp2_v2.py`.
+
 **Records**: 1258  
 **Seeds**: [0, 1, 7, 13, 42, 123, 256, 512, 1337, 2024] (n=10)  
 **Conditions** (7): ['baseline', 'rus_r01', 'rus_r05', 'smote_r01', 'smote_r05', 'sw_smote_r01', 'sw_smote_r05']  
