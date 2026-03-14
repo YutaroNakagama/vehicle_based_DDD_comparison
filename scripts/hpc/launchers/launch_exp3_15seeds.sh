@@ -24,6 +24,12 @@
 # ============================================================
 set -uo pipefail
 
+# Trap signals to log why daemon dies
+trap 'echo "[KILLED] Received SIGHUP at $(date)" | tee -a "${LOG_FILE:-/dev/null}"; exit 130' HUP
+trap 'echo "[KILLED] Received SIGTERM at $(date)" | tee -a "${LOG_FILE:-/dev/null}"; exit 143' TERM
+trap 'echo "[KILLED] Received SIGINT at $(date)" | tee -a "${LOG_FILE:-/dev/null}"; exit 130' INT
+trap 'echo "[EXIT] Script exiting with code $? at $(date)" | tee -a "${LOG_FILE:-/dev/null}"' EXIT
+
 PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
 CPU_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/train/pbs_prior_research_unified.sh"
 GPU_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/train/pbs_prior_research_unified_gpu.sh"
@@ -45,7 +51,7 @@ DOMAINS=("out_domain" "in_domain")
 MODELS=("SvmA" "Lstm")
 
 # Queue limits (KAGAYAKI per-user limits)
-MAX_TOTAL_JOBS=170
+MAX_TOTAL_JOBS=165  # leave margin for race between two daemons
 POLL_INTERVAL=120  # seconds between queue checks when waiting for slots
 MAX_PER_BATCH=40   # max jobs to submit in one batch before re-checking queue
 
@@ -114,10 +120,22 @@ get_total_queue_count() {
 
 get_per_queue_counts() {
     # Populates QUEUE_COUNTS associative array
-    declare -gA QUEUE_COUNTS=()
+    # Unset and re-declare to avoid stale keys
+    unset QUEUE_COUNTS 2>/dev/null
+    declare -gA QUEUE_COUNTS
     while IFS=' ' read -r count queue; do
-        QUEUE_COUNTS["$queue"]=$count
+        [[ -n "$queue" ]] && QUEUE_COUNTS["$queue"]=$count
     done < <(qstat -u s2240011 2>/dev/null | tail -n +6 | awk '{print $3}' | sort | uniq -c | awk '{print $1, $2}')
+}
+
+get_queue_count() {
+    # Safe accessor for QUEUE_COUNTS — returns 0 for missing keys
+    local q="$1"
+    if [[ -n "$q" && -n "${QUEUE_COUNTS[$q]+x}" ]]; then
+        echo "${QUEUE_COUNTS[$q]}"
+    else
+        echo 0
+    fi
 }
 
 wait_for_slots() {
@@ -132,7 +150,8 @@ wait_for_slots() {
             continue
         fi
         get_per_queue_counts
-        local qcount="${QUEUE_COUNTS[$queue]:-0}"
+        local qcount
+        qcount=$(get_queue_count "$queue")
         if [[ $qcount -lt $limit ]]; then
             return 0
         fi
@@ -150,7 +169,8 @@ pick_queue() {
     local best_queue="${candidates[0]}"
     local best_count=99999
     for q in "${candidates[@]}"; do
-        local cnt="${QUEUE_COUNTS[$q]:-0}"
+        local cnt
+        cnt=$(get_queue_count "$q")
         local lim="${QUEUE_LIMITS[$q]:-40}"
         local avail=$((lim - cnt))
         if [[ $avail -gt 0 && $cnt -lt $best_count ]]; then
@@ -263,11 +283,6 @@ for job_spec in "${PENDING_JOBS[@]}"; do
         fi
     fi
 
-    # Wait for queue slots (unless dry run)
-    if ! $DRY_RUN; then
-        wait_for_slots "$QUEUE"
-    fi
-
     # Build qsub command
     VARS="MODEL=$MODEL,CONDITION=$CONDITION,DISTANCE=$DISTANCE,DOMAIN=$DOMAIN,SEED=$SEED,N_TRIALS=$N_TRIALS,RANKING=$RANKING,RUN_EVAL=true"
     if [[ -n "$RATIO" ]]; then
@@ -283,9 +298,11 @@ for job_spec in "${PENDING_JOBS[@]}"; do
         ((SUBMITTED++))
     else
         # Retry with backoff if queue is temporarily full
-        local attempts=0
-        local max_attempts=5
+        attempts=0
+        max_attempts=10
         while true; do
+            # Always re-check slots before attempting qsub
+            wait_for_slots "$QUEUE"
             JOB_ID=$(eval "$CMD" 2>&1)
             if [[ $? -eq 0 ]]; then
                 echo "[SUBMIT] $MODEL | $CONDITION | $DISTANCE | $DOMAIN | s$SEED | r=$RATIO → $JOB_ID ($QUEUE)"
@@ -300,8 +317,8 @@ for job_spec in "${PENDING_JOBS[@]}"; do
                 ((FAILED++))
                 break
             fi
-            echo "[RETRY] $QUEUE full, waiting $POLL_INTERVAL s... (attempt $attempts/$max_attempts)" | tee -a "$LOG_FILE"
-            sleep "$POLL_INTERVAL"
+            echo "[RETRY] qsub failed ($JOB_ID), re-picking queue... (attempt $attempts/$max_attempts)" | tee -a "$LOG_FILE"
+            sleep 5
             # Re-pick queue on retry (might find a less loaded one)
             if [[ "$MODEL" == "Lstm" ]]; then
                 QUEUE=$(get_queue_gpu)
@@ -309,7 +326,6 @@ for job_spec in "${PENDING_JOBS[@]}"; do
                 QUEUE=$(get_queue_cpu)
             fi
             CMD="qsub -N $JOB_NAME -l select=1:$NCPUS_MEM -l walltime=$WALLTIME -q $QUEUE -v $VARS $SCRIPT"
-            wait_for_slots "$QUEUE"
         done
         sleep 0.3
 
