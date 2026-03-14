@@ -112,7 +112,7 @@ Complexity features: Sample Entropy (template matching with tolerance $r = 0.2\s
 
 ### 3.4 Domain Grouping
 
-Pairwise distances between all 87 subjects are computed using their mean feature vectors with three metrics (MMD, DTW, Wasserstein). For each metric, subjects are ranked by mean distance to all others and split at the median into two groups: **in-domain** (44 subjects with the lowest mean distances, most typical) and **out-domain** (43 subjects with the highest mean distances, most dissimilar). This binary partition ensures that every subject is assigned to exactly one domain group with no intermediate category, maximizing statistical power for the in-domain vs. out-domain contrast.
+Pairwise distances between all 87 subjects are computed using their mean feature vectors with three metrics (MMD, DTW, Wasserstein). For each metric, a $K$-nearest-neighbour (KNN) score is computed per subject as the mean distance to the $K = 5$ closest neighbours, and subjects are ranked by this score and split at the median into two groups: **in-domain** (44 subjects with the lowest KNN scores, most typical) and **out-domain** (43 subjects with the highest KNN scores, most dissimilar). This binary partition ensures that every subject is assigned to exactly one domain group with no intermediate category, maximizing statistical power for the in-domain vs. out-domain contrast.
 
 ### 3.5 Experimental Design
 
@@ -270,15 +270,15 @@ Detailed stratification by mode × condition × level reveals that the statistic
 
 #### 4.3.3 Domain Group Concordance
 
-Subject rankings by mean distance across the three metrics show moderate-to-strong agreement:
+Subject rankings by KNN score ($K = 5$) across the three metrics show weak-to-strong agreement:
 
 | Metric Pair | Spearman $\rho$ | $p$-value | Kendall $\tau$ |
 |-------------|:---------------:|:---------:|:--------------:|
-| MMD vs. Wasserstein | 0.752 | $4.6 \times 10^{-17}$ | 0.622 |
-| MMD vs. DTW | 0.477 | $3.0 \times 10^{-6}$ | 0.339 |
-| Wasserstein vs. DTW | 0.803 | $9.0 \times 10^{-21}$ | 0.617 |
+| MMD vs. Wasserstein | 0.658 | $4.3 \times 10^{-12}$ | 0.478 |
+| MMD vs. DTW | 0.312 | $3.3 \times 10^{-3}$ | 0.226 |
+| Wasserstein vs. DTW | 0.795 | $3.5 \times 10^{-20}$ | 0.610 |
 
-Despite this, 40/87 (46.0%) subjects switch domain groups across metrics in the binary partition. Three-metric agreement is 25/44 (56.8%) for in-domain and 22/43 (51.2%) for out-domain, indicating moderate stability at both tails of the distance distribution.
+Despite this, 37/87 (42.5%) subjects switch domain groups across metrics in the binary partition. Three-metric agreement is 26/44 (59.1%) for in-domain and 24/43 (55.8%) for out-domain, indicating moderate stability at both tails of the distance distribution.
 
 **Key finding**: Even though subjects switch groups in ranking, the downstream classification performance is indistinguishable ($\eta^2 < 0.004$). This demonstrates that the distance metric–performance pathway is effectively decoupled.
 
@@ -453,7 +453,7 @@ The key findings are:
 
 1. **Class imbalance handling dominates** ($\eta^2 = 0.58$–$0.79$): SMOTE-based oversampling dramatically improves detection performance across all metrics. SW-SMOTE with $r = 0.1$ achieves the highest F2-score (0.558) and AUPRC (0.648) in within-domain settings; plain SMOTE with $r = 0.1$ achieves the highest AUROC by mean rank (0.90). The AUPRC improvement from baseline (0.12 → 0.65, +460%) confirms that gains are genuine under class imbalance, not artifacts of threshold-insensitive metrics.
 
-2. **Distance metric choice is irrelevant** ($\eta^2 < 0.004$): MMD, DTW, and Wasserstein produce statistically indistinguishable downstream performance despite 46.0% of subjects switching domain groups across metrics. Vehicle dynamics coupling and feature scale heterogeneity provide a physics-grounded explanation.
+2. **Distance metric choice is irrelevant** ($\eta^2 < 0.004$): MMD, DTW, and Wasserstein produce statistically indistinguishable downstream performance despite 42.5% of subjects switching domain groups across metrics. Vehicle dynamics coupling and feature scale heterogeneity provide a physics-grounded explanation.
 
 3. **Training mode hierarchy is clear**: Within-domain ≈ mixed >> cross-domain (F2: 0.36 vs. 0.13; AUROC: 0.77 vs. 0.52), with Cliff's $\delta = 0.83$–$0.95$ (large).
 
