@@ -163,7 +163,7 @@ Based on the literature and factorial design, we formulate 6 primary hypotheses 
 
 | # | Hypothesis | Factor | RQ |
 |:-:|-----------|:------:|:--:|
-| H1 | Oversampling > Baseline ≥ RUS in classification performance | Condition | RQ1 |
+| H1 | Oversampling > RUS > Baseline in classification performance | Condition | RQ1 |
 | H2 | The optimal sampling ratio is method-dependent | Condition × Ratio | RQ1 |
 | H3 | The choice of distance metric affects downstream performance | Distance | RQ2 |
 | H4 | In-domain subjects outperform out-domain subjects | Level | RQ2 |
@@ -197,7 +197,7 @@ The Kruskal-Wallis test reveals a significant condition effect across all 18 exp
 | AUROC | 18/18 | 0.579 | Large | 23.63–65.21 | < 0.0001 |
 | AUPRC | 18/18 | 0.625 | Large | 35.50–64.85 | < 0.0001 |
 
-#### 4.2.2 Method Ordering (H1: Oversampling > Baseline ≥ RUS)
+#### 4.2.2 Method Ordering (H1: Oversampling > RUS > Baseline)
 
 Mann-Whitney $U$ tests with Cliff's $\delta$ effect sizes confirm a clear performance hierarchy:
 
@@ -209,7 +209,7 @@ Mann-Whitney $U$ tests with Cliff's $\delta$ effect sizes confirm a clear perfor
 
 Within-domain SMOTE/SW-SMOTE vs. baseline: $\delta = +0.98$–$1.00$ (F2, AUROC, AUPRC), confirming near-complete performance separation.
 
-Oversampling methods consistently outperform RUS: F2-score 16/24 cells oversampling wins, all with large Cliff's $\delta$; AUROC 19/24 cells (17/24 large effects). RUS degrades performance relative to both oversampling and baseline in most settings, confirming the ordering Oversampling > Baseline ≥ RUS. **H1 is fully supported.**
+Oversampling methods consistently outperform both RUS and baseline: F2-score 16/24 cells oversampling wins, all with large Cliff's $\delta$; AUROC 19/24 cells (17/24 large effects). However, RUS does not outperform baseline — it degrades performance relative to baseline in most settings (F2: baseline wins 11/12 cells; AUROC: 7/12; AUPRC: 5/12), yielding the observed ordering Oversampling > Baseline ≥ RUS rather than the hypothesised Oversampling > RUS > Baseline. **H1 is partially supported**: the superiority of oversampling is confirmed, but RUS fails to improve over no rebalancing.
 
 *Supplementary finding*: Plain SMOTE is generally competitive with or superior to SW-SMOTE (H7, see Appendix C).
 
@@ -523,7 +523,7 @@ For practitioners, these results prescribe a clear strategy: apply SMOTE-based c
 
 | # | Hypothesis | Verdict | Key Evidence |
 |:-:|-----------|:-------:|-------------|
-| H1 | Oversampling > Baseline ≥ RUS | ✓ Fully supported | $\eta^2 = 0.793$; oversampling 24/24 large $\delta$; RUS ≤ baseline in most cells |
+| H1 | Oversampling > RUS > Baseline | ✓ Partially supported | Oversampling > Baseline confirmed ($\eta^2 = 0.793$; 24/24 large $\delta$); RUS > Baseline rejected (RUS ≤ baseline in most cells) |
 | H2 | Optimal ratio is method-dependent | ✓ Supported | RUS/SW→$r=0.1$; SMOTE→$r=0.5$ |
 | H3 | Distance metric matters | ✗ Negligible | $\eta^2 < 0.004$, all metrics equivalent |
 | H4 | In-domain > out-domain | ✓ Partially | True in cross-domain; reversed in within-domain |
