@@ -178,12 +178,12 @@ Based on the literature and factorial design, we formulate 6 primary hypotheses 
 
 ### 4.1 Overview
 
-A total of 1,512 observations across 7 conditions, 3 training modes, 3 distance metrics, 2 domain levels, and 12 random seeds were analyzed. The permutation test confirms a significant global condition effect for F2-score ($T_{\text{obs}} = 13.41$, $p < 0.001$) and AUROC ($T_{\text{obs}} = 10.35$, $p < 0.001$).
+A total of 1,512 observations across 7 conditions, 3 training modes, 3 distance metrics, 2 domain levels, and 12 random seeds were analyzed. The permutation test confirms a significant global condition effect for F2-score ($T_{\text{obs}} = 13.41$, $p < 0.001$), AUROC ($T_{\text{obs}} = 10.35$, $p < 0.001$), and AUPRC ($p < 0.001$).
 
-Fig. 2 summarizes the relative importance of each experimental factor. The four-factor effect size hierarchy (F2-score, AUROC, AUPRC) immediately reveals that **Mode** ($\eta^2 > 0.6$) and **Condition** ($\eta^2 = 0.1$–$0.8$) account for nearly all systematic variance, while **Level** (in/out-domain) and **Distance** contribute negligibly. This visual establishes the central narrative of the paper: rebalancing and training regime matter; domain grouping strategy does not.
+Fig. 2 summarizes the relative importance of each experimental factor. The four-factor effect size hierarchy (F2-score, AUROC, AUPRC) immediately reveals that **Condition** ($\eta^2 = 0.1$–$0.8$) and **Mode** ($\eta^2 > 0.6$) account for nearly all systematic variance, while **Distance** and **Level** (in/out-domain) contribute negligibly. This visual establishes the central narrative of the paper: rebalancing and training regime matter; domain grouping strategy does not.
 
 ![Effect Size Hierarchy](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig2_effect_hierarchy.png)
-*Fig. 2. Effect size hierarchy ($\eta^2$) for the four experimental factors (Condition, Mode, Level, Distance) across F2-score, AUROC, and AUPRC. Mode dominates, followed by Condition; Level and Distance are negligible.*
+*Fig. 2. Effect size hierarchy ($\eta^2$) for the four experimental factors (Condition, Distance, Level, Mode) across F2-score, AUROC, and AUPRC. Condition and Mode dominate; Distance and Level are negligible.*
 
 ### 4.2 Class Imbalance Handling (RQ1: H1, H2)
 
