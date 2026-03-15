@@ -121,11 +121,15 @@ The experiment follows a 4-factor factorial design:
 | Factor | Symbol | Levels | Type |
 |--------|:------:|:------:|------|
 | Condition ($C$) | method × ratio | 7 | Between-group |
-| Training mode ($M$) | source/target/mixed | 3 | Between-group |
 | Distance metric ($D$) | MMD/DTW/Wasserstein | 3 | Between-group |
 | Domain level ($L$) | in/out | 2 | Within-subject |
+| Training mode ($M$) | source/target/mixed | 3 | Between-group |
 
 **Conditions (7)**: baseline (no rebalancing), RUS ($r=0.1$, $r=0.5$), SMOTE ($r=0.1$, $r=0.5$), SW-SMOTE ($r=0.1$, $r=0.5$).
+
+**Distance metrics (3)**: MMD, DTW, and Wasserstein, used to compute subject-level KNN scores for domain grouping (§3.4).
+
+**Domain levels (2)**: In-domain (44 subjects) and out-domain (43 subjects), determined by median split of KNN scores.
 
 **Training modes (3)**: Cross-domain (train on the opposite domain group only, 43 or 44 subjects), within-domain (train on the target domain group only, 44 or 43 subjects), mixed (train on all 87 subjects).
 
@@ -282,9 +286,37 @@ Despite this, 37/87 (42.5%) subjects switch domain groups across metrics in the 
 
 **Key finding**: Even though subjects switch groups in ranking, the downstream classification performance is indistinguishable ($\eta^2 < 0.004$). This demonstrates that the distance metric–performance pathway is effectively decoupled.
 
-### 4.4 Training Mode Effect (H7)
+### 4.4 Domain Shift Effect (H10, H12)
 
-#### 4.4.1 Within-Domain vs. Cross-Domain (H7)
+#### 4.4.1 In-Domain vs. Out-Domain (H10)
+
+The domain gap $\Delta = Y_{\text{out}} - Y_{\text{in}}$ is generally small and non-significant:
+
+- **F2-score**: 11/63 Wilcoxon tests significant (Bonf. $\alpha' = 0.00079$); mean $|\Delta| = 0.030$–$0.047$.
+- **AUROC**: 12/63 significant; mean $|\Delta| = 0.019$–$0.097$.
+
+Notably, within-domain and mixed training often show **positive** $\Delta$ (out-domain outperforms in-domain), suggesting that rebalancing is more effective for behaviorally diverse subjects:
+
+| Mode | Baseline $\Delta$ (F2) | Best rebalancing $\Delta$ (F2) |
+|------|:----------------------:|:------------------------------:|
+| Cross-domain | −0.025 | SMOTE: +0.003 |
+| Within-domain | +0.027 | RUS: +0.122 |
+| Mixed | +0.085 | SMOTE: +0.104 |
+
+#### 4.4.2 Condition × Mode Interaction (H12)
+
+**Strongly supported.** The optimal condition varies by mode — RUS performs best in cross-domain (rank 1–2 by F2); SMOTE/SW-SMOTE dominate in within-domain and mixed settings. This interaction indicates that practitioners cannot choose a single rebalancing strategy without considering the training mode.
+
+Fig. 3 captures this interaction structure as a heatmap of mean performance across 7 conditions × 3 modes. The Cross-domain column is uniformly dark (low performance) regardless of condition, while the Within-domain and Mixed columns reveal large inter-condition variation with SMOTE/SW-SMOTE methods showing the highest values. This visual pattern explains why H12 is significant: the condition effect is mode-dependent because Cross-domain training compresses all methods into a uniformly poor performance regime.
+
+![Condition × Mode Heatmap](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig3_condition_mode_heatmap.png)
+*Fig. 3. Mean performance heatmap (7 conditions × 3 modes) for F2-score, AUROC, and AUPRC. Cross-domain performance is uniformly low regardless of rebalancing method, while Within-domain and Mixed reveal strong condition differentiation — visually confirming the Condition × Mode interaction (H12).*
+
+*Supplementary findings*: Condition × distance interaction (H13) is weak (12/18 consistent, 6/18 minor swaps; see Appendix C). Level × mode interaction (H14) confirms that within-domain training eliminates or reverses the domain gap (see Appendix C). The domain gap in cross-domain settings (H9) and the effect of oversampling on domain gap (H11) show mixed, context-dependent results (see Appendix C).
+
+### 4.5 Training Mode Effect (H7)
+
+#### 4.5.1 Within-Domain vs. Cross-Domain (H7)
 
 The training mode has a massive impact on performance:
 
@@ -300,7 +332,7 @@ Fig. 6 makes this mode separation visually striking. The box plots show that Cro
 ![Training Mode Box Plot](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig6_mode_boxplot.png)
 *Fig. 6. Performance distributions by training mode with Cliff's $\delta$ annotations. Cross-domain is clearly separated from Within-domain and Mixed ($\delta > 0.8$, large), while Within-domain and Mixed are statistically equivalent.*
 
-#### 4.4.2 Descriptive Statistics by Condition × Mode
+#### 4.5.2 Descriptive Statistics by Condition × Mode
 
 | Condition | Cross-domain F2 | Within-domain F2 | Mixed F2 |
 |-----------|:----------------:|:------------------:|:---------:|
@@ -311,34 +343,6 @@ Fig. 6 makes this mode separation visually striking. The box plots show that Cro
 | sw\_smote\_r05 | 0.042 | 0.468 | 0.402 |
 | rus\_r01 | 0.165 | 0.179 | 0.208 |
 | rus\_r05 | 0.157 | 0.159 | 0.170 |
-
-### 4.5 Domain Shift Effect (H10, H12)
-
-#### 4.5.1 In-Domain vs. Out-Domain (H10)
-
-The domain gap $\Delta = Y_{\text{out}} - Y_{\text{in}}$ is generally small and non-significant:
-
-- **F2-score**: 11/63 Wilcoxon tests significant (Bonf. $\alpha' = 0.00079$); mean $|\Delta| = 0.030$–$0.047$.
-- **AUROC**: 12/63 significant; mean $|\Delta| = 0.019$–$0.097$.
-
-Notably, within-domain and mixed training often show **positive** $\Delta$ (out-domain outperforms in-domain), suggesting that rebalancing is more effective for behaviorally diverse subjects:
-
-| Mode | Baseline $\Delta$ (F2) | Best rebalancing $\Delta$ (F2) |
-|------|:----------------------:|:------------------------------:|
-| Cross-domain | −0.025 | SMOTE: +0.003 |
-| Within-domain | +0.027 | RUS: +0.122 |
-| Mixed | +0.085 | SMOTE: +0.104 |
-
-#### 4.5.2 Condition × Mode Interaction (H12)
-
-**Strongly supported.** The optimal condition varies by mode — RUS performs best in cross-domain (rank 1–2 by F2); SMOTE/SW-SMOTE dominate in within-domain and mixed settings. This interaction indicates that practitioners cannot choose a single rebalancing strategy without considering the training mode.
-
-Fig. 3 captures this interaction structure as a heatmap of mean performance across 7 conditions × 3 modes. The Cross-domain column is uniformly dark (low performance) regardless of condition, while the Within-domain and Mixed columns reveal large inter-condition variation with SMOTE/SW-SMOTE methods showing the highest values. This visual pattern explains why H12 is significant: the condition effect is mode-dependent because Cross-domain training compresses all methods into a uniformly poor performance regime.
-
-![Condition × Mode Heatmap](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig3_condition_mode_heatmap.png)
-*Fig. 3. Mean performance heatmap (7 conditions × 3 modes) for F2-score, AUROC, and AUPRC. Cross-domain performance is uniformly low regardless of rebalancing method, while Within-domain and Mixed reveal strong condition differentiation — visually confirming the Condition × Mode interaction (H12).*
-
-*Supplementary findings*: Condition × distance interaction (H13) is weak (12/18 consistent, 6/18 minor swaps; see Appendix C). Level × mode interaction (H14) confirms that within-domain training eliminates or reverses the domain gap (see Appendix C). The domain gap in cross-domain settings (H9) and the effect of oversampling on domain gap (H11) show mixed, context-dependent results (see Appendix C).
 
 ### 4.6 Robustness Validation
 
