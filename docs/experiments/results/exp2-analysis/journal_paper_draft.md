@@ -227,7 +227,37 @@ RUS > Baseline is **not supported**. In within-domain and mixed settings, baseli
 
 #### 4.2.3 Sampling Ratio Sensitivity (H2)
 
-The optimal sampling ratio is method-specific: $r=0.1$ is optimal for RUS and SW-SMOTE, while $r=0.5$ is preferred for SMOTE in within-domain settings. Directional agreement between $r=0.1$ and $r=0.5$ rankings is 91% (F2) and 87% (AUROC), indicating that method choice matters more than ratio tuning, though the method-dependent sensitivity underscores the need to select method and ratio jointly.
+**H2**: The optimal sampling ratio is method-dependent ($r=0.1$ vs $r=0.5$).
+
+We test this by comparing $r=0.1$ vs $r=0.5$ within each method using Mann-Whitney $U$ tests across 6 cells (3 modes × 2 levels), yielding 18 comparisons per metric (3 methods × 6 cells). Bonferroni-corrected $\alpha' = 0.05/18 = 0.00278$. Positive $\delta$ indicates $r=0.1$ advantage.
+
+**F2-score** ($r=0.1$ vs $r=0.5$):
+
+| Method | Direction ($r=0.1$ wins) | Significant / 6 | Mean $\delta$ | Interpretation |
+|:-------:|:------------------------:|:----------------:|:-------------:|:--------------:|
+| RUS | 6/6 | 3 | +0.355 | $r=0.1$ preferred (medium) |
+| SMOTE | 2/6 | 0 | −0.003 | $r=0.5$ marginally preferred (negligible) |
+| SW-SMOTE | 6/6 | 6 | +0.678 | $r=0.1$ strongly preferred (large) |
+
+**AUROC** ($r=0.1$ vs $r=0.5$):
+
+| Method | Direction ($r=0.1$ wins) | Significant / 6 | Mean $\delta$ | Interpretation |
+|:-------:|:------------------------:|:----------------:|:-------------:|:--------------:|
+| RUS | 5/6 | 1 | +0.243 | $r=0.1$ preferred (small) |
+| SMOTE | 6/6 | 0 | +0.173 | $r=0.1$ preferred (small, non-significant) |
+| SW-SMOTE | 4/6 | 2 | +0.221 | $r=0.1$ preferred (small) |
+
+**AUPRC** ($r=0.1$ vs $r=0.5$):
+
+| Method | Direction ($r=0.1$ wins) | Significant / 6 | Mean $\delta$ | Interpretation |
+|:-------:|:------------------------:|:----------------:|:-------------:|:--------------:|
+| RUS | 5/6 | 1 | +0.142 | $r=0.1$ preferred (small) |
+| SMOTE | 5/6 | 0 | +0.121 | $r=0.1$ preferred (small, non-significant) |
+| SW-SMOTE | 4/6 | 4 | +0.370 | $r=0.1$ preferred (medium) |
+
+Across all three metrics, $r=0.1$ is preferred for RUS (16/18 cells) and SW-SMOTE (14/18 cells, 12 significant). For SMOTE, $r=0.1$ is preferred on AUROC (6/6) and AUPRC (5/6), but $r=0.5$ is marginally preferred on F2 (4/6, 0 significant, $\delta \approx 0$). Directional agreement between $r=0.1$ and $r=0.5$ condition rankings is 91% (F2) and 87% (AUROC).
+
+**H2 verdict — partially supported**: Method-dependent ratio sensitivity is observed only for F2-score, where SMOTE prefers $r=0.5$ while RUS and SW-SMOTE prefer $r=0.1$. For AUROC and AUPRC, all three methods consistently favour $r=0.1$, though SMOTE's preference is non-significant ($\delta < 0.18$). Overall, $r=0.1$ is the more robust default across methods and metrics.
 
 #### 4.2.4 Condition Rankings
 
@@ -400,7 +430,7 @@ Strongest pairwise concordance: AUROC ↔ AUPRC ($\rho = 0.929$), F2 ↔ AUROC (
 
 #### 4.5.3 Ratio Sensitivity
 
-Directional agreement between $r=0.1$ and $r=0.5$ rankings: 91% (F2), 87% (AUROC). AUROC ranking is perfectly stable across ratios ($\rho = 1.000$). F2 ranking is more sensitive ($\rho = 0.400$), primarily due to SMOTE's ratio-dependent behavior.
+Directional agreement between $r=0.1$ and $r=0.5$ condition rankings is 91% (F2) and 87% (AUROC). AUROC ranking is perfectly stable across ratios ($\rho = 1.000$). F2 ranking is more sensitive ($\rho = 0.400$), primarily due to SMOTE's ratio-dependent behaviour (see §4.2.3 for per-method statistical tests).
 
 #### 4.5.4 Precision–Recall Trade-Off
 
@@ -536,7 +566,7 @@ For practitioners, these results prescribe a clear strategy: apply SMOTE-based c
 | # | Hypothesis | Verdict | Key Evidence |
 |:-:|-----------|:-------:|-------------|
 | H1 | Oversampling > RUS > Baseline | ✓ Partially supported | Oversampling > RUS confirmed in within-domain/mixed (32/48 large $\delta$); reversed in cross-domain. RUS > Baseline rejected (Baseline > RUS in 10/12 cells, F2) |
-| H2 | Optimal ratio is method-dependent | ✓ Supported | RUS/SW→$r=0.1$; SMOTE→$r=0.5$ |
+| H2 | Optimal ratio is method-dependent | ✓ Partially supported | Method-dependence only for F2 (SMOTE→$r=0.5$); AUROC/AUPRC: all methods favour $r=0.1$ |
 | H3 | Distance metric matters | ✗ Negligible | $\eta^2 < 0.004$, all metrics equivalent |
 | H4 | In-domain > out-domain | ✓ Partially | True in cross-domain; reversed in within-domain |
 | H5 | Within-domain > cross-domain | ✓ Fully supported | $\delta = +0.833$ (F2), $+0.945$ (AUROC) |
@@ -571,7 +601,7 @@ The following 7 hypotheses were tested as part of the comprehensive analysis fra
 | Hypothesis | Omnibus test | Post-hoc / pairwise | Effect size | Correction | Bootstrap | Section |
 |:----------:|:------------|:--------------------|:-----------|:-----------|:----------|:--------|
 | H1 | Kruskal-Wallis $H$ (18 cells) | Mann-Whitney $U$: OS vs RUS (48 pairs), RUS vs BL (12 pairs) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.00104$ (OS–RUS), $0.00417$ (RUS–BL) | Percentile $B=2{,}000$ | §4.2.1–4.2.2 |
-| H2 | — | Directional ranking agreement | — | — | — | §4.2.3 |
+| H2 | — | Mann-Whitney $U$ ($r=0.1$ vs $r=0.5$, 18 pairs) | Cliff's $\delta$ | Bonf. $\alpha'=0.00278$ | — | §4.2.3 |
 | H3 | Kruskal-Wallis $H$ (6 cells) | Mann-Whitney $U$ (pooled) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.0028$ | — | §4.3.1 |
 | H4 | — | Wilcoxon signed-rank (63 pairs) | Mean $\lvert\Delta\rvert$ | Bonf. $\alpha'=0.00079$ | — | §4.3.4 |
 | H5 | Friedman $\chi_F^2$ (14 conditions) | Nemenyi post-hoc (CD = 2.600) | Cliff's $\delta$, Kendall's $W$ | — | — | §4.3.5 |
