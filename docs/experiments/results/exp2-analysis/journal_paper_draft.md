@@ -189,10 +189,10 @@ Fig. 2 summarizes the relative importance of each experimental factor. The four-
 
 #### 4.2.1 Global Test
 
-The Kruskal-Wallis test reveals a significant condition effect across all 18 experimental cells:
+The Kruskal-Wallis test reveals a significant condition effect across all 18 experimental cells (Bonferroni $\alpha' = 0.05/18 = 0.0028$):
 
-- **F2-score**: 18/18 cells significant at Bonferroni $\alpha' = 0.0028$; mean $\eta^2 = 0.793$ (large); $H = 61.99$–$74.94$, all $p < 0.0001$.
-- **AUROC**: 18/18 cells significant; mean $\eta^2 = 0.579$ (large); $H = 23.63$–$65.21$.
+- **F2-score**: 18/18 cells significant; mean $\eta^2 = 0.793$ (large); $H = 61.99$–$74.94$, all $p < 0.0001$.
+- **AUROC**: 18/18 cells significant; mean $\eta^2 = 0.579$ (large); $H = 23.63$–$65.21$, all $p < 0.0001$.
 - **AUPRC**: 18/18 cells significant; mean $\eta^2 = 0.625$ (large); $H = 35.50$–$64.85$, all $p < 0.0001$.
 
 Extended metrics confirm universality: F1-score (18/18 significant, $\eta^2 = 0.769$), Recall (18/18, $\eta^2 = 0.755$).
