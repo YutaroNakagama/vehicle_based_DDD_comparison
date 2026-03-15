@@ -257,11 +257,6 @@ def plot_effect_hierarchy(df: pd.DataFrame):
                 ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.005,
                         f"{v:.4f}", ha="center", va="bottom", fontsize=6.5)
 
-    # Reference lines
-    ax.axhline(0.14, color="gray", linewidth=0.8, linestyle=":", alpha=0.5)
-    ax.text(3.65, 0.145, "large effect threshold", fontsize=7, color="gray",
-            ha="right", fontstyle="italic")
-
     ax.set_xticks(x)
     ax.set_xticklabels(factors, fontsize=10)
     ax.set_ylabel("Mean η² (Kruskal-Wallis)", fontsize=10)
