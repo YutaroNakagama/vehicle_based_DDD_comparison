@@ -205,9 +205,9 @@ Mann-Whitney $U$ tests with Cliff's $\delta$ effect sizes confirm a clear perfor
 |--------|:-------------------:|:-------------:|:------:|:-----:|:----------:|
 | F2-score | 30/36 | 30 (83%) | 1 (3%) | 3 (8%) | 2 (6%) |
 | AUROC | 23/36 | 23 (64%) | 1 (3%) | 8 (22%) | 4 (11%) |
-| F1-score | 28/36 | 28 (78%) | — | 6 (17%) | 2 (6%) |
+| AUPRC | 22/36 | 22 (61%) | 2 (6%) | 5 (14%) | 7 (19%) |
 
-Within-domain SMOTE/SW-SMOTE vs. baseline: $\delta = +0.98$–$1.00$ (F2, AUROC, AUPRC, F1), confirming near-complete performance separation.
+Within-domain SMOTE/SW-SMOTE vs. baseline: $\delta = +0.98$–$1.00$ (F2, AUROC, AUPRC), confirming near-complete performance separation.
 
 Oversampling methods consistently outperform RUS: F2-score 16/24 cells oversampling wins, all with large Cliff's $\delta$; AUROC 19/24 cells (17/24 large effects). RUS degrades performance relative to both oversampling and baseline in most settings, confirming the ordering Oversampling > Baseline ≥ RUS. **H1 is fully supported.**
 
