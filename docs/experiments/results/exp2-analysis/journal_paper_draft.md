@@ -199,17 +199,29 @@ The Kruskal-Wallis test reveals a significant condition effect across all 18 exp
 
 #### 4.2.2 Method Ordering (H1: Oversampling > RUS > Baseline)
 
-Mann-Whitney $U$ tests with Cliff's $\delta$ effect sizes confirm a clear performance hierarchy:
+H1 contains two sub-hypotheses: (A) Oversampling > RUS and (B) RUS > Baseline. We test each with Mann-Whitney $U$ tests and Cliff's $\delta$ effect sizes.
 
-| Metric | Significant (Bonf.) | Large effects | Medium | Small | Negligible |
-|--------|:-------------------:|:-------------:|:------:|:-----:|:----------:|
-| F2-score | 30/36 | 30 (83%) | 1 (3%) | 3 (8%) | 2 (6%) |
-| AUROC | 23/36 | 23 (64%) | 1 (3%) | 8 (22%) | 4 (11%) |
-| AUPRC | 22/36 | 22 (61%) | 2 (6%) | 5 (14%) | 7 (19%) |
+**Sub-hypothesis A — Oversampling > RUS** (4 oversampling × 2 RUS × 6 cells = 48 comparisons, Bonferroni $\alpha' = 0.00104$):
 
-Within-domain SMOTE/SW-SMOTE vs. baseline: $\delta = +0.98$–$1.00$ (F2, AUROC, AUPRC), confirming near-complete performance separation.
+| Metric | OS > RUS | RUS > OS | Sig. OS > RUS | Sig. RUS > OS | Large OS > RUS | Large RUS > OS |
+|--------|:--------:|:--------:|:------------:|:------------:|:--------------:|:--------------:|
+| F2-score | 32/48 | 16/48 | 32 | 16 | 32 | 16 |
+| AUROC | 39/48 | 9/48 | 32 | 2 | 32 | 2 |
+| AUPRC | 35/48 | 13/48 | 32 | 4 | 32 | 4 |
 
-Oversampling methods consistently outperform both RUS and baseline: F2-score 16/24 cells oversampling wins, all with large Cliff's $\delta$; AUROC 19/24 cells (17/24 large effects). However, RUS does not outperform baseline — it degrades performance relative to baseline in most settings (F2: baseline wins 11/12 cells; AUROC: 7/12; AUPRC: 5/12), yielding the observed ordering Oversampling > Baseline ≥ RUS rather than the hypothesised Oversampling > RUS > Baseline. **H1 is partially supported**: the superiority of oversampling is confirmed, but RUS fails to improve over no rebalancing.
+The result is **mode-dependent**: within-domain and mixed training show OS > RUS in 16/16 comparisons per metric (all significant, all large $\delta$; mean $\delta = +0.93$–$+0.99$), while cross-domain (source\_only) shows a complete reversal with RUS > OS in 16/16 (F2), 9/16 (AUROC), and 13/16 (AUPRC) comparisons.
+
+**Sub-hypothesis B — RUS > Baseline** (2 RUS × 6 cells = 12 comparisons, Bonferroni $\alpha' = 0.00417$):
+
+| Metric | RUS > BL | BL > RUS | Sig. RUS > BL | Sig. BL > RUS | Large BL > RUS |
+|--------|:--------:|:--------:|:------------:|:------------:|:--------------:|
+| F2-score | 2/12 | 10/12 | 1 | 6 | 6 |
+| AUROC | 3/12 | 9/12 | 0 | 5 | 5 |
+| AUPRC | 5/12 | 7/12 | 0 | 4 | 4 |
+
+RUS > Baseline is **not supported**. In within-domain and mixed settings, baseline significantly outperforms RUS with large effects (F2 mean $\delta = -0.84$, AUROC $-0.80$, AUPRC $-0.74$ in mixed mode). In cross-domain, differences are negligible ($\delta \approx 0$).
+
+**H1 verdict — partially supported**: Oversampling > RUS is confirmed in within-domain and mixed settings (32/48 significant with large $\delta$), but reversed in cross-domain. RUS > Baseline is rejected across all modes. The observed ordering is mode-dependent: Oversampling > Baseline > RUS (within-domain/mixed) vs. RUS ≈ Oversampling ≈ Baseline (cross-domain, near chance). This interaction is further analysed under H6 (§4.4).
 
 *Supplementary finding*: Plain SMOTE is generally competitive with or superior to SW-SMOTE (H7, see Appendix C).
 
@@ -523,7 +535,7 @@ For practitioners, these results prescribe a clear strategy: apply SMOTE-based c
 
 | # | Hypothesis | Verdict | Key Evidence |
 |:-:|-----------|:-------:|-------------|
-| H1 | Oversampling > RUS > Baseline | ✓ Partially supported | Oversampling > Baseline confirmed ($\eta^2 = 0.793$; 24/24 large $\delta$); RUS > Baseline rejected (RUS ≤ baseline in most cells) |
+| H1 | Oversampling > RUS > Baseline | ✓ Partially supported | OS > RUS confirmed in within-domain/mixed (32/48 large $\delta$); reversed in cross-domain. RUS > Baseline rejected (BL > RUS in 10/12 cells, F2) |
 | H2 | Optimal ratio is method-dependent | ✓ Supported | RUS/SW→$r=0.1$; SMOTE→$r=0.5$ |
 | H3 | Distance metric matters | ✗ Negligible | $\eta^2 < 0.004$, all metrics equivalent |
 | H4 | In-domain > out-domain | ✓ Partially | True in cross-domain; reversed in within-domain |
@@ -558,7 +570,7 @@ The following 7 hypotheses were tested as part of the comprehensive analysis fra
 
 | Hypothesis | Omnibus test | Post-hoc / pairwise | Effect size | Correction | Bootstrap | Section |
 |:----------:|:------------|:--------------------|:-----------|:-----------|:----------|:--------|
-| H1 | Kruskal-Wallis $H$ (18 cells) | Mann-Whitney $U$ (36 pairs) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.0028$ | Percentile $B=2{,}000$ | §4.2.1–4.2.2 |
+| H1 | Kruskal-Wallis $H$ (18 cells) | Mann-Whitney $U$: OS vs RUS (48 pairs), RUS vs BL (12 pairs) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.00104$ (OS–RUS), $0.00417$ (RUS–BL) | Percentile $B=2{,}000$ | §4.2.1–4.2.2 |
 | H2 | — | Directional ranking agreement | — | — | — | §4.2.3 |
 | H3 | Kruskal-Wallis $H$ (6 cells) | Mann-Whitney $U$ (pooled) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.0028$ | — | §4.3.1 |
 | H4 | — | Wilcoxon signed-rank (63 pairs) | Mean $\lvert\Delta\rvert$ | Bonf. $\alpha'=0.00079$ | — | §4.3.4 |
