@@ -551,3 +551,35 @@ The following 7 hypotheses were tested as part of the comprehensive analysis fra
 | H11 | Oversampling reduces domain gap | ✗ Mixed | Context-dependent; sometimes increases gap | Weak interaction effect |
 | H12 | Condition × Distance interaction | ✓ Weak | 12/18 consistent; 6/18 minor swaps | Negligible given H3 |
 | H13 | Level × Mode interaction | ✓ Supported | Within-domain reverses domain shift | Extension of H4 + H5 |
+
+## Appendix D: Statistical Methods–Hypothesis Correspondence Table
+
+### D.1 Methods Applied per Hypothesis
+
+| Hypothesis | Omnibus test | Post-hoc / pairwise | Effect size | Correction | Bootstrap | Section |
+|:----------:|:------------|:--------------------|:-----------|:-----------|:----------|:--------|
+| H1 | Kruskal-Wallis $H$ (18 cells) | Mann-Whitney $U$ (36 pairs) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.0028$ | Percentile $B=2{,}000$ | §4.2.1–4.2.2 |
+| H2 | — | Directional ranking agreement | — | — | — | §4.2.3 |
+| H3 | Kruskal-Wallis $H$ (6 cells) | Mann-Whitney $U$ (pooled) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.0028$ | — | §4.3.1 |
+| H4 | — | Wilcoxon signed-rank (63 pairs) | Mean $|\Delta|$ | Bonf. $\alpha'=0.00079$ | — | §4.3.4 |
+| H5 | Friedman $\chi_F^2$ (14 conditions) | Nemenyi post-hoc (CD = 2.600) | Cliff's $\delta$, Kendall's $W$ | — | — | §4.3.5 |
+| H6 | Friedman $\chi_F^2$ | Ranking comparison by mode | — | — | — | §4.4 |
+
+### D.2 Methods Applied per Purpose
+
+| Purpose | Method | Parameters | Hypotheses |
+|---------|--------|-----------|:----------:|
+| Global condition effect | Permutation test | $B=10{,}000$; $H_0$: label exchangeability | H1 |
+| $k$-group comparison | Kruskal-Wallis $H$ | $\alpha'=\alpha/m$ | H1, H3 |
+| Paired $k$-group ranking | Friedman $\chi_F^2$ | 7 conditions × 18 cells | H5, H6 |
+| Pairwise unpaired | Mann-Whitney $U$ | Per-cell ($n=12$) or pooled ($n=36$) | H1, H3, H7 |
+| Pairwise paired | Wilcoxon signed-rank | In-domain vs. out-domain pairs | H4, H10, H11 |
+| Post-hoc ranking | Nemenyi test | $\text{CD} = q_\alpha \sqrt{k(k+1)/6n}$ | H5 |
+| Subject ranking concordance | Spearman $\rho$, Kendall $\tau$ | 3 metric pairs | H3 (§4.3.2) |
+| Cross-metric agreement | Kendall's $W$ | $k=7$ metrics, $n=7$ conditions | Robustness (§4.5.2) |
+| Effect size (rank-based) | Cliff's $\delta$ | Thresholds: negligible/small/medium/large | H1, H3, H5 |
+| Effect size (variance) | $\eta^2 = H / (N-1)$ | Proportion of variance explained | H1, H3 |
+| Effect size CI | Percentile bootstrap | $B=2{,}000$ | H1 |
+| Population mean CI | BCa bootstrap | $B=10{,}000$ | All |
+| Multiple testing | Bonferroni | $\alpha'=\alpha/m$, $\alpha=0.05$ | All |
+| Post-hoc power | Mann-Whitney detectable $|\delta_{\min}|$ | Per-cell: 0.923; pooled: 0.533 | §4.5.5 |
