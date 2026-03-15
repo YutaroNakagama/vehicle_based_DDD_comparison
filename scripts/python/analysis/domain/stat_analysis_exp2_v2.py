@@ -59,12 +59,11 @@ METHOD_GROUPS = {
     "sw_smote": ["sw_smote_r01", "sw_smote_r05"],
 }
 
-METRICS = [("f2", "F2-score"), ("auc", "AUROC")]
+METRICS = [("f2", "F2-score"), ("auc", "AUROC"), ("auc_pr", "AUPRC")]
 METRICS_EXTRA = [
     ("precision", "Precision"),
     ("recall", "Recall"),
     ("f1", "F1-score"),
-    ("auc_pr", "AUPRC"),
     ("accuracy", "Accuracy"),
 ]
 
