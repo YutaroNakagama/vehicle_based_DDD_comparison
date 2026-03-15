@@ -294,25 +294,9 @@ Fig. 5 provides a visual confirmation of this statistical equivalence. The violi
 ![Distance Metric Violin](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig5_distance_violin.png)
 *Fig. 5. Performance distributions by distance metric (Within-domain and Mixed modes). F2-score, AUROC, and AUPRC distributions are virtually indistinguishable across MMD, DTW, and Wasserstein, consistent with $|\delta| < 0.15$ for all pairwise comparisons.*
 
-#### 4.3.2 Distance Metric Granular Analysis
+Notably, 42.5% of subjects switch domain groups depending on the distance metric used, yet downstream classification performance remains indistinguishable ($\eta^2 < 0.004$), demonstrating that the distance metric–performance pathway is effectively decoupled. No single metric (including Wasserstein) demonstrates superior discriminative power (H8, see Appendix C).
 
-Detailed stratification by mode × condition × level reveals that the statistically significant distance effects are concentrated in cross-domain (source\_only) AUROC cells, where per-cell $\eta^2 \approx 0.2$–$0.3$ and per-cell Cliff's $\delta$ reaches 0.5–0.7. However, these cells correspond to near-chance classification (AUROC $\approx$ 0.51–0.53), so the absolute performance differences remain negligible (< 2 pp). In within-domain and mixed modes — where performance is practically meaningful — the distance metric effect vanishes ($\eta^2 < 0.01$, $|\delta| < 0.17$). No single metric (including Wasserstein) demonstrates superior discriminative power (H8, see Appendix C); all three produce equivalent domain groupings.
-
-#### 4.3.3 Domain Group Concordance
-
-Subject rankings by KNN score ($K = 5$) across the three metrics show weak-to-strong agreement:
-
-| Metric Pair | Spearman $\rho$ | $p$-value | Kendall $\tau$ |
-|-------------|:---------------:|:---------:|:--------------:|
-| MMD vs. Wasserstein | 0.658 | $4.3 \times 10^{-12}$ | 0.478 |
-| MMD vs. DTW | 0.312 | $3.3 \times 10^{-3}$ | 0.226 |
-| Wasserstein vs. DTW | 0.795 | $3.5 \times 10^{-20}$ | 0.610 |
-
-Despite this, 37/87 (42.5%) subjects switch domain groups across metrics in the binary partition. Three-metric agreement is 26/44 (59.1%) for in-domain and 24/43 (55.8%) for out-domain, indicating moderate stability at both tails of the distance distribution.
-
-**Key finding**: Even though subjects switch groups in ranking, the downstream classification performance is indistinguishable ($\eta^2 < 0.004$). This demonstrates that the distance metric–performance pathway is effectively decoupled.
-
-#### 4.3.4 Domain Shift Effect (H4)
+#### 4.3.2 Domain Shift Effect (H4)
 
 The domain gap $\Delta = Y_{\text{out}} - Y_{\text{in}}$ is generally small and non-significant:
 
@@ -327,7 +311,7 @@ Notably, within-domain and mixed training often show **positive** $\Delta$ (out-
 | Within-domain | +0.027 | RUS: +0.122 |
 | Mixed | +0.085 | SMOTE: +0.104 |
 
-#### 4.3.5 Training Mode Effect (H5)
+#### 4.3.3 Training Mode Effect (H5)
 
 The training mode has a massive impact on performance:
 
@@ -565,8 +549,8 @@ The following 7 hypotheses were tested as part of the comprehensive analysis fra
 | H1 | Kruskal-Wallis $H$ (18 cells) | Mann-Whitney $U$: OS vs RUS (48 pairs), RUS vs BL (12 pairs) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.00104$ (OS–RUS), $0.00417$ (RUS–BL) | Percentile $B=2{,}000$ | §4.2.1–4.2.2 |
 | H2 | — | Mann-Whitney $U$ ($r=0.1$ vs $r=0.5$, 18 pairs) | Cliff's $\delta$ | Bonf. $\alpha'=0.00278$ | — | §4.2.3 |
 | H3 | Kruskal-Wallis $H$ (6 cells) | Mann-Whitney $U$ (pooled) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.0028$ | — | §4.3.1 |
-| H4 | — | Wilcoxon signed-rank (63 pairs) | Mean $\lvert\Delta\rvert$ | Bonf. $\alpha'=0.00079$ | — | §4.3.4 |
-| H5 | Friedman $\chi_F^2$ (14 conditions) | Nemenyi post-hoc (CD = 2.600) | Cliff's $\delta$, Kendall's $W$ | — | — | §4.3.5 |
+| H4 | — | Wilcoxon signed-rank (63 pairs) | Mean $\lvert\Delta\rvert$ | Bonf. $\alpha'=0.00079$ | — | §4.3.2 |
+| H5 | Friedman $\chi_F^2$ (14 conditions) | Nemenyi post-hoc (CD = 2.600) | Cliff's $\delta$, Kendall's $W$ | — | — | §4.3.3 |
 | H6 | Friedman $\chi_F^2$ | Ranking comparison by mode | — | — | — | §4.4 |
 
 ### D.2 Methods Applied per Purpose
@@ -579,7 +563,7 @@ The following 7 hypotheses were tested as part of the comprehensive analysis fra
 | Pairwise unpaired | Mann-Whitney $U$ | Per-cell ($n=12$) or pooled ($n=36$) | H1, H3, H7 |
 | Pairwise paired | Wilcoxon signed-rank | In-domain vs. out-domain pairs | H4, H10, H11 |
 | Post-hoc ranking | Nemenyi test | $\text{CD} = q_\alpha \sqrt{k(k+1)/6n}$ | H5 |
-| Subject ranking concordance | Spearman $\rho$, Kendall $\tau$ | 3 metric pairs | H3 (§4.3.2) |
+| Subject ranking concordance | Spearman $\rho$, Kendall $\tau$ | 3 metric pairs | H3 (§4.3.1) |
 | Cross-metric agreement | Kendall's $W$ | $k=7$ metrics, $n=7$ conditions | Robustness (§4.5.2) |
 | Effect size (rank-based) | Cliff's $\delta$ | Thresholds: negligible/small/medium/large | H1, H3, H5 |
 | Effect size (variance) | $\eta^2 = H / (N-1)$ | Proportion of variance explained | H1, H3 |
