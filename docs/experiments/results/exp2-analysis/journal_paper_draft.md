@@ -561,7 +561,7 @@ The following 7 hypotheses were tested as part of the comprehensive analysis fra
 | H1 | Kruskal-Wallis $H$ (18 cells) | Mann-Whitney $U$ (36 pairs) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.0028$ | Percentile $B=2{,}000$ | §4.2.1–4.2.2 |
 | H2 | — | Directional ranking agreement | — | — | — | §4.2.3 |
 | H3 | Kruskal-Wallis $H$ (6 cells) | Mann-Whitney $U$ (pooled) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.0028$ | — | §4.3.1 |
-| H4 | — | Wilcoxon signed-rank (63 pairs) | Mean $|\Delta|$ | Bonf. $\alpha'=0.00079$ | — | §4.3.4 |
+| H4 | — | Wilcoxon signed-rank (63 pairs) | Mean $\lvert\Delta\rvert$ | Bonf. $\alpha'=0.00079$ | — | §4.3.4 |
 | H5 | Friedman $\chi_F^2$ (14 conditions) | Nemenyi post-hoc (CD = 2.600) | Cliff's $\delta$, Kendall's $W$ | — | — | §4.3.5 |
 | H6 | Friedman $\chi_F^2$ | Ranking comparison by mode | — | — | — | §4.4 |
 
@@ -582,4 +582,4 @@ The following 7 hypotheses were tested as part of the comprehensive analysis fra
 | Effect size CI | Percentile bootstrap | $B=2{,}000$ | H1 |
 | Population mean CI | BCa bootstrap | $B=10{,}000$ | All |
 | Multiple testing | Bonferroni | $\alpha'=\alpha/m$, $\alpha=0.05$ | All |
-| Post-hoc power | Mann-Whitney detectable $|\delta_{\min}|$ | Per-cell: 0.923; pooled: 0.533 | §4.5.5 |
+| Post-hoc power | Mann-Whitney detectable $\lvert\delta_{\min}\rvert$ | Per-cell: 0.923; pooled: 0.533 | §4.5.5 |
