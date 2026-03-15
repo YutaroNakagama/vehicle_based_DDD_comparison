@@ -269,15 +269,6 @@ def plot_effect_hierarchy(df: pd.DataFrame):
     ax.legend(loc="upper right", framealpha=0.9)
     ax.set_ylim(0, max(r[2] for r in results) * 1.25)
 
-    # Add annotation arrow pointing to Distance + Level bars
-    ax.annotate(
-        "Negligible",
-        xy=(1.15, 0.005), xytext=(1.5, 0.15),
-        fontsize=9, fontweight="bold", color="#c0392b",
-        arrowprops=dict(arrowstyle="->", color="#c0392b", lw=1.5),
-        ha="center",
-    )
-
     fig.tight_layout()
     _save(fig, "fig2_effect_hierarchy.png")
 
