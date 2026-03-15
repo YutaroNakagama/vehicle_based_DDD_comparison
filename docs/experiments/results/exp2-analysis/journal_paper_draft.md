@@ -196,8 +196,6 @@ The Kruskal-Wallis test reveals a significant condition effect across all 18 exp
 | F2-score | 18/18 | 0.793 | Large | 61.99–74.94 | < 0.0001 |
 | AUROC | 18/18 | 0.579 | Large | 23.63–65.21 | < 0.0001 |
 | AUPRC | 18/18 | 0.625 | Large | 35.50–64.85 | < 0.0001 |
-| F1-score | 18/18 | 0.769 | Large | — | < 0.0001 |
-| Recall | 18/18 | 0.755 | Large | — | < 0.0001 |
 
 #### 4.2.2 Method Ordering (H1: Oversampling > Baseline ≥ RUS)
 
