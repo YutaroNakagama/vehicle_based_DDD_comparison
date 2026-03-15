@@ -203,18 +203,18 @@ H1 contains two sub-hypotheses: (A) Oversampling > RUS and (B) RUS > Baseline. W
 
 **Sub-hypothesis A — Oversampling > RUS** (4 oversampling × 2 RUS × 6 cells = 48 comparisons, Bonferroni $\alpha' = 0.00104$):
 
-| Metric | OS > RUS | RUS > OS | Sig. OS > RUS | Sig. RUS > OS | Large OS > RUS | Large RUS > OS |
-|--------|:--------:|:--------:|:------------:|:------------:|:--------------:|:--------------:|
+| Metric | Oversampling wins | RUS wins | Bonf. significant (Oversampling) | Bonf. significant (RUS) | Large $\delta$ (Oversampling) | Large $\delta$ (RUS) |
+|--------|:-----------------:|:--------:|:-------------------------------:|:----------------------:|:----------------------------:|:-------------------:|
 | F2-score | 32/48 | 16/48 | 32 | 16 | 32 | 16 |
 | AUROC | 39/48 | 9/48 | 32 | 2 | 32 | 2 |
 | AUPRC | 35/48 | 13/48 | 32 | 4 | 32 | 4 |
 
-The result is **mode-dependent**: within-domain and mixed training show OS > RUS in 16/16 comparisons per metric (all significant, all large $\delta$; mean $\delta = +0.93$–$+0.99$), while cross-domain (source\_only) shows a complete reversal with RUS > OS in 16/16 (F2), 9/16 (AUROC), and 13/16 (AUPRC) comparisons.
+The result is **mode-dependent**: within-domain and mixed training show oversampling > RUS in 16/16 comparisons per metric (all significant, all large $\delta$; mean $\delta = +0.93$–$+0.99$), while cross-domain (source\_only) shows a complete reversal with RUS > oversampling in 16/16 (F2), 9/16 (AUROC), and 13/16 (AUPRC) comparisons.
 
 **Sub-hypothesis B — RUS > Baseline** (2 RUS × 6 cells = 12 comparisons, Bonferroni $\alpha' = 0.00417$):
 
-| Metric | RUS > BL | BL > RUS | Sig. RUS > BL | Sig. BL > RUS | Large BL > RUS |
-|--------|:--------:|:--------:|:------------:|:------------:|:--------------:|
+| Metric | RUS wins | Baseline wins | Bonf. significant (RUS) | Bonf. significant (Baseline) | Large $\delta$ (Baseline) |
+|--------|:--------:|:-------------:|:----------------------:|:---------------------------:|:------------------------:|
 | F2-score | 2/12 | 10/12 | 1 | 6 | 6 |
 | AUROC | 3/12 | 9/12 | 0 | 5 | 5 |
 | AUPRC | 5/12 | 7/12 | 0 | 4 | 4 |
@@ -535,7 +535,7 @@ For practitioners, these results prescribe a clear strategy: apply SMOTE-based c
 
 | # | Hypothesis | Verdict | Key Evidence |
 |:-:|-----------|:-------:|-------------|
-| H1 | Oversampling > RUS > Baseline | ✓ Partially supported | OS > RUS confirmed in within-domain/mixed (32/48 large $\delta$); reversed in cross-domain. RUS > Baseline rejected (BL > RUS in 10/12 cells, F2) |
+| H1 | Oversampling > RUS > Baseline | ✓ Partially supported | Oversampling > RUS confirmed in within-domain/mixed (32/48 large $\delta$); reversed in cross-domain. RUS > Baseline rejected (Baseline > RUS in 10/12 cells, F2) |
 | H2 | Optimal ratio is method-dependent | ✓ Supported | RUS/SW→$r=0.1$; SMOTE→$r=0.5$ |
 | H3 | Distance metric matters | ✗ Negligible | $\eta^2 < 0.004$, all metrics equivalent |
 | H4 | In-domain > out-domain | ✓ Partially | True in cross-domain; reversed in within-domain |
