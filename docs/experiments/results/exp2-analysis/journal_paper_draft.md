@@ -347,8 +347,9 @@ Subsampling analysis confirms ranking stability:
 |--------|:------:|:------:|:------:|:------:|:------:|
 | F2-score | 0.282 | 0.151 | 0.028 | 0.000 | 0.000 |
 | AUROC | 0.501 | 0.333 | 0.242 | 0.154 | 0.147 |
+| AUPRC | 0.496 | 0.314 | 0.205 | 0.101 | 0.000 |
 
-By $k=11$ (of 12 seeds), F2 rankings are perfectly stable; AUROC rankings stabilize with $\sigma = 0.147$.
+By $k=11$ (of 12 seeds), F2 and AUPRC rankings are perfectly stable; AUROC rankings stabilize with $\sigma = 0.147$.
 
 Fig. 8 visualizes these convergence trajectories. The monotonically decreasing $\sigma_{\text{rank}}(k)$ curves across all three metrics (F2-score, AUROC, AUPRC) confirm that 12 seeds provide sufficient statistical power for stable condition rankings. Per-condition traces reveal that oversampling methods (SMOTE, SW-SMOTE) converge more slowly than RUS and baseline — reflecting the tighter ranking competition among the top-performing methods — but all converge well before the full seed count.
 
@@ -359,17 +360,13 @@ Fig. 8 visualizes these convergence trajectories. The monotonically decreasing $
 
 Kendall’s $W = 0.643$ ($k = 7$ metrics: F2, AUROC, F1, AUPRC, Recall, Precision, Accuracy; $n = 7$ conditions) indicates **moderate agreement** in condition rankings across all evaluation metrics.
 
-Strongest pairwise concordance: AUROC ↔ AUPRC ($\rho = 0.929$), F2 ↔ AUROC ($\rho = 0.786$).
+Strongest pairwise concordance: AUROC ↔ AUPRC ($\rho = 0.929$), F2 ↔ AUPRC ($\rho = 0.821$), F2 ↔ AUROC ($\rho = 0.786$).
 
-#### 4.5.3 Ratio Sensitivity
-
-Directional agreement between $r=0.1$ and $r=0.5$ condition rankings is 91% (F2) and 87% (AUROC). AUROC ranking is perfectly stable across ratios ($\rho = 1.000$). F2 ranking is more sensitive ($\rho = 0.400$), primarily due to SMOTE's ratio-dependent behaviour (see §4.2.3 for per-method statistical tests).
-
-#### 4.5.4 Precision–Recall Trade-Off
+#### 4.5.3 Precision–Recall Trade-Off
 
 No clear precision–recall trade-off: 0/36 cells exhibit simultaneous recall improvement with precision degradation. SMOTE methods yield predominantly win-win outcomes (recall↑, precision stable); RUS shows regression patterns (both decline).
 
-#### 4.5.5 Power Analysis
+#### 4.5.4 Power Analysis
 
 With $n = 12$ seeds per cell, Mann-Whitney $U$ detects:
 - Per-distance cell ($n = 12$): $|\delta_{\min}| \approx 0.923$ — only **large** effects detectable
@@ -557,4 +554,4 @@ The following 7 hypotheses were tested as part of the comprehensive analysis fra
 | Effect size CI | Percentile bootstrap | $B=2{,}000$ | H1 |
 | Population mean CI | BCa bootstrap | $B=10{,}000$ | All |
 | Multiple testing | Bonferroni | $\alpha'=\alpha/m$, $\alpha=0.05$ | All |
-| Post-hoc power | Mann-Whitney detectable $\lvert\delta_{\min}\rvert$ | Per-cell: 0.923; pooled: 0.533 | §4.5.5 |
+| Post-hoc power | Mann-Whitney detectable $\lvert\delta_{\min}\rvert$ | Per-cell: 0.923; pooled: 0.533 | §4.5.4 |
