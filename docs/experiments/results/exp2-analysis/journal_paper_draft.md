@@ -223,6 +223,11 @@ RUS > Baseline is **not supported**. In within-domain and mixed settings, baseli
 
 **H1 verdict — partially supported**: Oversampling > RUS is confirmed in within-domain and mixed settings (32/48 significant with large $\delta$), but reversed in cross-domain. RUS > Baseline is rejected across all modes. The observed ordering is mode-dependent: Oversampling > Baseline > RUS (within-domain/mixed) vs. RUS ≈ Oversampling ≈ Baseline (cross-domain, near chance). This interaction is further analysed under H6 (§4.4).
 
+A Friedman test across all 7 conditions confirms significant rank differences (Friedman $\chi^2 = 57.93$–$60.43$, $p < 0.0001$). Nemenyi post-hoc (CD = 2.600) identifies 9–10/21 pairwise comparisons as significant across all three primary metrics, corroborating the group-level H1 findings at individual-condition resolution. Full condition rankings are provided in Appendix B. The top-ranked method differs between F2/AUPRC (sw\_smote\_r01) and AUROC (smote\_r01), reflecting AUPRC's sensitivity to the precision–recall balance under imbalance.
+
+![Critical Difference Diagrams](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig4_cd_diagrams.png)
+*Fig. 4. Nemenyi post-hoc Critical Difference diagrams for F2-score, AUROC, and AUPRC. Methods connected by a bar are not significantly different ($\alpha = 0.05$). Oversampling methods consistently rank left (better); the top-ranked method differs between F2/AUPRC (sw\_smote\_r01) and AUROC (smote\_r01).*
+
 *Supplementary finding*: Plain SMOTE is generally competitive with or superior to SW-SMOTE (H7, see Appendix C).
 
 #### 4.2.3 Sampling Ratio Sensitivity (H2)
@@ -259,49 +264,6 @@ Across all three metrics, $r=0.1$ is preferred for RUS (16/18 cells) and SW-SMOT
 
 **H2 verdict — partially supported**: Method-dependent ratio sensitivity is observed only for F2-score, where SMOTE prefers $r=0.5$ while RUS and SW-SMOTE prefer $r=0.1$. For AUROC and AUPRC, all three methods consistently favour $r=0.1$, though SMOTE's preference is non-significant ($\delta < 0.18$). Overall, $r=0.1$ is the more robust default across methods and metrics.
 
-#### 4.2.4 Condition Rankings
-
-**F2-score** (mean rank across 18 cells, 1 = best):
-
-| Rank | Condition | Mean Rank | Wins |
-|:----:|-----------|:---------:|:----:|
-| 1 | sw\_smote\_r01 | 2.67 | 12 |
-| 2 | smote\_r05 | 3.11 | 0 |
-| 3 | smote\_r01 | 3.56 | 0 |
-| 4 | baseline | 4.06 | 2 |
-| 5 | rus\_r01 | 4.61 | 4 |
-| 6 | sw\_smote\_r05 | 4.67 | 0 |
-| 7 | rus\_r05 | 5.33 | 0 |
-
-**AUROC**:
-
-| Rank | Condition | Mean Rank | Wins |
-|:----:|-----------|:---------:|:----:|
-| 1 | smote\_r01 | 2.22 | 7 |
-| 2 | sw\_smote\_r01 | 2.89 | 6 |
-| 3 | smote\_r05 | 3.39 | 1 |
-| 4 | sw\_smote\_r05 | 4.17 | 1 |
-| 5 | baseline | 4.72 | 1 |
-| 6 | rus\_r01 | 4.89 | 1 |
-| 7 | rus\_r05 | 5.72 | 1 |
-
-**AUPRC** (mean rank across 18 cells, 1 = best):
-
-| Rank | Condition | Mean Rank | Wins |
-|:----:|-----------|:---------:|:----:|
-| 1 | sw\_smote\_r01 | 2.44 | 7 |
-| 2 | smote\_r01 | 2.89 | 5 |
-| 3 | smote\_r05 | 3.28 | 1 |
-| 4 | sw\_smote\_r05 | 4.17 | 0 |
-| 5 | rus\_r01 | 4.50 | 3 |
-| 6 | baseline | 5.28 | 0 |
-| 7 | rus\_r05 | 5.44 | 2 |
-
-Nemenyi post-hoc test (Friedman $\chi^2 = 57.93$–$60.43$, $p < 0.0001$; CD = 2.600) confirms 9–10/21 pairwise comparisons significant across all three primary metrics. AUPRC rankings closely mirror F2 rankings ($\rho = 0.821$) but differ from AUROC (sw\_smote\_r01 ranks 1st on F2/AUPRC vs. smote\_r01 on AUROC), reflecting AUPRC’s sensitivity to the precision–recall balance under imbalance.
-These ranking structures are visualized in Fig. 4, which presents Critical Difference (CD) diagrams for all three primary metrics. Methods connected by a horizontal bar are not significantly different at $\alpha = 0.05$. Across all three panels, oversampling methods (SMOTE, SW-SMOTE) cluster on the left (best ranks), while baseline and RUS occupy the right. The CD value of 2.600 indicates that a mean rank difference exceeding this threshold is required for statistical significance, providing a clear threshold for interpreting the separation between method groups.
-
-![Critical Difference Diagrams](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig4_cd_diagrams.png)
-*Fig. 4. Nemenyi post-hoc Critical Difference diagrams for F2-score, AUROC, and AUPRC. Methods connected by a bar are not significantly different ($\alpha = 0.05$). Oversampling methods consistently rank left (better); the top-ranked method differs between F2/AUPRC (sw\_smote\_r01) and AUROC (smote\_r01).*
 ### 4.3 Domain Analysis (RQ2)
 
 #### 4.3.1 Distance Metric Effect (H3)
