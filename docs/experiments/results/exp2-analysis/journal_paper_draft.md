@@ -274,9 +274,7 @@ The Kruskal-Wallis test (6 cells = mode × level, pooling conditions) shows negl
 |--------|:-----------------------:|:-------------:|:------------:|
 | F2-score | 0/6 | 0.004 | 0.023 |
 | AUROC | 2/6 | 0.089 | 0.322 |
-| F1-score | 2/6 | 0.020 | 0.071 |
 | AUPRC | 2/6 | 0.038 | 0.117 |
-| Recall | 0/6 | 0.003 | 0.011 |
 
 The elevated AUROC $\eta^2$ is driven entirely by the two cross-domain cells (source\_only × in\_domain, source\_only × out\_domain), where all conditions perform near chance (AUROC $\approx$ 0.51–0.53) and the very low within-group variance inflates the statistic despite absolute mean differences of < 2 percentage points. In the global (fully pooled) analysis, the distance factor has $\eta^2 < 0.003$ across all metrics, confirming negligible practical importance.
 
@@ -286,6 +284,7 @@ Pooled performance across all conditions:
 |--------|:---:|:---:|:-----------:|:--------------------------:|
 | F2-score | 0.286 ± 0.185 | 0.281 ± 0.187 | 0.290 ± 0.192 | 0.044 |
 | AUROC | 0.687 ± 0.166 | 0.683 ± 0.169 | 0.696 ± 0.167 | 0.086 |
+| AUPRC | 0.258 ± 0.269 | 0.260 ± 0.270 | 0.270 ± 0.275 | 0.055 |
 
 All pooled pairwise Cliff's $\delta$ values are negligible ($|\delta| < 0.09$).
 
