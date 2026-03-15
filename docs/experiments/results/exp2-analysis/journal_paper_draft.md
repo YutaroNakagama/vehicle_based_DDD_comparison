@@ -337,18 +337,6 @@ Fig. 3 captures this interaction structure as a heatmap of mean performance acro
 
 *Supplementary findings*: Condition × distance interaction (H12) is weak (12/18 consistent, 6/18 minor swaps; see Appendix C). Level × mode interaction (H13) confirms that within-domain training eliminates or reverses the domain gap (see Appendix C). The domain gap in cross-domain settings (H10) and the effect of oversampling on domain gap (H11) show mixed, context-dependent results (see Appendix C).
 
-#### 4.4.1 Descriptive Statistics by Condition × Mode
-
-| Condition | Cross-domain F2 | Within-domain F2 | Mixed F2 |
-|-----------|:----------------:|:------------------:|:---------:|
-| baseline | 0.160 | 0.215 | 0.268 |
-| smote\_r01 | 0.138 | 0.448 | 0.452 |
-| smote\_r05 | 0.115 | 0.499 | 0.514 |
-| sw\_smote\_r01 | 0.101 | 0.558 | 0.588 |
-| sw\_smote\_r05 | 0.042 | 0.468 | 0.402 |
-| rus\_r01 | 0.165 | 0.179 | 0.208 |
-| rus\_r05 | 0.157 | 0.159 | 0.170 |
-
 ### 4.5 Robustness Validation
 
 #### 4.5.1 Seed Convergence
