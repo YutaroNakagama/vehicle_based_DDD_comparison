@@ -6,7 +6,7 @@ plot_journal_figures_v2.py
 Generate publication-quality figures for Experiment 2 journal paper.
 
 Figures (7 total):
-  Fig 2 — Effect size hierarchy dot plot (η² by factor)
+  Fig 2 — Effect size hierarchy dot plot (η² by 4 factors)
   Fig 3 — Condition × Mode heatmap (F2 + AUROC, 2 panels)
   Fig 4 — Critical Difference diagrams (Nemenyi, F2 / AUROC / AUPRC)
   Fig 5 — Distance metric equivalence violin plot
@@ -162,10 +162,10 @@ def eta_squared_from_H(H: float, n: int, k: int) -> float:
 # Fig 2: Effect Size Hierarchy Dot Plot
 # ===================================================================
 def plot_effect_hierarchy(df: pd.DataFrame):
-    """Show η² by factor (condition, mode, distance) side by side.
-    Demonstrates the 35–1100× dominance of rebalancing."""
+    """Show η² by factor (condition, mode, level, distance) side by side.
+    Demonstrates the dominance of rebalancing and training mode."""
 
-    fig, ax = plt.subplots(figsize=(9, 5))
+    fig, ax = plt.subplots(figsize=(10, 5))
 
     results = []  # (factor, metric, eta2)
 
@@ -200,6 +200,22 @@ def plot_effect_hierarchy(df: pd.DataFrame):
                     etas_mode.append(eta_squared_from_H(H, n, len(groups)))
         results.append(("Mode\n(training)", mlabel, np.mean(etas_mode)))
 
+        # -- Level effect: KW across 2 levels per cell, mean η²
+        etas_level = []
+        for cond in CONDITIONS_7:
+            for mode in MODES:
+                for dist in DISTANCES:
+                    sub = df[(df["condition"] == cond) & (df["mode"] == mode)
+                             & (df["distance"] == dist)]
+                    groups = [sub[sub["level"] == lv][metric].dropna().values
+                              for lv in LEVELS]
+                    groups = [g for g in groups if len(g) > 0]
+                    if len(groups) >= 2:
+                        H, p = stats.kruskal(*groups)
+                        n = sum(len(g) for g in groups)
+                        etas_level.append(eta_squared_from_H(H, n, len(groups)))
+        results.append(("Level\n(in/out-domain)", mlabel, np.mean(etas_level)))
+
         # -- Distance effect: KW across 3 distances per cell, mean η²
         etas_dist = []
         for cond in CONDITIONS_7:
@@ -217,10 +233,12 @@ def plot_effect_hierarchy(df: pd.DataFrame):
         results.append(("Distance\n(metric)", mlabel, np.mean(etas_dist)))
 
     # Plot
-    factors = ["Condition\n(rebalancing)", "Mode\n(training)", "Distance\n(metric)"]
+    factors = [
+        "Condition\n(rebalancing)", "Mode\n(training)",
+        "Level\n(in/out-domain)", "Distance\n(metric)",
+    ]
     x = np.arange(len(factors))
-    n_metrics = 3
-    width = 0.25
+    width = 0.22
     colors_metric = {"F2-score": "#e74c3c", "AUROC": "#3498db", "AUPRC": "#2ecc71"}
     metric_names = ["F2-score", "AUROC", "AUPRC"]
 
@@ -241,7 +259,7 @@ def plot_effect_hierarchy(df: pd.DataFrame):
 
     # Reference lines
     ax.axhline(0.14, color="gray", linewidth=0.8, linestyle=":", alpha=0.5)
-    ax.text(2.65, 0.145, "large effect threshold", fontsize=7, color="gray",
+    ax.text(3.55, 0.145, "large effect threshold", fontsize=7, color="gray",
             ha="right", fontstyle="italic")
 
     ax.set_xticks(x)
@@ -251,10 +269,10 @@ def plot_effect_hierarchy(df: pd.DataFrame):
     ax.legend(loc="upper right", framealpha=0.9)
     ax.set_ylim(0, max(r[2] for r in results) * 1.25)
 
-    # Add annotation arrow
+    # Add annotation arrow pointing to Distance bar
     ax.annotate(
-        "35–1,100× larger",
-        xy=(2.15, 0.005), xytext=(1.5, 0.25),
+        "Negligible",
+        xy=(3.15, 0.005), xytext=(2.8, 0.15),
         fontsize=9, fontweight="bold", color="#c0392b",
         arrowprops=dict(arrowstyle="->", color="#c0392b", lw=1.5),
         ha="center",
