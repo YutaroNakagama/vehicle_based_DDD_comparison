@@ -390,11 +390,7 @@ Kendall’s $W = 0.643$ ($k = 7$ metrics: F2, AUROC, F1, AUPRC, Recall, Precisio
 
 Strongest pairwise concordance: AUROC ↔ AUPRC ($\rho = 0.929$), F2 ↔ AUPRC ($\rho = 0.821$), F2 ↔ AUROC ($\rho = 0.786$).
 
-#### 4.5.3 Precision–Recall Trade-Off
-
-No clear precision–recall trade-off: 0/36 cells exhibit simultaneous recall improvement with precision degradation. SMOTE methods yield predominantly win-win outcomes (recall↑, precision stable); RUS shows regression patterns (both decline).
-
-#### 4.5.4 Power Analysis
+#### 4.5.3 Power Analysis
 
 With $n = 12$ seeds per cell, Mann-Whitney $U$ detects:
 - Per-distance cell ($n = 12$): $|\delta_{\min}| \approx 0.923$ — only **large** effects detectable
@@ -428,7 +424,7 @@ Our results provide a clear hierarchy of optimization priorities: **rebalancing 
 
 - SMOTE-based oversampling transforms within-domain F2 from 0.215 (baseline) to 0.558 (sw\_smote\_r01) — a 160% improvement.
 - AUROC improves from 0.63 (baseline) to 0.90 (sw\_smote\_r01) in within-domain settings.
-- AUPRC — the metric most sensitive to class imbalance — improves from 0.12 (baseline) to 0.65 (sw\_smote\_r01), a 460% relative improvement. This confirms that rebalancing produces genuine minority-class precision gains, not merely threshold-shifted recall.
+- AUPRC — the metric most sensitive to class imbalance — improves from 0.12 (baseline) to 0.65 (sw\_smote\_r01), a 460% relative improvement. This confirms that rebalancing produces genuine minority-class precision gains, not merely threshold-shifted recall. Notably, 0/36 condition–mode cells exhibit a precision–recall trade-off (simultaneous recall improvement with precision degradation); SMOTE methods yield predominantly win-win outcomes (recall↑, precision stable).
 - These gains require no additional data collection, no domain distance computation, and no subject grouping strategy — only a preprocessing step.
 
 In contrast, switching from Wasserstein to MMD for domain grouping yields $|\Delta\text{F2}| < 0.01$, $|\Delta\text{AUROC}| < 0.02$, and $|\Delta\text{AUPRC}| < 0.01$.
@@ -582,4 +578,4 @@ The following 7 hypotheses were tested as part of the comprehensive analysis fra
 | Effect size CI | Percentile bootstrap | $B=2{,}000$ | H1 |
 | Population mean CI | BCa bootstrap | $B=10{,}000$ | All |
 | Multiple testing | Bonferroni | $\alpha'=\alpha/m$, $\alpha=0.05$ | All |
-| Post-hoc power | Mann-Whitney detectable $\lvert\delta_{\min}\rvert$ | Per-cell: 0.923; pooled: 0.533 | §4.5.4 |
+| Post-hoc power | Mann-Whitney detectable $\lvert\delta_{\min}\rvert$ | Per-cell: 0.923; pooled: 0.533 | §4.5.3 |
