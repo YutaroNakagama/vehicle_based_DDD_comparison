@@ -329,13 +329,14 @@ The training mode has a massive impact on performance:
 |--------|:------------:|:-------------:|:-----:|:---------------------------:|
 | F2-score | 0.125 ± 0.043 | 0.361 ± 0.182 | 0.372 ± 0.178 | +0.833 (large) |
 | AUROC | 0.520 ± 0.015 | 0.773 ± 0.148 | 0.773 ± 0.140 | +0.945 (large) |
+| AUPRC | 0.050 ± 0.007 | 0.362 ± 0.272 | 0.376 ± 0.280 | +0.951 (large) |
 
-All 14 Friedman tests across conditions are significant (14/14, $p < 0.0001$), with Kendall's W ranging from 0.455 to 0.969. Mixed training performs equivalently to within-domain and substantially better than cross-domain (F2: $0.372$ vs. $0.125$; AUROC: $0.773$ vs. $0.520$), confirming the supplementary H9 finding (see Appendix C).
+All 14 Friedman tests across conditions are significant (14/14, $p < 0.0001$), with Kendall's W ranging from 0.455 to 0.969. Mixed training performs equivalently to within-domain and substantially better than cross-domain (F2: $0.372$ vs. $0.125$; AUROC: $0.773$ vs. $0.520$; AUPRC: $0.376$ vs. $0.050$), confirming the supplementary H9 finding (see Appendix C). Within-domain vs. Mixed is negligible across all three metrics ($\delta < 0.05$).
 
-Fig. 6 makes this mode separation visually striking. The box plots show that Cross-domain performance is compressed into a narrow, low-performance band for all three metrics, clearly separated from Within-domain and Mixed. The annotated Cliff's $\delta$ values quantify the gap: Cross-domain vs. Within/Mixed yields $\delta > 0.8$ (large effect), while Within-domain vs. Mixed is negligible ($\delta < 0.05$). This dichotomy — large separation from Cross-domain but equivalence between Within-domain and Mixed — has direct practical significance: mixing data from other vehicles into training does not degrade performance relative to using only matched-vehicle data.
+Fig. 6 makes this mode separation visually striking. The box plots show that Cross-domain performance is compressed into a narrow, low-performance band for all three metrics, clearly separated from Within-domain and Mixed. This dichotomy has direct practical significance: mixing data from other vehicles into training does not degrade performance relative to using only matched-vehicle data.
 
 ![Training Mode Box Plot](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig6_mode_boxplot.png)
-*Fig. 6. Performance distributions by training mode with Cliff's $\delta$ annotations. Cross-domain is clearly separated from Within-domain and Mixed ($\delta > 0.8$, large), while Within-domain and Mixed are statistically equivalent.*
+*Fig. 6. Performance distributions by training mode. Cross-domain is clearly separated from Within-domain and Mixed ($\delta > 0.8$, large), while Within-domain and Mixed are statistically equivalent ($\delta < 0.05$).*
 
 ### 4.4 Imbalance × Domain Interaction (RQ3: H6)
 

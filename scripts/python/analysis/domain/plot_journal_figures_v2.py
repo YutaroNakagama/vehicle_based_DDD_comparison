@@ -545,36 +545,12 @@ def plot_mode_boxplot(df: pd.DataFrame):
             ax.text(i, vals.mean() + 0.012, f"μ={vals.mean():.3f}",
                     ha="center", va="bottom", fontsize=8, fontweight="bold")
 
-        # Cliff's δ annotations
-        cross = df[df["mode"] == "source_only"][metric].dropna().values
-        within = df[df["mode"] == "target_only"][metric].dropna().values
-        mixed_v = df[df["mode"] == "mixed"][metric].dropna().values
-
-        def cliff_d(x, y):
-            nx, ny = len(x), len(y)
-            more = sum(1 for xi in x for yj in y if xi > yj)
-            less = sum(1 for xi in x for yj in y if xi < yj)
-            return (more - less) / (nx * ny)
-
-        d_wc = cliff_d(within, cross)
-        d_mc = cliff_d(mixed_v, cross)
-        # Position annotation above the data
-        y_max = max(np.percentile(within, 95), np.percentile(mixed_v, 95))
-        ax.annotate(
-            f"δ = {d_wc:+.3f}\n(large)",
-            xy=(0.5, max(np.median(within), np.median(cross))),
-            xytext=(0.5, y_max * 1.15),
-            fontsize=8, ha="center", color="#8e44ad", fontweight="bold",
-            arrowprops=dict(arrowstyle="->", color="#8e44ad", lw=1),
-        )
-
         ax.set_xticks(range(3))
         ax.set_xticklabels([MODE_LABELS[m] for m in MODES], fontsize=10)
         ax.set_ylabel(mlabel, fontsize=10)
         ax.set_title(mlabel, fontsize=11, fontweight="bold")
 
-    fig.suptitle("Training Mode Effect: Within-Domain ≈ Mixed >> Cross-Domain\n"
-                 "(Cliff's δ = 0.83–0.95, large effect)",
+    fig.suptitle("Training Mode Effect: Within-Domain ≈ Mixed >> Cross-Domain",
                  fontsize=12, fontweight="bold")
     fig.tight_layout(rect=[0, 0, 1, 0.90])
     _save(fig, "fig6_mode_boxplot.png")
