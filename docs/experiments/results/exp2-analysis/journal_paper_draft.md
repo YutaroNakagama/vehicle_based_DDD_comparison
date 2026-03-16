@@ -340,9 +340,25 @@ Fig. 6 makes this mode separation visually striking. The box plots show that Cro
 
 ### 4.4 Imbalance × Domain Interaction (RQ3: H6)
 
-**Strongly supported.** The optimal condition varies by mode — RUS performs best in cross-domain (rank 1–2 by F2); SMOTE/SW-SMOTE dominate in within-domain and mixed settings. This interaction indicates that practitioners cannot choose a single rebalancing strategy without considering the training mode.
+**Strongly supported.** Per-mode Friedman tests confirm that conditions differ significantly within each mode (all 9 tests $p < 10^{-5}$), but the *identity* of the best condition reverses between cross-domain and within-domain/mixed:
 
-Fig. 3 captures this interaction structure as a heatmap of mean performance across 7 conditions × 3 modes. The Cross-domain column is uniformly dark (low performance) regardless of condition, while the Within-domain and Mixed columns reveal large inter-condition variation with SMOTE/SW-SMOTE methods showing the highest values. This visual pattern explains why H6 is significant: the condition effect is mode-dependent because Cross-domain training compresses all methods into a uniformly poor performance regime.
+| Mode | F2 #1 | AUROC #1 | AUPRC #1 | Friedman $W$ (F2 / AUROC / AUPRC) |
+|------|-------|----------|----------|:---------------------------------:|
+| Cross-domain | RUS $r{=}0.1$ | RUS $r{=}0.1$ | RUS $r{=}0.1$ | 0.956 / 0.429 / 0.729 |
+| Within-domain | SW-SMOTE $r{=}0.1$ | SW-SMOTE $r{=}0.1$ | SW-SMOTE $r{=}0.1$ | 0.873 / 0.816 / 0.843 |
+| Mixed | SW-SMOTE $r{=}0.1$ | SW-SMOTE $r{=}0.1$ | SW-SMOTE $r{=}0.1$ | 0.841 / 0.821 / 0.791 |
+
+This ranking reversal is quantified by cross-mode Spearman $\rho$ on the 7-condition ranking vectors:
+
+| Mode pair | F2 $\rho$ | AUROC $\rho$ | AUPRC $\rho$ |
+|-----------|:---------:|:------------:|:------------:|
+| Cross vs. Within | $-0.786$ ($p=0.036$) | $-0.857$ ($p=0.014$) | $-0.786$ ($p=0.036$) |
+| Cross vs. Mixed | $-0.679$ ($p=0.094$) | $-0.857$ ($p=0.014$) | $-0.893$ ($p=0.007$) |
+| Within vs. Mixed | $+0.964$ ($p<0.001$) | $+1.000$ ($p<0.001$) | $+0.964$ ($p<0.001$) |
+
+Cross-domain rankings are **negatively** correlated with within-domain and mixed rankings ($\rho = -0.68$ to $-0.89$), while within-domain and mixed rankings are nearly identical ($\rho \geq +0.96$). The overall Kendall's $W$ across the three modes confirms this discordance: $W = 0.17$–$0.22$ (non-significant, $p > 0.67$), meaning the three modes do *not* agree on condition rankings — the defining signature of a Condition $\times$ Mode interaction.
+
+Fig. 3 captures this interaction structure as a heatmap of mean performance across 7 conditions $\times$ 3 modes. The Cross-domain column is uniformly dark (low performance) regardless of condition, while the Within-domain and Mixed columns reveal large inter-condition variation with SMOTE/SW-SMOTE methods showing the highest values.
 
 ![Condition × Mode Heatmap](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig3_condition_mode_heatmap.png)
 *Fig. 3. Mean performance heatmap (7 conditions × 3 modes) for F2-score, AUROC, and AUPRC. Cross-domain performance is uniformly low regardless of rebalancing method, while Within-domain and Mixed reveal strong condition differentiation — visually confirming the Condition × Mode interaction (H6).*
@@ -547,7 +563,7 @@ The following 7 hypotheses were tested as part of the comprehensive analysis fra
 | H3 | Kruskal-Wallis $H$ (6 cells) | Mann-Whitney $U$ (pooled) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.0028$ | — | §4.3.1 |
 | H4 | — | Wilcoxon signed-rank (63 pairs) | Mean $\lvert\Delta\rvert$, Cliff's $\delta$ | Bonf. $\alpha'=0.00079$ | — | §4.3.2 |
 | H5 | Friedman $\chi_F^2$ (14 conditions) | Nemenyi post-hoc (CD = 2.600) | Cliff's $\delta$, Kendall's $W$ | — | — | §4.3.3 |
-| H6 | Friedman $\chi_F^2$ | Ranking comparison by mode | — | — | — | §4.4 |
+| H6 | Friedman $\chi_F^2$ (per mode, 9 tests) | Spearman $\rho$ (cross-mode ranking concordance) | Kendall's $W$ (3-mode) | — | — | §4.4 |
 
 ### D.2 Methods Applied per Purpose
 
