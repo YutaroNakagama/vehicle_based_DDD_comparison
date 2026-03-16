@@ -299,16 +299,27 @@ Notably, 42.5% of subjects switch domain groups depending on the distance metric
 
 The domain gap $\Delta = Y_{\text{out}} - Y_{\text{in}}$ is generally small and non-significant:
 
-- **F2-score**: 11/63 Wilcoxon tests significant (Bonf. $\alpha' = 0.00079$); mean $|\Delta| = 0.030$–$0.047$.
-- **AUROC**: 12/63 significant; mean $|\Delta| = 0.019$–$0.097$.
+| Metric | Significant / 63 | Mean $\lvert\Delta\rvert$ range |
+|--------|:-----------------:|:-------------------------------:|
+| F2-score | 11 | 0.032–0.043 |
+| AUROC | 12 | 0.018–0.092 |
+| AUPRC | 16 | 0.016–0.114 |
+
+All 63 Wilcoxon signed-rank tests per metric (7 conditions $\times$ 3 modes $\times$ 3 distances, paired by seed) use Bonferroni $\alpha' = 0.00079$. AUPRC yields the most significant pairs (16/63), yet the absolute gaps remain small. Mean Cliff's $\lvert\delta\rvert$ by mode: cross-domain 0.45–0.79, within-domain 0.30–0.41, mixed 0.42–0.67 — indicating moderate-to-large effect sizes that vary more by mode than by metric.
 
 Notably, within-domain and mixed training often show **positive** $\Delta$ (out-domain outperforms in-domain), suggesting that rebalancing is more effective for behaviorally diverse subjects:
 
-| Mode | Baseline $\Delta$ (F2) | Best rebalancing $\Delta$ (F2) |
-|------|:----------------------:|:------------------------------:|
-| Cross-domain | −0.025 | SMOTE: +0.003 |
-| Within-domain | +0.027 | RUS: +0.122 |
-| Mixed | +0.085 | SMOTE: +0.104 |
+| Mode | Metric | Baseline $\Delta$ | Best rebalancing $\Delta$ |
+|------|--------|:-----------------:|:-------------------------:|
+| Cross-domain | F2 | $-0.006$ | SMOTE $r{=}0.5$: $+0.007$ |
+| | AUROC | $-0.004$ | RUS $r{=}0.5$: $+0.014$ |
+| | AUPRC | $-0.004$ | RUS $r{=}0.5$: $-0.000$ |
+| Within-domain | F2 | $+0.020$ | RUS $r{=}0.1$: $+0.066$ |
+| | AUROC | $+0.082$ | RUS $r{=}0.1$: $+0.056$ |
+| | AUPRC | $+0.063$ | RUS $r{=}0.1$: $+0.034$ |
+| Mixed | F2 | $+0.060$ | SW-SMOTE $r{=}0.5$: $+0.084$ |
+| | AUROC | $+0.161$ | RUS $r{=}0.1$: $+0.083$ |
+| | AUPRC | $+0.234$ | SMOTE $r{=}0.1$: $+0.151$ |
 
 #### 4.3.3 Training Mode Effect (H5)
 
@@ -533,7 +544,7 @@ The following 7 hypotheses were tested as part of the comprehensive analysis fra
 | H1 | Kruskal-Wallis $H$ (18 cells) | Mann-Whitney $U$: OS vs RUS (48 pairs), RUS vs BL (12 pairs) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.00104$ (OS–RUS), $0.00417$ (RUS–BL) | Percentile $B=2{,}000$ | §4.2.1–4.2.2 |
 | H2 | — | Mann-Whitney $U$ ($r=0.1$ vs $r=0.5$, 18 pairs) | Cliff's $\delta$ | Bonf. $\alpha'=0.00278$ | — | §4.2.3 |
 | H3 | Kruskal-Wallis $H$ (6 cells) | Mann-Whitney $U$ (pooled) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.0028$ | — | §4.3.1 |
-| H4 | — | Wilcoxon signed-rank (63 pairs) | Mean $\lvert\Delta\rvert$ | Bonf. $\alpha'=0.00079$ | — | §4.3.2 |
+| H4 | — | Wilcoxon signed-rank (63 pairs) | Mean $\lvert\Delta\rvert$, Cliff's $\delta$ | Bonf. $\alpha'=0.00079$ | — | §4.3.2 |
 | H5 | Friedman $\chi_F^2$ (14 conditions) | Nemenyi post-hoc (CD = 2.600) | Cliff's $\delta$, Kendall's $W$ | — | — | §4.3.3 |
 | H6 | Friedman $\chi_F^2$ | Ranking comparison by mode | — | — | — | §4.4 |
 
