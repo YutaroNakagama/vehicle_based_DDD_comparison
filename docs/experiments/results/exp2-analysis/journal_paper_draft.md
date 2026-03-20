@@ -166,7 +166,7 @@ Based on the literature and factorial design, we formulate 6 primary hypotheses 
 | H1 | Rebalancing methods differ significantly in classification performance | Condition | RQ1 |
 | H2 | The optimal sampling ratio is method-dependent | Condition × Ratio | RQ1 |
 | H3 | The choice of distance metric affects downstream performance | Distance | RQ2 |
-| H4 | In-domain subjects outperform out-domain subjects | Level | RQ2 |
+| H4 | Domain membership (in-domain vs. out-domain) significantly affects classification performance | Level | RQ2 |
 | H5 | Within-domain training outperforms cross-domain training | Mode | RQ2 |
 | H6 | The effect of rebalancing depends on training mode (Condition × Mode interaction) | Condition × Mode | RQ3 |
 
@@ -522,7 +522,7 @@ For practitioners, these results prescribe a clear strategy: apply SMOTE-based c
 | H1 | Rebalancing methods differ significantly | ✓ Strongly supported | Kruskal-Wallis significant in 18/18 cells ($\eta^2 = 0.58$–$0.79$). Post-hoc ordering is mode-dependent: OS > BL > RUS (within/mixed); RUS ≈ OS ≈ BL (cross-domain) |
 | H2 | Optimal ratio is method-dependent | ✓ Partially supported | Method-dependence only for F2 (SMOTE→$r=0.5$); AUROC/AUPRC: all methods favour $r=0.1$ |
 | H3 | Distance metric matters | ✗ Negligible | $\eta^2 < 0.004$, all metrics equivalent |
-| H4 | In-domain > out-domain | ✓ Partially | True in cross-domain; reversed in within-domain |
+| H4 | Domain membership affects performance | ✓ Strongly supported (direction is mode-dependent) | Significant in 11–16/63 cells; cross-domain: in-domain advantage ($\Delta < 0$); within-domain/mixed: out-domain advantage ($\Delta > 0$) |
 | H5 | Within-domain > cross-domain | ✓ Fully supported | $\delta = +0.833$ (F2), $+0.945$ (AUROC) |
 | H6 | Condition × Mode interaction | ✓ Strong | Best method varies by mode |
 
