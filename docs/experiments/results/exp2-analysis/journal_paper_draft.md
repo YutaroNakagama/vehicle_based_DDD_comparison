@@ -163,7 +163,7 @@ Based on the literature and factorial design, we formulate 6 primary hypotheses 
 
 | # | Hypothesis | Factor | RQ |
 |:-:|-----------|:------:|:--:|
-| H1 | Oversampling > RUS > Baseline in classification performance | Condition | RQ1 |
+| H1 | Rebalancing methods differ significantly in classification performance | Condition | RQ1 |
 | H2 | The optimal sampling ratio is method-dependent | Condition × Ratio | RQ1 |
 | H3 | The choice of distance metric affects downstream performance | Distance | RQ2 |
 | H4 | In-domain subjects outperform out-domain subjects | Level | RQ2 |
@@ -197,11 +197,11 @@ The Kruskal-Wallis test reveals a significant condition effect across all 18 exp
 | AUROC | 18/18 | 0.579 | Large | 23.63–65.21 | < 0.0001 |
 | AUPRC | 18/18 | 0.625 | Large | 35.50–64.85 | < 0.0001 |
 
-#### 4.2.2 Method Ordering (H1: Oversampling > RUS > Baseline)
+#### 4.2.2 Pairwise Comparisons (H1)
 
-H1 contains two sub-hypotheses: (A) Oversampling > RUS and (B) RUS > Baseline. We test each with Mann-Whitney $U$ tests and Cliff's $\delta$ effect sizes.
+Having established that rebalancing methods differ significantly (H1, §4.2.1), we examine the ordering through two post-hoc contrasts using Mann-Whitney $U$ tests and Cliff's $\delta$ effect sizes.
 
-**Sub-hypothesis A — Oversampling > RUS** (4 oversampling × 2 RUS × 6 cells = 48 comparisons, Bonferroni $\alpha' = 0.00104$):
+**Contrast 1 — Oversampling vs. RUS** (4 oversampling × 2 RUS × 6 cells = 48 comparisons, Bonferroni $\alpha' = 0.00104$):
 
 | Metric | Oversampling wins | RUS wins | Bonf. significant (Oversampling) | Bonf. significant (RUS) | Large $\delta$ (Oversampling) | Large $\delta$ (RUS) |
 |--------|:-----------------:|:--------:|:-------------------------------:|:----------------------:|:----------------------------:|:-------------------:|
@@ -211,7 +211,7 @@ H1 contains two sub-hypotheses: (A) Oversampling > RUS and (B) RUS > Baseline. W
 
 The result is **mode-dependent**: within-domain and mixed training show oversampling > RUS in 16/16 comparisons per metric (all significant, all large $\delta$; mean $\delta = +0.93$–$+0.99$), while cross-domain (source\_only) shows a complete reversal with RUS > oversampling in 16/16 (F2), 9/16 (AUROC), and 13/16 (AUPRC) comparisons.
 
-**Sub-hypothesis B — RUS > Baseline** (2 RUS × 6 cells = 12 comparisons, Bonferroni $\alpha' = 0.00417$):
+**Contrast 2 — RUS vs. Baseline** (2 RUS × 6 cells = 12 comparisons, Bonferroni $\alpha' = 0.00417$):
 
 | Metric | RUS wins | Baseline wins | Bonf. significant (RUS) | Bonf. significant (Baseline) | Large $\delta$ (Baseline) |
 |--------|:--------:|:-------------:|:----------------------:|:---------------------------:|:------------------------:|
@@ -219,9 +219,9 @@ The result is **mode-dependent**: within-domain and mixed training show oversamp
 | AUROC | 3/12 | 9/12 | 0 | 5 | 5 |
 | AUPRC | 5/12 | 7/12 | 0 | 4 | 4 |
 
-RUS > Baseline is **not supported**. In within-domain and mixed settings, baseline significantly outperforms RUS with large effects (F2 mean $\delta = -0.84$, AUROC $-0.80$, AUPRC $-0.74$ in mixed mode). In cross-domain, differences are negligible ($\delta \approx 0$).
+RUS does not outperform baseline. In within-domain and mixed settings, baseline significantly outperforms RUS with large effects (F2 mean $\delta = -0.84$, AUROC $-0.80$, AUPRC $-0.74$ in mixed mode). In cross-domain, differences are negligible ($\delta \approx 0$).
 
-**H1 verdict — partially supported**: Oversampling > RUS is confirmed in within-domain and mixed settings (32/48 significant with large $\delta$), but reversed in cross-domain. RUS > Baseline is rejected across all modes. The observed ordering is mode-dependent: Oversampling > Baseline > RUS (within-domain/mixed) vs. RUS ≈ Oversampling ≈ Baseline (cross-domain, near chance). This interaction is further analysed under H6 (§4.4).
+**H1 verdict — strongly supported**: Rebalancing methods differ significantly across all 18 cells (§4.2.1). Post-hoc contrasts reveal a mode-dependent ordering: Oversampling > Baseline > RUS in within-domain and mixed settings (32/48 significant with large $\delta$), while cross-domain performance is uniformly low with RUS showing marginal advantages. This interaction is further analysed under H6 (§4.4).
 
 A Friedman test across all 7 conditions confirms significant rank differences (Friedman $\chi^2 = 57.93$–$60.43$, $p < 0.0001$). Nemenyi post-hoc (CD = 2.600) identifies 9–10/21 pairwise comparisons as significant across all three primary metrics, corroborating the group-level H1 findings at individual-condition resolution. Full condition rankings are provided in Appendix B. The top-ranked method differs between F2/AUPRC (sw\_smote\_r01) and AUROC (smote\_r01), reflecting AUPRC's sensitivity to the precision–recall balance under imbalance.
 
@@ -519,7 +519,7 @@ For practitioners, these results prescribe a clear strategy: apply SMOTE-based c
 
 | # | Hypothesis | Verdict | Key Evidence |
 |:-:|-----------|:-------:|-------------|
-| H1 | Oversampling > RUS > Baseline | ✓ Partially supported | Oversampling > RUS confirmed in within-domain/mixed (32/48 large $\delta$); reversed in cross-domain. RUS > Baseline rejected (Baseline > RUS in 10/12 cells, F2) |
+| H1 | Rebalancing methods differ significantly | ✓ Strongly supported | Kruskal-Wallis significant in 18/18 cells ($\eta^2 = 0.58$–$0.79$). Post-hoc ordering is mode-dependent: OS > BL > RUS (within/mixed); RUS ≈ OS ≈ BL (cross-domain) |
 | H2 | Optimal ratio is method-dependent | ✓ Partially supported | Method-dependence only for F2 (SMOTE→$r=0.5$); AUROC/AUPRC: all methods favour $r=0.1$ |
 | H3 | Distance metric matters | ✗ Negligible | $\eta^2 < 0.004$, all metrics equivalent |
 | H4 | In-domain > out-domain | ✓ Partially | True in cross-domain; reversed in within-domain |
@@ -555,6 +555,8 @@ The following 7 hypotheses were tested as part of the comprehensive analysis fra
 | Hypothesis | Omnibus test | Post-hoc / pairwise | Effect size | Correction | Bootstrap | Section |
 |:----------:|:------------|:--------------------|:-----------|:-----------|:----------|:--------|
 | H1 | Kruskal-Wallis $H$ (18 cells) | Mann-Whitney $U$: OS vs RUS (48 pairs), RUS vs BL (12 pairs) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.00104$ (OS–RUS), $0.00417$ (RUS–BL) | Percentile $B=2{,}000$ | §4.2.1–4.2.2 |
+
+*Note: H1 is a non-directional omnibus hypothesis (§4.2.1); the post-hoc contrasts in §4.2.2 characterise the mode-dependent ordering discovered through the data.*
 | H2 | — | Mann-Whitney $U$ ($r=0.1$ vs $r=0.5$, 18 pairs) | Cliff's $\delta$ | Bonf. $\alpha'=0.00278$ | — | §4.2.3 |
 | H3 | Kruskal-Wallis $H$ (6 cells) | Mann-Whitney $U$ (pooled) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.0028$ | — | §4.3.1 |
 | H4 | — | Wilcoxon signed-rank (63 pairs) | Mean $\lvert\Delta\rvert$, Cliff's $\delta$ | Bonf. $\alpha'=0.00079$ | — | §4.3.2 |
