@@ -353,6 +353,9 @@ def collect_all_split2(
             continue
 
         for json_path in sorted(eval_dir.rglob("eval_results_*.json")):
+            # Skip invalidated results
+            if "_invalidated" in str(json_path):
+                continue
             meta = parse_eval_filename(json_path.name)
             if meta is None:
                 continue
@@ -437,6 +440,9 @@ def collect_pooled_data(
             continue
 
         for json_path in sorted(eval_dir.rglob("eval_results_*pooled*prior*.json")):
+            # Skip invalidated results
+            if "_invalidated" in str(json_path):
+                continue
             # Try each pattern in order; first match wins
             matched = False
             for pat, cond_source in _pooled_patterns:
