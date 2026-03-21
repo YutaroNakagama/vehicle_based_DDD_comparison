@@ -418,6 +418,16 @@ $$\frac{\eta^2_{\text{condition}}}{\eta^2_{\text{distance}}} \approx \frac{0.11\
 
 Rebalancing shifts the classifier's decision boundary so dramatically that any subtle difference in training set composition due to domain grouping is overwhelmed.
 
+**Supplementary normalisation analysis.** To disentangle the lane offset dominance from the intrinsic metric equivalence, we recomputed all three distance matrices after applying StandardScaler (zero mean, unit variance) across the pooled feature space. Normalisation eliminates the $O(10^3)$ scale disparity (std max/min ratio: raw $5.6 \times 10^{10}$ → standardised $1.0$). The key findings are:
+
+| Pair | Raw $\rho$ | Standardised $\rho$ |
+|------|:----------:|:--------------------:|
+| MMD vs Wasserstein | 0.819 | 0.757 |
+| MMD vs DTW | 0.478 | 0.116 (n.s.) |
+| Wasserstein vs DTW | 0.805 | 0.444 |
+
+After normalisation, DTW diverges substantially from MMD and Wasserstein ($\rho = 0.12$, $p = 0.29$), while MMD and Wasserstein remain correlated ($\rho = 0.76$). Subject group switching increases from 57.5% to 69.0%, and only 31–62% of subjects remain in the same domain group (Jaccard 0.18–0.45). This confirms that the H3 finding of metric equivalence is **partially** attributable to lane offset dominance: when feature scales are equalised, DTW — which operates on temporal trajectory shape — captures distributional properties distinct from the sample-level statistics used by MMD and Wasserstein. However, since all experiments used unnormalised distances (consistent with the prior-research replication design), the primary H3 result ($\eta^2 < 0.004$) reflects the operational reality of this pipeline.
+
 ### 5.2 Rebalancing as a Stronger Lever Than Domain Adaptation
 
 Our results provide a clear hierarchy of optimization priorities: **rebalancing method** ($\eta^2 = 0.58$–$0.79$) > **training mode** ($\delta = 0.83$–$0.95$) >> **distance metric** ($\eta^2 < 0.004$). This has practical implications for DDD system design:
@@ -448,7 +458,7 @@ This may be because:
 
 2. **Deterministic data split**: The train/test partition (`subject_time_split`) is deterministic — random seeds only vary model initialization and resampling, not the data partition.
 
-3. **Unnormalized distance computation**: The domain grouping uses unnormalized features, causing lane offset dominance. Feature standardization may reveal metric-specific differences that are currently masked.
+3. **Unnormalized distance computation**: The domain grouping uses unnormalized features, causing lane offset dominance. A supplementary analysis with StandardScaler-normalised features confirms that metric-specific differences emerge after normalisation (cross-metric rank concordance drops from $\rho = 0.48$–$0.82$ to $\rho = 0.12$–$0.76$; see §5.1), but the downstream classification impact remains untested.
 
 4. **Sample size constraints**: With $n = 12$ per cell, only large effects ($|\delta| > 0.53$) are detectable after Bonferroni correction. Subtle distance metric effects may exist below our detection threshold.
 
@@ -456,7 +466,7 @@ This may be because:
 
 ### 5.5 Future Directions
 
-1. **Feature normalization**: Repeating distance computation on standardized features would test whether metrics become distinguishable when lane offset dominance is removed.
+1. **Normalised-distance retraining**: Our supplementary analysis shows that normalised features produce different domain groupings (§5.1). Full retraining with normalised-distance groups would reveal whether these grouping differences translate into classification performance differences.
 2. **Signal-specific distances**: Computing domain groups using individual signals (lane offset alone vs. all signals) would quantify the information contribution of each signal.
 3. **Multiple classifiers**: Extending to LSTM and SVM-based architectures would strengthen the generalizability claim.
 4. **Real-vehicle validation**: Transferring findings from simulator to on-road data is essential for practical deployment.
