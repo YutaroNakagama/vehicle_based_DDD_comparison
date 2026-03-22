@@ -7,7 +7,7 @@ Generate publication-quality figures for Experiment 2 journal paper.
 
 Figures (7 total):
   Fig 2 — Effect size hierarchy dot plot (η² by 4 factors)
-  Fig 3 — Condition × Mode heatmap (F2 + AUROC, 2 panels)
+  Fig 3 — Rebalancing × Mode heatmap (F2 + AUROC, 2 panels)
   Fig 4 — Critical Difference diagrams (Nemenyi, F2 / AUROC / AUPRC)
   Fig 5 — Distance metric equivalence violin plot
   Fig 6 — Training mode grouped box plot
@@ -184,7 +184,7 @@ def plot_effect_hierarchy(df: pd.DataFrame):
                         H, p = stats.kruskal(*groups)
                         n = sum(len(g) for g in groups)
                         etas_cond.append(eta_squared_from_H(H, n, len(groups)))
-        results.append(("Condition\n(rebalancing)", mlabel, np.mean(etas_cond)))
+        results.append(("Rebalancing\n(strategy)", mlabel, np.mean(etas_cond)))
 
         # -- Distance effect: KW across 3 distances per cell, mean η²
         etas_dist = []
@@ -232,9 +232,9 @@ def plot_effect_hierarchy(df: pd.DataFrame):
                     etas_mode.append(eta_squared_from_H(H, n, len(groups)))
         results.append(("Mode\n(training)", mlabel, np.mean(etas_mode)))
 
-    # Plot – factor order matches paper: Condition, Distance, Level, Mode
+    # Plot – factor order matches paper: Rebalancing, Distance, Level, Mode
     factors = [
-        "Condition\n(rebalancing)", "Distance\n(metric)",
+        "Rebalancing\n(strategy)", "Distance\n(metric)",
         "Level\n(in/out-domain)", "Mode\n(training)",
     ]
     x = np.arange(len(factors))
@@ -269,10 +269,10 @@ def plot_effect_hierarchy(df: pd.DataFrame):
 
 
 # ===================================================================
-# Fig 3: Condition × Mode Heatmap
+# Fig 3: Rebalancing × Mode Heatmap
 # ===================================================================
 def plot_condition_mode_heatmap(df: pd.DataFrame):
-    """Heatmap of mean performance: 7 conditions × 3 modes."""
+    """Heatmap of mean performance: 7 rebalancing strategies × 3 modes."""
 
     fig, axes = plt.subplots(1, 3, figsize=(17, 5))
 
@@ -302,7 +302,7 @@ def plot_condition_mode_heatmap(df: pd.DataFrame):
         ax.set_title(mlabel, fontsize=12, fontweight="bold")
         plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04, label=mlabel)
 
-    fig.suptitle("Mean Performance by Condition and Training Mode\n"
+    fig.suptitle("Mean Performance by Rebalancing Strategy and Training Mode\n"
                  "(pooled across distances, levels, and 12 seeds)",
                  fontsize=12, fontweight="bold")
     fig.tight_layout(rect=[0, 0, 1, 0.92])
@@ -625,7 +625,7 @@ def plot_domain_shift(df: pd.DataFrame):
     fig.legend(handles=legend_elements, loc="lower center", ncol=2,
                fontsize=9, framealpha=0.9)
 
-    fig.suptitle("Domain Shift Direction by Condition × Mode\n"
+    fig.suptitle("Domain Shift Direction by Rebalancing Strategy × Mode\n"
                  "Green = out-domain outperforms (gap reversal)",
                  fontsize=12, fontweight="bold")
     fig.tight_layout(rect=[0, 0.05, 1, 0.92])
@@ -735,7 +735,7 @@ def main():
     print("\n[1/7] Fig 2 — Effect size hierarchy...")
     plot_effect_hierarchy(df)
 
-    print("[2/7] Fig 3 — Condition × Mode heatmap...")
+    print("[2/7] Fig 3 — Rebalancing × Mode heatmap...")
     plot_condition_mode_heatmap(df)
 
     print("[3/7] Fig 4 — Critical Difference diagrams...")
