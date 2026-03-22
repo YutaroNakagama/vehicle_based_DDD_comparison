@@ -155,6 +155,28 @@ Due to non-normality (Shapiro-Wilk rejects normality in 45–71% of cells across
 
 All test families are Bonferroni-corrected ($\alpha' = \alpha/m$, $\alpha = 0.05$). Effect sizes follow Cliff's (1993) thresholds: $|\delta| < 0.147$ negligible, $< 0.33$ small, $< 0.474$ medium, $\geq 0.474$ large. Effect size confidence intervals are computed via percentile bootstrap ($B = 2{,}000$). Overall population means are estimated with BCa bootstrap CIs ($B = 10{,}000$). A global permutation test ($B = 10{,}000$) validates the condition effect against the null hypothesis of label exchangeability.
 
+#### 3.6.1 Kruskal–Wallis effect size ($\eta^2$)
+
+Kruskal–Wallis $H$ is computed as:
+
+$$
+H = \frac{12}{N(N+1)} \sum_{i=1}^{k} \frac{R_i^2}{n_i} - 3(N+1)
+$$
+
+where:
+- $k$ is the number of groups (e.g., $k=7$ for Condition, $k=3$ for Mode/Distance, $k=2$ for Level),
+- $N$ is the total number of observations,
+- $R_i$ is the rank sum for group $i$,
+- $n_i$ is the sample size for group $i$.
+
+The nonparametric effect size $\eta^2$ is approximated by:
+
+$$
+\eta^2 = \frac{H}{N - 1}.
+$$
+
+Higher $\eta^2$ values indicate a larger proportion of variance explained by the factor.
+
 ### 3.7 Hypotheses
 
 Based on the literature and factorial design, we formulate 6 primary hypotheses and 7 supplementary hypotheses.
