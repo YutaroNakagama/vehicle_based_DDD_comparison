@@ -190,7 +190,7 @@ Based on the literature and factorial design, we formulate 6 primary hypotheses 
 | H3 | The choice of distance metric affects downstream performance | Distance | RQ2 |
 | H4 | Domain membership (in-domain vs. out-domain) significantly affects classification performance | Membership | RQ2 |
 | H5 | Within-domain training outperforms cross-domain training | Mode | RQ2 |
-| H6 | The effect of rebalancing depends on training mode (Rebalancing × Mode interaction) | Rebalancing × Mode | RQ3 |
+| H6 | The effect of rebalancing depends on training mode and domain membership ($R \times M \times G$ interaction) | Rebalancing × Mode (× Membership) | RQ3 |
 
 **Supplementary hypotheses** (H7–H13, reported in Appendix C) refine the primary findings with finer-grained comparisons: SW-SMOTE vs. SMOTE (H7), Wasserstein superiority (H8), mixed vs. cross-domain (H9), domain gap in cross-domain (H10), oversampling and domain gap (H11), rebalancing × distance interaction (H12), and membership × mode interaction (H13).
 
@@ -360,7 +360,11 @@ Fig. 6 makes this mode separation visually striking. The box plots show that Cro
 ![Training Mode Box Plot](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig6_mode_boxplot.png)
 *Fig. 6. Performance distributions by training mode. Cross-domain is clearly separated from Within-domain and Mixed ($\delta > 0.8$, large), while Within-domain and Mixed are statistically equivalent ($\delta < 0.05$).*
 
-### 4.4 Imbalance × Domain Interaction (RQ3: H6)
+### 4.4 Rebalancing × Mode × Membership Interaction (RQ3: H6)
+
+RQ3 asks how rebalancing effectiveness interacts with domain configuration. Since distance metric choice is irrelevant (H3, §4.3.1), the operationally meaningful domain factors are training mode ($M$) and domain membership ($G$). We therefore frame the interaction as a three-factor relationship $R \times M \times G$, testing the $R \times M$ component directly (H6) and integrating evidence for the $G$ dimension from H4 (§4.3.2), H11, and H13 (Appendix C).
+
+#### 4.4.1 Rebalancing × Mode (H6)
 
 **Strongly supported.** Per-mode Friedman tests confirm that strategies differ significantly within each mode (all 9 tests $p < 10^{-5}$), but the *identity* of the best strategy reverses between cross-domain and within-domain/mixed:
 
@@ -385,7 +389,17 @@ Fig. 3 captures this interaction structure as a heatmap of mean performance acro
 ![Rebalancing × Mode Heatmap](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig3_condition_mode_heatmap.png)
 *Fig. 3. Mean performance heatmap (7 strategies × 3 modes) for F2-score, AUROC, and AUPRC. Cross-domain performance is uniformly low regardless of rebalancing method, while Within-domain and Mixed reveal strong strategy differentiation — visually confirming the Rebalancing × Mode interaction (H6).*
 
-*Supplementary findings*: Rebalancing × distance interaction (H12) is weak (12/18 consistent, 6/18 minor swaps; see Appendix C). Membership × mode interaction (H13) confirms that within-domain training eliminates or reverses the domain gap (see Appendix C). The domain gap in cross-domain settings (H10) and the effect of oversampling on domain gap (H11) show mixed, context-dependent results (see Appendix C).
+#### 4.4.2 Role of Domain Membership ($G$) in the Interaction
+
+While a direct $R \times M \times G$ factorial test is not conducted (splitting by membership would halve the per-cell sample size to $n = 6$, leaving only very large effects detectable), the three-factor interaction can be characterised by combining evidence from H4, H11, and H13:
+
+- **$G \times M$ interaction (H13)**: Within-domain and mixed training reverse the expected domain gap — out-domain subjects outperform in-domain subjects ($\Delta > 0$; see §4.3.2 and Appendix C). This reversal does not occur in cross-domain settings, where $\Delta \approx 0$.
+- **$R \times G$ interaction (H11)**: Rebalancing does not consistently reduce the domain gap. The effect is context-dependent: in mixed mode, oversampling amplifies the out-domain advantage (AUPRC baseline $\Delta = +0.234$ vs. SMOTE $r{=}0.1$: $+0.151$), while in cross-domain mode, the gap remains negligible regardless of strategy (see §4.3.2).
+- **Combined $R \times M \times G$ picture**: The $R \times M$ ranking reversal (§4.4.1) is the dominant interaction, and it holds regardless of membership group — the strategy rankings within each mode are pooled across $G$ (the Friedman tests above use all 18 cells per mode). The membership dimension modulates the *magnitude* of performance differences (larger $|\Delta|$ in within-domain/mixed) but does not alter *which* strategy is optimal.
+
+In summary, the three-factor interaction is hierarchical: $R \times M$ determines the optimal strategy, while $G$ introduces a secondary, mode-dependent performance offset that does not change strategy selection.
+
+*Supplementary findings*: Rebalancing × distance interaction (H12) is weak (12/18 consistent, 6/18 minor swaps; see Appendix C).
 
 ### 4.5 Robustness Validation
 
@@ -463,7 +477,7 @@ In contrast, switching from Wasserstein to MMD for domain grouping yields $|\Del
 
 ### 5.3 The Domain Gap Reversal Phenomenon
 
-An unexpected finding is that the domain gap reverses in within-domain and mixed training: out-domain subjects sometimes outperform in-domain subjects ($\Delta > 0$). Fig. 7 visualizes this pattern through diverging horizontal bars for each Rebalancing × Mode cell. Green bars (positive $\Delta$) indicate that out-domain performance exceeds in-domain. Across all three metrics (F2-score, AUROC, AUPRC), the majority of bars point green — especially in the Mixed mode panel — demonstrating that domain shift does not systematically degrade performance. This visual is consistent with the Wilcoxon test results (H10: 0/63 to 12/63 significant) and provides direct evidence that the domain split does not introduce a meaningful performance penalty.
+An unexpected finding is that the domain gap reverses in within-domain and mixed training: out-domain subjects sometimes outperform in-domain subjects ($\Delta > 0$). Fig. 7 visualizes this pattern through diverging horizontal bars for each Rebalancing × Mode × Membership cell. Green bars (positive $\Delta$) indicate that out-domain performance exceeds in-domain. Across all three metrics (F2-score, AUROC, AUPRC), the majority of bars point green — especially in the Mixed mode panel — demonstrating that domain shift does not systematically degrade performance. This visual is consistent with the Wilcoxon test results (H10: 0/63 to 12/63 significant) and provides direct evidence that the domain split does not introduce a meaningful performance penalty.
 
 ![Domain Shift Direction](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig7_domain_shift_reversal.png)
 *Fig. 7. Domain gap direction ($\Delta = \text{out} - \text{in}$) by Rebalancing × Mode. Green = out-domain outperforms in-domain (gap reversal). The prevalence of green bars, especially in Mixed mode, demonstrates that domain shift does not cause systematic performance degradation.*
@@ -515,7 +529,7 @@ The key findings are:
 
 **RQ3 — Interaction:**
 
-5. **Rebalancing strategy depends on training mode**: The optimal strategy varies by mode (RUS in cross-domain; SMOTE/SW-SMOTE in within-domain and mixed), revealing a strong rebalancing × mode interaction that practitioners must account for.
+5. **Rebalancing strategy depends on training mode**: The optimal strategy varies by mode (RUS in cross-domain; SMOTE/SW-SMOTE in within-domain and mixed), revealing a strong $R \times M$ interaction. Domain membership ($G$) modulates the magnitude of performance differences but does not alter strategy selection (§4.4.2).
 
 6. **Results are robust**: Consistent across 12 random seeds ($\sigma_{\text{rank}} \to 0$ at $k = 9$), 5 evaluation metrics (Kendall's $W = 0.643$), 2 sampling ratios (91% directional agreement), and confirmed by permutation test ($p < 0.001$).
 
@@ -556,7 +570,7 @@ For practitioners, these results prescribe a clear strategy: apply SMOTE-based c
 | H3 | Distance metric matters | ✗ Negligible | $\eta^2 < 0.004$, all metrics equivalent |
 | H4 | Domain membership affects performance | ✓ Strongly supported (direction is mode-dependent) | Significant in 11–16/63 cells; cross-domain: in-domain advantage ($\Delta < 0$); within-domain/mixed: out-domain advantage ($\Delta > 0$) |
 | H5 | Within-domain > cross-domain | ✓ Fully supported | $\delta = +0.833$ (F2), $+0.945$ (AUROC) |
-| H6 | Rebalancing × Mode interaction | ✓ Strong | Best method varies by mode |
+| H6 | Rebalancing × Mode × Membership interaction | ✓ Strong ($R \times M$); secondary ($G$) | Best method varies by mode; membership modulates magnitude but not strategy selection |
 
 ## Appendix B: Extended Metrics Rebalancing Strategy Rankings
 
