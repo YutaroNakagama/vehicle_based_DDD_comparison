@@ -97,7 +97,7 @@ is_completed() {
 # Queue capacity management
 # ============================================================
 declare -A QUEUE_LIMITS=(
-    [SINGLE]=40 [LONG]=15 [DEFAULT]=10 [SMALL]=10
+    [SINGLE]=40 [LONG]=15 [DEFAULT]=40 [SMALL]=30
 )
 
 get_total_queue_count() {
@@ -235,7 +235,7 @@ for job_spec in "${PENDING_JOBS[@]}"; do
 
     # SvmW: CPU queue, 8 cores, 32GB RAM, 72h walltime
     SCRIPT="$CPU_SCRIPT"
-    NCPUS_MEM="ncpus=8:mem=32gb"
+    NCPUS_MEM="ncpus=4:mem=4gb"
     WALLTIME="72:00:00"
     if $DRY_RUN; then
         QUEUE="CPU-auto"

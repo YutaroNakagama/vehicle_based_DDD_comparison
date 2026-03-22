@@ -110,7 +110,7 @@ is_completed() {
 # ============================================================
 # Per-queue limits (KAGAYAKI)
 declare -A QUEUE_LIMITS=(
-    [SINGLE]=40 [LONG]=15 [DEFAULT]=10 [SMALL]=10
+    [SINGLE]=40 [LONG]=15 [DEFAULT]=40 [SMALL]=30
     [GPU-1]=40 [GPU-1A]=40 [GPU-S]=40 [GPU-L]=40 [GPU-LA]=40
 )
 
@@ -264,7 +264,7 @@ for job_spec in "${PENDING_JOBS[@]}"; do
     # Select script, resources, and queue (pick least-loaded)
     if [[ "$MODEL" == "Lstm" ]]; then
         SCRIPT="$GPU_SCRIPT"
-        NCPUS_MEM="ncpus=4:mem=16gb:ngpus=1"
+        NCPUS_MEM="ncpus=4:mem=4gb:ngpus=1"
         WALLTIME="20:00:00"
         if $DRY_RUN; then
             QUEUE="GPU-auto"
@@ -274,7 +274,7 @@ for job_spec in "${PENDING_JOBS[@]}"; do
     else
         # SvmA (72h: smote/smote_plain + mmd + ratio=0.5 can exceed 48h)
         SCRIPT="$CPU_SCRIPT"
-        NCPUS_MEM="ncpus=8:mem=32gb"
+        NCPUS_MEM="ncpus=4:mem=4gb"
         WALLTIME="72:00:00"
         if $DRY_RUN; then
             QUEUE="CPU-auto"
