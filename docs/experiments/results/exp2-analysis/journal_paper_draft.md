@@ -126,7 +126,7 @@ The experiment follows a 4-factor factorial design:
 | Rebalancing strategy ($R$) | method × ratio | 7 | Between-group |
 | Distance metric ($D$) | MMD/DTW/Wasserstein | 3 | Between-group |
 | Domain membership ($G$) | in/out | 2 | Within-subject |
-| Training mode ($M$) | source/target/mixed | 3 | Between-group |
+| Training mode ($M$) | cross/within/mixed | 3 | Between-group |
 
 **Rebalancing strategies (7)**: baseline (no rebalancing), RUS ($r=0.1$, $r=0.5$), SMOTE ($r=0.1$, $r=0.5$), SW-SMOTE ($r=0.1$, $r=0.5$).
 
