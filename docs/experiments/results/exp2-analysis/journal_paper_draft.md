@@ -4,7 +4,7 @@
 
 ## Abstract
 
-Drowsy driving detection (DDD) using vehicle dynamics signals faces two practical challenges: severe class imbalance between alert and drowsy states, and domain shift across individual drivers. This study systematically evaluates the relative importance of class imbalance handling methods and domain grouping strategies through a 4-factor factorial experiment (7 conditions × 3 training modes × 3 distance metrics × 2 domain levels) with 87 driving simulator subjects and 12 random seeds (1,512 total observations). We address three research questions — effectiveness of class imbalance handling (RQ1: H1, H2), influence of domain grouping decisions (RQ2: H3, H4, H5), and interaction between rebalancing and domain configuration (RQ3: H6) — using non-parametric statistical methods with Bonferroni correction, permutation tests, and bootstrap confidence intervals. Results reveal that the choice of imbalance handling method has a dominant effect ($\eta^2 = 0.58$–$0.79$, large) while the choice of distance metric for domain grouping is negligible ($\eta^2 < 0.004$). SMOTE-based oversampling improves F2-score from 0.22 (baseline) to 0.56 in within-domain settings, AUROC from 0.63 to 0.90, and AUPRC from 0.12 to 0.65 — a 460% relative improvement on the imbalance-sensitive precision–recall metric. Within-domain training outperforms cross-domain training with large effect sizes ($\delta = 0.83$–$0.95$), and the optimal rebalancing strategy depends on training mode, with RUS effective only in cross-domain settings and SMOTE dominating elsewhere. We provide a vehicle dynamics explanation for the distance metric irrelevance: the bicycle model coupling $a_y = v \cdot \dot{\delta}/L$ reduces the 135-dimensional feature space to approximately 45 effective dimensions, with lane offset features ($O(10^3)$) dominating all metrics equally. These findings demonstrate that for practical DDD deployment, investing in appropriate class rebalancing yields far greater returns than optimizing domain partition strategies.
+Drowsy driving detection (DDD) using vehicle dynamics signals faces two practical challenges: severe class imbalance between alert and drowsy states, and domain shift across individual drivers. This study systematically evaluates the relative importance of class imbalance handling methods and domain grouping strategies through a 4-factor factorial experiment (7 rebalancing strategies × 3 training modes × 3 distance metrics × 2 domain levels) with 87 driving simulator subjects and 12 random seeds (1,512 total observations). We address three research questions — effectiveness of class imbalance handling (RQ1: H1, H2), influence of domain grouping decisions (RQ2: H3, H4, H5), and interaction between rebalancing and domain configuration (RQ3: H6) — using non-parametric statistical methods with Bonferroni correction, permutation tests, and bootstrap confidence intervals. Results reveal that the choice of imbalance handling method has a dominant effect ($\eta^2 = 0.58$–$0.79$, large) while the choice of distance metric for domain grouping is negligible ($\eta^2 < 0.004$). SMOTE-based oversampling improves F2-score from 0.22 (baseline) to 0.56 in within-domain settings, AUROC from 0.63 to 0.90, and AUPRC from 0.12 to 0.65 — a 460% relative improvement on the imbalance-sensitive precision–recall metric. Within-domain training outperforms cross-domain training with large effect sizes ($\delta = 0.83$–$0.95$), and the optimal rebalancing strategy depends on training mode, with RUS effective only in cross-domain settings and SMOTE dominating elsewhere. We provide a vehicle dynamics explanation for the distance metric irrelevance: the bicycle model coupling $a_y = v \cdot \dot{\delta}/L$ reduces the 135-dimensional feature space to approximately 45 effective dimensions, with lane offset features ($O(10^3)$) dominating all metrics equally. These findings demonstrate that for practical DDD deployment, investing in appropriate class rebalancing yields far greater returns than optimizing domain partition strategies.
 
 **Keywords**: drowsy driving detection, class imbalance, domain shift, vehicle dynamics, SMOTE, distance metric, non-parametric statistics
 
@@ -37,7 +37,7 @@ This study makes the following contributions:
 
 2. **Vehicle dynamics explanation** (RQ2): We provide a physics-grounded explanation for why distance metrics produce equivalent domain groupings — the bicycle model coupling reduces effective feature dimensionality from 135 to 45, with lane offset features dominating all metrics at $O(10^3)$ scale.
 
-3. **Mode-dependent rebalancing strategy** (RQ3): We reveal a strong condition × mode interaction — RUS is effective only in cross-domain settings while SMOTE dominates elsewhere — demonstrating that practitioners must jointly consider imbalance handling and domain configuration.
+3. **Mode-dependent rebalancing strategy** (RQ3): We reveal a strong rebalancing × mode interaction — RUS is effective only in cross-domain settings while SMOTE dominates elsewhere — demonstrating that practitioners must jointly consider imbalance handling and domain configuration.
 
 4. **Comprehensive hypothesis framework**: We test 6 hypotheses with Bonferroni-corrected non-parametric tests, permutation tests ($p < 0.001$), bootstrap CIs, and seed convergence analysis, providing a reproducible template for DDD evaluation. Supplementary analyses (7 additional hypotheses) are reported in Appendix C.
 
@@ -123,12 +123,12 @@ The experiment follows a 4-factor factorial design:
 
 | Factor | Symbol | Levels | Type |
 |--------|:------:|:------:|------|
-| Condition ($C$) | method × ratio | 7 | Between-group |
+| Rebalancing strategy ($R$) | method × ratio | 7 | Between-group |
 | Distance metric ($D$) | MMD/DTW/Wasserstein | 3 | Between-group |
 | Domain level ($L$) | in/out | 2 | Within-subject |
 | Training mode ($M$) | source/target/mixed | 3 | Between-group |
 
-**Conditions (7)**: baseline (no rebalancing), RUS ($r=0.1$, $r=0.5$), SMOTE ($r=0.1$, $r=0.5$), SW-SMOTE ($r=0.1$, $r=0.5$).
+**Rebalancing strategies (7)**: baseline (no rebalancing), RUS ($r=0.1$, $r=0.5$), SMOTE ($r=0.1$, $r=0.5$), SW-SMOTE ($r=0.1$, $r=0.5$).
 
 **Distance metrics (3)**: MMD, DTW, and Wasserstein, used to compute subject-level KNN scores for domain grouping (§3.4).
 
@@ -138,7 +138,7 @@ The experiment follows a 4-factor factorial design:
 
 **Evaluation metrics**: F2-score, AUROC, and AUPRC (primary). F2-score emphasizes recall for safety-critical detection; AUROC measures overall discrimination; AUPRC evaluates precision–recall trade-offs under class imbalance, avoiding the optimistic bias of AUROC when the negative class dominates (Saito & Rehmsmeier, 2015). F1-score and Recall serve as supplementary metrics.
 
-**Reproducibility**: 12 random seeds $\times$ 18 cells (3 modes × 3 distances × 2 levels) per condition = 1,512 total observations.
+**Reproducibility**: 12 random seeds $\times$ 18 cells (3 modes × 3 distances × 2 levels) per strategy = 1,512 total observations.
 
 ### 3.6 Statistical Analysis Framework
 
@@ -153,7 +153,7 @@ Due to non-normality (Shapiro-Wilk rejects normality in 45–71% of cells across
 | Effect size | Cliff's $\delta$ | Cliff (1993) |
 | Post-hoc | Nemenyi test | Nemenyi (1963) |
 
-All test families are Bonferroni-corrected ($\alpha' = \alpha/m$, $\alpha = 0.05$). Effect sizes follow Cliff's (1993) thresholds: $|\delta| < 0.147$ negligible, $< 0.33$ small, $< 0.474$ medium, $\geq 0.474$ large. Effect size confidence intervals are computed via percentile bootstrap ($B = 2{,}000$). Overall population means are estimated with BCa bootstrap CIs ($B = 10{,}000$). A global permutation test ($B = 10{,}000$) validates the condition effect against the null hypothesis of label exchangeability.
+All test families are Bonferroni-corrected ($\alpha' = \alpha/m$, $\alpha = 0.05$). Effect sizes follow Cliff's (1993) thresholds: $|\delta| < 0.147$ negligible, $< 0.33$ small, $< 0.474$ medium, $\geq 0.474$ large. Effect size confidence intervals are computed via percentile bootstrap ($B = 2{,}000$). Overall population means are estimated with BCa bootstrap CIs ($B = 10{,}000$). A global permutation test ($B = 10{,}000$) validates the rebalancing effect against the null hypothesis of label exchangeability.
 
 #### 3.6.1 Kruskal–Wallis effect size ($\eta^2$)
 
@@ -164,7 +164,7 @@ H = \frac{12}{N(N+1)} \sum_{i=1}^{k} \frac{R_i^2}{n_i} - 3(N+1)
 $$
 
 where:
-- $k$ is the number of groups (e.g., $k=7$ for Condition, $k=3$ for Mode/Distance, $k=2$ for Level),
+- $k$ is the number of groups (e.g., $k=7$ for Rebalancing strategy, $k=3$ for Mode/Distance, $k=2$ for Level),
 - $N$ is the total number of observations,
 - $R_i$ is the rank sum for group $i$,
 - $n_i$ is the sample size for group $i$.
@@ -185,14 +185,14 @@ Based on the literature and factorial design, we formulate 6 primary hypotheses 
 
 | # | Hypothesis | Factor | RQ |
 |:-:|-----------|:------:|:--:|
-| H1 | Rebalancing methods differ significantly in classification performance | Condition | RQ1 |
-| H2 | The optimal sampling ratio is method-dependent | Condition × Ratio | RQ1 |
+| H1 | Rebalancing methods differ significantly in classification performance | Rebalancing | RQ1 |
+| H2 | The optimal sampling ratio is method-dependent | Rebalancing × Ratio | RQ1 |
 | H3 | The choice of distance metric affects downstream performance | Distance | RQ2 |
 | H4 | Domain membership (in-domain vs. out-domain) significantly affects classification performance | Level | RQ2 |
 | H5 | Within-domain training outperforms cross-domain training | Mode | RQ2 |
-| H6 | The effect of rebalancing depends on training mode (Condition × Mode interaction) | Condition × Mode | RQ3 |
+| H6 | The effect of rebalancing depends on training mode (Rebalancing × Mode interaction) | Rebalancing × Mode | RQ3 |
 
-**Supplementary hypotheses** (H7–H13, reported in Appendix C) refine the primary findings with finer-grained comparisons: SW-SMOTE vs. SMOTE (H7), Wasserstein superiority (H8), mixed vs. cross-domain (H9), domain gap in cross-domain (H10), oversampling and domain gap (H11), condition × distance interaction (H12), and level × mode interaction (H13).
+**Supplementary hypotheses** (H7–H13, reported in Appendix C) refine the primary findings with finer-grained comparisons: SW-SMOTE vs. SMOTE (H7), Wasserstein superiority (H8), mixed vs. cross-domain (H9), domain gap in cross-domain (H10), oversampling and domain gap (H11), rebalancing × distance interaction (H12), and level × mode interaction (H13).
 
 ---
 
@@ -200,18 +200,18 @@ Based on the literature and factorial design, we formulate 6 primary hypotheses 
 
 ### 4.1 Overview
 
-A total of 1,512 observations across 7 conditions, 3 training modes, 3 distance metrics, 2 domain levels, and 12 random seeds were analyzed. The permutation test confirms a significant global condition effect for F2-score ($T_{\text{obs}} = 13.41$, $p < 0.001$), AUROC ($T_{\text{obs}} = 10.35$, $p < 0.001$), and AUPRC ($p < 0.001$).
+A total of 1,512 observations across 7 rebalancing strategies, 3 training modes, 3 distance metrics, 2 domain levels, and 12 random seeds were analyzed. The permutation test confirms a significant global rebalancing effect for F2-score ($T_{\text{obs}} = 13.41$, $p < 0.001$), AUROC ($T_{\text{obs}} = 10.35$, $p < 0.001$), and AUPRC ($p < 0.001$).
 
-Fig. 2 summarizes the relative importance of each experimental factor. The four-factor effect size hierarchy (F2-score, AUROC, AUPRC) immediately reveals that **Condition** ($\eta^2 = 0.1$–$0.8$) and **Mode** ($\eta^2 > 0.6$) account for nearly all systematic variance, while **Distance** and **Level** (in/out-domain) contribute negligibly. This visual establishes the central narrative of the paper: rebalancing and training regime matter; domain grouping strategy does not.
+Fig. 2 summarizes the relative importance of each experimental factor. The four-factor effect size hierarchy (F2-score, AUROC, AUPRC) immediately reveals that **Rebalancing** ($\eta^2 = 0.1$–$0.8$) and **Mode** ($\eta^2 > 0.6$) account for nearly all systematic variance, while **Distance** and **Level** (in/out-domain) contribute negligibly. This visual establishes the central narrative of the paper: rebalancing and training regime matter; domain grouping strategy does not.
 
 ![Effect Size Hierarchy](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig2_effect_hierarchy.png)
-*Fig. 2. Effect size hierarchy ($\eta^2$) for the four experimental factors (Condition, Distance, Level, Mode) across F2-score, AUROC, and AUPRC. Condition and Mode dominate; Distance and Level are negligible.*
+*Fig. 2. Effect size hierarchy ($\eta^2$) for the four experimental factors (Rebalancing, Distance, Level, Mode) across F2-score, AUROC, and AUPRC. Rebalancing and Mode dominate; Distance and Level are negligible.*
 
 ### 4.2 Class Imbalance Handling (RQ1: H1, H2)
 
 #### 4.2.1 Global Test
 
-The Kruskal-Wallis test reveals a significant condition effect across all 18 experimental cells (Bonferroni $\alpha' = 0.05/18 = 0.0028$):
+The Kruskal-Wallis test reveals a significant rebalancing effect across all 18 experimental cells (Bonferroni $\alpha' = 0.05/18 = 0.0028$):
 
 | Metric | Significant | Mean $\eta^2$ | Effect | $H$ range | $p$ |
 |--------|:-----------:|:-------------:|:------:|:---------:|:---:|
@@ -245,7 +245,7 @@ RUS does not outperform baseline. In within-domain and mixed settings, baseline 
 
 **H1 verdict — strongly supported**: Rebalancing methods differ significantly across all 18 cells (§4.2.1). Post-hoc contrasts reveal a mode-dependent ordering: Oversampling > Baseline > RUS in within-domain and mixed settings (32/48 significant with large $\delta$), while cross-domain performance is uniformly low with RUS showing marginal advantages. This interaction is further analysed under H6 (§4.4).
 
-A Friedman test across all 7 conditions confirms significant rank differences (Friedman $\chi^2 = 57.93$–$60.43$, $p < 0.0001$). Nemenyi post-hoc (CD = 2.600) identifies 9–10/21 pairwise comparisons as significant across all three primary metrics, corroborating the group-level H1 findings at individual-condition resolution. Full condition rankings are provided in Appendix B. The top-ranked method differs between F2/AUPRC (sw\_smote\_r01) and AUROC (smote\_r01), reflecting AUPRC's sensitivity to the precision–recall balance under imbalance.
+A Friedman test across all 7 strategies confirms significant rank differences (Friedman $\chi^2 = 57.93$–$60.43$, $p < 0.0001$). Nemenyi post-hoc (CD = 2.600) identifies 9–10/21 pairwise comparisons as significant across all three primary metrics, corroborating the group-level H1 findings at individual-strategy resolution. Full strategy rankings are provided in Appendix B. The top-ranked method differs between F2/AUPRC (sw\_smote\_r01) and AUROC (smote\_r01), reflecting AUPRC's sensitivity to the precision–recall balance under imbalance.
 
 ![Critical Difference Diagrams](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig4_cd_diagrams.png)
 *Fig. 4. Nemenyi post-hoc Critical Difference diagrams for F2-score, AUROC, and AUPRC. Methods connected by a bar are not significantly different ($\alpha = 0.05$). Oversampling methods consistently rank left (better); the top-ranked method differs between F2/AUPRC (sw\_smote\_r01) and AUROC (smote\_r01).*
@@ -282,7 +282,7 @@ We test this by comparing $r=0.1$ vs $r=0.5$ within each method using Mann-Whitn
 | SMOTE | 5/6 | 0 | +0.121 | $r=0.1$ preferred (small, non-significant) |
 | SW-SMOTE | 4/6 | 4 | +0.370 | $r=0.1$ preferred (medium) |
 
-Across all three metrics, $r=0.1$ is preferred for RUS (16/18 cells) and SW-SMOTE (14/18 cells, 12 significant). For SMOTE, $r=0.1$ is preferred on AUROC (6/6) and AUPRC (5/6), but $r=0.5$ is marginally preferred on F2 (4/6, 0 significant, $\delta \approx 0$). Directional agreement between $r=0.1$ and $r=0.5$ condition rankings is 91% (F2) and 87% (AUROC).
+Across all three metrics, $r=0.1$ is preferred for RUS (16/18 cells) and SW-SMOTE (14/18 cells, 12 significant). For SMOTE, $r=0.1$ is preferred on AUROC (6/6) and AUPRC (5/6), but $r=0.5$ is marginally preferred on F2 (4/6, 0 significant, $\delta \approx 0$). Directional agreement between $r=0.1$ and $r=0.5$ strategy rankings is 91% (F2) and 87% (AUROC).
 
 **H2 verdict — partially supported**: Method-dependent ratio sensitivity is observed only for F2-score, where SMOTE prefers $r=0.5$ while RUS and SW-SMOTE prefer $r=0.1$. For AUROC and AUPRC, all three methods consistently favour $r=0.1$, though SMOTE's preference is non-significant ($\delta < 0.18$). Overall, $r=0.1$ is the more robust default across methods and metrics.
 
@@ -290,7 +290,7 @@ Across all three metrics, $r=0.1$ is preferred for RUS (16/18 cells) and SW-SMOT
 
 #### 4.3.1 Distance Metric Effect (H3)
 
-The Kruskal-Wallis test (6 cells = mode × level, pooling conditions) shows negligible distance metric effects for most metrics, with isolated statistical significance confined to cross-domain AUROC cells:
+The Kruskal-Wallis test (6 cells = mode × level, pooling strategies) shows negligible distance metric effects for most metrics, with isolated statistical significance confined to cross-domain AUROC cells:
 
 | Metric | Bonf. significant cells | Mean $\eta^2$ | Max $\eta^2$ |
 |--------|:-----------------------:|:-------------:|:------------:|
@@ -298,9 +298,9 @@ The Kruskal-Wallis test (6 cells = mode × level, pooling conditions) shows negl
 | AUROC | 2/6 | 0.089 | 0.322 |
 | AUPRC | 2/6 | 0.038 | 0.117 |
 
-The elevated AUROC $\eta^2$ is driven entirely by the two cross-domain cells (source\_only × in\_domain, source\_only × out\_domain), where all conditions perform near chance (AUROC $\approx$ 0.51–0.53) and the very low within-group variance inflates the statistic despite absolute mean differences of < 2 percentage points. In the global (fully pooled) analysis, the distance factor has $\eta^2 < 0.003$ across all metrics, confirming negligible practical importance.
+The elevated AUROC $\eta^2$ is driven entirely by the two cross-domain cells (source\_only × in\_domain, source\_only × out\_domain), where all strategies perform near chance (AUROC $\approx$ 0.51–0.53) and the very low within-group variance inflates the statistic despite absolute mean differences of < 2 percentage points. In the global (fully pooled) analysis, the distance factor has $\eta^2 < 0.003$ across all metrics, confirming negligible practical importance.
 
-Pooled performance across all conditions:
+Pooled performance across all strategies:
 
 | Metric | MMD | DTW | Wasserstein | Max $\lvert\delta\rvert$ |
 |--------|:---:|:---:|:-----------:|:--------------------------:|
@@ -327,7 +327,7 @@ The domain gap $\Delta = Y_{\text{out}} - Y_{\text{in}}$ is generally small and 
 | AUROC | 12 | 0.018–0.092 |
 | AUPRC | 16 | 0.016–0.114 |
 
-All 63 Wilcoxon signed-rank tests per metric (7 conditions $\times$ 3 modes $\times$ 3 distances, paired by seed) use Bonferroni $\alpha' = 0.00079$. AUPRC yields the most significant pairs (16/63), yet the absolute gaps remain small. Mean Cliff's $\lvert\delta\rvert$ by mode: cross-domain 0.45–0.79, within-domain 0.30–0.41, mixed 0.42–0.67 — indicating moderate-to-large effect sizes that vary more by mode than by metric.
+All 63 Wilcoxon signed-rank tests per metric (7 strategies $\times$ 3 modes $\times$ 3 distances, paired by seed) use Bonferroni $\alpha' = 0.00079$. AUPRC yields the most significant pairs (16/63), yet the absolute gaps remain small. Mean Cliff's $\lvert\delta\rvert$ by mode: cross-domain 0.45–0.79, within-domain 0.30–0.41, mixed 0.42–0.67 — indicating moderate-to-large effect sizes that vary more by mode than by metric.
 
 Notably, within-domain and mixed training often show **positive** $\Delta$ (out-domain outperforms in-domain), suggesting that rebalancing is more effective for behaviorally diverse subjects:
 
@@ -353,7 +353,7 @@ The training mode has a massive impact on performance:
 | AUROC | 0.520 ± 0.015 | 0.773 ± 0.148 | 0.773 ± 0.140 | +0.945 (large) |
 | AUPRC | 0.050 ± 0.007 | 0.362 ± 0.272 | 0.376 ± 0.280 | +0.951 (large) |
 
-All 14 Friedman tests across conditions are significant (14/14, $p < 0.0001$), with Kendall's W ranging from 0.455 to 0.969. Mixed training performs equivalently to within-domain and substantially better than cross-domain (F2: $0.372$ vs. $0.125$; AUROC: $0.773$ vs. $0.520$; AUPRC: $0.376$ vs. $0.050$), confirming the supplementary H9 finding (see Appendix C). Within-domain vs. Mixed is negligible across all three metrics ($\delta < 0.05$).
+All 14 Friedman tests across strategies are significant (14/14, $p < 0.0001$), with Kendall's W ranging from 0.455 to 0.969. Mixed training performs equivalently to within-domain and substantially better than cross-domain (F2: $0.372$ vs. $0.125$; AUROC: $0.773$ vs. $0.520$; AUPRC: $0.376$ vs. $0.050$), confirming the supplementary H9 finding (see Appendix C). Within-domain vs. Mixed is negligible across all three metrics ($\delta < 0.05$).
 
 Fig. 6 makes this mode separation visually striking. The box plots show that Cross-domain performance is compressed into a narrow, low-performance band for all three metrics, clearly separated from Within-domain and Mixed. This dichotomy has direct practical significance: mixing data from other vehicles into training does not degrade performance relative to using only matched-vehicle data.
 
@@ -362,7 +362,7 @@ Fig. 6 makes this mode separation visually striking. The box plots show that Cro
 
 ### 4.4 Imbalance × Domain Interaction (RQ3: H6)
 
-**Strongly supported.** Per-mode Friedman tests confirm that conditions differ significantly within each mode (all 9 tests $p < 10^{-5}$), but the *identity* of the best condition reverses between cross-domain and within-domain/mixed:
+**Strongly supported.** Per-mode Friedman tests confirm that strategies differ significantly within each mode (all 9 tests $p < 10^{-5}$), but the *identity* of the best strategy reverses between cross-domain and within-domain/mixed:
 
 | Mode | F2 #1 | AUROC #1 | AUPRC #1 | Friedman $W$ (F2 / AUROC / AUPRC) |
 |------|-------|----------|----------|:---------------------------------:|
@@ -370,7 +370,7 @@ Fig. 6 makes this mode separation visually striking. The box plots show that Cro
 | Within-domain | SW-SMOTE $r{=}0.1$ | SW-SMOTE $r{=}0.1$ | SW-SMOTE $r{=}0.1$ | 0.873 / 0.816 / 0.843 |
 | Mixed | SW-SMOTE $r{=}0.1$ | SW-SMOTE $r{=}0.1$ | SW-SMOTE $r{=}0.1$ | 0.841 / 0.821 / 0.791 |
 
-This ranking reversal is quantified by cross-mode Spearman $\rho$ on the 7-condition ranking vectors:
+This ranking reversal is quantified by cross-mode Spearman $\rho$ on the 7-strategy ranking vectors:
 
 | Mode pair | F2 $\rho$ | AUROC $\rho$ | AUPRC $\rho$ |
 |-----------|:---------:|:------------:|:------------:|
@@ -378,14 +378,14 @@ This ranking reversal is quantified by cross-mode Spearman $\rho$ on the 7-condi
 | Cross vs. Mixed | $-0.679$ ($p=0.094$) | $-0.857$ ($p=0.014$) | $-0.893$ ($p=0.007$) |
 | Within vs. Mixed | $+0.964$ ($p<0.001$) | $+1.000$ ($p<0.001$) | $+0.964$ ($p<0.001$) |
 
-Cross-domain rankings are **negatively** correlated with within-domain and mixed rankings ($\rho = -0.68$ to $-0.89$), while within-domain and mixed rankings are nearly identical ($\rho \geq +0.96$). The overall Kendall's $W$ across the three modes confirms this discordance: $W = 0.17$–$0.22$ (non-significant, $p > 0.67$), meaning the three modes do *not* agree on condition rankings — the defining signature of a Condition $\times$ Mode interaction.
+Cross-domain rankings are **negatively** correlated with within-domain and mixed rankings ($\rho = -0.68$ to $-0.89$), while within-domain and mixed rankings are nearly identical ($\rho \geq +0.96$). The overall Kendall's $W$ across the three modes confirms this discordance: $W = 0.17$–$0.22$ (non-significant, $p > 0.67$), meaning the three modes do *not* agree on strategy rankings — the defining signature of a Rebalancing $\times$ Mode interaction.
 
-Fig. 3 captures this interaction structure as a heatmap of mean performance across 7 conditions $\times$ 3 modes. The Cross-domain column is uniformly dark (low performance) regardless of condition, while the Within-domain and Mixed columns reveal large inter-condition variation with SMOTE/SW-SMOTE methods showing the highest values.
+Fig. 3 captures this interaction structure as a heatmap of mean performance across 7 strategies × 3 modes. The Cross-domain column is uniformly dark (low performance) regardless of strategy, while the Within-domain and Mixed columns reveal large inter-strategy variation with SMOTE/SW-SMOTE methods showing the highest values.
 
-![Condition × Mode Heatmap](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig3_condition_mode_heatmap.png)
-*Fig. 3. Mean performance heatmap (7 conditions × 3 modes) for F2-score, AUROC, and AUPRC. Cross-domain performance is uniformly low regardless of rebalancing method, while Within-domain and Mixed reveal strong condition differentiation — visually confirming the Condition × Mode interaction (H6).*
+![Rebalancing × Mode Heatmap](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig3_condition_mode_heatmap.png)
+*Fig. 3. Mean performance heatmap (7 strategies × 3 modes) for F2-score, AUROC, and AUPRC. Cross-domain performance is uniformly low regardless of rebalancing method, while Within-domain and Mixed reveal strong strategy differentiation — visually confirming the Rebalancing × Mode interaction (H6).*
 
-*Supplementary findings*: Condition × distance interaction (H12) is weak (12/18 consistent, 6/18 minor swaps; see Appendix C). Level × mode interaction (H13) confirms that within-domain training eliminates or reverses the domain gap (see Appendix C). The domain gap in cross-domain settings (H10) and the effect of oversampling on domain gap (H11) show mixed, context-dependent results (see Appendix C).
+*Supplementary findings*: Rebalancing × distance interaction (H12) is weak (12/18 consistent, 6/18 minor swaps; see Appendix C). Level × mode interaction (H13) confirms that within-domain training eliminates or reverses the domain gap (see Appendix C). The domain gap in cross-domain settings (H10) and the effect of oversampling on domain gap (H11) show mixed, context-dependent results (see Appendix C).
 
 ### 4.5 Robustness Validation
 
@@ -401,14 +401,14 @@ Subsampling analysis confirms ranking stability:
 
 By $k=11$ (of 12 seeds), F2 and AUPRC rankings are perfectly stable; AUROC rankings stabilize with $\sigma = 0.147$.
 
-Fig. 8 visualizes these convergence trajectories. The monotonically decreasing $\sigma_{\text{rank}}(k)$ curves across all three metrics (F2-score, AUROC, AUPRC) confirm that 12 seeds provide sufficient statistical power for stable condition rankings. Per-condition traces reveal that oversampling methods (SMOTE, SW-SMOTE) converge more slowly than RUS and baseline — reflecting the tighter ranking competition among the top-performing methods — but all converge well before the full seed count.
+Fig. 8 visualizes these convergence trajectories. The monotonically decreasing $\sigma_{\text{rank}}(k)$ curves across all three metrics (F2-score, AUROC, AUPRC) confirm that 12 seeds provide sufficient statistical power for stable strategy rankings. Per-strategy traces reveal that oversampling methods (SMOTE, SW-SMOTE) converge more slowly than RUS and baseline — reflecting the tighter ranking competition among the top-performing methods — but all converge well before the full seed count.
 
 ![Seed Convergence](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig8_seed_convergence.png)
 *Fig. 8. Ranking stability ($\sigma_{\text{rank}}$) as a function of seed subset size $k$. All three primary metrics show monotonic convergence. F2-score achieves $\sigma = 0$ by $k = 9$; AUROC and AUPRC stabilize below the $\sigma = 0.5$ threshold, confirming that $n = 12$ seeds is sufficient.*
 
 #### 4.5.2 Cross-Metric Concordance
 
-Kendall’s $W = 0.643$ ($k = 7$ metrics: F2, AUROC, F1, AUPRC, Recall, Precision, Accuracy; $n = 7$ conditions) indicates **moderate agreement** in condition rankings across all evaluation metrics.
+Kendall’s $W = 0.643$ ($k = 7$ metrics: F2, AUROC, F1, AUPRC, Recall, Precision, Accuracy; $n = 7$ strategies) indicates **moderate agreement** in strategy rankings across all evaluation metrics.
 
 Strongest pairwise concordance: AUROC ↔ AUPRC ($\rho = 0.929$), F2 ↔ AUPRC ($\rho = 0.821$), F2 ↔ AUROC ($\rho = 0.786$).
 
@@ -434,9 +434,9 @@ The central unexpected finding — that three fundamentally different distance m
 
 **Inter-subject discrimination is inherently weak.** The overall ICC ratio (inter-subject / total variance) is only 0.111, meaning 88.9% of feature variance is intra-subject (within-session variability). When subject positions in feature space are this "blurred," the coarse binary partition at the median (in-domain: 44 subjects, out-domain: 43 subjects) is robust to metric choice, even though fine-grained subject rankings differ ($\rho = 0.48$–$0.80$).
 
-**Rebalancing absorption.** The condition effect is 35–1,100× larger than the distance metric effect:
+**Rebalancing absorption.** The rebalancing effect is 35–1,100× larger than the distance metric effect:
 
-$$\frac{\eta^2_{\text{condition}}}{\eta^2_{\text{distance}}} \approx \frac{0.11\text{–}0.14}{<0.004} = 35\text{–}1{,}100\times \tag{3}$$
+$$\frac{\eta^2_{\text{rebalancing}}}{\eta^2_{\text{distance}}} \approx \frac{0.11\text{–}0.14}{<0.004} = 35\text{–}1{,}100\times \tag{3}$$
 
 Rebalancing shifts the classifier's decision boundary so dramatically that any subtle difference in training set composition due to domain grouping is overwhelmed.
 
@@ -456,17 +456,17 @@ Our results provide a clear hierarchy of optimization priorities: **rebalancing 
 
 - SMOTE-based oversampling transforms within-domain F2 from 0.215 (baseline) to 0.558 (sw\_smote\_r01) — a 160% improvement.
 - AUROC improves from 0.63 (baseline) to 0.90 (sw\_smote\_r01) in within-domain settings.
-- AUPRC — the metric most sensitive to class imbalance — improves from 0.12 (baseline) to 0.65 (sw\_smote\_r01), a 460% relative improvement. This confirms that rebalancing produces genuine minority-class precision gains, not merely threshold-shifted recall. Notably, 0/36 condition–mode cells exhibit a precision–recall trade-off (simultaneous recall improvement with precision degradation); SMOTE methods yield predominantly win-win outcomes (recall↑, precision stable).
+- AUPRC — the metric most sensitive to class imbalance — improves from 0.12 (baseline) to 0.65 (sw\_smote\_r01), a 460% relative improvement. This confirms that rebalancing produces genuine minority-class precision gains, not merely threshold-shifted recall. Notably, 0/36 strategy–mode cells exhibit a precision–recall trade-off (simultaneous recall improvement with precision degradation); SMOTE methods yield predominantly win-win outcomes (recall↑, precision stable).
 - These gains require no additional data collection, no domain distance computation, and no subject grouping strategy — only a preprocessing step.
 
 In contrast, switching from Wasserstein to MMD for domain grouping yields $|\Delta\text{F2}| < 0.01$, $|\Delta\text{AUROC}| < 0.02$, and $|\Delta\text{AUPRC}| < 0.01$.
 
 ### 5.3 The Domain Gap Reversal Phenomenon
 
-An unexpected finding is that the domain gap reverses in within-domain and mixed training: out-domain subjects sometimes outperform in-domain subjects ($\Delta > 0$). Fig. 7 visualizes this pattern through diverging horizontal bars for each Condition × Mode cell. Green bars (positive $\Delta$) indicate that out-domain performance exceeds in-domain. Across all three metrics (F2-score, AUROC, AUPRC), the majority of bars point green — especially in the Mixed mode panel — demonstrating that domain shift does not systematically degrade performance. This visual is consistent with the Wilcoxon test results (H10: 0/63 to 12/63 significant) and provides direct evidence that the domain split does not introduce a meaningful performance penalty.
+An unexpected finding is that the domain gap reverses in within-domain and mixed training: out-domain subjects sometimes outperform in-domain subjects ($\Delta > 0$). Fig. 7 visualizes this pattern through diverging horizontal bars for each Rebalancing × Mode cell. Green bars (positive $\Delta$) indicate that out-domain performance exceeds in-domain. Across all three metrics (F2-score, AUROC, AUPRC), the majority of bars point green — especially in the Mixed mode panel — demonstrating that domain shift does not systematically degrade performance. This visual is consistent with the Wilcoxon test results (H10: 0/63 to 12/63 significant) and provides direct evidence that the domain split does not introduce a meaningful performance penalty.
 
 ![Domain Shift Direction](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig7_domain_shift_reversal.png)
-*Fig. 7. Domain gap direction ($\Delta = \text{out} - \text{in}$) by Condition × Mode. Green = out-domain outperforms in-domain (gap reversal). The prevalence of green bars, especially in Mixed mode, demonstrates that domain shift does not cause systematic performance degradation.*
+*Fig. 7. Domain gap direction ($\Delta = \text{out} - \text{in}$) by Rebalancing × Mode. Green = out-domain outperforms in-domain (gap reversal). The prevalence of green bars, especially in Mixed mode, demonstrates that domain shift does not cause systematic performance degradation.*
 
 This may be because:
 
@@ -497,7 +497,7 @@ This may be because:
 
 ## 6. Conclusion
 
-This study systematically evaluates the interplay between class imbalance handling and domain grouping strategies for drowsy driving detection through a factorial experiment with 87 subjects, 7 conditions, and 1,512 observations, addressing three research questions with rigorous non-parametric statistics.
+This study systematically evaluates the interplay between class imbalance handling and domain grouping strategies for drowsy driving detection through a factorial experiment with 87 subjects, 7 rebalancing strategies, and 1,512 observations, addressing three research questions with rigorous non-parametric statistics.
 
 The key findings are:
 
@@ -515,7 +515,7 @@ The key findings are:
 
 **RQ3 — Interaction:**
 
-5. **Rebalancing strategy depends on training mode**: The optimal condition varies by mode (RUS in cross-domain; SMOTE/SW-SMOTE in within-domain and mixed), revealing a strong condition × mode interaction that practitioners must account for.
+5. **Rebalancing strategy depends on training mode**: The optimal strategy varies by mode (RUS in cross-domain; SMOTE/SW-SMOTE in within-domain and mixed), revealing a strong rebalancing × mode interaction that practitioners must account for.
 
 6. **Results are robust**: Consistent across 12 random seeds ($\sigma_{\text{rank}} \to 0$ at $k = 9$), 5 evaluation metrics (Kendall's $W = 0.643$), 2 sampling ratios (91% directional agreement), and confirmed by permutation test ($p < 0.001$).
 
@@ -556,9 +556,9 @@ For practitioners, these results prescribe a clear strategy: apply SMOTE-based c
 | H3 | Distance metric matters | ✗ Negligible | $\eta^2 < 0.004$, all metrics equivalent |
 | H4 | Domain membership affects performance | ✓ Strongly supported (direction is mode-dependent) | Significant in 11–16/63 cells; cross-domain: in-domain advantage ($\Delta < 0$); within-domain/mixed: out-domain advantage ($\Delta > 0$) |
 | H5 | Within-domain > cross-domain | ✓ Fully supported | $\delta = +0.833$ (F2), $+0.945$ (AUROC) |
-| H6 | Condition × Mode interaction | ✓ Strong | Best method varies by mode |
+| H6 | Rebalancing × Mode interaction | ✓ Strong | Best method varies by mode |
 
-## Appendix B: Extended Metrics Condition Rankings
+## Appendix B: Extended Metrics Rebalancing Strategy Rankings
 
 | Rank | F2 (mean rank) | AUROC | F1 | AUPRC | Recall |
 |:----:|:--------------:|:-----:|:--:|:-----:|:------:|
@@ -577,7 +577,7 @@ The following 7 hypotheses were tested as part of the comprehensive analysis fra
 | H9 | Mixed > cross-domain | ✓ Fully supported | F2: 0.372 vs. 0.125 | Corollary of H5 |
 | H10 | Domain gap larger in cross-domain | ✓ Supported | Cross-domain $\Delta < 0$; within-domain reverses | Overlaps H4 |
 | H11 | Oversampling reduces domain gap | ✗ Mixed | Context-dependent; sometimes increases gap | Weak interaction effect |
-| H12 | Condition × Distance interaction | ✓ Weak | 12/18 consistent; 6/18 minor swaps | Negligible given H3 |
+| H12 | Rebalancing × Distance interaction | ✓ Weak | 12/18 consistent; 6/18 minor swaps | Negligible given H3 |
 | H13 | Level × Mode interaction | ✓ Supported | Within-domain reverses domain shift | Extension of H4 + H5 |
 
 ## Appendix D: Statistical Methods–Hypothesis Correspondence Table
@@ -592,21 +592,21 @@ The following 7 hypotheses were tested as part of the comprehensive analysis fra
 | H2 | — | Mann-Whitney $U$ ($r=0.1$ vs $r=0.5$, 18 pairs) | Cliff's $\delta$ | Bonf. $\alpha'=0.00278$ | — | §4.2.3 |
 | H3 | Kruskal-Wallis $H$ (6 cells) | Mann-Whitney $U$ (pooled) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.0028$ | — | §4.3.1 |
 | H4 | — | Wilcoxon signed-rank (63 pairs) | Mean $\lvert\Delta\rvert$, Cliff's $\delta$ | Bonf. $\alpha'=0.00079$ | — | §4.3.2 |
-| H5 | Friedman $\chi_F^2$ (14 conditions) | Nemenyi post-hoc (CD = 2.600) | Cliff's $\delta$, Kendall's $W$ | — | — | §4.3.3 |
+| H5 | Friedman $\chi_F^2$ (14 strategies) | Nemenyi post-hoc (CD = 2.600) | Cliff's $\delta$, Kendall's $W$ | — | — | §4.3.3 |
 | H6 | Friedman $\chi_F^2$ (per mode, 9 tests) | Spearman $\rho$ (cross-mode ranking concordance) | Kendall's $W$ (3-mode) | — | — | §4.4 |
 
 ### D.2 Methods Applied per Purpose
 
 | Purpose | Method | Parameters | Hypotheses |
 |---------|--------|-----------|:----------:|
-| Global condition effect | Permutation test | $B=10{,}000$; $H_0$: label exchangeability | H1 |
+| Global rebalancing effect | Permutation test | $B=10{,}000$; $H_0$: label exchangeability | H1 |
 | $k$-group comparison | Kruskal-Wallis $H$ | $\alpha'=\alpha/m$ | H1, H3 |
-| Paired $k$-group ranking | Friedman $\chi_F^2$ | 7 conditions × 18 cells | H5, H6 |
+| Paired $k$-group ranking | Friedman $\chi_F^2$ | 7 strategies × 18 cells | H5, H6 |
 | Pairwise unpaired | Mann-Whitney $U$ | Per-cell ($n=12$) or pooled ($n=36$) | H1, H3, H7 |
 | Pairwise paired | Wilcoxon signed-rank | In-domain vs. out-domain pairs | H4, H10, H11 |
 | Post-hoc ranking | Nemenyi test | $\text{CD} = q_\alpha \sqrt{k(k+1)/6n}$ | H5 |
 | Subject ranking concordance | Spearman $\rho$, Kendall $\tau$ | 3 metric pairs | H3 (§4.3.1) |
-| Cross-metric agreement | Kendall's $W$ | $k=7$ metrics, $n=7$ conditions | Robustness (§4.5.2) |
+| Cross-metric agreement | Kendall's $W$ | $k=7$ metrics, $n=7$ strategies | Robustness (§4.5.2) |
 | Effect size (rank-based) | Cliff's $\delta$ | Thresholds: negligible/small/medium/large | H1, H3, H5 |
 | Effect size (variance) | $\eta^2 = H / (N-1)$ | Proportion of variance explained | H1, H3 |
 | Effect size CI | Percentile bootstrap | $B=2{,}000$ | H1 |
