@@ -202,8 +202,8 @@ def plot_effect_hierarchy(df: pd.DataFrame):
                         etas_dist.append(eta_squared_from_H(H, n, len(groups)))
         results.append(("Distance\n(metric)", mlabel, np.mean(etas_dist)))
 
-        # -- Level effect: KW across 2 levels per cell, mean η²
-        etas_level = []
+        # -- Membership effect: KW across 2 membership groups per cell, mean η²
+        etas_membership = []
         for cond in CONDITIONS_7:
             for mode in MODES:
                 for dist in DISTANCES:
@@ -215,8 +215,8 @@ def plot_effect_hierarchy(df: pd.DataFrame):
                     if len(groups) >= 2:
                         H, p = stats.kruskal(*groups)
                         n = sum(len(g) for g in groups)
-                        etas_level.append(eta_squared_from_H(H, n, len(groups)))
-        results.append(("Level\n(in/out-domain)", mlabel, np.mean(etas_level)))
+                        etas_membership.append(eta_squared_from_H(H, n, len(groups)))
+        results.append(("Membership\n(in/out-domain)", mlabel, np.mean(etas_membership)))
 
         # -- Mode effect: KW across 3 modes per cell, mean η²
         etas_mode = []
@@ -232,10 +232,10 @@ def plot_effect_hierarchy(df: pd.DataFrame):
                     etas_mode.append(eta_squared_from_H(H, n, len(groups)))
         results.append(("Mode\n(training)", mlabel, np.mean(etas_mode)))
 
-    # Plot – factor order matches paper: Rebalancing, Distance, Level, Mode
+    # Plot – factor order matches paper: Rebalancing, Distance, Membership, Mode
     factors = [
         "Rebalancing\n(strategy)", "Distance\n(metric)",
-        "Level\n(in/out-domain)", "Mode\n(training)",
+        "Membership\n(in/out-domain)", "Mode\n(training)",
     ]
     x = np.arange(len(factors))
     width = 0.22
