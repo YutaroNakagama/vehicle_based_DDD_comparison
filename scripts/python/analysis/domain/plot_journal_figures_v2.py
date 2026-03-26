@@ -159,110 +159,106 @@ def eta_squared_from_H(H: float, n: int, k: int) -> float:
 
 
 # ===================================================================
-# Fig 2: Effect Size Hierarchy Dot Plot
+# Fig 2: Variance-Based Sensitivity Analysis (Sobol Indices)
 # ===================================================================
 def plot_effect_hierarchy(df: pd.DataFrame):
-    """Show η² by factor (condition, mode, level, distance) side by side.
-    Demonstrates the dominance of rebalancing and training mode."""
+    """Stacked bar chart showing first-order (S1) and interaction (ST-S1)
+    Sobol indices for each factor, with 95 % bootstrap CIs on ST.
+    Replaces old η²-only dot plot with a complete variance decomposition."""
+
+    csv_path = (
+        PROJECT_ROOT / "results" / "analysis" / "exp2_domain_shift"
+        / "figures" / "csv" / "split2" / "sensitivity" / "sobol_indices.csv"
+    )
+    if not csv_path.exists():
+        print("  [SKIP] sobol_indices.csv not found. Run sensitivity_analysis_exp2.py first.")
+        return
+
+    si = pd.read_csv(csv_path)
 
     fig, ax = plt.subplots(figsize=(10, 5))
 
-    results = []  # (factor, metric, eta2)
-
-    for metric, mlabel in PRIMARY_METRICS:
-        # -- Condition effect: KW across 7 conditions per cell, mean η²
-        etas_cond = []
-        for mode in MODES:
-            for level in LEVELS:
-                for dist in DISTANCES:
-                    sub = df[(df["mode"] == mode) & (df["level"] == level)
-                             & (df["distance"] == dist)]
-                    groups = [sub[sub["condition"] == c][metric].dropna().values
-                              for c in CONDITIONS_7]
-                    groups = [g for g in groups if len(g) > 0]
-                    if len(groups) >= 2:
-                        H, p = stats.kruskal(*groups)
-                        n = sum(len(g) for g in groups)
-                        etas_cond.append(eta_squared_from_H(H, n, len(groups)))
-        results.append(("Rebalancing\n(strategy)", mlabel, np.mean(etas_cond)))
-
-        # -- Distance effect: KW across 3 distances per cell, mean η²
-        etas_dist = []
-        for cond in CONDITIONS_7:
-            for mode in MODES:
-                for level in LEVELS:
-                    sub = df[(df["condition"] == cond) & (df["mode"] == mode)
-                             & (df["level"] == level)]
-                    groups = [sub[sub["distance"] == d][metric].dropna().values
-                              for d in DISTANCES]
-                    groups = [g for g in groups if len(g) > 0]
-                    if len(groups) >= 2:
-                        H, p = stats.kruskal(*groups)
-                        n = sum(len(g) for g in groups)
-                        etas_dist.append(eta_squared_from_H(H, n, len(groups)))
-        results.append(("Distance\n(metric)", mlabel, np.mean(etas_dist)))
-
-        # -- Membership effect: KW across 2 membership groups per cell, mean η²
-        etas_membership = []
-        for cond in CONDITIONS_7:
-            for mode in MODES:
-                for dist in DISTANCES:
-                    sub = df[(df["condition"] == cond) & (df["mode"] == mode)
-                             & (df["distance"] == dist)]
-                    groups = [sub[sub["level"] == lv][metric].dropna().values
-                              for lv in LEVELS]
-                    groups = [g for g in groups if len(g) > 0]
-                    if len(groups) >= 2:
-                        H, p = stats.kruskal(*groups)
-                        n = sum(len(g) for g in groups)
-                        etas_membership.append(eta_squared_from_H(H, n, len(groups)))
-        results.append(("Membership\n(in/out-domain)", mlabel, np.mean(etas_membership)))
-
-        # -- Mode effect: KW across 3 modes per cell, mean η²
-        etas_mode = []
-        for cond in CONDITIONS_7:
-            for level in LEVELS:
-                sub = df[(df["condition"] == cond) & (df["level"] == level)]
-                groups = [sub[sub["mode"] == m][metric].dropna().values
-                          for m in MODES]
-                groups = [g for g in groups if len(g) > 0]
-                if len(groups) >= 2:
-                    H, p = stats.kruskal(*groups)
-                    n = sum(len(g) for g in groups)
-                    etas_mode.append(eta_squared_from_H(H, n, len(groups)))
-        results.append(("Mode\n(training)", mlabel, np.mean(etas_mode)))
-
-    # Plot – factor order matches paper: Rebalancing, Distance, Membership, Mode
-    factors = [
-        "Rebalancing\n(strategy)", "Distance\n(metric)",
-        "Membership\n(in/out-domain)", "Mode\n(training)",
-    ]
-    x = np.arange(len(factors))
-    width = 0.22
-    colors_metric = {"F2-score": "#e74c3c", "AUROC": "#3498db", "AUPRC": "#2ecc71"}
+    # Factor display labels (short)
+    factor_display = {
+        "condition": "Rebalancing\n($R$)",
+        "distance": "Distance\n($D$)",
+        "level": "Membership\n($G$)",
+        "mode": "Mode\n($M$)",
+    }
+    factor_order = ["condition", "distance", "level", "mode"]
     metric_names = ["F2-score", "AUROC", "AUPRC"]
+    colors_s1 = {"F2-score": "#e74c3c", "AUROC": "#3498db", "AUPRC": "#2ecc71"}
+    colors_inter = {"F2-score": "#f5b7b1", "AUROC": "#aed6f1", "AUPRC": "#abebc6"}
+
+    x = np.arange(len(factor_order))
+    width = 0.22
 
     for i, mlabel in enumerate(metric_names):
-        vals = [r[2] for r in results if r[1] == mlabel]
+        mdata = si[si["metric"] == mlabel].set_index("factor_key")
         offset = (i - 1) * width
-        bars = ax.bar(x + offset, vals, width,
-                      label=mlabel, color=colors_metric[mlabel], alpha=0.85,
-                      edgecolor="white", linewidth=0.8)
-        for bar, v in zip(bars, vals):
-            if v > 0.01:
-                ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01,
-                        f"{v:.3f}", ha="center", va="bottom", fontsize=7,
+
+        s1_vals = [mdata.loc[f, "S1"] for f in factor_order]
+        st_vals = [mdata.loc[f, "ST"] for f in factor_order]
+        inter_vals = [st - s1 for st, s1 in zip(st_vals, s1_vals)]
+        st_lo = [mdata.loc[f, "ST_lo"] for f in factor_order]
+        st_hi = [mdata.loc[f, "ST_hi"] for f in factor_order]
+        # Error bars on ST
+        yerr_lo = [st - lo for st, lo in zip(st_vals, st_lo)]
+        yerr_hi = [hi - st for st, hi in zip(st_vals, st_hi)]
+
+        # Bottom bar: S1 (main effect)
+        bars_s1 = ax.bar(x + offset, s1_vals, width,
+                         color=colors_s1[mlabel], alpha=0.9,
+                         edgecolor="white", linewidth=0.8,
+                         label=f"{mlabel} (main)" if i == 0 else "")
+        # Top bar: interaction (ST - S1)
+        bars_inter = ax.bar(x + offset, inter_vals, width,
+                            bottom=s1_vals,
+                            color=colors_inter[mlabel], alpha=0.7,
+                            edgecolor="white", linewidth=0.8,
+                            hatch="//",
+                            label=f"{mlabel} (interaction)" if i == 0 else "")
+        # Error bars on total ST
+        ax.errorbar(x + offset, st_vals,
+                    yerr=[yerr_lo, yerr_hi],
+                    fmt="none", ecolor="black", elinewidth=0.8, capsize=2)
+
+        # Annotate ST value
+        for j, (sv, s1v) in enumerate(zip(st_vals, s1_vals)):
+            if sv > 0.02:
+                ax.text(x[j] + offset, sv + max(yerr_hi[j], 0) + 0.015,
+                        f"$S_T$={sv:.3f}",
+                        ha="center", va="bottom", fontsize=6.5,
                         fontweight="bold")
+                # Also show S1
+                ax.text(x[j] + offset, s1v / 2,
+                        f"{s1v:.3f}",
+                        ha="center", va="center", fontsize=6,
+                        color="white", fontweight="bold")
             else:
-                ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.005,
-                        f"{v:.4f}", ha="center", va="bottom", fontsize=6.5)
+                ax.text(x[j] + offset, sv + 0.008,
+                        f"{sv:.4f}",
+                        ha="center", va="bottom", fontsize=5.5)
 
     ax.set_xticks(x)
-    ax.set_xticklabels(factors, fontsize=10)
-    ax.set_ylabel("Mean η² (Kruskal-Wallis)", fontsize=10)
-    ax.set_title("Effect Size Hierarchy by Experimental Factor", fontweight="bold")
-    ax.legend(loc="upper right", framealpha=0.9)
-    ax.set_ylim(0, max(r[2] for r in results) * 1.25)
+    ax.set_xticklabels([factor_display[f] for f in factor_order], fontsize=10)
+    ax.set_ylabel("Sobol Index (fraction of total variance)", fontsize=10)
+    ax.set_title("Variance-Based Sensitivity Analysis by Experimental Factor",
+                 fontweight="bold")
+
+    # Custom legend
+    from matplotlib.patches import Patch
+    legend_elements = []
+    for mlabel in metric_names:
+        legend_elements.append(
+            Patch(facecolor=colors_s1[mlabel], alpha=0.9,
+                  label=f"{mlabel} — main effect ($S_i$)"))
+        legend_elements.append(
+            Patch(facecolor=colors_inter[mlabel], alpha=0.7, hatch="//",
+                  label=f"{mlabel} — interactions ($S_{{Ti}}-S_i$)"))
+    ax.legend(handles=legend_elements, loc="upper right", framealpha=0.9,
+              fontsize=7, ncol=1)
+    ax.set_ylim(0, 0.82)
 
     fig.tight_layout()
     _save(fig, "fig2_effect_hierarchy.png")
