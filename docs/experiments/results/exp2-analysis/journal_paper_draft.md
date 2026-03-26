@@ -4,7 +4,7 @@
 
 ## Abstract
 
-Drowsy driving detection (DDD) using vehicle dynamics signals faces two practical challenges: severe class imbalance between alert and drowsy states, and domain shift across individual drivers. This study systematically evaluates the relative importance of class imbalance handling methods and domain grouping strategies through a 4-factor factorial experiment (7 rebalancing strategies × 3 training modes × 3 distance metrics × 2 domain membership groups) with 87 driving simulator subjects and 12 random seeds (1,512 total observations). We address three research questions — effectiveness of class imbalance handling (RQ1: H1, H2), influence of domain grouping decisions (RQ2: H3, H4, H5), and interaction between rebalancing and domain configuration (RQ3: H6) — using non-parametric statistical methods with Bonferroni correction, permutation tests, and bootstrap confidence intervals. Results reveal that the choice of imbalance handling method has a dominant effect ($\eta^2 = 0.58$–$0.79$, large) while the choice of distance metric for domain grouping is negligible ($\eta^2 < 0.004$). SMOTE-based oversampling improves F2-score from 0.22 (baseline) to 0.56 in within-domain settings, AUROC from 0.63 to 0.90, and AUPRC from 0.12 to 0.65 — a 460% relative improvement on the imbalance-sensitive precision–recall metric. Within-domain training outperforms cross-domain training with large effect sizes ($\delta = 0.83$–$0.95$), and the optimal rebalancing strategy depends on training mode, with RUS effective only in cross-domain settings and SMOTE dominating elsewhere. We provide a vehicle dynamics explanation for the distance metric irrelevance: the bicycle model coupling $a_y = v \cdot \dot{\delta}/L$ reduces the 135-dimensional feature space to approximately 45 effective dimensions, with lane offset features ($O(10^3)$) dominating all metrics equally. These findings demonstrate that for practical DDD deployment, investing in appropriate class rebalancing yields far greater returns than optimizing domain partition strategies.
+Drowsy driving detection (DDD) using vehicle dynamics signals faces two practical challenges: severe class imbalance between alert and drowsy states, and domain shift across individual drivers. This study systematically evaluates the relative importance of class imbalance handling methods and domain grouping strategies through a 4-factor factorial experiment (7 rebalancing strategies × 3 training modes × 3 distance metrics × 2 domain membership groups) with 87 driving simulator subjects and 12 random seeds (1,512 total observations). We address three research questions — effectiveness of class imbalance handling (RQ1: H1, H2), influence of domain grouping decisions (RQ2: H3, H4, H5), and interaction between rebalancing and domain configuration (RQ3: H6) — using non-parametric statistical methods with Bonferroni correction, permutation tests, and bootstrap confidence intervals. A variance-based sensitivity analysis (functional ANOVA decomposition) reveals that **Mode** ($S_M = 0.31$–$0.50$) and **Rebalancing** ($S_R = 0.24$–$0.29$) together account for over 60% of total variance as main effects, with a substantial $R \times M$ interaction ($S_{R \times M} = 0.16$–$0.21$), while Distance ($S_D < 0.001$) and Membership ($S_G < 0.01$) are negligible. SMOTE-based oversampling improves F2-score from 0.22 (baseline) to 0.56 in within-domain settings, AUROC from 0.63 to 0.90, and AUPRC from 0.12 to 0.65 — a 460% relative improvement on the imbalance-sensitive precision–recall metric. Within-domain training outperforms cross-domain training with large effect sizes ($\delta = 0.83$–$0.95$), and the optimal rebalancing strategy depends on training mode, with RUS effective only in cross-domain settings and SMOTE dominating elsewhere. We provide a vehicle dynamics explanation for the distance metric irrelevance: the bicycle model coupling $a_y = v \cdot \dot{\delta}/L$ reduces the 135-dimensional feature space to approximately 45 effective dimensions, with lane offset features ($O(10^3)$) dominating all metrics equally. These findings demonstrate that for practical DDD deployment, selecting an appropriate training mode and applying class rebalancing jointly yield far greater returns than optimizing domain partition strategies.
 
 **Keywords**: drowsy driving detection, class imbalance, domain shift, vehicle dynamics, SMOTE, distance metric, non-parametric statistics
 
@@ -33,11 +33,11 @@ Despite extensive literature on class imbalance handling (He & Garcia, 2009) and
 
 This study makes the following contributions:
 
-1. **Quantitative dominance of rebalancing over domain grouping** (RQ1 vs. RQ2): We demonstrate through rigorous non-parametric testing that class imbalance handling ($\eta^2 = 0.58$–$0.79$) has 35–1,100× larger effect than distance metric choice ($\eta^2 < 0.004$) across five evaluation metrics.
+1. **Quantitative dominance of training mode and rebalancing over domain grouping** (RQ1 vs. RQ2): A variance-based sensitivity analysis (functional ANOVA decomposition) shows that training mode ($S_{TM} = 0.48$–$0.66$) and rebalancing ($S_{TR} = 0.40$–$0.46$), including their interaction ($S_{R \times M} = 0.12$–$0.21$), together account for $>80$% of systematic variance, while distance metric ($S_{TD} < 0.015$) and domain membership ($S_{TG} < 0.031$) are negligible.
 
 2. **Vehicle dynamics explanation** (RQ2): We provide a physics-grounded explanation for why distance metrics produce equivalent domain groupings — the bicycle model coupling reduces effective feature dimensionality from 135 to 45, with lane offset features dominating all metrics at $O(10^3)$ scale.
 
-3. **Mode-dependent rebalancing strategy** (RQ3): We reveal a strong rebalancing × mode interaction — RUS is effective only in cross-domain settings while SMOTE dominates elsewhere — demonstrating that practitioners must jointly consider imbalance handling and domain configuration.
+3. **Mode-dependent rebalancing strategy** (RQ3): We reveal a strong rebalancing × mode interaction ($S_{R \times M} = 0.12$–$0.21$, the third-largest effect) — RUS is effective only in cross-domain settings while SMOTE dominates elsewhere — demonstrating that practitioners must jointly consider imbalance handling and domain configuration.
 
 4. **Comprehensive hypothesis framework**: We test 6 hypotheses with Bonferroni-corrected non-parametric tests, permutation tests ($p < 0.001$), bootstrap CIs, and seed convergence analysis, providing a reproducible template for DDD evaluation. Supplementary analyses (7 additional hypotheses) are reported in Appendix C.
 
@@ -151,6 +151,7 @@ Due to non-normality (Shapiro-Wilk rejects normality in 45–71% of cells across
 | 2-group unpaired | Mann-Whitney $U$ | Mann & Whitney (1947) |
 | 2-group paired | Wilcoxon signed-rank | Wilcoxon (1945) |
 | Effect size | Cliff's $\delta$ | Cliff (1993) |
+| Sensitivity analysis | Sobol indices ($S_i$, $S_{Ti}$) | Saltelli et al. (2008) |
 | Post-hoc | Nemenyi test | Nemenyi (1963) |
 
 All test families are Bonferroni-corrected ($\alpha' = \alpha/m$, $\alpha = 0.05$). Effect sizes follow Cliff's (1993) thresholds: $|\delta| < 0.147$ negligible, $< 0.33$ small, $< 0.474$ medium, $\geq 0.474$ large. Effect size confidence intervals are computed via percentile bootstrap ($B = 2{,}000$). Overall population means are estimated with BCa bootstrap CIs ($B = 10{,}000$). A global permutation test ($B = 10{,}000$) validates the rebalancing effect against the null hypothesis of label exchangeability.
@@ -177,6 +178,22 @@ $$
 
 Higher $\eta^2$ values indicate a larger proportion of variance explained by the factor.
 
+#### 3.6.2 Variance-based sensitivity analysis (Sobol indices)
+
+To quantify the relative importance of each factor and their interactions, we perform a functional ANOVA decomposition of the total variance. The balanced factorial design ($7 \times 3 \times 2 \times 3 \times 12$ seeds $= 1{,}512$ observations) permits exact computation of sum-of-squares for all main effects and interactions up to fourth order. The first-order Sobol index for factor $i$ is:
+
+$$
+S_i = \frac{\text{SS}_i}{\text{SS}_{\text{total}}}
+$$
+
+and the total-order index, which includes all interactions involving factor $i$, is:
+
+$$
+S_{Ti} = S_i + \sum_{j \neq i} S_{ij} + \sum_{j < k, \, i \in \{j,k\}} S_{ijk} + \cdots
+$$
+
+The difference $S_{Ti} - S_i$ quantifies the fraction of variance attributable to interactions involving factor $i$. Confidence intervals (95%) are obtained by percentile bootstrap ($B = 2{,}000$) resampling over seeds to preserve the factorial structure.
+
 ### 3.7 Hypotheses
 
 Based on the literature and factorial design, we formulate 6 primary hypotheses and 7 supplementary hypotheses.
@@ -202,10 +219,10 @@ Based on the literature and factorial design, we formulate 6 primary hypotheses 
 
 A total of 1,512 observations across 7 rebalancing strategies, 3 training modes, 3 distance metrics, 2 domain membership groups, and 12 random seeds were analyzed. The permutation test confirms a significant global rebalancing effect for F2-score ($T_{\text{obs}} = 13.41$, $p < 0.001$), AUROC ($T_{\text{obs}} = 10.35$, $p < 0.001$), and AUPRC ($p < 0.001$).
 
-Fig. 2 summarizes the relative importance of each experimental factor. The four-factor effect size hierarchy (F2-score, AUROC, AUPRC) immediately reveals that **Rebalancing** ($\eta^2 = 0.1$–$0.8$) and **Mode** ($\eta^2 > 0.6$) account for nearly all systematic variance, while **Distance** and **Membership** (in/out-domain) contribute negligibly. This visual establishes the central narrative of the paper: rebalancing and training regime matter; domain grouping strategy does not.
+Fig. 2 presents a variance-based sensitivity analysis (functional ANOVA decomposition) that decomposes total variance into main-effect and interaction contributions for each factor. **Mode** contributes the largest main effect ($S_M = 0.31$–$0.50$), followed by **Rebalancing** ($S_R = 0.24$–$0.29$). Both factors also participate in a substantial $R \times M$ interaction (21.2% of F2-score variance, 15.3% of AUROC variance). The total-order indices — which include all interactions — show that Mode accounts for $S_{TM} = 0.48$–$0.66$ and Rebalancing for $S_{TR} = 0.40$–$0.46$ of total variance. In contrast, **Distance** ($S_{TD} < 0.015$) and **Membership** ($S_{TG} < 0.031$) are negligible even when interactions are included. Residual variance (seed-to-seed variation) accounts for 7.9%–21.9%. This decomposition establishes the central narrative: rebalancing and training mode, including their interaction, account for $> 80$% of systematic variance; domain grouping strategy does not.
 
-![Effect Size Hierarchy](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig2_effect_hierarchy.png)
-*Fig. 2. Effect size hierarchy ($\eta^2$) for the four experimental factors (Rebalancing, Distance, Membership, Mode) across F2-score, AUROC, and AUPRC. Rebalancing and Mode dominate; Distance and Membership are negligible.*
+![Sensitivity Analysis](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig2_effect_hierarchy.png)
+*Fig. 2. Variance-based sensitivity analysis (Sobol indices) for the four experimental factors across F2-score, AUROC, and AUPRC. Solid bars show first-order indices ($S_i$, main effect); hatched bars show interaction contributions ($S_{Ti} - S_i$). Error bars indicate 95% bootstrap CIs on total-order indices ($S_{Ti}$). Mode and Rebalancing dominate; Distance and Membership are negligible.*
 
 ### 4.2 Class Imbalance Handling (RQ1: H1, H2)
 
@@ -353,7 +370,7 @@ The training mode has a massive impact on performance:
 | AUROC | 0.520 ± 0.015 | 0.773 ± 0.148 | 0.773 ± 0.140 | +0.945 (large) |
 | AUPRC | 0.050 ± 0.007 | 0.362 ± 0.272 | 0.376 ± 0.280 | +0.951 (large) |
 
-All 14 Friedman tests across strategies are significant (14/14, $p < 0.0001$), with Kendall's W ranging from 0.455 to 0.969. Mixed training performs equivalently to within-domain and substantially better than cross-domain (F2: $0.372$ vs. $0.125$; AUROC: $0.773$ vs. $0.520$; AUPRC: $0.376$ vs. $0.050$), confirming the supplementary H9 finding (see Appendix C). Within-domain vs. Mixed is negligible across all three metrics ($\delta < 0.05$).
+All 14 Friedman tests across strategies are significant (14/14, $p < 0.0001$), with Kendall's W ranging from 0.455 to 0.969. Mixed training performs equivalently to within-domain and substantially better than cross-domain (F2: $0.372$ vs. $0.125$; AUROC: $0.773$ vs. $0.520$; AUPRC: $0.376$ vs. $0.050$), confirming the supplementary H9 finding (see Appendix C). Within-domain vs. Mixed is negligible across all three metrics ($\delta < 0.05$). The sensitivity analysis (§4.1, Fig. 2) confirms Mode as the single largest source of variance: the first-order index $S_M = 0.31$–$0.50$ and total-order $S_{TM} = 0.48$–$0.66$, the highest among all four factors.
 
 Fig. 6 makes this mode separation visually striking. The box plots show that Cross-domain performance is compressed into a narrow, low-performance band for all three metrics, clearly separated from Within-domain and Mixed. This dichotomy has direct practical significance: mixing data from other vehicles into training does not degrade performance relative to using only matched-vehicle data.
 
@@ -362,7 +379,7 @@ Fig. 6 makes this mode separation visually striking. The box plots show that Cro
 
 ### 4.4 Rebalancing × Mode × Membership Interaction (RQ3: H6)
 
-RQ3 asks how rebalancing effectiveness interacts with domain configuration. Since distance metric choice is irrelevant (H3, §4.3.1), the operationally meaningful domain factors are training mode ($M$) and domain membership ($G$). We therefore frame the interaction as a three-factor relationship $R \times M \times G$, testing the $R \times M$ component directly (H6) and integrating evidence for the $G$ dimension from H4 (§4.3.2), H11, and H13 (Appendix C).
+RQ3 asks how rebalancing effectiveness interacts with domain configuration. Since distance metric choice is irrelevant (H3, §4.3.1), the operationally meaningful domain factors are training mode ($M$) and domain membership ($G$). We therefore frame the interaction as a three-factor relationship $R \times M \times G$, testing the $R \times M$ component directly (H6) and integrating evidence for the $G$ dimension from H4 (§4.3.2), H11, and H13 (Appendix C). The sensitivity analysis (§4.1) quantifies this interaction: the $R \times M$ second-order Sobol index accounts for 13.8%–21.2% of total variance — making it the third-largest effect after the main effects of Mode and Rebalancing.
 
 #### 4.4.1 Rebalancing × Mode (H6)
 
@@ -391,7 +408,7 @@ Fig. 3 captures this interaction structure as a heatmap of mean performance acro
 
 #### 4.4.2 Role of Domain Membership ($G$) in the Interaction
 
-While a direct $R \times M \times G$ factorial test is not conducted (splitting by membership would halve the per-cell sample size to $n = 6$, leaving only very large effects detectable), the three-factor interaction can be characterised by combining evidence from H4, H11, and H13:
+The sensitivity analysis confirms that $G$ is a minor contributor: its total-order index $S_{TG} < 0.031$ across all metrics, meaning domain membership — including all its interactions with other factors — accounts for less than 3.1% of total variance. While a direct $R \times M \times G$ factorial test is not conducted (splitting by membership would halve the per-cell sample size to $n = 6$, leaving only very large effects detectable), the three-factor interaction can be characterised by combining evidence from H4, H11, and H13:
 
 - **$G \times M$ interaction (H13)**: Within-domain and mixed training reverse the expected domain gap — out-domain subjects outperform in-domain subjects ($\Delta > 0$; see §4.3.2 and Appendix C). This reversal does not occur in cross-domain settings, where $\Delta \approx 0$.
 - **$R \times G$ interaction (H11)**: Rebalancing does not consistently reduce the domain gap. The effect is context-dependent: in mixed mode, oversampling amplifies the out-domain advantage (AUPRC baseline $\Delta = +0.234$ vs. SMOTE $r{=}0.1$: $+0.151$), while in cross-domain mode, the gap remains negligible regardless of strategy (see §4.3.2).
@@ -440,7 +457,7 @@ Wilcoxon signed-rank has a $p$-floor of $1/2^{11} = 0.000488$, which is below th
 
 ### 5.1 Why Distance Metrics Are Irrelevant: A Vehicle Dynamics Explanation
 
-The central unexpected finding — that three fundamentally different distance metrics produce equivalent downstream performance ($\eta^2 < 0.004$) — can be explained through the vehicle dynamics of the feature space:
+The central unexpected finding — that three fundamentally different distance metrics produce equivalent downstream performance ($S_{TD} < 0.015$, $\eta^2 < 0.004$) — can be explained through the vehicle dynamics of the feature space:
 
 **Physical coupling reduces effective dimensionality.** The bicycle model (Eq. 1) couples four of five raw signals ($\delta$, $\dot{\delta}$, $a_y$, $e_{\text{lane}}$) through the chain $\delta \to \dot{\delta} \to a_y \to e_{\text{lane}}$, with only $a_x$ dynamically independent. PCA confirms this: 45 principal components explain 95% of variance from 135 features (3:1 compression), and the first PC alone explains 22.2%.
 
@@ -448,9 +465,9 @@ The central unexpected finding — that three fundamentally different distance m
 
 **Inter-subject discrimination is inherently weak.** The overall ICC ratio (inter-subject / total variance) is only 0.111, meaning 88.9% of feature variance is intra-subject (within-session variability). When subject positions in feature space are this "blurred," the coarse binary partition at the median (in-domain: 44 subjects, out-domain: 43 subjects) is robust to metric choice, even though fine-grained subject rankings differ ($\rho = 0.48$–$0.80$).
 
-**Rebalancing absorption.** The rebalancing effect is 35–1,100× larger than the distance metric effect:
+**Rebalancing absorption.** The sensitivity analysis confirms rebalancing's dominance — the total-order Sobol index ratio is:
 
-$$\frac{\eta^2_{\text{rebalancing}}}{\eta^2_{\text{distance}}} \approx \frac{0.11\text{–}0.14}{<0.004} = 35\text{–}1{,}100\times \tag{3}$$
+$$\frac{S_{TR}}{S_{TD}} \approx \frac{0.40\text{–}0.46}{<0.015} = 27\text{–}31\times \tag{3}$$
 
 Rebalancing shifts the classifier's decision boundary so dramatically that any subtle difference in training set composition due to domain grouping is overwhelmed.
 
@@ -462,11 +479,13 @@ Rebalancing shifts the classifier's decision boundary so dramatically that any s
 | MMD vs DTW | 0.478 | 0.116 (n.s.) |
 | Wasserstein vs DTW | 0.805 | 0.444 |
 
-After normalisation, DTW diverges substantially from MMD and Wasserstein ($\rho = 0.12$, $p = 0.29$), while MMD and Wasserstein remain correlated ($\rho = 0.76$). Subject group switching increases from 57.5% to 69.0%, and only 31–62% of subjects remain in the same domain group (Jaccard 0.18–0.45). This confirms that the H3 finding of metric equivalence is **partially** attributable to lane offset dominance: when feature scales are equalised, DTW — which operates on temporal trajectory shape — captures distributional properties distinct from the sample-level statistics used by MMD and Wasserstein. However, since all experiments used unnormalised distances (consistent with the prior-research replication design), the primary H3 result ($\eta^2 < 0.004$) reflects the operational reality of this pipeline.
+After normalisation, DTW diverges substantially from MMD and Wasserstein ($\rho = 0.12$, $p = 0.29$), while MMD and Wasserstein remain correlated ($\rho = 0.76$). Subject group switching increases from 57.5% to 69.0%, and only 31–62% of subjects remain in the same domain group (Jaccard 0.18–0.45). This confirms that the H3 finding of metric equivalence is **partially** attributable to lane offset dominance: when feature scales are equalised, DTW — which operates on temporal trajectory shape — captures distributional properties distinct from the sample-level statistics used by MMD and Wasserstein. However, since all experiments used unnormalised distances (consistent with the prior-research replication design), the primary H3 result ($S_{TD} < 0.015$) reflects the operational reality of this pipeline.
 
-### 5.2 Rebalancing as a Stronger Lever Than Domain Adaptation
+### 5.2 Rebalancing and Training Mode as the Dominant Design Factors
 
-Our results provide a clear hierarchy of optimization priorities: **rebalancing method** ($\eta^2 = 0.58$–$0.79$) > **training mode** ($\delta = 0.83$–$0.95$) >> **distance metric** ($\eta^2 < 0.004$). This has practical implications for DDD system design:
+The sensitivity analysis establishes a clear hierarchy of optimization priorities: **mode** ($S_{TM} = 0.48$–$0.66$) $\geq$ **rebalancing** ($S_{TR} = 0.40$–$0.46$) $\gg$ **distance metric** ($S_{TD} < 0.015$). Together, the main effects of Mode and Rebalancing plus their interaction account for $82.2\%$ (F2-score), $88.2\%$ (AUROC), and $77.1\%$ (AUPRC) of systematic (non-residual) variance. Crucially, these two factors also interact strongly ($S_{R \times M} = 0.12$–$0.21$), meaning their effects cannot be considered independently — the optimal rebalancing strategy depends on the training mode (§4.4.1).
+
+This has practical implications for DDD system design:
 
 - SMOTE-based oversampling transforms within-domain F2 from 0.215 (baseline) to 0.558 (sw\_smote\_r01) — a 160% improvement.
 - AUROC improves from 0.63 (baseline) to 0.90 (sw\_smote\_r01) in within-domain settings.
@@ -482,7 +501,7 @@ An unexpected finding is that the domain gap reverses in within-domain and mixed
 ![Domain Shift Direction](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig7_domain_shift_reversal.png)
 *Fig. 7. Domain gap direction ($\Delta = \text{out} - \text{in}$) by Rebalancing × Mode. Green = out-domain outperforms in-domain (gap reversal). The prevalence of green bars, especially in Mixed mode, demonstrates that domain shift does not cause systematic performance degradation.*
 
-This may be because:
+The sensitivity analysis quantifies this phenomenon: the $G \times M$ interaction accounts for only 0.6%–0.7% of total variance, confirming that while the direction reversal is qualitatively notable, its magnitude is small relative to the dominant $R$ and $M$ main effects. The reversal may be because:
 
 1. Out-domain subjects exhibit more diverse driving patterns, providing richer training signal when their own data is included (within-domain setting).
 2. The diversity of out-domain data acts as implicit regularization, improving generalization.
@@ -517,23 +536,23 @@ The key findings are:
 
 **RQ1 — Class imbalance handling:**
 
-1. **Class imbalance handling dominates** ($\eta^2 = 0.58$–$0.79$): SMOTE-based oversampling dramatically improves detection performance across all metrics. SW-SMOTE with $r = 0.1$ achieves the highest F2-score (0.558) and AUPRC (0.648) in within-domain settings; plain SMOTE with $r = 0.1$ achieves the highest AUROC by mean rank (0.90). The AUPRC improvement from baseline (0.12 → 0.65, +460%) confirms that gains are genuine under class imbalance, not artifacts of threshold-insensitive metrics.
+1. **Training mode and rebalancing jointly dominate** ($S_{TM} = 0.48$–$0.66$; $S_{TR} = 0.40$–$0.46$): These two factors, together with their interaction ($S_{R \times M} = 0.12$–$0.21$), account for $>80$% of systematic variance. SMOTE-based oversampling transforms within-domain F2-score from 0.22 (baseline) to 0.56 (sw\_smote\_r01), AUROC from 0.63 to 0.90, and AUPRC from 0.12 to 0.65 — a 460% relative improvement on the imbalance-sensitive metric.
 
 **RQ2 — Domain analysis:**
 
-2. **Distance metric choice is irrelevant** ($\eta^2 < 0.004$): MMD, DTW, and Wasserstein produce statistically indistinguishable downstream performance despite 42.5% of subjects switching domain groups across metrics. Vehicle dynamics coupling and feature scale heterogeneity provide a physics-grounded explanation.
+2. **Distance metric choice is irrelevant** ($S_{TD} < 0.015$): MMD, DTW, and Wasserstein produce statistically indistinguishable downstream performance despite 42.5% of subjects switching domain groups across metrics. Vehicle dynamics coupling and feature scale heterogeneity provide a physics-grounded explanation.
 
-3. **Domain shift direction is context-dependent**: In-domain subjects do not consistently outperform out-domain subjects; within-domain and mixed training reverse the expected domain gap ($\Delta > 0$), with rebalancing amplifying the reversal.
+3. **Domain shift direction is context-dependent**: In-domain subjects do not consistently outperform out-domain subjects; within-domain and mixed training reverse the expected domain gap ($\Delta > 0$), with rebalancing amplifying the reversal. The $G \times M$ interaction accounts for only 0.6%–0.7% of total variance.
 
-4. **Training mode hierarchy is clear**: Within-domain ≈ mixed >> cross-domain (F2: 0.36 vs. 0.13; AUROC: 0.77 vs. 0.52), with Cliff's $\delta = 0.83$–$0.95$ (large).
+4. **Training mode hierarchy is clear**: Within-domain $\approx$ mixed $\gg$ cross-domain (F2: 0.36 vs. 0.13; AUROC: 0.77 vs. 0.52), with Cliff's $\delta = 0.83$–$0.95$ (large). Mode is the single largest source of variance ($S_M = 0.31$–$0.50$).
 
 **RQ3 — Interaction:**
 
-5. **Rebalancing strategy depends on training mode**: The optimal strategy varies by mode (RUS in cross-domain; SMOTE/SW-SMOTE in within-domain and mixed), revealing a strong $R \times M$ interaction. Domain membership ($G$) modulates the magnitude of performance differences but does not alter strategy selection (§4.4.2).
+5. **Rebalancing strategy depends on training mode**: The optimal strategy varies by mode (RUS in cross-domain; SMOTE/SW-SMOTE in within-domain and mixed), revealing a strong $R \times M$ interaction ($S_{R \times M} = 0.12$–$0.21$, the third-largest effect). Domain membership ($G$) modulates the magnitude of performance differences but does not alter strategy selection ($S_{TG} < 0.031$; §4.4.2).
 
 6. **Results are robust**: Consistent across 12 random seeds ($\sigma_{\text{rank}} \to 0$ at $k = 9$), 5 evaluation metrics (Kendall's $W = 0.643$), 2 sampling ratios (91% directional agreement), and confirmed by permutation test ($p < 0.001$).
 
-For practitioners, these results prescribe a clear strategy: apply SMOTE-based class rebalancing with within-domain or mixed training, and choose any convenient distance metric for domain grouping. The choice of rebalancing method matters more than all other design decisions combined.
+For practitioners, these results prescribe a clear strategy: use within-domain or mixed training (the largest single factor), apply SMOTE-based class rebalancing (the largest controllable preprocessing step), and choose any convenient distance metric for domain grouping. The combined effect of training mode and rebalancing — including their interaction — accounts for over 80% of systematic variance, dwarfing all domain-related design choices.
 
 ---
 
@@ -552,9 +571,9 @@ For practitioners, these results prescribe a clear strategy: apply SMOTE-based c
 - Nemenyi, P. (1963). *Distribution-free multiple comparisons*. PhD thesis, Princeton University.
 - Pan, S. J., & Yang, Q. (2010). A survey on transfer learning. *IEEE TKDE*, 22(10), 1345–1359.
 - Rajamani, R. (2012). *Vehicle Dynamics and Control* (2nd ed.). Springer.
+- Saltelli, A., Ratto, M., Andres, T., Campolongo, F., Cariboni, J., Gatelli, D., Saisana, M., & Tarantola, S. (2008). *Global Sensitivity Analysis: The Primer*. Wiley.
 - Saito, T., & Rehmsmeier, M. (2015). The precision–recall plot is more informative than the ROC plot when evaluating binary classifiers on imbalanced datasets. *PLOS ONE*, 10(3), e0118432.
 - Shannon, C. E. (1948). A mathematical theory of communication. *Bell System Technical Journal*, 27(3), 379–423.
-- Saito, T., & Rehmsmeier, M. (2015). The precision–recall plot is more informative than the ROC plot when evaluating binary classifiers on imbalanced datasets. *PLOS ONE*, 10(3), e0118432.
 - Villani, C. (2009). *Optimal Transport: Old and New*. Springer.
 - Wang, X., et al. (2022). Real-time detection of driver drowsiness using LSTM. *Sensors*, 22(13), 4904.
 - Wilcoxon, F. (1945). Individual comparisons by ranking methods. *Biometrics Bulletin*, 1(6), 80–83.
@@ -623,6 +642,7 @@ The following 7 hypotheses were tested as part of the comprehensive analysis fra
 | Cross-metric agreement | Kendall's $W$ | $k=7$ metrics, $n=7$ strategies | Robustness (§4.5.2) |
 | Effect size (rank-based) | Cliff's $\delta$ | Thresholds: negligible/small/medium/large | H1, H3, H5 |
 | Effect size (variance) | $\eta^2 = H / (N-1)$ | Proportion of variance explained | H1, H3 |
+| Sensitivity analysis | Sobol indices ($S_i$, $S_{Ti}$) | Functional ANOVA decomposition; bootstrap $B=2{,}000$ | §4.1 |
 | Effect size CI | Percentile bootstrap | $B=2{,}000$ | H1 |
 | Population mean CI | BCa bootstrap | $B=10{,}000$ | All |
 | Multiple testing | Bonferroni | $\alpha'=\alpha/m$, $\alpha=0.05$ | All |
