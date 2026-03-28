@@ -47,7 +47,7 @@ This study makes the following contributions:
 
 ### 2.1 Vehicle-Based Drowsy Driving Detection
 
-Vehicle dynamics signals — steering wheel angle, lateral/longitudinal acceleration, and lane position — have been widely used for DDD due to their non-intrusive nature. Arefnezhad et al. (2019) used steering wheel angle and velocity signals with statistical and spectral features for drowsiness classification. Wang et al. (2022) extended this approach using LSTM networks with five vehicle signals (speed, longitudinal acceleration, lateral acceleration, lane offset, steering wheel rate), applying Gaussian smoothing with a 1-second window. Atiquzzaman et al. (2018) introduced prediction error features based on second-order Taylor approximation to capture deviations from smooth driving trajectories.
+Vehicle dynamics signals — steering wheel angle, lateral/longitudinal acceleration, and lane position — have been widely used for DDD due to their non-intrusive nature. Arefnezhad et al. (2019) used steering wheel angle and velocity signals with statistical and spectral features for drowsiness classification. Wang et al. (2022) extended this approach using LSTM networks with five vehicle signals (speed, longitudinal acceleration, lateral acceleration, lane offset, steering wheel rate), applying Gaussian smoothing with a 1-second window. Zhao et al. (2012) applied continuous wavelet transform to vehicle dynamics signals for drowsiness detection, demonstrating that time–frequency representations can capture transient changes in driving behaviour that fixed-window spectral methods may miss.
 
 ### 2.2 Class Imbalance in DDD
 
@@ -554,6 +554,7 @@ For practitioners, these results prescribe a clear strategy: use within-domain o
 
 - Arefnezhad, S., et al. (2019). Driver drowsiness estimation using EEG signals with a dynamical encoder–decoder. *IET Intelligent Transport Systems*, 13(2), 301–310.
 - Atiquzzaman, M., et al. (2018). Real-time detection of drivers' texting and eating behavior based on vehicle dynamics. *Transportation Research Part F*, 58, 594–604.
+- Zhao, C., et al. (2012). Driver drowsiness detection using continuous wavelet transform. *Proceedings of the IEEE International Conference on Signal Processing*, 1–4.
 - Berndt, D. J., & Clifford, J. (1994). Using dynamic time warping to find patterns in time series. *AAAI Workshop on Knowledge Discovery in Databases*, 359–370.
 - Chawla, N. V., et al. (2002). SMOTE: Synthetic minority over-sampling technique. *JAIR*, 16, 321–357.
 - Cliff, N. (1993). Dominance statistics: Ordinal analyses to answer ordinal questions. *Psychological Bulletin*, 114(3), 494–509.
