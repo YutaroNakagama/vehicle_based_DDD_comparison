@@ -226,51 +226,9 @@ Fig. 2 presents a variance-based sensitivity analysis (functional ANOVA decompos
 
 ### 4.2 Rebalancing × Mode Interaction (RQ1, RQ3: H1, H4, H5)
 
-The sensitivity analysis (§4.1) identified Rebalancing ($S_{TR} = 0.40$–$0.46$) and Mode ($S_{TM} = 0.48$–$0.66$) as the only practically important factors, with a substantial interaction ($S_{R \times M} = 0.12$–$0.21$) — together accounting for $> 80$% of systematic variance. A 4-group Kruskal–Wallis test confirms significant strategy differences across virtually all experimental cells (53/54 significant after Bonferroni correction, mean $\eta^2 = 0.53$–$0.73$). This section analyses how these two factors interact.
+The sensitivity analysis (§4.1) identified Rebalancing ($S_{TR} = 0.40$–$0.46$) and Mode ($S_{TM} = 0.48$–$0.66$) as the only practically important factors, with a substantial interaction ($S_{R \times M} = 0.12$–$0.21$) — together accounting for $> 80$% of systematic variance. This section analyses how these two factors interact and quantifies individual strategy performance.
 
-#### 4.2.1 Mode Dichotomy and Ranking Reversal
-
-Training mode produces the dominant performance split:
-
-| Metric | Cross-domain | Within-domain | Mixed | $\delta$ (Within vs. Cross) |
-|--------|:------------:|:-------------:|:-----:|:---------------------------:|
-| F2-score | 0.125 ± 0.043 | 0.361 ± 0.182 | 0.372 ± 0.178 | +0.833 (large) |
-| AUROC | 0.520 ± 0.015 | 0.773 ± 0.148 | 0.773 ± 0.140 | +0.945 (large) |
-| AUPRC | 0.050 ± 0.007 | 0.362 ± 0.272 | 0.376 ± 0.280 | +0.951 (large) |
-
-Within-domain and Mixed are statistically equivalent ($\delta < 0.05$), confirming that mixing data from other vehicles does not degrade performance (H7; Appendix C). Cross-domain training collapses all strategies to near-chance levels.
-
-Crucially, the *identity* of the best strategy reverses between modes. Per-mode Friedman tests confirm significant strategy differences within each mode (all 9 tests $p < 10^{-5}$):
-
-| Mode | F2 #1 | AUROC #1 | AUPRC #1 | Friedman $W$ (F2 / AUROC / AUPRC) |
-|------|-------|----------|----------|:---------------------------------:|
-| Cross-domain | RUS $r{=}0.1$ | RUS $r{=}0.1$ | RUS $r{=}0.1$ | 0.956 / 0.429 / 0.729 |
-| Within-domain | SW-SMOTE $r{=}0.1$ | SW-SMOTE $r{=}0.1$ | SW-SMOTE $r{=}0.1$ | 0.873 / 0.816 / 0.843 |
-| Mixed | SW-SMOTE $r{=}0.1$ | SW-SMOTE $r{=}0.1$ | SW-SMOTE $r{=}0.1$ | 0.841 / 0.821 / 0.791 |
-
-Cross-mode Spearman $\rho$ on the 7-strategy ranking vectors quantifies this reversal:
-
-| Mode pair | F2 $\rho$ | AUROC $\rho$ | AUPRC $\rho$ |
-|-----------|:---------:|:------------:|:------------:|
-| Cross vs. Within | $-0.786$ ($p=0.036$) | $-0.857$ ($p=0.014$) | $-0.786$ ($p=0.036$) |
-| Cross vs. Mixed | $-0.679$ ($p=0.094$) | $-0.857$ ($p=0.014$) | $-0.893$ ($p=0.007$) |
-| Within vs. Mixed | $+0.964$ ($p<0.001$) | $+1.000$ ($p<0.001$) | $+0.964$ ($p<0.001$) |
-
-Cross-domain rankings are **negatively** correlated with within-domain and mixed rankings ($\rho = -0.68$ to $-0.89$), while within-domain and mixed rankings are nearly identical ($\rho \geq +0.96$). Kendall's $W$ across the three modes is $0.17$–$0.22$ (non-significant, $p > 0.67$), meaning the modes do *not* agree on strategy rankings — the defining signature of the $R \times M$ interaction.
-
-Fig. 3 captures this interaction as a heatmap. The Cross-domain column is uniformly dark regardless of strategy, while Within-domain and Mixed reveal large inter-strategy variation.
-
-![Rebalancing × Mode Heatmap](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig3_condition_mode_heatmap.png)
-*Fig. 3. Mean performance heatmap (7 strategies × 3 modes) for F2-score, AUROC, and AUPRC. Cross-domain is uniformly low; Within-domain and Mixed reveal strong strategy differentiation — visually confirming the $R \times M$ interaction.*
-
-Fig. 4 provides a distributional view. In the Cross-domain column, all 7 strategies collapse to a narrow low-performance band. In Within-domain and Mixed, SMOTE-based strategies (blue, orange) separate sharply from Baseline (grey) and RUS (green), with SW-SMOTE $r{=}0.1$ showing the highest median across all three metrics.
-
-![Strategy Comparison](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig4_strategy_comparison.png)
-*Fig. 4. Performance distributions of the 7 rebalancing strategies by training mode. Rows: F2-score, AUROC, AUPRC. Columns: Cross-domain, Within-domain, Mixed. The Cross-domain column is uniformly compressed near chance, while Within-domain and Mixed reveal large inter-strategy separation.*
-
-#### 4.2.2 Individual Strategy Performance
-
-Table 2 presents the performance of all 7 strategies, pooled over distance, membership, and seeds.
+**Mode dichotomy.** Training mode produces a binary performance split (Table 2). Within-domain and Mixed are statistically equivalent ($\delta < 0.05$), while Cross-domain collapses to near-chance levels ($\delta > 0.83$ vs. Within).
 
 **Table 2.** Mean ± SD performance by rebalancing strategy and training mode.
 
@@ -284,26 +242,21 @@ Table 2 presents the performance of all 7 strategies, pooled over distance, memb
 | SW-SMOTE $r{=}0.1$ | **0.416** ± 0.243 | **0.765** ± 0.183 | **0.447** ± 0.337 | 0.101 | 0.558 | **0.587** |
 | SW-SMOTE $r{=}0.5$ | 0.304 ± 0.233 | 0.745 ± 0.166 | 0.274 ± 0.223 | 0.042 | 0.468 | 0.402 |
 
-**SMOTE-based methods dominate in within-domain and mixed modes.** The best overall strategy is SW-SMOTE $r{=}0.1$ (F2 = 0.416, AUROC = 0.765, AUPRC = 0.447). In within-domain, it achieves F2 = 0.558, AUROC = 0.903, AUPRC = 0.648 — improvements of +159%, +43%, and +457% over Baseline. **RUS degrades performance**, performing worse than Baseline across all metrics (F2: 0.184/0.162 vs. 0.215; $\delta = -0.84$). Only in cross-domain does RUS show marginal advantages, but absolute performance is near chance.
+The best overall strategy is SW-SMOTE $r{=}0.1$ (within-domain F2 = 0.558, AUROC = 0.903, AUPRC = 0.648; +159%/+43%/+457% over Baseline). RUS degrades performance relative to Baseline ($\delta = -0.84$). Only in cross-domain — where absolute performance is near chance — does RUS show a marginal advantage.
 
-Nemenyi post-hoc tests (CD = 2.600) identify 9–10/21 pairwise comparisons as significant. Mean ranks confirm a two-cluster hierarchy (Table 3).
+**Ranking reversal.** The *identity* of the best strategy reverses between modes. Per-mode Friedman tests (all 9 tests $p < 10^{-5}$) show RUS $r{=}0.1$ ranks first in cross-domain while SW-SMOTE $r{=}0.1$ ranks first in within-domain and mixed (consistently across all three metrics). Cross-mode Spearman $\rho$ on the 7-strategy ranking vectors confirms the reversal: cross- vs. within-domain $\rho = -0.79$ to $-0.86$ ($p < 0.04$), while within- vs. mixed $\rho \geq +0.96$ ($p < 0.001$). Kendall's $W$ across the three modes is $0.17$–$0.22$ (non-significant), meaning the modes do *not* agree on strategy rankings — the defining signature of the $R \times M$ interaction.
 
-**Table 3.** Friedman mean ranks (1 = best).
+Fig. 3 visualises this interaction. In the Cross-domain column, all 7 strategies collapse to a narrow low-performance band. In Within-domain and Mixed, SMOTE-based strategies separate sharply from Baseline and RUS.
 
-| Metric | SW-SM. $r{=}0.1$ | SM. $r{=}0.1$ | SM. $r{=}0.5$ | BL | SW-SM. $r{=}0.5$ | RUS $r{=}0.1$ | RUS $r{=}0.5$ |
-|--------|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| F2-score | **2.98** | 3.23 | 3.29 | 4.12 | 4.53 | 4.65 | 5.21 |
-| AUROC | 2.98 | **2.76** | 3.32 | 4.67 | 3.47 | 5.16 | 5.64 |
-| AUPRC | 2.89 | **2.85** | 3.20 | 4.73 | 3.83 | 5.09 | 5.41 |
+![Strategy Comparison](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig4_strategy_comparison.png)
+*Fig. 3. Performance distributions of the 7 rebalancing strategies by training mode (rows: F2, AUROC, AUPRC; columns: Cross, Within, Mixed). The Cross-domain column is uniformly compressed near chance; Within-domain and Mixed reveal large inter-strategy separation — the $R \times M$ interaction.*
 
-The oversampling cluster (ranks 2.76–3.83) is statistically separated from the Baseline/RUS cluster (ranks 4.12–5.64). The top-ranked method differs between F2 (SW-SMOTE $r{=}0.1$) and AUROC/AUPRC (SMOTE $r{=}0.1$), but these are statistically interchangeable (Nemenyi rank difference < CD).
+**Strategy clusters.** Nemenyi post-hoc tests (CD = 2.600) identify two statistically separated clusters (Fig. 4): oversampling methods (mean ranks 2.76–3.83) vs. Baseline/RUS (ranks 4.12–5.64). The top-ranked methods (SW-SMOTE $r{=}0.1$ for F2; SMOTE $r{=}0.1$ for AUROC/AUPRC) are statistically interchangeable (rank difference < CD). Sampling ratio $r=0.1$ is the more robust default across methods.
 
 ![Critical Difference Diagrams](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig4_cd_diagrams.png)
-*Fig. 5. Nemenyi post-hoc Critical Difference diagrams for F2-score, AUROC, and AUPRC. Oversampling methods consistently rank left (better); methods connected by a bar are not significantly different ($\alpha = 0.05$).*
+*Fig. 4. Nemenyi post-hoc Critical Difference diagrams. Oversampling methods rank left (better); methods connected by a bar are not significantly different ($\alpha = 0.05$).*
 
-Sampling ratio sensitivity is method-dependent: $r=0.1$ is preferred for SW-SMOTE (F2 $\delta = +0.678$, large) and RUS ($\delta = +0.355$, medium), while SMOTE is ratio-insensitive ($\delta \approx 0$). Overall, $r=0.1$ is the more robust default.
-
-**Verdict — H1, H4, H5 strongly supported.** The 7 strategies differ significantly (53/54 omnibus tests, Friedman $p < 0.0001$). Mode creates a binary split (Within/Mixed $\gg$ Cross, $\delta > 0.83$), and rebalancing effectiveness reverses across modes ($\rho = -0.68$ to $-0.89$). SMOTE-based oversampling transforms within-domain F2 from 0.215 to 0.558 (+159%), while RUS degrades it. The $R \times M$ interaction ($S_{R \times M} = 0.12$–$0.21$) is the third-largest effect after the two main effects.
+**Verdict — H1, H4, H5 strongly supported.** The 7 strategies differ significantly (53/54 omnibus tests, Friedman $p < 0.0001$). Mode creates a binary split ($\delta > 0.83$), and rebalancing effectiveness reverses across modes ($\rho = -0.79$ to $-0.86$). SMOTE-based oversampling transforms within-domain F2 from 0.215 to 0.558 (+159%), while RUS degrades it.
 
 ### 4.3 Robustness Validation
 
@@ -321,10 +274,10 @@ Subsampling analysis confirms ranking stability:
 
 By $k=11$ (of 12 seeds), F2 and AUPRC rankings are perfectly stable; AUROC rankings stabilize with $\sigma = 0.147$.
 
-Fig. 6 visualizes these convergence trajectories. The monotonically decreasing $\sigma_{\text{rank}}(k)$ curves confirm that 12 seeds provide sufficient statistical power for stable strategy rankings.
+Fig. 5 visualizes these convergence trajectories. The monotonically decreasing $\sigma_{\text{rank}}(k)$ curves confirm that 12 seeds provide sufficient statistical power for stable strategy rankings.
 
 ![Seed Convergence](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig8_seed_convergence.png)
-*Fig. 6. Ranking stability ($\sigma_{\text{rank}}$) as a function of seed subset size $k$. All three primary metrics show monotonic convergence, confirming that $n = 12$ seeds is sufficient.*
+*Fig. 5. Ranking stability ($\sigma_{\text{rank}}$) as a function of seed subset size $k$. All three primary metrics show monotonic convergence, confirming that $n = 12$ seeds is sufficient.*
 
 #### 4.3.2 Cross-Metric Concordance
 
@@ -386,10 +339,10 @@ In contrast, switching from Wasserstein to MMD for domain grouping yields $|\Del
 
 ### 5.3 The Domain Gap Reversal Phenomenon
 
-An unexpected finding is that the domain gap reverses in within-domain and mixed training: out-domain subjects sometimes outperform in-domain subjects ($\Delta > 0$). Fig. 7 visualizes this pattern through diverging horizontal bars for each Rebalancing × Mode × Membership cell. Green bars (positive $\Delta$) indicate that out-domain performance exceeds in-domain. Across all three metrics (F2-score, AUROC, AUPRC), the majority of bars point green — especially in the Mixed mode panel — demonstrating that domain shift does not systematically degrade performance. This visual is consistent with the Wilcoxon test results (H8: 0/63 to 12/63 significant) and provides direct evidence that the domain split does not introduce a meaningful performance penalty.
+An unexpected finding is that the domain gap reverses in within-domain and mixed training: out-domain subjects sometimes outperform in-domain subjects ($\Delta > 0$). Fig. 6 visualizes this pattern through diverging horizontal bars for each Rebalancing × Mode × Membership cell. Green bars (positive $\Delta$) indicate that out-domain performance exceeds in-domain. Across all three metrics (F2-score, AUROC, AUPRC), the majority of bars point green — especially in the Mixed mode panel — demonstrating that domain shift does not systematically degrade performance. This visual is consistent with the Wilcoxon test results (H8: 0/63 to 12/63 significant) and provides direct evidence that the domain split does not introduce a meaningful performance penalty.
 
 ![Domain Shift Direction](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig7_domain_shift_reversal.png)
-*Fig. 7. Domain gap direction ($\Delta = \text{out} - \text{in}$) by Rebalancing × Mode. Green = out-domain outperforms in-domain (gap reversal). The prevalence of green bars, especially in Mixed mode, demonstrates that domain shift does not cause systematic performance degradation.*
+*Fig. 6. Domain gap direction ($\Delta = \text{out} - \text{in}$) by Rebalancing × Mode. Green = out-domain outperforms in-domain (gap reversal). The prevalence of green bars, especially in Mixed mode, demonstrates that domain shift does not cause systematic performance degradation.*
 
 The sensitivity analysis quantifies this phenomenon: the $G \times M$ interaction accounts for only 0.6%–0.7% of total variance, confirming that while the direction reversal is qualitatively notable, its magnitude is small relative to the dominant $R$ and $M$ main effects. The reversal may be because:
 
@@ -510,11 +463,11 @@ The following 6 hypotheses were tested as part of the comprehensive analysis fra
 |:----------:|:------------|:--------------------|:-----------|:-----------|:----------|:--------|
 | H1 | Kruskal-Wallis $H$ (4 groups, 18 cells) | Mann-Whitney $U$: OS vs RUS (48 pairs), RUS vs BL (12 pairs), SMOTE vs SW-SMOTE (6 pairs); $r=0.1$ vs $r=0.5$ (18 pairs) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.00104$ (OS–RUS), $0.00417$ (RUS–BL), $0.00278$ (SM–SW, ratio) | Percentile $B=2{,}000$ | §4.2 |
 
-*Note: H1 is analysed jointly with H4 and H5 in §4.2 (mode dichotomy in §4.2.1, individual strategies in §4.2.2).*
+*Note: H1 is analysed jointly with H4 and H5 in §4.2.*
 | H2 | Kruskal-Wallis $H$ (6 cells) | Mann-Whitney $U$ (pooled) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.0028$ | — | App. F |
 | H3 | — | Wilcoxon signed-rank (63 pairs) | Mean $\lvert\Delta\rvert$, Cliff's $\delta$ | Bonf. $\alpha'=0.00079$ | — | App. F |
-| H4 | Friedman $\chi_F^2$ (14 strategies) | Nemenyi post-hoc (CD = 2.600) | Cliff's $\delta$, Kendall's $W$ | — | — | §4.2.1 |
-| H5 | Friedman $\chi_F^2$ (per mode, 9 tests) | Spearman $\rho$ (cross-mode ranking concordance) | Kendall's $W$ (3-mode) | — | — | §4.2.1 |
+| H4 | Friedman $\chi_F^2$ (14 strategies) | Nemenyi post-hoc (CD = 2.600) | Cliff's $\delta$, Kendall's $W$ | — | — | §4.2 |
+| H5 | Friedman $\chi_F^2$ (per mode, 9 tests) | Spearman $\rho$ (cross-mode ranking concordance) | Kendall's $W$ (3-mode) | — | — | §4.2 |
 
 ### D.2 Methods Applied per Purpose
 
