@@ -251,10 +251,7 @@ Fig. 3 visualises this interaction. In the Cross-domain column, all 7 strategies
 ![Strategy Comparison](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig4_strategy_comparison.png)
 *Fig. 3. Performance distributions of the 7 rebalancing strategies by training mode (rows: F2, AUROC, AUPRC; columns: Cross, Within, Mixed). The Cross-domain column is uniformly compressed near chance; Within-domain and Mixed reveal large inter-strategy separation — the $R \times M$ interaction.*
 
-**Strategy clusters.** Nemenyi post-hoc tests (CD = 2.600) identify two statistically separated clusters (Fig. 4): oversampling methods (mean ranks 2.76–3.83) vs. Baseline/RUS (ranks 4.12–5.64). The top-ranked methods (SW-SMOTE $r{=}0.1$ for F2; SMOTE $r{=}0.1$ for AUROC/AUPRC) are statistically interchangeable (rank difference < CD). Sampling ratio $r=0.1$ is the more robust default across methods.
-
-![Critical Difference Diagrams](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig4_cd_diagrams.png)
-*Fig. 4. Nemenyi post-hoc Critical Difference diagrams. Oversampling methods rank left (better); methods connected by a bar are not significantly different ($\alpha = 0.05$).*
+**Strategy clusters.** Nemenyi post-hoc tests (CD = 2.600) identify two statistically separated clusters: oversampling methods (mean ranks 2.76–3.83) vs. Baseline/RUS (ranks 4.12–5.64). The top-ranked methods (SW-SMOTE $r{=}0.1$ for F2; SMOTE $r{=}0.1$ for AUROC/AUPRC) are statistically interchangeable (rank difference < CD). Sampling ratio $r=0.1$ is the more robust default across methods.
 
 **Verdict — H1, H4, H5 strongly supported.** The 7 strategies differ significantly (53/54 omnibus tests, Friedman $p < 0.0001$). Mode creates a binary split ($\delta > 0.83$), and rebalancing effectiveness reverses across modes ($\rho = -0.79$ to $-0.86$). SMOTE-based oversampling transforms within-domain F2 from 0.215 to 0.558 (+159%), while RUS degrades it.
 
@@ -274,10 +271,10 @@ Subsampling analysis confirms ranking stability:
 
 By $k=11$ (of 12 seeds), F2 and AUPRC rankings are perfectly stable; AUROC rankings stabilize with $\sigma = 0.147$.
 
-Fig. 5 visualizes these convergence trajectories. The monotonically decreasing $\sigma_{\text{rank}}(k)$ curves confirm that 12 seeds provide sufficient statistical power for stable strategy rankings.
+Fig. 4 visualizes these convergence trajectories. The monotonically decreasing $\sigma_{\text{rank}}(k)$ curves confirm that 12 seeds provide sufficient statistical power for stable strategy rankings.
 
 ![Seed Convergence](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig8_seed_convergence.png)
-*Fig. 5. Ranking stability ($\sigma_{\text{rank}}$) as a function of seed subset size $k$. All three primary metrics show monotonic convergence, confirming that $n = 12$ seeds is sufficient.*
+*Fig. 4. Ranking stability ($\sigma_{\text{rank}}$) as a function of seed subset size $k$. All three primary metrics show monotonic convergence, confirming that $n = 12$ seeds is sufficient.*
 
 #### 4.3.2 Cross-Metric Concordance
 
@@ -339,10 +336,10 @@ In contrast, switching from Wasserstein to MMD for domain grouping yields $|\Del
 
 ### 5.3 The Domain Gap Reversal Phenomenon
 
-An unexpected finding is that the domain gap reverses in within-domain and mixed training: out-domain subjects sometimes outperform in-domain subjects ($\Delta > 0$). Fig. 6 visualizes this pattern through diverging horizontal bars for each Rebalancing × Mode × Membership cell. Green bars (positive $\Delta$) indicate that out-domain performance exceeds in-domain. Across all three metrics (F2-score, AUROC, AUPRC), the majority of bars point green — especially in the Mixed mode panel — demonstrating that domain shift does not systematically degrade performance. This visual is consistent with the Wilcoxon test results (H8: 0/63 to 12/63 significant) and provides direct evidence that the domain split does not introduce a meaningful performance penalty.
+An unexpected finding is that the domain gap reverses in within-domain and mixed training: out-domain subjects sometimes outperform in-domain subjects ($\Delta > 0$). Fig. 5 visualizes this pattern through diverging horizontal bars for each Rebalancing × Mode × Membership cell. Green bars (positive $\Delta$) indicate that out-domain performance exceeds in-domain. Across all three metrics (F2-score, AUROC, AUPRC), the majority of bars point green — especially in the Mixed mode panel — demonstrating that domain shift does not systematically degrade performance. This visual is consistent with the Wilcoxon test results (H8: 0/63 to 12/63 significant) and provides direct evidence that the domain split does not introduce a meaningful performance penalty.
 
 ![Domain Shift Direction](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig7_domain_shift_reversal.png)
-*Fig. 6. Domain gap direction ($\Delta = \text{out} - \text{in}$) by Rebalancing × Mode. Green = out-domain outperforms in-domain (gap reversal). The prevalence of green bars, especially in Mixed mode, demonstrates that domain shift does not cause systematic performance degradation.*
+*Fig. 5. Domain gap direction ($\Delta = \text{out} - \text{in}$) by Rebalancing × Mode. Green = out-domain outperforms in-domain (gap reversal). The prevalence of green bars, especially in Mixed mode, demonstrates that domain shift does not cause systematic performance degradation.*
 
 The sensitivity analysis quantifies this phenomenon: the $G \times M$ interaction accounts for only 0.6%–0.7% of total variance, confirming that while the direction reversal is qualitatively notable, its magnitude is small relative to the dominant $R$ and $M$ main effects. The reversal may be because:
 
