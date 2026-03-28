@@ -292,19 +292,27 @@ Rebalancing shifts the classifier's decision boundary so dramatically that any d
 
 ### 5.2 Rebalancing and Training Mode as the Dominant Design Factors
 
-The sensitivity analysis establishes a clear hierarchy of optimization priorities: **mode** ($S_{TM} = 0.48$–$0.66$) $\geq$ **rebalancing** ($S_{TR} = 0.40$–$0.46$) $\gg$ **distance metric** ($S_{TD} < 0.015$). Together, the main effects of Mode and Rebalancing plus their interaction account for $82.2\%$ (F2-score), $88.2\%$ (AUROC), and $77.1\%$ (AUPRC) of systematic (non-residual) variance. Crucially, these two factors also interact strongly ($S_{R \times M} = 0.12$–$0.21$), meaning their effects cannot be considered independently — the optimal rebalancing strategy depends on the training mode (§4.2).
+The functional ANOVA decomposition (Fig. 2) decomposes total variance into additive contributions. Let $V_{\mathrm{sys}} = V - V_{\varepsilon}$ denote the systematic (non-residual) variance. For F2-score the decomposition is:
 
-The direct strategy comparison (Table 2) quantifies the practical magnitude of each rebalancing choice within the practically relevant within-domain setting:
+$$\frac{S_M + S_R + S_{R \times M}}{1 - S_{\varepsilon}} = \frac{0.368 + 0.243 + 0.212}{1 - 0.157} = \frac{0.823}{0.843} = 97.5\% \tag{4}$$
 
-- **SW-SMOTE $r{=}0.1$** is the best overall strategy, reaching F2 = 0.558, AUROC = 0.903, AUPRC = 0.648 — improvements of +159%, +43%, and +457% over Baseline respectively.
-- **SMOTE variants** ($r{=}0.1$ and $r{=}0.5$) follow closely: SMOTE $r{=}0.5$ achieves F2 = 0.499 (+132%), while SMOTE $r{=}0.1$ achieves the highest AUROC mean rank (2.76). The two SMOTE variants and SW-SMOTE $r{=}0.1$ form a statistically interchangeable top cluster (Nemenyi rank difference < CD).
-- **SW-SMOTE $r{=}0.5$** ranks mid-range (F2 = 0.468, +117%), showing that the higher sampling ratio reduces SW-SMOTE's advantage more than it does for plain SMOTE.
-- **Baseline** (F2 = 0.215) outperforms both RUS variants, even without any rebalancing.
-- **RUS degrades performance** relative to Baseline in within-domain and mixed settings (F2: 0.178/0.159 vs. 0.215; $\delta = -0.84$). Undersampling discards majority-class information that the classifier needs for decision boundary calibration.
+Analogous ratios are 95.8\% (AUROC) and 96.1\% (AUPRC), confirming that Mode, Rebalancing, and their interaction jointly account for $>95$\% of systematic variance across all three primary metrics. In contrast, Distance and Membership together contribute $< 5$\% ($S_{TD} + S_{TG} < 0.046$).
 
-These gains require no additional data collection, no domain distance computation, and no subject grouping strategy — only a preprocessing step. AUPRC improvements confirm genuine minority-class precision gains, not merely threshold-shifted recall: 0/36 strategy–mode cells exhibit a precision–recall trade-off; SMOTE methods yield predominantly win-win outcomes (recall↑, precision stable).
+The interaction term $S_{R \times M}$ is not merely statistically present but practically decisive: it produces a full ranking reversal between modes. The Spearman rank correlation between the 7-strategy ranking vectors in cross-domain vs. within-domain is:
 
-In contrast, switching from Wasserstein to MMD for domain grouping yields $|\Delta\text{F2}| < 0.01$, $|\Delta\text{AUROC}| < 0.02$, and $|\Delta\text{AUPRC}| < 0.01$.
+$$\rho_{\text{cross,within}} = -0.79 \;\text{to}\; -0.86 \quad (p < 0.04) \tag{5}$$
+
+while within-domain vs. mixed yields $\rho \geq +0.96$ ($p < 0.001$). This sign reversal maps directly onto the Sobol interaction: the 21.2\% of F2 variance attributed to $R \times M$ manifests as a qualitative change in which strategy is optimal, not merely a quantitative shift in effect magnitude. The practical consequence is stark: a practitioner who selects a rebalancing strategy based on cross-domain results would deploy the *worst* strategy for within-domain operation, and vice versa (Table 2).
+
+**Mechanistic interpretation.** The mode-dependent reversal has a data-geometric explanation. In within-domain and mixed modes, each subject’s own data is present in the training set, providing a subject-specific decision boundary. Here the bottleneck is class imbalance: minority-class (drowsy) epochs are scarce, and oversampling via SMOTE generates synthetic examples along the minority-class manifold, enriching the decision boundary without discarding majority-class information. In quantitative terms:
+
+$$\Delta\text{F2}_{\text{SMOTE}} = \text{F2}_{\text{SW-SMOTE}} - \text{F2}_{\text{BL}} = 0.558 - 0.215 = +0.343 \;(+159\%) \tag{6}$$
+
+RUS, by contrast, discards majority-class samples ($\delta_{\text{RUS vs BL}} = -0.84$), destroying the very information that calibrates the boundary for subject-specific patterns.
+
+In cross-domain mode, target-subject data is entirely absent from training. The bottleneck shifts from class imbalance to domain mismatch: the classifier must generalise across subjects with different driving dynamics. Here, oversampling amplifies source-domain patterns that may not transfer, while RUS’s information loss is less damaging because the majority-class signal was already misaligned. All strategies collapse to near-chance levels (F2 $= 0.04$–$0.17$), and the inter-strategy variance shrinks dramatically — consistent with the $R \times M$ interaction absorbing 21\% of total F2 variance.
+
+AUPRC improvements confirm that SMOTE’s gains are genuine minority-class precision improvements, not threshold-shifted recall: 0/36 strategy–mode cells exhibit a precision–recall trade-off; the dominant pattern is win–win (recall↑, precision stable). For comparison, switching distance metric yields $|\Delta\text{F2}| < 0.01$ — two orders of magnitude below the rebalancing effect (Eq. 6), consistent with the Sobol ratio $S_{TR}/S_{TD} > 27\times$ (Eq. 3).
 
 ### 5.3 The Domain Gap Reversal Phenomenon
 
