@@ -257,38 +257,10 @@ Fig. 3 visualises this interaction. In the Cross-domain column, all 7 strategies
 
 ### 4.3 Robustness Validation
 
-The sensitivity analysis already established that Distance ($S_{TD} < 0.015$) and Membership ($S_{TG} < 0.031$) are negligible. Confirmatory hypothesis tests — including Kruskal–Wallis omnibus tests ($\eta^2 < 0.003$ pooled), Bayesian model comparison ($BF_{01} = 71$–$767$, "very strong" to "extreme" evidence for $H_0$), and domain gap analysis — corroborate this conclusion. All pairwise Cliff's $\delta < 0.09$ between distance metrics, and 42.5% of subjects switch domain groups across metrics without measurable effect on classification. Full statistical details, tables, and the violin plot are provided in Appendix F.
-
-#### 4.3.1 Seed Convergence
-
-Subsampling analysis confirms ranking stability:
-
-| Metric | $k=3$ ($\sigma_{\text{rank}}$) | $k=5$ | $k=7$ | $k=9$ | $k=11$ |
-|--------|:------:|:------:|:------:|:------:|:------:|
-| F2-score | 0.282 | 0.151 | 0.028 | 0.000 | 0.000 |
-| AUROC | 0.501 | 0.333 | 0.242 | 0.154 | 0.147 |
-| AUPRC | 0.496 | 0.314 | 0.205 | 0.101 | 0.000 |
-
-By $k=11$ (of 12 seeds), F2 and AUPRC rankings are perfectly stable; AUROC rankings stabilize with $\sigma = 0.147$.
-
-Fig. 4 visualizes these convergence trajectories. The monotonically decreasing $\sigma_{\text{rank}}(k)$ curves confirm that 12 seeds provide sufficient statistical power for stable strategy rankings.
+Distance ($S_{TD} < 0.015$, $BF_{01} = 71$–$767$) and Membership ($S_{TG} < 0.031$) are confirmed negligible by both frequentist and Bayesian tests; full statistical details are in Appendix F. Subsampling analysis shows $\sigma_{\text{rank}}$ decreases monotonically, reaching 0 (F2, AUPRC) or 0.147 (AUROC) by $k = 11$ of 12 seeds (Fig. 4), confirming sufficient seed count. Cross-metric concordance is moderate (Kendall’s $W = 0.643$; AUROC–AUPRC $\rho = 0.929$). Post-hoc power analysis indicates the pooled design ($n = 36$) detects $|\delta| \geq 0.53$, well below all reported large effects ($|\delta| > 0.8$).
 
 ![Seed Convergence](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig8_seed_convergence.png)
-*Fig. 4. Ranking stability ($\sigma_{\text{rank}}$) as a function of seed subset size $k$. All three primary metrics show monotonic convergence, confirming that $n = 12$ seeds is sufficient.*
-
-#### 4.3.2 Cross-Metric Concordance
-
-Kendall’s $W = 0.643$ ($k = 7$ metrics: F2, AUROC, F1, AUPRC, Recall, Precision, Accuracy; $n = 7$ strategies) indicates **moderate agreement** in strategy rankings across all evaluation metrics.
-
-Strongest pairwise concordance: AUROC ↔ AUPRC ($\rho = 0.929$), F2 ↔ AUPRC ($\rho = 0.821$), F2 ↔ AUROC ($\rho = 0.786$).
-
-#### 4.3.3 Power Analysis
-
-With $n = 12$ seeds per cell, Mann-Whitney $U$ detects:
-- Per-distance cell ($n = 12$): $|\delta_{\min}| \approx 0.923$ — only **large** effects detectable
-- Pooled across distances ($n = 36$): $|\delta_{\min}| \approx 0.533$ — **large** effects detectable
-
-Wilcoxon signed-rank has a $p$-floor of $1/2^{11} = 0.000488$, which is below the Bonferroni-corrected threshold ($\alpha' = 0.00139$), enabling paired tests to reach significance.
+*Fig. 4. Ranking stability ($\sigma_{\text{rank}}$) as a function of seed subset size $k$. Monotonic convergence confirms that $n = 12$ seeds is sufficient.*
 
 ---
 
