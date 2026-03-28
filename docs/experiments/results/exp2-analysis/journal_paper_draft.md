@@ -219,7 +219,7 @@ Based on the literature and factorial design, we formulate 5 primary hypotheses 
 
 A total of 1,512 observations across 7 rebalancing strategies, 3 training modes, 3 distance metrics, 2 domain membership groups, and 12 random seeds were analyzed. The permutation test confirms a significant global rebalancing effect for F2-score ($T_{\text{obs}} = 13.41$, $p < 0.001$), AUROC ($T_{\text{obs}} = 10.35$, $p < 0.001$), and AUPRC ($p < 0.001$).
 
-Fig. 2 presents a variance-based sensitivity analysis (functional ANOVA decomposition) that decomposes total variance into main-effect and interaction contributions for each factor. **Mode** contributes the largest main effect ($S_M = 0.31$–$0.50$), followed by **Rebalancing** ($S_R = 0.24$–$0.29$). Both factors also participate in a substantial $R \times M$ interaction (21.2% of F2-score variance, 15.3% of AUROC variance). The total-order indices — which include all interactions — show that Mode accounts for $S_{TM} = 0.48$–$0.66$ and Rebalancing for $S_{TR} = 0.40$–$0.46$ of total variance. In contrast, **Distance** ($S_{TD} < 0.015$) and **Membership** ($S_{TG} < 0.031$) are negligible even when interactions are included. Residual variance (seed-to-seed variation) accounts for 7.9%–21.9%. This decomposition establishes the central narrative: rebalancing and training mode, including their interaction, account for $> 80$% of systematic variance; domain grouping strategy does not. §4.3 confirms this negligibility through detailed hypothesis tests and Bayesian evidence. A complementary one-factor-at-a-time (OFAT) analysis (Appendix E, Figs. S1–S4) visualises the per-condition effect of each factor, confirming the Sobol ranking and revealing that the $R$ effect is strongly mode-dependent.
+Fig. 2 presents a variance-based sensitivity analysis (functional ANOVA decomposition) that decomposes total variance into main-effect and interaction contributions for each factor. **Mode** contributes the largest main effect ($S_M = 0.31$–$0.50$), followed by **Rebalancing** ($S_R = 0.24$–$0.29$). Both factors also participate in a substantial $R \times M$ interaction (21.2% of F2-score variance, 15.3% of AUROC variance). The total-order indices — which include all interactions — show that Mode accounts for $S_{TM} = 0.48$–$0.66$ and Rebalancing for $S_{TR} = 0.40$–$0.46$ of total variance. In contrast, **Distance** ($S_{TD} < 0.015$) and **Membership** ($S_{TG} < 0.031$) are negligible even when interactions are included. Residual variance (seed-to-seed variation) accounts for 7.9%–21.9%. This decomposition establishes the central narrative: rebalancing and training mode, including their interaction, account for $> 80$% of systematic variance; domain grouping strategy does not. Appendix F provides the confirmatory hypothesis tests and Bayesian evidence. A complementary one-factor-at-a-time (OFAT) analysis (Appendix E, Figs. S1–S4) visualises the per-condition effect of each factor, confirming the Sobol ranking and revealing that the $R$ effect is strongly mode-dependent.
 
 ![Sensitivity Analysis](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig2_effect_hierarchy.png)
 *Fig. 2. Variance-based sensitivity analysis (Sobol indices) for the four experimental factors across F2-score, AUROC, and AUPRC. Solid bars show first-order indices ($S_i$, main effect); hatched bars show interaction contributions ($S_{Ti} - S_i$). Error bars indicate 95% bootstrap CIs on total-order indices ($S_{Ti}$). Mode and Rebalancing dominate; Distance and Membership are negligible.*
@@ -305,48 +305,11 @@ Sampling ratio sensitivity is method-dependent: $r=0.1$ is preferred for SW-SMOT
 
 **Verdict — H1, H4, H5 strongly supported.** The 7 strategies differ significantly (53/54 omnibus tests, Friedman $p < 0.0001$). Mode creates a binary split (Within/Mixed $\gg$ Cross, $\delta > 0.83$), and rebalancing effectiveness reverses across modes ($\rho = -0.68$ to $-0.89$). SMOTE-based oversampling transforms within-domain F2 from 0.215 to 0.558 (+159%), while RUS degrades it. The $R \times M$ interaction ($S_{R \times M} = 0.12$–$0.21$) is the third-largest effect after the two main effects.
 
-### 4.3 Distance Metric Equivalence (RQ2: H2)
+### 4.3 Robustness Validation
 
-Consistent with the near-zero Sobol index ($S_{TD} < 0.015$), the Kruskal–Wallis test (6 cells = mode × membership, pooling strategies) confirms negligible distance metric effects, with isolated statistical significance confined to cross-domain AUROC cells:
+The sensitivity analysis already established that Distance ($S_{TD} < 0.015$) and Membership ($S_{TG} < 0.031$) are negligible. Confirmatory hypothesis tests — including Kruskal–Wallis omnibus tests ($\eta^2 < 0.003$ pooled), Bayesian model comparison ($BF_{01} = 71$–$767$, "very strong" to "extreme" evidence for $H_0$), and domain gap analysis — corroborate this conclusion. All pairwise Cliff's $\delta < 0.09$ between distance metrics, and 42.5% of subjects switch domain groups across metrics without measurable effect on classification. Full statistical details, tables, and the violin plot are provided in Appendix F.
 
-| Metric | Bonf. significant cells | Mean $\eta^2$ | Max $\eta^2$ |
-|--------|:-----------------------:|:-------------:|:------------:|
-| F2-score | 0/6 | 0.004 | 0.023 |
-| AUROC | 2/6 | 0.089 | 0.322 |
-| AUPRC | 2/6 | 0.038 | 0.117 |
-
-The elevated AUROC $\eta^2$ is driven entirely by the two cross-domain cells, where all strategies perform near chance (AUROC $\approx$ 0.51–0.53) and low within-group variance inflates the statistic despite absolute mean differences of < 2 percentage points. In the fully pooled analysis, $\eta^2 < 0.003$ across all metrics.
-
-Pooled performance across all strategies:
-
-| Metric | MMD | DTW | Wasserstein | Max $\lvert\delta\rvert$ |
-|--------|:---:|:---:|:-----------:|:--------------------------:|
-| F2-score | 0.286 ± 0.185 | 0.281 ± 0.187 | 0.290 ± 0.192 | 0.044 |
-| AUROC | 0.687 ± 0.166 | 0.683 ± 0.169 | 0.696 ± 0.167 | 0.086 |
-| AUPRC | 0.258 ± 0.269 | 0.260 ± 0.270 | 0.270 ± 0.275 | 0.055 |
-
-All pooled pairwise Cliff's $\delta$ values are negligible ($|\delta| < 0.09$).
-
-**Bayesian evidence for equivalence.** Because the frequentist tests above can only fail to reject $H_0$ — not affirm it — we supplement with a Bayesian analysis using the BIC approximation to the Bayes factor (Masson, 2011; Wagenmakers, 2007). The omnibus $BF_{01}$ (evidence favouring $H_0$: no distance effect) is:
-
-| Metric | $H$ | $p$ | $BF_{01}$ | Interpretation |
-|--------|:---:|:---:|:---------:|:--------------:|
-| F2-score | 1.36 | 0.507 | 767 | Extreme evidence for $H_0$ |
-| AUROC | 6.12 | 0.047 | 71 | Very strong evidence for $H_0$ |
-| AUPRC | 2.76 | 0.252 | 381 | Extreme evidence for $H_0$ |
-
-All three Bayes factors exceed $BF_{01} > 70$, providing "very strong" to "extreme" evidence on the Jeffreys (1961) scale that the distance metric has no effect on downstream classification. Even for AUROC — where the frequentist $p = 0.047$ narrowly crosses the uncorrected $\alpha = 0.05$ threshold — the Bayesian analysis firmly favours $H_0$, illustrating a classic large-$N$ divergence between $p$-values and Bayes factors.
-
-![Distance Metric Violin](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig5_distance_violin.png)
-*Fig. 6. Performance distributions by distance metric (Within-domain and Mixed modes). F2-score, AUROC, and AUPRC distributions are virtually indistinguishable across MMD, DTW, and Wasserstein, consistent with $|\delta| < 0.15$ for all pairwise comparisons.*
-
-Notably, 42.5% of subjects switch domain groups depending on the distance metric used, yet downstream classification performance remains indistinguishable ($\eta^2 < 0.004$), demonstrating that the distance metric–performance pathway is effectively decoupled. Domain membership ($S_{TG} < 0.031$) is similarly negligible: the domain gap $\Delta = Y_{\text{out}} - Y_{\text{in}}$ is small and mostly non-significant (11–16/63 Bonferroni-significant comparisons, $|\Delta| < 0.11$), with the curious reversal pattern ($\Delta > 0$ in within-domain/mixed modes) discussed further in §5.3.
-
-**Verdict — H2 strongly supported; H3 not supported.** Distance metric choice does not influence classification performance ($BF_{01} > 70$, all $|\delta| < 0.09$). Domain membership effects are negligible per Sobol and do not alter strategy rankings.
-
-### 4.4 Robustness Validation
-
-#### 4.4.1 Seed Convergence
+#### 4.3.1 Seed Convergence
 
 Subsampling analysis confirms ranking stability:
 
@@ -358,18 +321,18 @@ Subsampling analysis confirms ranking stability:
 
 By $k=11$ (of 12 seeds), F2 and AUPRC rankings are perfectly stable; AUROC rankings stabilize with $\sigma = 0.147$.
 
-Fig. 7 visualizes these convergence trajectories. The monotonically decreasing $\sigma_{\text{rank}}(k)$ curves confirm that 12 seeds provide sufficient statistical power for stable strategy rankings.
+Fig. 6 visualizes these convergence trajectories. The monotonically decreasing $\sigma_{\text{rank}}(k)$ curves confirm that 12 seeds provide sufficient statistical power for stable strategy rankings.
 
 ![Seed Convergence](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig8_seed_convergence.png)
-*Fig. 7. Ranking stability ($\sigma_{\text{rank}}$) as a function of seed subset size $k$. All three primary metrics show monotonic convergence, confirming that $n = 12$ seeds is sufficient.*
+*Fig. 6. Ranking stability ($\sigma_{\text{rank}}$) as a function of seed subset size $k$. All three primary metrics show monotonic convergence, confirming that $n = 12$ seeds is sufficient.*
 
-#### 4.4.2 Cross-Metric Concordance
+#### 4.3.2 Cross-Metric Concordance
 
 Kendall’s $W = 0.643$ ($k = 7$ metrics: F2, AUROC, F1, AUPRC, Recall, Precision, Accuracy; $n = 7$ strategies) indicates **moderate agreement** in strategy rankings across all evaluation metrics.
 
 Strongest pairwise concordance: AUROC ↔ AUPRC ($\rho = 0.929$), F2 ↔ AUPRC ($\rho = 0.821$), F2 ↔ AUROC ($\rho = 0.786$).
 
-#### 4.4.3 Power Analysis
+#### 4.3.3 Power Analysis
 
 With $n = 12$ seeds per cell, Mann-Whitney $U$ detects:
 - Per-distance cell ($n = 12$): $|\delta_{\min}| \approx 0.923$ — only **large** effects detectable
@@ -391,7 +354,7 @@ The central unexpected finding — that three fundamentally different distance m
 | MMD vs DTW | 0.116 (n.s.) |
 | Wasserstein vs DTW | 0.444 |
 
-DTW diverges substantially from MMD and Wasserstein ($\rho = 0.12$, $p = 0.29$), meaning DTW — which operates on temporal trajectory shape — captures distributional properties genuinely distinct from the sample-level statistics used by MMD and Wasserstein. Consequently, 42.5% of subjects switch domain groups depending on the metric used. Yet this produces no measurable effect on classification ($\eta^2 < 0.004$, $BF_{01} = 71$–$767$; §4.3). The Bayesian analysis is particularly important here: because H2 is a null claim ("distance does not matter"), the frequentist framework can only fail to reject — it cannot affirm the null. The Bayes factors provide this affirmation, placing the evidence firmly in the "very strong" to "extreme" range for all three metrics (Jeffreys, 1961). Three mechanisms explain this decoupling:
+DTW diverges substantially from MMD and Wasserstein ($\rho = 0.12$, $p = 0.29$), meaning DTW — which operates on temporal trajectory shape — captures distributional properties genuinely distinct from the sample-level statistics used by MMD and Wasserstein. Consequently, 42.5% of subjects switch domain groups depending on the metric used. Yet this produces no measurable effect on classification ($\eta^2 < 0.004$, $BF_{01} = 71$–$767$; Appendix F). The Bayesian analysis is particularly important here: because H2 is a null claim ("distance does not matter"), the frequentist framework can only fail to reject — it cannot affirm the null. The Bayes factors provide this affirmation, placing the evidence firmly in the "very strong" to "extreme" range for all three metrics (Jeffreys, 1961). Three mechanisms explain this decoupling:
 
 **Physical coupling reduces effective dimensionality.** The bicycle model (Eq. 1) couples four of five raw signals ($\delta$, $\dot{\delta}$, $a_y$, $e_{\text{lane}}$) through the chain $\delta \to \dot{\delta} \to a_y \to e_{\text{lane}}$, with only $a_x$ dynamically independent. PCA confirms this: 45 principal components explain 95% of variance from 135 features (3:1 compression), and the first PC alone explains 22.2%.
 
@@ -423,10 +386,10 @@ In contrast, switching from Wasserstein to MMD for domain grouping yields $|\Del
 
 ### 5.3 The Domain Gap Reversal Phenomenon
 
-An unexpected finding is that the domain gap reverses in within-domain and mixed training: out-domain subjects sometimes outperform in-domain subjects ($\Delta > 0$). Fig. 8 visualizes this pattern through diverging horizontal bars for each Rebalancing × Mode × Membership cell. Green bars (positive $\Delta$) indicate that out-domain performance exceeds in-domain. Across all three metrics (F2-score, AUROC, AUPRC), the majority of bars point green — especially in the Mixed mode panel — demonstrating that domain shift does not systematically degrade performance. This visual is consistent with the Wilcoxon test results (H8: 0/63 to 12/63 significant) and provides direct evidence that the domain split does not introduce a meaningful performance penalty.
+An unexpected finding is that the domain gap reverses in within-domain and mixed training: out-domain subjects sometimes outperform in-domain subjects ($\Delta > 0$). Fig. 7 visualizes this pattern through diverging horizontal bars for each Rebalancing × Mode × Membership cell. Green bars (positive $\Delta$) indicate that out-domain performance exceeds in-domain. Across all three metrics (F2-score, AUROC, AUPRC), the majority of bars point green — especially in the Mixed mode panel — demonstrating that domain shift does not systematically degrade performance. This visual is consistent with the Wilcoxon test results (H8: 0/63 to 12/63 significant) and provides direct evidence that the domain split does not introduce a meaningful performance penalty.
 
 ![Domain Shift Direction](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig7_domain_shift_reversal.png)
-*Fig. 8. Domain gap direction ($\Delta = \text{out} - \text{in}$) by Rebalancing × Mode. Green = out-domain outperforms in-domain (gap reversal). The prevalence of green bars, especially in Mixed mode, demonstrates that domain shift does not cause systematic performance degradation.*
+*Fig. 7. Domain gap direction ($\Delta = \text{out} - \text{in}$) by Rebalancing × Mode. Green = out-domain outperforms in-domain (gap reversal). The prevalence of green bars, especially in Mixed mode, demonstrates that domain shift does not cause systematic performance degradation.*
 
 The sensitivity analysis quantifies this phenomenon: the $G \times M$ interaction accounts for only 0.6%–0.7% of total variance, confirming that while the direction reversal is qualitatively notable, its magnitude is small relative to the dominant $R$ and $M$ main effects. The reversal may be because:
 
@@ -548,8 +511,8 @@ The following 6 hypotheses were tested as part of the comprehensive analysis fra
 | H1 | Kruskal-Wallis $H$ (4 groups, 18 cells) | Mann-Whitney $U$: OS vs RUS (48 pairs), RUS vs BL (12 pairs), SMOTE vs SW-SMOTE (6 pairs); $r=0.1$ vs $r=0.5$ (18 pairs) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.00104$ (OS–RUS), $0.00417$ (RUS–BL), $0.00278$ (SM–SW, ratio) | Percentile $B=2{,}000$ | §4.2 |
 
 *Note: H1 is analysed jointly with H4 and H5 in §4.2 (mode dichotomy in §4.2.1, individual strategies in §4.2.2).*
-| H2 | Kruskal-Wallis $H$ (6 cells) | Mann-Whitney $U$ (pooled) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.0028$ | — | §4.3 |
-| H3 | — | Wilcoxon signed-rank (63 pairs) | Mean $\lvert\Delta\rvert$, Cliff's $\delta$ | Bonf. $\alpha'=0.00079$ | — | §4.3 |
+| H2 | Kruskal-Wallis $H$ (6 cells) | Mann-Whitney $U$ (pooled) | Cliff's $\delta$, $\eta^2$ | Bonf. $\alpha'=0.0028$ | — | App. F |
+| H3 | — | Wilcoxon signed-rank (63 pairs) | Mean $\lvert\Delta\rvert$, Cliff's $\delta$ | Bonf. $\alpha'=0.00079$ | — | App. F |
 | H4 | Friedman $\chi_F^2$ (14 strategies) | Nemenyi post-hoc (CD = 2.600) | Cliff's $\delta$, Kendall's $W$ | — | — | §4.2.1 |
 | H5 | Friedman $\chi_F^2$ (per mode, 9 tests) | Spearman $\rho$ (cross-mode ranking concordance) | Kendall's $W$ (3-mode) | — | — | §4.2.1 |
 
@@ -563,16 +526,16 @@ The following 6 hypotheses were tested as part of the comprehensive analysis fra
 | Pairwise unpaired | Mann-Whitney $U$ | Per-cell ($n=12$) or pooled ($n=36$) | H1, H2 |
 | Pairwise paired | Wilcoxon signed-rank | In-domain vs. out-domain pairs | H3, H8, H9 |
 | Post-hoc ranking | Nemenyi test | $\text{CD} = q_\alpha \sqrt{k(k+1)/6n}$ | H4 |
-| Subject ranking concordance | Spearman $\rho$, Kendall $\tau$ | 3 metric pairs | H2 (§4.3) |
-| Cross-metric agreement | Kendall's $W$ | $k=7$ metrics, $n=7$ strategies | Robustness (§4.4.2) |
+| Subject ranking concordance | Spearman $\rho$, Kendall $\tau$ | 3 metric pairs | H2 (App. F) |
+| Cross-metric agreement | Kendall's $W$ | $k=7$ metrics, $n=7$ strategies | Robustness (§4.3.2) |
 | Effect size (rank-based) | Cliff's $\delta$ | Thresholds: negligible/small/medium/large | H1, H2, H4 |
 | Effect size (variance) | $\eta^2 = H / (N-1)$ | Proportion of variance explained | H1, H2 |
 | Sensitivity analysis | Sobol indices ($S_i$, $S_{Ti}$) | Functional ANOVA decomposition; bootstrap $B=2{,}000$ | §4.1 |
-| Bayesian null support | $BF_{01}$ (BIC approx.) | Jeffreys scale; $BF_{01} > 10$: strong $H_0$ support | H2 (§4.3) |
+| Bayesian null support | $BF_{01}$ (BIC approx.) | Jeffreys scale; $BF_{01} > 10$: strong $H_0$ support | H2 (App. F) |
 | Effect size CI | Percentile bootstrap | $B=2{,}000$ | H1 |
 | Population mean CI | BCa bootstrap | $B=10{,}000$ | All |
 | Multiple testing | Bonferroni | $\alpha'=\alpha/m$, $\alpha=0.05$ | All |
-| Post-hoc power | Mann-Whitney detectable $\lvert\delta_{\min}\rvert$ | Per-cell: 0.923; pooled: 0.533 | §4.4.3 |
+| Post-hoc power | Mann-Whitney detectable $\lvert\delta_{\min}\rvert$ | Per-cell: 0.923; pooled: 0.533 | §4.3.3 |
 
 ## Appendix E: One-Factor-at-a-Time (OFAT) Analysis
 
@@ -599,3 +562,56 @@ Taken together, the OFAT analysis corroborates the Sobol ranking ($M > R \gg D \
 
 ![OFAT Membership](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig_s_ofat_level.png)
 *Fig. S4. OFAT analysis for the Membership factor ($G$). Each line represents one of 63 fixed conditions ($R \times D \times M$).*
+
+## Appendix F: Distance Metric Equivalence — Full Statistical Analysis (RQ2: H2, H3)
+
+This appendix provides the complete statistical tests for the distance metric and domain membership effects summarised in §4.3. The sensitivity analysis (§4.1) established that Distance ($S_{TD} < 0.015$) and Membership ($S_{TG} < 0.031$) are negligible factors. The following subsections provide confirmatory evidence.
+
+### F.1 Distance Metric Effect (H2)
+
+Consistent with the near-zero Sobol index ($S_{TD} < 0.015$), the Kruskal–Wallis test (6 cells = mode × membership, pooling strategies) confirms negligible distance metric effects, with isolated statistical significance confined to cross-domain AUROC cells:
+
+| Metric | Bonf. significant cells | Mean $\eta^2$ | Max $\eta^2$ |
+|--------|:-----------------------:|:-------------:|:------------:|
+| F2-score | 0/6 | 0.004 | 0.023 |
+| AUROC | 2/6 | 0.089 | 0.322 |
+| AUPRC | 2/6 | 0.038 | 0.117 |
+
+The elevated AUROC $\eta^2$ is driven entirely by the two cross-domain cells, where all strategies perform near chance (AUROC $\approx$ 0.51–0.53) and low within-group variance inflates the statistic despite absolute mean differences of < 2 percentage points. In the fully pooled analysis, $\eta^2 < 0.003$ across all metrics.
+
+Pooled performance across all strategies:
+
+| Metric | MMD | DTW | Wasserstein | Max $\lvert\delta\rvert$ |
+|--------|:---:|:---:|:-----------:|:--------------------------:|
+| F2-score | 0.286 ± 0.185 | 0.281 ± 0.187 | 0.290 ± 0.192 | 0.044 |
+| AUROC | 0.687 ± 0.166 | 0.683 ± 0.169 | 0.696 ± 0.167 | 0.086 |
+| AUPRC | 0.258 ± 0.269 | 0.260 ± 0.270 | 0.270 ± 0.275 | 0.055 |
+
+All pooled pairwise Cliff's $\delta$ values are negligible ($|\delta| < 0.09$).
+
+**Bayesian evidence for equivalence.** Because the frequentist tests can only fail to reject $H_0$ — not affirm it — we supplement with a Bayesian analysis using the BIC approximation to the Bayes factor (Masson, 2011; Wagenmakers, 2007). The omnibus $BF_{01}$ (evidence favouring $H_0$: no distance effect) is:
+
+| Metric | $H$ | $p$ | $BF_{01}$ | Interpretation |
+|--------|:---:|:---:|:---------:|:--------------:|
+| F2-score | 1.36 | 0.507 | 767 | Extreme evidence for $H_0$ |
+| AUROC | 6.12 | 0.047 | 71 | Very strong evidence for $H_0$ |
+| AUPRC | 2.76 | 0.252 | 381 | Extreme evidence for $H_0$ |
+
+All three Bayes factors exceed $BF_{01} > 70$, providing "very strong" to "extreme" evidence on the Jeffreys (1961) scale that the distance metric has no effect on downstream classification. Even for AUROC — where the frequentist $p = 0.047$ narrowly crosses the uncorrected $\alpha = 0.05$ threshold — the Bayesian analysis firmly favours $H_0$, illustrating a classic large-$N$ divergence between $p$-values and Bayes factors.
+
+![Distance Metric Violin](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig5_distance_violin.png)
+*Fig. F1. Performance distributions by distance metric (Within-domain and Mixed modes). F2-score, AUROC, and AUPRC distributions are virtually indistinguishable across MMD, DTW, and Wasserstein, consistent with $|\delta| < 0.15$ for all pairwise comparisons.*
+
+### F.2 Domain Membership Effect (H3)
+
+Consistent with the negligible Membership Sobol index ($S_{TG} < 0.031$), the domain gap $\Delta = Y_{\text{out}} - Y_{\text{in}}$ is generally small and non-significant:
+
+| Metric | Significant / 63 | Mean $\lvert\Delta\rvert$ range |
+|--------|:-----------------:|:-------------------------------:|
+| F2-score | 11 | 0.032–0.043 |
+| AUROC | 12 | 0.018–0.092 |
+| AUPRC | 16 | 0.016–0.114 |
+
+All 63 Wilcoxon signed-rank tests per metric (7 strategies × 3 modes × 3 distances, paired by seed) use Bonferroni $\alpha' = 0.00079$. Within-domain and mixed training often show **positive** $\Delta$ (out-domain outperforms in-domain), a reversal discussed in §5.3.
+
+**Verdict — H2 strongly supported; H3 not supported.** Distance metric choice does not influence classification performance ($BF_{01} > 70$, all $|\delta| < 0.09$). Domain membership effects are negligible per Sobol and do not alter strategy rankings.
