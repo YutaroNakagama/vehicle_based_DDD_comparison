@@ -300,9 +300,13 @@ Analogous ratios are 95.8\% (AUROC) and 96.1\% (AUPRC), confirming that Mode, Re
 
 The interaction term $S_{R \times M}$ is not merely statistically present but practically decisive: it produces a full ranking reversal between modes. The Spearman rank correlation between the 7-strategy ranking vectors in cross-domain vs. within-domain is:
 
-$$\rho_{\text{cross,within}} = -0.79 \;\text{to}\; -0.86 \quad (p < 0.04) \tag{5}$$
+$$\rho_{\text{cross,within}} = -0.74 \;\text{to}\; -0.89 \tag{5}$$
 
-while within-domain vs. mixed yields $\rho \geq +0.96$ ($p < 0.001$). This sign reversal maps directly onto the Sobol interaction: the 21.2\% of F2 variance attributed to $R \times M$ manifests as a qualitative change in which strategy is optimal, not merely a quantitative shift in effect magnitude. The practical consequence is stark: a practitioner who selects a rebalancing strategy based on cross-domain results would deploy the *worst* strategy for within-domain operation, and vice versa (Table 2).
+while within-domain vs. mixed yields $\rho \geq +0.99$ ($p < 0.001$). This sign reversal maps directly onto the Sobol interaction: the 21.2\% of F2 variance attributed to $R \times M$ manifests as a qualitative change in which strategy is optimal, not merely a quantitative shift in effect magnitude. The practical consequence is stark: a practitioner who selects a rebalancing strategy based on cross-domain results would deploy the *worst* strategy for within-domain operation, and vice versa (Table 2).
+
+![Ranking Reversal](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig_ranking_reversal.png)
+*Fig. 5. Strategy ranking reversal across training modes. Lines trace Friedman mean ranks (lower = better) for each of the 7 strategies. In Cross-domain, RUS variants rank highest; in Within-domain and Mixed, SMOTE-based strategies dominate — a complete inversion consistent with $\rho_{C,W} = -0.74$ to $-0.89$ (Eq. 5). The near-perfect overlap of Within and Mixed columns ($\rho \geq 0.99$) confirms mode equivalence.*
+
 
 **Mechanistic interpretation.** The mode-dependent reversal has a data-geometric explanation. In within-domain and mixed modes, each subject’s own data is present in the training set, providing a subject-specific decision boundary. Here the bottleneck is class imbalance: minority-class (drowsy) epochs are scarce, and oversampling via SMOTE generates synthetic examples along the minority-class manifold, enriching the decision boundary without discarding majority-class information. In quantitative terms:
 
@@ -316,10 +320,10 @@ AUPRC improvements confirm that SMOTE’s gains are genuine minority-class preci
 
 ### 5.3 The Domain Gap Reversal Phenomenon
 
-An unexpected finding is that the domain gap reverses in within-domain and mixed training: out-domain subjects sometimes outperform in-domain subjects ($\Delta > 0$). Fig. 5 visualizes this pattern through diverging horizontal bars for each Rebalancing × Mode × Membership cell. Green bars (positive $\Delta$) indicate that out-domain performance exceeds in-domain. Across all three metrics (F2-score, AUROC, AUPRC), the majority of bars point green — especially in the Mixed mode panel — demonstrating that domain shift does not systematically degrade performance. This visual is consistent with the Wilcoxon test results (H8: 0/63 to 12/63 significant) and provides direct evidence that the domain split does not introduce a meaningful performance penalty.
+An unexpected finding is that the domain gap reverses in within-domain and mixed training: out-domain subjects sometimes outperform in-domain subjects ($\Delta > 0$). Fig. 6 visualizes this pattern through diverging horizontal bars for each Rebalancing × Mode × Membership cell. Green bars (positive $\Delta$) indicate that out-domain performance exceeds in-domain. Across all three metrics (F2-score, AUROC, AUPRC), the majority of bars point green — especially in the Mixed mode panel — demonstrating that domain shift does not systematically degrade performance. This visual is consistent with the Wilcoxon test results (H8: 0/63 to 12/63 significant) and provides direct evidence that the domain split does not introduce a meaningful performance penalty.
 
 ![Domain Shift Direction](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig7_domain_shift_reversal.png)
-*Fig. 5. Domain gap direction ($\Delta = \text{out} - \text{in}$) by Rebalancing × Mode. Green = out-domain outperforms in-domain (gap reversal). The prevalence of green bars, especially in Mixed mode, demonstrates that domain shift does not cause systematic performance degradation.*
+*Fig. 6. Domain gap direction ($\Delta = \text{out} - \text{in}$) by Rebalancing × Mode. Green = out-domain outperforms in-domain (gap reversal). The prevalence of green bars, especially in Mixed mode, demonstrates that domain shift does not cause systematic performance degradation.*
 
 The sensitivity analysis quantifies this phenomenon: the $G \times M$ interaction accounts for only 0.6%–0.7% of total variance, confirming that while the direction reversal is qualitatively notable, its magnitude is small relative to the dominant $R$ and $M$ main effects. The reversal may be because:
 
