@@ -218,7 +218,7 @@ Based on the literature and factorial design, we formulate 5 primary hypotheses 
 
 A total of 1,512 observations across 7 rebalancing strategies, 3 training modes, 3 distance metrics, 2 domain membership groups, and 12 random seeds were analyzed. The permutation test confirms a significant global rebalancing effect for F2-score ($T_{\text{obs}} = 13.41$, $p < 0.001$), AUROC ($T_{\text{obs}} = 10.35$, $p < 0.001$), and AUPRC ($p < 0.001$).
 
-Fig. 2 presents a variance-based sensitivity analysis (functional ANOVA decomposition) that decomposes total variance into main-effect and interaction contributions for each factor. **Mode** contributes the largest main effect ($S_M = 0.31$–$0.50$), followed by **Rebalancing** ($S_R = 0.24$–$0.29$). Both factors also participate in a substantial $R \times M$ interaction (21.2% of F2-score variance, 15.3% of AUROC variance). The total-order indices — which include all interactions — show that Mode accounts for $S_{TM} = 0.48$–$0.66$ and Rebalancing for $S_{TR} = 0.40$–$0.46$ of total variance. In contrast, **Distance** ($S_{TD} < 0.015$) and **Membership** ($S_{TG} < 0.031$) are negligible even when interactions are included. Residual variance (seed-to-seed variation) accounts for 7.9%–21.9%. This decomposition establishes the central narrative: rebalancing and training mode, including their interaction, account for $> 80$% of systematic variance; domain grouping strategy does not. Sections 4.3.1 and 4.3.2 confirm and explain this negligibility through detailed hypothesis tests.
+Fig. 2 presents a variance-based sensitivity analysis (functional ANOVA decomposition) that decomposes total variance into main-effect and interaction contributions for each factor. **Mode** contributes the largest main effect ($S_M = 0.31$–$0.50$), followed by **Rebalancing** ($S_R = 0.24$–$0.29$). Both factors also participate in a substantial $R \times M$ interaction (21.2% of F2-score variance, 15.3% of AUROC variance). The total-order indices — which include all interactions — show that Mode accounts for $S_{TM} = 0.48$–$0.66$ and Rebalancing for $S_{TR} = 0.40$–$0.46$ of total variance. In contrast, **Distance** ($S_{TD} < 0.015$) and **Membership** ($S_{TG} < 0.031$) are negligible even when interactions are included. Residual variance (seed-to-seed variation) accounts for 7.9%–21.9%. This decomposition establishes the central narrative: rebalancing and training mode, including their interaction, account for $> 80$% of systematic variance; domain grouping strategy does not. Sections 4.3.1 and 4.3.2 confirm and explain this negligibility through detailed hypothesis tests. A complementary one-factor-at-a-time (OFAT) analysis (Appendix E, Figs. S1–S4) visualises the per-condition effect of each factor, confirming the Sobol ranking and revealing that the $R$ effect is strongly mode-dependent.
 
 ![Sensitivity Analysis](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig2_effect_hierarchy.png)
 *Fig. 2. Variance-based sensitivity analysis (Sobol indices) for the four experimental factors across F2-score, AUROC, and AUPRC. Solid bars show first-order indices ($S_i$, main effect); hatched bars show interaction contributions ($S_{Ti} - S_i$). Error bars indicate 95% bootstrap CIs on total-order indices ($S_{Ti}$). Mode and Rebalancing dominate; Distance and Membership are negligible.*
@@ -639,3 +639,29 @@ The following 6 hypotheses were tested as part of the comprehensive analysis fra
 | Population mean CI | BCa bootstrap | $B=10{,}000$ | All |
 | Multiple testing | Bonferroni | $\alpha'=\alpha/m$, $\alpha=0.05$ | All |
 | Post-hoc power | Mann-Whitney detectable $\lvert\delta_{\min}\rvert$ | Per-cell: 0.923; pooled: 0.533 | §4.5.3 |
+
+## Appendix E: One-Factor-at-a-Time (OFAT) Analysis
+
+The Sobol decomposition in §4.1 quantifies each factor's contribution to total variance but, as a global summary, does not reveal how the effect varies across individual experimental conditions. To provide this complementary view, we perform a one-factor-at-a-time (OFAT) analysis: for each target factor, we fix every other factor at each of its levels, sweep the target factor, and plot the resulting performance trajectory. Each thin line in Figs. S1–S4 represents one such fixed condition (averaged over 12 seeds); the bold black line is the grand OFAT mean and the grey band indicates ±1 SD across conditions.
+
+**Rebalancing ($R$; Fig. S1).** SMOTE and SW-SMOTE variants consistently outperform Baseline and RUS across all 18 fixed conditions ($D \times G \times M$). The spread across conditions (Δ = 0.08–0.55 for F2-score) reflects the $R \times M$ interaction: cross-domain conditions cluster at the bottom with small rebalancing gains, while within-domain and mixed conditions fan upward with large SMOTE-driven improvements.
+
+**Distance ($D$; Fig. S2).** The OFAT mean is flat across MMD, DTW, and Wasserstein, and individual condition lines remain nearly parallel. This confirms that $D$ is negligible regardless of which other factors are held fixed ($S_{TD} < 0.015$).
+
+**Mode ($M$; Fig. S3).** Every condition shows a monotonic rise from cross-domain to within-domain/mixed. At the "Cross" level, all lines converge near floor performance (F2 ≈ 0.05–0.20); at "Within" and "Mixed", the lines fan out according to the rebalancing strategy, again evidencing the $R \times M$ interaction.
+
+**Membership ($G$; Fig. S4).** The OFAT mean shows a slight upward slope from In to Out, but individual lines diverge in both directions. The effect is condition-dependent and averages to near zero, consistent with $S_{TG} < 0.031$.
+
+Taken together, the OFAT analysis corroborates the Sobol ranking ($M > R \gg D \approx G$) while providing condition-level granularity that the variance decomposition summarises away.
+
+![OFAT Rebalancing](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig_s_ofat_condition.png)
+*Fig. S1. OFAT analysis for the Rebalancing factor ($R$). Each line represents one of 18 fixed conditions ($D \times G \times M$), averaged over 12 seeds. Bold line: grand OFAT mean; grey band: ±1 SD.*
+
+![OFAT Distance](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig_s_ofat_distance.png)
+*Fig. S2. OFAT analysis for the Distance factor ($D$). Each line represents one of 42 fixed conditions ($R \times G \times M$).*
+
+![OFAT Mode](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig_s_ofat_mode.png)
+*Fig. S3. OFAT analysis for the Mode factor ($M$). Each line represents one of 42 fixed conditions ($R \times D \times G$).*
+
+![OFAT Membership](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig_s_ofat_level.png)
+*Fig. S4. OFAT analysis for the Membership factor ($G$). Each line represents one of 63 fixed conditions ($R \times D \times M$).*
