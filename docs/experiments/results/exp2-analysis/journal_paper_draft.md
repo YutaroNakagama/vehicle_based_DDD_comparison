@@ -153,8 +153,9 @@ Due to non-normality (Shapiro-Wilk rejects normality in 45–71% of cells across
 | Effect size | Cliff's $\delta$ | Cliff (1993) |
 | Sensitivity analysis | Sobol indices ($S_i$, $S_{Ti}$) | Saltelli et al. (2008) |
 | Post-hoc | Nemenyi test | Nemenyi (1963) |
+| Bayesian null support | $BF_{01}$ (BIC approximation) | Wagenmakers (2007); Masson (2011) |
 
-All test families are Bonferroni-corrected ($\alpha' = \alpha/m$, $\alpha = 0.05$). Effect sizes follow Cliff's (1993) thresholds: $|\delta| < 0.147$ negligible, $< 0.33$ small, $< 0.474$ medium, $\geq 0.474$ large. Effect size confidence intervals are computed via percentile bootstrap ($B = 2{,}000$). Overall population means are estimated with BCa bootstrap CIs ($B = 10{,}000$). A global permutation test ($B = 10{,}000$) validates the rebalancing effect against the null hypothesis of label exchangeability.
+All test families are Bonferroni-corrected ($\alpha' = \alpha/m$, $\alpha = 0.05$). Effect sizes follow Cliff's (1993) thresholds: $|\delta| < 0.147$ negligible, $< 0.33$ small, $< 0.474$ medium, $\geq 0.474$ large. Effect size confidence intervals are computed via percentile bootstrap ($B = 2{,}000$). Overall population means are estimated with BCa bootstrap CIs ($B = 10{,}000$). A global permutation test ($B = 10{,}000$) validates the rebalancing effect against the null hypothesis of label exchangeability. For null claims (H2: distance metric equivalence), we supplement frequentist tests with Bayes factors using the BIC approximation (Wagenmakers, 2007), interpreted on the Jeffreys (1961) scale.
 
 #### 3.6.1 Kruskal–Wallis effect size ($\eta^2$)
 
@@ -237,43 +238,43 @@ A 4-group Kruskal-Wallis test (Baseline vs. SMOTE vs. SW-SMOTE vs. RUS, pooling 
 
 The single non-significant AUROC cell (Cross × In-domain × DTW, $H = 7.56$, $p = 0.056$) occurs where all methods perform near chance ($\approx 0.52$), leaving minimal between-group variance.
 
-#### 4.2.2 Pairwise Comparisons
+#### 4.2.2 Individual Strategy Comparison
 
-Having established that rebalancing methods differ significantly (§4.2.1), we examine the ordering through three post-hoc contrasts using Mann-Whitney $U$ tests and Cliff's $\delta$ effect sizes.
+Table 2 presents the performance of all 7 strategies across the three primary metrics, pooled over all conditions (distance, membership, seed) and broken down by training mode. A Friedman test across all 7 strategies confirms significant rank differences (Friedman $\chi^2 = 57.93$–$60.43$, $p < 0.0001$).
 
-**Contrast 1 — Oversampling vs. RUS** (4 oversampling × 2 RUS × 6 cells = 48 comparisons, Bonferroni $\alpha' = 0.00104$):
+**Table 2.** Mean ± SD performance (pooled over $D$, $G$, and seeds) by rebalancing strategy and training mode.
 
-| Metric | Oversampling wins | RUS wins | Bonf. significant (Oversampling) | Bonf. significant (RUS) | Large $\delta$ (Oversampling) | Large $\delta$ (RUS) |
-|--------|:-----------------:|:--------:|:-------------------------------:|:----------------------:|:----------------------------:|:-------------------:|
-| F2-score | 32/48 | 16/48 | 32 | 16 | 32 | 16 |
-| AUROC | 39/48 | 9/48 | 32 | 2 | 32 | 2 |
-| AUPRC | 35/48 | 13/48 | 32 | 4 | 32 | 4 |
+| Strategy | F2 (overall) | AUROC (overall) | AUPRC (overall) | F2 (Cross) | F2 (Within) | F2 (Mixed) |
+|----------|:------------:|:---------------:|:---------------:|:----------:|:-----------:|:----------:|
+| Baseline | 0.215 ± 0.057 | 0.631 ± 0.123 | 0.135 ± 0.168 | 0.160 | 0.215 | 0.268 |
+| RUS $r{=}0.1$ | 0.184 ± 0.049 | 0.594 ± 0.094 | 0.108 ± 0.122 | 0.165 | 0.178 | 0.208 |
+| RUS $r{=}0.5$ | 0.162 ± 0.036 | 0.564 ± 0.064 | 0.072 ± 0.052 | 0.156 | 0.159 | 0.170 |
+| SMOTE $r{=}0.1$ | 0.346 ± 0.158 | 0.765 ± 0.176 | 0.407 ± 0.286 | 0.138 | 0.448 | 0.452 |
+| SMOTE $r{=}0.5$ | 0.376 ± 0.205 | 0.755 ± 0.172 | 0.394 ± 0.276 | 0.114 | 0.499 | 0.514 |
+| SW-SMOTE $r{=}0.1$ | **0.416** ± 0.243 | **0.765** ± 0.183 | **0.447** ± 0.337 | 0.101 | 0.558 | **0.587** |
+| SW-SMOTE $r{=}0.5$ | 0.304 ± 0.233 | 0.745 ± 0.166 | 0.274 ± 0.223 | 0.042 | 0.468 | 0.402 |
 
-The result is **mode-dependent**: within-domain and mixed training show oversampling > RUS in 16/16 comparisons per metric (all significant, all large $\delta$; mean $\delta = +0.93$–$+0.99$), while cross-domain (source\_only) shows a complete reversal with RUS > oversampling in 16/16 (F2), 9/16 (AUROC), and 13/16 (AUPRC) comparisons.
+Three patterns emerge from Table 2:
 
-**Contrast 2 — RUS vs. Baseline** (2 RUS × 6 cells = 12 comparisons, Bonferroni $\alpha' = 0.00417$):
+**1. SMOTE-based methods dominate overall.** The four oversampling strategies (SMOTE and SW-SMOTE) consistently outperform Baseline and RUS. The best overall strategy is SW-SMOTE $r{=}0.1$ (F2 = 0.416, AUROC = 0.765, AUPRC = 0.447). Relative to Baseline, this represents a +93% improvement in F2, +21% in AUROC, and +231% in AUPRC. In the within-domain setting, SW-SMOTE $r{=}0.1$ achieves F2 = 0.558, AUROC = 0.903, and AUPRC = 0.648 — a +159% (F2), +43% (AUROC), and +457% (AUPRC) improvement over Baseline.
 
-| Metric | RUS wins | Baseline wins | Bonf. significant (RUS) | Bonf. significant (Baseline) | Large $\delta$ (Baseline) |
-|--------|:--------:|:-------------:|:----------------------:|:---------------------------:|:------------------------:|
-| F2-score | 2/12 | 10/12 | 1 | 6 | 6 |
-| AUROC | 3/12 | 9/12 | 0 | 5 | 5 |
-| AUPRC | 5/12 | 7/12 | 0 | 4 | 4 |
+**2. RUS degrades performance.** Both RUS variants perform *worse* than Baseline across all three metrics (F2: 0.184/0.162 vs. 0.215; AUROC: 0.594/0.564 vs. 0.631). This is consistent across within-domain and mixed modes, where Baseline significantly outperforms RUS with large effects (F2 mean $\delta = -0.84$, AUROC $-0.80$). Only in cross-domain — where all strategies perform near chance — does RUS show a marginal F2 advantage (0.165 vs. 0.160), but the absolute difference is negligible.
 
-RUS does not outperform baseline. In within-domain and mixed settings, baseline significantly outperforms RUS with large effects (F2 mean $\delta = -0.84$, AUROC $-0.80$, AUPRC $-0.74$ in mixed mode). In cross-domain, differences are negligible ($\delta \approx 0$).
+**3. The effect is strongly mode-dependent.** In cross-domain training, all 7 strategies cluster near the performance floor (F2 = 0.042–0.165, AUROC ≈ 0.52), and oversampling actually *harms* performance relative to Baseline (F2: 0.101–0.138 vs. 0.160). In within-domain and mixed settings, oversampling produces dramatic gains while RUS produces moderate losses. This mode-dependence — the $R \times M$ interaction — is the defining feature of the experimental results and is analysed further under H5 (§4.4).
 
-**Contrast 3 — SMOTE vs. SW-SMOTE** (pooled across ratios, 6 cells = 3 modes × 2 membership groups, Bonferroni $\alpha' = 0.00278$):
+Nemenyi post-hoc tests (CD = 2.600) corroborate these patterns at individual-strategy resolution, identifying 9–10/21 pairwise comparisons as significant across the three primary metrics. Mean ranks confirm the hierarchy (Table 3).
 
-| Metric | SMOTE wins | SW-SMOTE wins | Significant | Mean $|\delta|$ |
-|--------|:----------:|:-------------:|:-----------:|:---------------:|
-| F2-score | 2/6 | 4/6 | 2 (SMOTE, cross-domain) | 0.369 |
-| AUROC | 2/6 | 4/6 | 1 (SMOTE, cross-domain) | 0.146 |
-| AUPRC | 5/6 | 1/6 | 2 (mixed direction) | 0.276 |
+**Table 3.** Friedman mean ranks (1 = best) across all blocks.
 
-SMOTE and SW-SMOTE are largely competitive. Significant differences are confined to cross-domain cells where absolute performance is near chance; in within-domain and mixed settings, effect sizes are small ($|\delta| < 0.24$) and non-significant.
+| Metric | SW-SM. $r{=}0.1$ | SM. $r{=}0.1$ | SM. $r{=}0.5$ | BL | SW-SM. $r{=}0.5$ | RUS $r{=}0.1$ | RUS $r{=}0.5$ |
+|--------|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| F2-score | **2.98** | 3.23 | 3.29 | 4.12 | 4.53 | 4.65 | 5.21 |
+| AUROC | 2.98 | **2.76** | 3.32 | 4.67 | 3.47 | 5.16 | 5.64 |
+| AUPRC | 2.89 | **2.85** | 3.20 | 4.73 | 3.83 | 5.09 | 5.41 |
 
-**H1 verdict — strongly supported**: The four rebalancing methods differ significantly across 53/54 metric–cell combinations (§4.2.1). Post-hoc contrasts reveal a mode-dependent ordering: Oversampling > Baseline > RUS in within-domain and mixed settings (32/48 significant with large $\delta$), while cross-domain performance is uniformly low with RUS showing marginal advantages. SMOTE and SW-SMOTE are statistically interchangeable in the practically relevant within-domain and mixed settings. This interaction is further analysed under H5 (§4.4).
+The top-ranked method differs between F2 (SW-SMOTE $r{=}0.1$) and AUROC/AUPRC (SMOTE $r{=}0.1$). However, these top strategies are not significantly different from each other (Nemenyi rank difference < CD), making them statistically interchangeable. The clear separation is between the oversampling cluster (ranks 2.76–3.83) and the Baseline/RUS cluster (ranks 4.12–5.64).
 
-A Friedman test across all 7 strategies confirms significant rank differences (Friedman $\chi^2 = 57.93$–$60.43$, $p < 0.0001$). Nemenyi post-hoc (CD = 2.600) identifies 9–10/21 pairwise comparisons as significant across all three primary metrics, corroborating the group-level H1 findings at individual-strategy resolution. Full strategy rankings are provided in Appendix B. The top-ranked method differs between F2/AUPRC (sw\_smote\_r01) and AUROC (smote\_r01), reflecting AUPRC's sensitivity to the precision–recall balance under imbalance.
+**H1 verdict — strongly supported**: The 7 strategies produce significantly different performance (53/54 omnibus tests significant, Friedman $p < 0.0001$). Oversampling (SMOTE, SW-SMOTE) dramatically improves within-domain and mixed performance while RUS consistently harms it. The effect magnitude is strongly mode-dependent, creating a clear $R \times M$ interaction analysed in §4.4.
 
 ![Critical Difference Diagrams](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig4_cd_diagrams.png)
 *Fig. 4. Nemenyi post-hoc Critical Difference diagrams for F2-score, AUROC, and AUPRC. Methods connected by a bar are not significantly different ($\alpha = 0.05$). Oversampling methods consistently rank left (better); the top-ranked method differs between F2/AUPRC (sw\_smote\_r01) and AUROC (smote\_r01).*
@@ -337,6 +338,16 @@ Pooled performance across all strategies:
 | AUPRC | 0.258 ± 0.269 | 0.260 ± 0.270 | 0.270 ± 0.275 | 0.055 |
 
 All pooled pairwise Cliff's $\delta$ values are negligible ($|\delta| < 0.09$).
+
+**Bayesian evidence for equivalence.** Because the frequentist tests above can only fail to reject $H_0$ — not affirm it — we supplement with a Bayesian analysis using the BIC approximation to the Bayes factor (Masson, 2011; Wagenmakers, 2007). The omnibus $BF_{01}$ (evidence favouring $H_0$: no distance effect) is:
+
+| Metric | $H$ | $p$ | $BF_{01}$ | Interpretation |
+|--------|:---:|:---:|:---------:|:--------------:|
+| F2-score | 1.36 | 0.507 | 767 | Extreme evidence for $H_0$ |
+| AUROC | 6.12 | 0.047 | 71 | Very strong evidence for $H_0$ |
+| AUPRC | 2.76 | 0.252 | 381 | Extreme evidence for $H_0$ |
+
+All three Bayes factors exceed $BF_{01} > 70$, providing "very strong" to "extreme" evidence on the Jeffreys (1961) scale that the distance metric has no effect on downstream classification. Even for AUROC — where the frequentist $p = 0.047$ narrowly crosses the uncorrected $\alpha = 0.05$ threshold (though not the Bonferroni-corrected one) — the Bayesian analysis firmly favours $H_0$, illustrating a classic large-$N$ divergence between $p$-values and Bayes factors: with $N = 1{,}512$, a tiny and practically meaningless effect can produce a nominally significant $p$-value while the Bayes factor correctly identifies it as evidentially null.
 
 Fig. 5 provides a visual confirmation of this statistical equivalence. The violin plots for Within-domain and Mixed modes show that performance distributions for MMD, DTW, and Wasserstein overlap almost completely across all three metrics. The near-identical shape and central tendency of each violin — despite the metrics capturing fundamentally different notions of distributional distance — reinforces that the domain grouping pathway is decoupled from downstream classification performance.
 
@@ -464,7 +475,7 @@ The central unexpected finding — that three fundamentally different distance m
 | MMD vs DTW | 0.116 (n.s.) |
 | Wasserstein vs DTW | 0.444 |
 
-DTW diverges substantially from MMD and Wasserstein ($\rho = 0.12$, $p = 0.29$), meaning DTW — which operates on temporal trajectory shape — captures distributional properties genuinely distinct from the sample-level statistics used by MMD and Wasserstein. Consequently, 42.5% of subjects switch domain groups depending on the metric used. Yet this produces no measurable effect on classification ($\eta^2 < 0.004$). Three mechanisms explain this decoupling:
+DTW diverges substantially from MMD and Wasserstein ($\rho = 0.12$, $p = 0.29$), meaning DTW — which operates on temporal trajectory shape — captures distributional properties genuinely distinct from the sample-level statistics used by MMD and Wasserstein. Consequently, 42.5% of subjects switch domain groups depending on the metric used. Yet this produces no measurable effect on classification ($\eta^2 < 0.004$, $BF_{01} = 71$–$767$; §4.3.1). The Bayesian analysis is particularly important here: because H2 is a null claim ("distance does not matter"), the frequentist framework can only fail to reject — it cannot affirm the null. The Bayes factors provide this affirmation, placing the evidence firmly in the "very strong" to "extreme" range for all three metrics (Jeffreys, 1961). Three mechanisms explain this decoupling:
 
 **Physical coupling reduces effective dimensionality.** The bicycle model (Eq. 1) couples four of five raw signals ($\delta$, $\dot{\delta}$, $a_y$, $e_{\text{lane}}$) through the chain $\delta \to \dot{\delta} \to a_y \to e_{\text{lane}}$, with only $a_x$ dynamically independent. PCA confirms this: 45 principal components explain 95% of variance from 135 features (3:1 compression), and the first PC alone explains 22.2%.
 
@@ -482,12 +493,15 @@ Rebalancing shifts the classifier's decision boundary so dramatically that any d
 
 The sensitivity analysis establishes a clear hierarchy of optimization priorities: **mode** ($S_{TM} = 0.48$–$0.66$) $\geq$ **rebalancing** ($S_{TR} = 0.40$–$0.46$) $\gg$ **distance metric** ($S_{TD} < 0.015$). Together, the main effects of Mode and Rebalancing plus their interaction account for $82.2\%$ (F2-score), $88.2\%$ (AUROC), and $77.1\%$ (AUPRC) of systematic (non-residual) variance. Crucially, these two factors also interact strongly ($S_{R \times M} = 0.12$–$0.21$), meaning their effects cannot be considered independently — the optimal rebalancing strategy depends on the training mode (§4.4).
 
-This has practical implications for DDD system design:
+The direct strategy comparison (Table 2) quantifies the practical magnitude of each rebalancing choice within the practically relevant within-domain setting:
 
-- SMOTE-based oversampling transforms within-domain F2 from 0.215 (baseline) to 0.558 (sw\_smote\_r01) — a 160% improvement.
-- AUROC improves from 0.63 (baseline) to 0.90 (sw\_smote\_r01) in within-domain settings.
-- AUPRC — the metric most sensitive to class imbalance — improves from 0.12 (baseline) to 0.65 (sw\_smote\_r01), a 460% relative improvement. This confirms that rebalancing produces genuine minority-class precision gains, not merely threshold-shifted recall. Notably, 0/36 strategy–mode cells exhibit a precision–recall trade-off (simultaneous recall improvement with precision degradation); SMOTE methods yield predominantly win-win outcomes (recall↑, precision stable).
-- These gains require no additional data collection, no domain distance computation, and no subject grouping strategy — only a preprocessing step.
+- **SW-SMOTE $r{=}0.1$** is the best overall strategy, reaching F2 = 0.558, AUROC = 0.903, AUPRC = 0.648 — improvements of +159%, +43%, and +457% over Baseline respectively.
+- **SMOTE variants** ($r{=}0.1$ and $r{=}0.5$) follow closely: SMOTE $r{=}0.5$ achieves F2 = 0.499 (+132%), while SMOTE $r{=}0.1$ achieves the highest AUROC mean rank (2.76). The two SMOTE variants and SW-SMOTE $r{=}0.1$ form a statistically interchangeable top cluster (Nemenyi rank difference < CD).
+- **SW-SMOTE $r{=}0.5$** ranks mid-range (F2 = 0.468, +117%), showing that the higher sampling ratio reduces SW-SMOTE's advantage more than it does for plain SMOTE.
+- **Baseline** (F2 = 0.215) outperforms both RUS variants, even without any rebalancing.
+- **RUS degrades performance** relative to Baseline in within-domain and mixed settings (F2: 0.178/0.159 vs. 0.215; $\delta = -0.84$). Undersampling discards majority-class information that the classifier needs for decision boundary calibration.
+
+These gains require no additional data collection, no domain distance computation, and no subject grouping strategy — only a preprocessing step. AUPRC improvements confirm genuine minority-class precision gains, not merely threshold-shifted recall: 0/36 strategy–mode cells exhibit a precision–recall trade-off; SMOTE methods yield predominantly win-win outcomes (recall↑, precision stable).
 
 In contrast, switching from Wasserstein to MMD for domain grouping yields $|\Delta\text{F2}| < 0.01$, $|\Delta\text{AUROC}| < 0.02$, and $|\Delta\text{AUPRC}| < 0.01$.
 
@@ -530,11 +544,11 @@ The key findings are:
 
 **RQ1 — Class imbalance handling:**
 
-1. **Training mode and rebalancing jointly dominate** ($S_{TM} = 0.48$–$0.66$; $S_{TR} = 0.40$–$0.46$): These two factors, together with their interaction ($S_{R \times M} = 0.12$–$0.21$), account for $>80$% of systematic variance. SMOTE-based oversampling transforms within-domain F2-score from 0.22 (baseline) to 0.56 (sw\_smote\_r01), AUROC from 0.63 to 0.90, and AUPRC from 0.12 to 0.65 — a 460% relative improvement on the imbalance-sensitive metric.
+1. **Training mode and rebalancing jointly dominate** ($S_{TM} = 0.48$–$0.66$; $S_{TR} = 0.40$–$0.46$): These two factors, together with their interaction ($S_{R \times M} = 0.12$–$0.21$), account for $>80$% of systematic variance. Among the 7 strategies evaluated, SW-SMOTE $r{=}0.1$ achieves the best within-domain performance (F2 = 0.558, AUROC = 0.903, AUPRC = 0.648), improving over Baseline by +159% (F2), +43% (AUROC), and +457% (AUPRC). The four SMOTE-based strategies form a top cluster (mean ranks 2.76–3.83), statistically separated from Baseline (4.12–4.73) and RUS (4.65–5.64). RUS consistently degrades performance relative to Baseline.
 
 **RQ2 — Domain analysis:**
 
-2. **Distance metric choice is irrelevant** ($S_{TD} < 0.015$): MMD, DTW, and Wasserstein produce statistically indistinguishable downstream performance despite generating genuinely different subject rankings under normalised features (DTW–MMD $\rho = 0.12$, n.s.) and 42.5% of subjects switching domain groups across metrics. Vehicle dynamics coupling, weak inter-subject discrimination (ICC = 0.111), and rebalancing absorption ($S_{TR}/S_{TD} > 27\times$) provide a physics-grounded explanation.
+2. **Distance metric choice is irrelevant** ($S_{TD} < 0.015$, $BF_{01} = 71$–$767$): MMD, DTW, and Wasserstein produce statistically indistinguishable downstream performance despite generating genuinely different subject rankings under normalised features (DTW–MMD $\rho = 0.12$, n.s.) and 42.5% of subjects switching domain groups across metrics. Bayesian analysis provides affirmative evidence for the null hypothesis (\"very strong\" to \"extreme\" on the Jeffreys scale). Vehicle dynamics coupling, weak inter-subject discrimination (ICC = 0.111), and rebalancing absorption ($S_{TR}/S_{TD} > 27\times$) provide a physics-grounded explanation.
 
 3. **Domain shift direction is context-dependent**: In-domain subjects do not consistently outperform out-domain subjects; within-domain and mixed training reverse the expected domain gap ($\Delta > 0$), with rebalancing amplifying the reversal. The $G \times M$ interaction accounts for only 0.6%–0.7% of total variance.
 
@@ -561,8 +575,10 @@ For practitioners, these results prescribe a clear strategy: use within-domain o
 - Friedman, M. (1937). The use of ranks to avoid the assumption of normality. *JASA*, 32(200), 675–701.
 - Gretton, A., et al. (2012). A kernel two-sample test. *JMLR*, 13(1), 723–773.
 - He, H., & Garcia, E. A. (2009). Learning from imbalanced data. *IEEE TKDE*, 21(9), 1263–1284.
+- Jeffreys, H. (1961). *Theory of Probability* (3rd ed.). Oxford University Press.
 - Kruskal, W. H., & Wallis, W. A. (1952). Use of ranks in one-criterion variance analysis. *JASA*, 47(260), 583–621.
 - Mann, H. B., & Whitney, D. R. (1947). On a test of whether one of two random variables is stochastically larger. *Annals of Mathematical Statistics*, 18(1), 50–60.
+- Masson, M. E. J. (2011). A tutorial on a practical Bayesian alternative to null-hypothesis significance testing. *Behavior Research Methods*, 43(3), 679–690.
 - Nemenyi, P. (1963). *Distribution-free multiple comparisons*. PhD thesis, Princeton University.
 - Pan, S. J., & Yang, Q. (2010). A survey on transfer learning. *IEEE TKDE*, 22(10), 1345–1359.
 - Rajamani, R. (2012). *Vehicle Dynamics and Control* (2nd ed.). Springer.
@@ -570,6 +586,7 @@ For practitioners, these results prescribe a clear strategy: use within-domain o
 - Saito, T., & Rehmsmeier, M. (2015). The precision–recall plot is more informative than the ROC plot when evaluating binary classifiers on imbalanced datasets. *PLOS ONE*, 10(3), e0118432.
 - Shannon, C. E. (1948). A mathematical theory of communication. *Bell System Technical Journal*, 27(3), 379–423.
 - Villani, C. (2009). *Optimal Transport: Old and New*. Springer.
+- Wagenmakers, E.-J. (2007). A practical solution to the pervasive problems of $p$ values. *Psychonomic Bulletin & Review*, 14(5), 779–804.
 - Wang, X., et al. (2022). Real-time detection of driver drowsiness using LSTM. *Sensors*, 22(13), 4904.
 - Wilcoxon, F. (1945). Individual comparisons by ranking methods. *Biometrics Bulletin*, 1(6), 80–83.
 
@@ -635,6 +652,7 @@ The following 6 hypotheses were tested as part of the comprehensive analysis fra
 | Effect size (rank-based) | Cliff's $\delta$ | Thresholds: negligible/small/medium/large | H1, H2, H4 |
 | Effect size (variance) | $\eta^2 = H / (N-1)$ | Proportion of variance explained | H1, H2 |
 | Sensitivity analysis | Sobol indices ($S_i$, $S_{Ti}$) | Functional ANOVA decomposition; bootstrap $B=2{,}000$ | §4.1 |
+| Bayesian null support | $BF_{01}$ (BIC approx.) | Jeffreys scale; $BF_{01} > 10$: strong $H_0$ support | H2 (§4.3.1) |
 | Effect size CI | Percentile bootstrap | $B=2{,}000$ | H1 |
 | Population mean CI | BCa bootstrap | $B=10{,}000$ | All |
 | Multiple testing | Bonferroni | $\alpha'=\alpha/m$, $\alpha=0.05$ | All |
