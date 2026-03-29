@@ -181,19 +181,30 @@ Higher $\eta^2$ values indicate a larger proportion of variance explained by the
 
 #### 3.6.2 Variance-based sensitivity analysis (Sobol indices)
 
-To quantify the relative importance of each factor and their interactions, we perform a functional ANOVA decomposition of the total variance. The balanced factorial design ($7 \times 3 \times 2 \times 3 \times 12$ seeds $= 1{,}512$ observations) permits exact computation of sum-of-squares for all main effects and interactions up to fourth order. The first-order Sobol index for factor $i$ is:
+To quantify the relative importance of each factor and their interactions, we adopt the Sobol--Hoeffding functional ANOVA decomposition (Sobol, 1993; Saltelli et al., 2008). For a model output $Y = f(X_1, \ldots, X_k)$ with $k$ input factors, the total variance admits a unique orthogonal decomposition:
 
-$$
-S_i = \frac{\text{SS}_i}{\text{SS}_{\text{total}}}
-$$
+$$V(Y) = \sum_{i=1}^{k} V_i + \sum_{i<j} V_{ij} + \cdots + V_{1,2,\ldots,k} \tag{3}$$
 
-and the total-order index, which includes all interactions involving factor $i$, is:
+where $V_i = \operatorname{Var}_{X_i}\!\bigl[\mathbb{E}_{X_{\sim i}}(Y \mid X_i)\bigr]$ is the variance of the conditional expectation over factor $i$ alone, $V_{ij}$ captures the joint effect of $(X_i, X_j)$ not accounted for by their individual contributions, and higher-order terms follow analogously. The first-order Sobol index normalises each contribution by the total variance:
 
-$$
-S_{Ti} = S_i + \sum_{j \neq i} S_{ij} + \sum_{j < k, \, i \in \{j,k\}} S_{ijk} + \cdots
-$$
+$$S_i = \frac{V_i}{V(Y)} \tag{4}$$
 
-The difference $S_{Ti} - S_i$ quantifies the fraction of variance attributable to interactions involving factor $i$. Confidence intervals (95%) are obtained by percentile bootstrap ($B = 2{,}000$) resampling over seeds to preserve the factorial structure.
+and the total-order index aggregates the main effect of factor $i$ with all interactions in which it participates:
+
+$$S_{Ti} = S_i + \sum_{j \neq i} S_{ij} + \sum_{\substack{j<k \\ i \in \{j,k\}}} S_{ijk} + \cdots = 1 - \frac{V_{\sim i}}{V(Y)} \tag{5}$$
+
+where $V_{\sim i} = \operatorname{Var}_{X_{\sim i}}\!\bigl[\mathbb{E}_{X_i}(Y \mid X_{\sim i})\bigr]$. The difference $S_{Ti} - S_i$ quantifies the fraction of variance attributable to interactions involving factor $i$.
+
+**Factorial design.** Our experiment constitutes a balanced full-factorial design with $k = 4$ categorical factors:
+
+| Factor | Symbol | Levels | Values |
+|--------|:------:|:------:|--------|
+| Rebalancing | $R$ | 7 | Baseline, RUS-0.1, RUS-0.5, SMOTE-0.1, SMOTE-0.5, SW-SMOTE-0.1, SW-SMOTE-0.5 |
+| Training mode | $M$ | 3 | Cross-domain (source-only), Within-domain (target-only), Mixed |
+| Distance metric | $D$ | 3 | MMD, DTW, Wasserstein |
+| Domain membership | $G$ | 2 | In-domain, Out-domain |
+
+Each of the $7 \times 3 \times 3 \times 2 = 126$ factor combinations is evaluated over 12 fixed random seeds $\mathcal{S} = \{0, 1, 3, 7, 13, 42, 123, 256, 512, 999, 1337, 2024\}$, yielding $N = 1{,}512$ total observations. Because the design is balanced, all sum-of-squares terms ($\text{SS}_i$, $\text{SS}_{ij}$, ...) are computed exactly via the marginal means without Monte Carlo sampling; hence $S_i = \text{SS}_i / \text{SS}_{\text{total}}$ with no estimation error beyond seed-to-seed variability. Interactions up to fourth order ($R \times M \times D \times G$) are resolved. Confidence intervals (95%) are obtained by percentile bootstrap ($B = 2{,}000$) resampling over the 12 seeds, preserving the factorial structure within each resample.
 
 ### 3.7 Hypotheses
 
@@ -284,7 +295,7 @@ DTW diverges substantially from MMD and Wasserstein ($\rho = 0.12$, $p = 0.29$),
 
 **Rebalancing absorption.** The sensitivity analysis confirms rebalancing's dominance — the total-order Sobol index ratio is:
 
-$$\frac{S_{TR}}{S_{TD}} \approx \frac{0.40\text{–}0.46}{<0.015} = 27\text{–}31\times \tag{3}$$
+$$\frac{S_{TR}}{S_{TD}} \approx \frac{0.40\text{–}0.46}{<0.015} = 27\text{–}31\times \tag{6}$$
 
 Rebalancing shifts the classifier's decision boundary so dramatically that any difference in training set composition due to domain grouping is overwhelmed.
 
@@ -294,29 +305,29 @@ Rebalancing shifts the classifier's decision boundary so dramatically that any d
 
 The functional ANOVA decomposition (Fig. 2) decomposes total variance into additive contributions. Let $V_{\mathrm{sys}} = V - V_{\varepsilon}$ denote the systematic (non-residual) variance. For F2-score the decomposition is:
 
-$$\frac{S_M + S_R + S_{R \times M}}{1 - S_{\varepsilon}} = \frac{0.368 + 0.243 + 0.212}{1 - 0.157} = \frac{0.823}{0.843} = 97.5\% \tag{4}$$
+$$\frac{S_M + S_R + S_{R \times M}}{1 - S_{\varepsilon}} = \frac{0.368 + 0.243 + 0.212}{1 - 0.157} = \frac{0.823}{0.843} = 97.5\% \tag{7}$$
 
 Analogous ratios are 95.8\% (AUROC) and 96.1\% (AUPRC), confirming that Mode, Rebalancing, and their interaction jointly account for $>95$\% of systematic variance across all three primary metrics. In contrast, Distance and Membership together contribute $< 5$\% ($S_{TD} + S_{TG} < 0.046$).
 
 The interaction term $S_{R \times M}$ is not merely statistically present but practically decisive: it produces a full ranking reversal between modes. The Spearman rank correlation between the 7-strategy ranking vectors in cross-domain vs. within-domain is:
 
-$$\rho_{\text{cross,within}} = -0.74 \;\text{to}\; -0.89 \tag{5}$$
+$$\rho_{\text{cross,within}} = -0.74 \;\text{to}\; -0.89 \tag{8}$$
 
 while within-domain vs. mixed yields $\rho \geq +0.99$ ($p < 0.001$). This sign reversal maps directly onto the Sobol interaction: the 21.2\% of F2 variance attributed to $R \times M$ manifests as a qualitative change in which strategy is optimal, not merely a quantitative shift in effect magnitude. The practical consequence is stark: a practitioner who selects a rebalancing strategy based on cross-domain results would deploy the *worst* strategy for within-domain operation, and vice versa (Table 2).
 
 ![Ranking Reversal](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig_ranking_reversal.png)
-*Fig. 5. Strategy ranking reversal across training modes. Lines trace Friedman mean ranks (lower = better) for each of the 7 strategies. In Cross-domain, RUS variants rank highest; in Within-domain and Mixed, SMOTE-based strategies dominate — a complete inversion consistent with $\rho_{C,W} = -0.74$ to $-0.89$ (Eq. 5). The near-perfect overlap of Within and Mixed columns ($\rho \geq 0.99$) confirms mode equivalence.*
+*Fig. 5. Strategy ranking reversal across training modes. Lines trace Friedman mean ranks (lower = better) for each of the 7 strategies. In Cross-domain, RUS variants rank highest; in Within-domain and Mixed, SMOTE-based strategies dominate — a complete inversion consistent with $\rho_{C,W} = -0.74$ to $-0.89$ (Eq. 8). The near-perfect overlap of Within and Mixed columns ($\rho \geq 0.99$) confirms mode equivalence.*
 
 
 **Mechanistic interpretation.** The mode-dependent reversal has a data-geometric explanation. In within-domain and mixed modes, each subject’s own data is present in the training set, providing a subject-specific decision boundary. Here the bottleneck is class imbalance: minority-class (drowsy) epochs are scarce, and oversampling via SMOTE generates synthetic examples along the minority-class manifold, enriching the decision boundary without discarding majority-class information. In quantitative terms:
 
-$$\Delta\text{F2}_{\text{SMOTE}} = \text{F2}_{\text{SW-SMOTE}} - \text{F2}_{\text{BL}} = 0.558 - 0.215 = +0.343 \;(+159\%) \tag{6}$$
+$$\Delta\text{F2}_{\text{SMOTE}} = \text{F2}_{\text{SW-SMOTE}} - \text{F2}_{\text{BL}} = 0.558 - 0.215 = +0.343 \;(+159\%) \tag{9}$$
 
 RUS, by contrast, discards majority-class samples ($\delta_{\text{RUS vs BL}} = -0.84$), destroying the very information that calibrates the boundary for subject-specific patterns.
 
 In cross-domain mode, target-subject data is entirely absent from training. The bottleneck shifts from class imbalance to domain mismatch: the classifier must generalise across subjects with different driving dynamics. Here, oversampling amplifies source-domain patterns that may not transfer, while RUS’s information loss is less damaging because the majority-class signal was already misaligned. All strategies collapse to near-chance levels (F2 $= 0.04$–$0.17$), and the inter-strategy variance shrinks dramatically — consistent with the $R \times M$ interaction absorbing 21\% of total F2 variance.
 
-AUPRC improvements confirm that SMOTE’s gains are genuine minority-class precision improvements, not threshold-shifted recall: 0/36 strategy–mode cells exhibit a precision–recall trade-off; the dominant pattern is win–win (recall↑, precision stable). For comparison, switching distance metric yields $|\Delta\text{F2}| < 0.01$ — two orders of magnitude below the rebalancing effect (Eq. 6), consistent with the Sobol ratio $S_{TR}/S_{TD} > 27\times$ (Eq. 3).
+AUPRC improvements confirm that SMOTE’s gains are genuine minority-class precision improvements, not threshold-shifted recall: 0/36 strategy–mode cells exhibit a precision–recall trade-off; the dominant pattern is win–win (recall↑, precision stable). For comparison, switching distance metric yields $|\Delta\text{F2}| < 0.01$ — two orders of magnitude below the rebalancing effect (Eq. 9), consistent with the Sobol ratio $S_{TR}/S_{TD} > 27\times$ (Eq. 6).
 
 ### 5.3 The Domain Gap Reversal Phenomenon
 
