@@ -185,15 +185,15 @@ To quantify the relative importance of each factor and their interactions, we ad
 
 $$V(Y) = \sum_{i=1}^{k} V_i + \sum_{i<j} V_{ij} + \cdots + V_{1,2,\ldots,k} \tag{3}$$
 
-where $V_i = \operatorname{Var}_{X_i}\!\bigl[\mathbb{E}_{X_{\sim i}}(Y \mid X_i)\bigr]$ is the variance of the conditional expectation over factor $i$ alone, $V_{ij}$ captures the joint effect of $(X_i, X_j)$ not accounted for by their individual contributions, and higher-order terms follow analogously. The first-order Sobol index normalises each contribution by the total variance:
+where $V_i = \mathrm{Var}_{X_i}\bigl[\mathbb{E}_{X_{\sim i}}(Y \mid X_i)\bigr]$ is the variance of the conditional expectation over factor $i$ alone, $V_{ij}$ captures the joint effect of $(X_i, X_j)$ not accounted for by their individual contributions, and higher-order terms follow analogously. The first-order Sobol index normalises each contribution by the total variance:
 
 $$S_i = \frac{V_i}{V(Y)} \tag{4}$$
 
 and the total-order index aggregates the main effect of factor $i$ with all interactions in which it participates:
 
-$$S_{Ti} = S_i + \sum_{j \neq i} S_{ij} + \sum_{\substack{j<k \\ i \in \{j,k\}}} S_{ijk} + \cdots = 1 - \frac{V_{\sim i}}{V(Y)} \tag{5}$$
+$$S_{Ti} = S_i + \sum_{j \neq i} S_{ij} + \sum_{j<k,\; i \in \lbrace j,k\rbrace} S_{ijk} + \cdots = 1 - \frac{V_{\sim i}}{V(Y)} \tag{5}$$
 
-where $V_{\sim i} = \operatorname{Var}_{X_{\sim i}}\!\bigl[\mathbb{E}_{X_i}(Y \mid X_{\sim i})\bigr]$. The difference $S_{Ti} - S_i$ quantifies the fraction of variance attributable to interactions involving factor $i$.
+where $V_{\sim i} = \mathrm{Var}_{X_{\sim i}}\bigl[\mathbb{E}_{X_i}(Y \mid X_{\sim i})\bigr]$. The difference $S_{Ti} - S_i$ quantifies the fraction of variance attributable to interactions involving factor $i$.
 
 **Factorial design.** Our experiment constitutes a balanced full-factorial design with $k = 4$ categorical factors:
 
