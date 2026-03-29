@@ -256,7 +256,7 @@ def plot_effect_hierarchy(df: pd.DataFrame):
         legend_elements.append(
             Patch(facecolor=colors_inter[mlabel], alpha=0.7, hatch="//",
                   label=f"{mlabel} — interactions ($S_{{Ti}}-S_i$)"))
-    ax.legend(handles=legend_elements, loc="upper right", framealpha=0.9,
+    ax.legend(handles=legend_elements, loc="upper left", framealpha=0.9,
               fontsize=7, ncol=1)
     ax.set_ylim(0, 0.82)
 
