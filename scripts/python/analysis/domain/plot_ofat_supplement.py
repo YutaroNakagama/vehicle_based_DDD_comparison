@@ -70,6 +70,28 @@ MODE_LABELS  = {"source_only": "Cross", "target_only": "Within", "mixed": "Mixed
 DIST_LABELS  = {"mmd": "MMD", "dtw": "DTW", "wasserstein": "Wass."}
 LEVEL_LABELS = {"in_domain": "In", "out_domain": "Out"}
 
+# Colour-coding by the most informative other factor
+MODE_COLORS = {
+    "source_only": "#e74c3c",   # red
+    "target_only": "#2ecc71",   # green
+    "mixed":       "#3498db",   # blue
+}
+FAMILY_COLORS = {
+    "baseline":      "#95a5a6",  # grey
+    "rus_r01":       "#27ae60",  # green bright
+    "rus_r05":       "#1e8449",  # green dark
+    "smote_r01":     "#3498db",  # blue bright
+    "smote_r05":     "#2980b9",  # blue dark
+    "sw_smote_r01":  "#e67e22",  # orange bright
+    "sw_smote_r05":  "#d35400",  # orange dark
+}
+FAMILY_LEGEND = {
+    "BL":       "#95a5a6",
+    "RUS":      "#27ae60",
+    "SMOTE":    "#3498db",
+    "SW-SMOTE": "#e67e22",
+}
+
 MODES     = ["source_only", "target_only", "mixed"]
 DISTANCES = ["mmd", "dtw", "wasserstein"]
 LEVELS    = ["in_domain", "out_domain"]
@@ -146,6 +168,16 @@ def plot_ofat(df: pd.DataFrame, target_factor: str):
     levels, label_map, display_name = FACTORS[target_factor]
     other_factors = [f for f in FACTORS if f != target_factor]
 
+    # Choose a colour-coding factor: Mode when available, else Rebalancing
+    if target_factor != "mode":
+        color_factor = "mode"
+        color_map = MODE_COLORS
+        color_labels = MODE_LABELS
+    else:
+        color_factor = "condition"
+        color_map = FAMILY_COLORS
+        color_labels = COND_LABELS
+
     fig, axes = plt.subplots(1, 3, figsize=(15, 5), sharey=False)
 
     for ax_idx, (metric, mlabel) in enumerate(PRIMARY_METRICS):
@@ -162,6 +194,7 @@ def plot_ofat(df: pd.DataFrame, target_factor: str):
 
         all_lines = []   # list of arrays, each shape = (n_levels,)
         combo_labels = []
+        combo_labels_raw = []  # raw dict per combo for colour lookup
 
         for _, combo_row in other_combos.iterrows():
             combo_dict = combo_row.to_dict()
@@ -183,15 +216,17 @@ def plot_ofat(df: pd.DataFrame, target_factor: str):
                 flevels, flabels, _ = FACTORS[f]
                 parts.append(flabels[combo_dict[f]])
             combo_labels.append("/".join(parts))
+            combo_labels_raw.append(combo_dict)
 
         all_lines = np.array(all_lines)  # shape (n_combos, n_levels)
 
-        # Plot each fixed-condition line (thin, semi-transparent)
+        # Plot each fixed-condition line, coloured by color_factor
         n_combos = len(all_lines)
         for i in range(n_combos):
-            color = LINE_CMAP(i / max(n_combos - 1, 1))
+            cf_val = combo_labels_raw[i][color_factor]
+            color = color_map[cf_val]
             ax.plot(range(len(levels)), all_lines[i], "-o",
-                    color=color, alpha=0.35, linewidth=0.8, markersize=3,
+                    color=color, alpha=0.40, linewidth=0.8, markersize=3,
                     zorder=2)
 
         # Compute grand OFAT mean and SD across fixed conditions
@@ -226,7 +261,21 @@ def plot_ofat(df: pd.DataFrame, target_factor: str):
         ax.set_ylabel(mlabel)
         ax.set_title(mlabel, fontweight="bold")
         if ax_idx == 0:
-            ax.legend(loc="best", framealpha=0.9)
+            # Build legend: OFAT mean + SD band + colour-factor entries
+            handles = ax.get_legend_handles_labels()[0][:2]  # mean + band
+            labels_leg = ["OFAT mean", "±1 SD"]
+            if target_factor != "mode":
+                # Colour by mode
+                for m_key, m_label in MODE_LABELS.items():
+                    handles.append(mpatches.Patch(color=MODE_COLORS[m_key], alpha=0.6))
+                    labels_leg.append(m_label)
+            else:
+                # Colour by rebalancing family
+                for fam_label, fam_color in FAMILY_LEGEND.items():
+                    handles.append(mpatches.Patch(color=fam_color, alpha=0.6))
+                    labels_leg.append(fam_label)
+            ax.legend(handles, labels_leg, loc="best", framealpha=0.9,
+                      fontsize=7, ncol=1)
 
     fig.suptitle(
         f"OFAT Analysis: {display_name}\n"
