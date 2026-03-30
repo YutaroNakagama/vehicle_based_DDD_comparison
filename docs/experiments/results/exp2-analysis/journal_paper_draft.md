@@ -246,7 +246,7 @@ Mode's remaining interactions ($M \times D$, $M \times G$, higher-order terms) c
 
 Appendix F provides the confirmatory hypothesis tests and Bayesian evidence. A complementary one-factor-at-a-time (OFAT) analysis (Appendix E, Figs. S1–S4) visualises the per-condition effect of each factor, confirming the Sobol ranking and revealing that the $R$ effect is strongly mode-dependent.
 
-![Sensitivity Analysis](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig2_effect_hierarchy.png)
+![Sensitivity Analysis](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig2_effect_hierarchy.svg)
 *Fig. 2. Variance-based sensitivity analysis (Sobol indices) for the four experimental factors across F2-score, AUROC, and AUPRC. Solid bars show first-order indices ($S_i$, main effect); hatched bars show interaction contributions ($S_{Ti} - S_i$). Error bars indicate 95% bootstrap CIs on total-order indices ($S_{Ti}$). Mode and Rebalancing dominate; Distance and Membership are negligible.*
 
 ### 4.2 Rebalancing × Mode Interaction (RQ1, RQ3: H1, H4, H5)
@@ -273,7 +273,7 @@ The best overall strategy is SW-SMOTE $r{=}0.1$ (within-domain F2 = 0.558, AUROC
 
 Fig. 3 visualises this interaction. In the Cross-domain column, all 7 strategies collapse to a narrow low-performance band. In Within-domain and Mixed, SMOTE-based strategies separate sharply from Baseline and RUS.
 
-![Strategy Comparison](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig4_strategy_comparison.png)
+![Strategy Comparison](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig4_strategy_comparison.svg)
 *Fig. 3. Performance distributions of the 7 rebalancing strategies by training mode (rows: F2, AUROC, AUPRC; columns: Cross, Within, Mixed). The Cross-domain column is uniformly compressed near chance; Within-domain and Mixed reveal large inter-strategy separation — the $R \times M$ interaction.*
 
 **Strategy clusters.** Nemenyi post-hoc tests (CD = 2.600) identify two statistically separated clusters: oversampling methods (mean ranks 2.76–3.83) vs. Baseline/RUS (ranks 4.12–5.64). The top-ranked methods (SW-SMOTE $r{=}0.1$ for F2; SMOTE $r{=}0.1$ for AUROC/AUPRC) are statistically interchangeable (rank difference < CD). Sampling ratio $r=0.1$ is the more robust default across methods.
@@ -284,7 +284,7 @@ Fig. 3 visualises this interaction. In the Cross-domain column, all 7 strategies
 
 Distance ($S_{TD} < 0.015$, $BF_{01} = 71$–$767$) and Membership ($S_{TG} < 0.031$) are confirmed negligible by both frequentist and Bayesian tests; full statistical details are in Appendix F. Subsampling analysis shows $\sigma_{\text{rank}}$ decreases monotonically, reaching 0 (F2, AUPRC) or 0.147 (AUROC) by $k = 11$ of 12 seeds (Fig. 4), confirming sufficient seed count. Cross-metric concordance is moderate (Kendall’s $W = 0.643$; AUROC–AUPRC $\rho = 0.929$). Post-hoc power analysis indicates the pooled design ($n = 36$) detects $|\delta| \geq 0.53$, well below all reported large effects ($|\delta| > 0.8$).
 
-![Seed Convergence](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig8_seed_convergence.png)
+![Seed Convergence](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig8_seed_convergence.svg)
 *Fig. 4. Ranking stability ($\sigma_{\text{rank}}$) as a function of seed subset size $k$. Monotonic convergence confirms that $n = 12$ seeds is sufficient.*
 
 ---
@@ -329,7 +329,7 @@ $$\rho_{\text{cross,within}} = -0.74 \;\text{to}\; -0.89 \tag{8}$$
 
 while within-domain vs. mixed yields $\rho \geq +0.99$ ($p < 0.001$). This sign reversal maps directly onto the Sobol interaction: the 21.2\% of F2 variance attributed to $R \times M$ manifests as a qualitative change in which strategy is optimal, not merely a quantitative shift in effect magnitude. The practical consequence is stark: a practitioner who selects a rebalancing strategy based on cross-domain results would deploy the *worst* strategy for within-domain operation, and vice versa (Table 2).
 
-![Ranking Reversal](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig_ranking_reversal.png)
+![Ranking Reversal](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_ranking_reversal.svg)
 *Fig. 5. Strategy ranking reversal across training modes. Lines trace Friedman mean ranks (lower = better) for each of the 7 strategies. In Cross-domain, RUS variants rank highest; in Within-domain and Mixed, SMOTE-based strategies dominate — a complete inversion consistent with $\rho_{C,W} = -0.74$ to $-0.89$ (Eq. 8). The near-perfect overlap of Within and Mixed columns ($\rho \geq 0.99$) confirms mode equivalence.*
 
 
@@ -347,7 +347,7 @@ AUPRC improvements confirm that SMOTE’s gains are genuine minority-class preci
 
 An unexpected finding is that the domain gap reverses in within-domain and mixed training: out-domain subjects sometimes outperform in-domain subjects ($\Delta > 0$). Fig. 6 visualizes this pattern through diverging horizontal bars for each Rebalancing × Mode × Membership cell. Green bars (positive $\Delta$) indicate that out-domain performance exceeds in-domain. Across all three metrics (F2-score, AUROC, AUPRC), the majority of bars point green — especially in the Mixed mode panel — demonstrating that domain shift does not systematically degrade performance. This visual is consistent with the Wilcoxon test results (H8: 0/63 to 12/63 significant) and provides direct evidence that the domain split does not introduce a meaningful performance penalty.
 
-![Domain Shift Direction](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig7_domain_shift_reversal.png)
+![Domain Shift Direction](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig7_domain_shift_reversal.svg)
 *Fig. 6. Domain gap direction ($\Delta = \text{out} - \text{in}$) by Rebalancing × Mode. Green = out-domain outperforms in-domain (gap reversal). The prevalence of green bars, especially in Mixed mode, demonstrates that domain shift does not cause systematic performance degradation.*
 
 The sensitivity analysis quantifies this phenomenon: the $G \times M$ interaction accounts for only 0.6%–0.9% of total variance ($S_{G \times M} = 0.006$–$0.009$), confirming that while the direction reversal is qualitatively notable, its magnitude is small relative to the dominant $R \times M$ interaction ($S_{R \times M} = 0.14$–$0.21$). As reported in §4.1, even Membership's total-order index ($S_{TG} = 0.018$–$0.031$) is 4.5–12$\times$ smaller than $S_{R \times M}$ alone. The reversal may be because:
@@ -510,16 +510,16 @@ The Sobol decomposition in §4.1 quantifies each factor's contribution to total 
 
 Taken together, the OFAT analysis corroborates the Sobol ranking ($M > R \gg D \approx G$) while providing condition-level granularity that the variance decomposition summarises away.
 
-![OFAT Rebalancing](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig_s_ofat_condition.png)
+![OFAT Rebalancing](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_s_ofat_condition.svg)
 *Fig. S1. OFAT analysis for the Rebalancing factor ($R$). Each line represents one of 18 fixed conditions ($D \times G \times M$), averaged over 12 seeds. Bold line: grand OFAT mean; grey band: ±1 SD.*
 
-![OFAT Distance](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig_s_ofat_distance.png)
+![OFAT Distance](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_s_ofat_distance.svg)
 *Fig. S2. OFAT analysis for the Distance factor ($D$). Each line represents one of 42 fixed conditions ($R \times G \times M$).*
 
-![OFAT Mode](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig_s_ofat_mode.png)
+![OFAT Mode](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_s_ofat_mode.svg)
 *Fig. S3. OFAT analysis for the Mode factor ($M$). Each line represents one of 42 fixed conditions ($R \times D \times G$).*
 
-![OFAT Membership](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig_s_ofat_level.png)
+![OFAT Membership](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_s_ofat_level.svg)
 *Fig. S4. OFAT analysis for the Membership factor ($G$). Each line represents one of 63 fixed conditions ($R \times D \times M$).*
 
 ## Appendix F: Distance Metric Equivalence — Full Statistical Analysis (RQ2: H2, H3)
@@ -558,7 +558,7 @@ All pooled pairwise Cliff's $\delta$ values are negligible ($|\delta| < 0.09$).
 
 All three Bayes factors exceed $BF_{01} > 70$, providing "very strong" to "extreme" evidence on the Jeffreys (1961) scale that the distance metric has no effect on downstream classification. Even for AUROC — where the frequentist $p = 0.047$ narrowly crosses the uncorrected $\alpha = 0.05$ threshold — the Bayesian analysis firmly favours $H_0$, illustrating a classic large-$N$ divergence between $p$-values and Bayes factors.
 
-![Distance Metric Violin](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig5_distance_violin.png)
+![Distance Metric Violin](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig5_distance_violin.svg)
 *Fig. F1. Performance distributions by distance metric (Within-domain and Mixed modes). F2-score, AUROC, and AUPRC distributions are virtually indistinguishable across MMD, DTW, and Wasserstein, consistent with $|\delta| < 0.15$ for all pairwise comparisons.*
 
 ### F.2 Domain Membership Effect (H3)

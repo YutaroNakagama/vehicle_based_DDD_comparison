@@ -35,7 +35,7 @@ CSV_BASE = (
 )
 OUT_DIR = (
     PROJECT_ROOT / "results" / "analysis" / "exp2_domain_shift"
-    / "figures" / "png" / "split2" / "journal_v2"
+    / "figures" / "svg" / "split2" / "journal_v2"
 )
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -74,17 +74,19 @@ MODE_LABELS = {
 }
 PRIMARY_METRICS = [("f2", "F2-score"), ("auc", "AUROC"), ("auc_pr", "AUPRC")]
 
-# Journal style
+# IEEE T-IV style
+_TIV_TEXT_WIDTH = 7.16   # double-column inches
 plt.rcParams.update({
     "font.family": "serif",
-    "font.size": 10,
-    "axes.titlesize": 11,
-    "axes.labelsize": 10,
-    "xtick.labelsize": 9,
-    "ytick.labelsize": 9,
-    "legend.fontsize": 8,
+    "font.size": 8,
+    "mathtext.fontset": "stix",
+    "svg.fonttype": "none",
+    "axes.titlesize": 8,
+    "axes.labelsize": 8,
+    "xtick.labelsize": 7,
+    "ytick.labelsize": 7,
+    "legend.fontsize": 7,
     "figure.dpi": 150,
-    "savefig.dpi": 300,
     "axes.grid": True,
     "grid.alpha": 0.3,
     "grid.linestyle": "--",
@@ -144,7 +146,7 @@ def plot_strategy_comparison(df: pd.DataFrame):
     agg = aggregate_blocks(df)
 
     fig, axes = plt.subplots(
-        3, 3, figsize=(14, 10),
+        3, 3, figsize=(_TIV_TEXT_WIDTH, 6.0),
         sharey="row", sharex=True,
     )
 
@@ -195,16 +197,16 @@ def plot_strategy_comparison(df: pd.DataFrame):
             if row == 2:
                 ax.set_xticklabels(
                     [COND_LABELS[c] for c in CONDITIONS_7],
-                    fontsize=7, ha="center",
+                    fontsize=6, ha="center",
                 )
             else:
                 ax.set_xticklabels([])
 
             if col == 0:
-                ax.set_ylabel(mlabel, fontsize=11, fontweight="bold")
+                ax.set_ylabel(mlabel, fontweight="bold")
 
             if row == 0:
-                ax.set_title(MODE_LABELS[mode], fontsize=12, fontweight="bold")
+                ax.set_title(MODE_LABELS[mode], fontweight="bold")
 
             ax.grid(axis="y", alpha=0.3, linestyle="--")
             ax.grid(axis="x", visible=False)
@@ -220,14 +222,14 @@ def plot_strategy_comparison(df: pd.DataFrame):
     ]
     fig.legend(
         handles=handles, loc="lower center",
-        ncol=7, fontsize=8, frameon=True,
+        ncol=7, fontsize=6.5, frameon=True,
         bbox_to_anchor=(0.5, -0.02),
     )
 
     fig.tight_layout(rect=[0, 0.03, 1, 1])
 
-    out = OUT_DIR / "fig4_strategy_comparison.png"
-    fig.savefig(out, dpi=300, bbox_inches="tight", facecolor="white")
+    out = OUT_DIR / "fig4_strategy_comparison.svg"
+    fig.savefig(out, format="svg", bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"  Saved: {out.relative_to(PROJECT_ROOT)}")
 

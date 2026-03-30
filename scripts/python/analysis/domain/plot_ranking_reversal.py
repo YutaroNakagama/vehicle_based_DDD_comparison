@@ -15,7 +15,7 @@ from scipy import stats
 # ── paths ──────────────────────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parents[4]
 CSV_BASE = ROOT / "results/analysis/exp2_domain_shift/figures/csv/split2"
-OUT_DIR = ROOT / "results/analysis/exp2_domain_shift/figures/png/split2/journal_v2"
+OUT_DIR = ROOT / "results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── constants ──────────────────────────────────────────────────────────
@@ -51,17 +51,19 @@ MODE_LABELS = {"source_only": "Cross", "target_only": "Within", "mixed": "Mixed"
 
 METRICS = {"f2": "F2-score", "auc": "AUROC", "auc_pr": "AUPRC"}
 
-# ── journal style ──────────────────────────────────────────────────────
+# ── IEEE T-IV style ────────────────────────────────────────────────────
+_TIV_TEXT_WIDTH = 7.16
 plt.rcParams.update({
     "font.family": "serif",
-    "font.size": 10,
-    "axes.titlesize": 11,
-    "axes.labelsize": 10,
-    "xtick.labelsize": 9,
-    "ytick.labelsize": 9,
-    "legend.fontsize": 8,
+    "font.size": 8,
+    "mathtext.fontset": "stix",
+    "svg.fonttype": "none",
+    "axes.titlesize": 8,
+    "axes.labelsize": 8,
+    "xtick.labelsize": 7,
+    "ytick.labelsize": 7,
+    "legend.fontsize": 7,
     "figure.dpi": 150,
-    "savefig.dpi": 300,
     "axes.grid": True,
     "grid.alpha": 0.3,
     "grid.linestyle": "--",
@@ -133,7 +135,7 @@ def compute_spearman(rank_df: pd.DataFrame):
 
 # ── plotting ───────────────────────────────────────────────────────────
 def plot_bump_chart(df: pd.DataFrame):
-    fig, axes = plt.subplots(1, 3, figsize=(10, 3.8), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(_TIV_TEXT_WIDTH, 2.5), sharey=True)
 
     for ax, (metric, metric_label) in zip(axes, METRICS.items()):
         rank_df = compute_per_mode_ranks(df, metric)
@@ -147,18 +149,18 @@ def plot_bump_chart(df: pd.DataFrame):
             ]
             ax.plot(
                 x_positions, ranks,
-                marker="o", markersize=6,
+                marker="o", markersize=4,
                 color=COND_COLORS[cond],
-                linewidth=2, alpha=0.85,
+                linewidth=1.5, alpha=0.85,
                 label=LABELS[cond],
             )
             # Label on right side
             ax.annotate(
                 LABELS[cond],
                 xy=(x_positions[-1], ranks[-1]),
-                xytext=(6, 0),
+                xytext=(4, 0),
                 textcoords="offset points",
-                fontsize=7,
+                fontsize=5.5,
                 color=COND_COLORS[cond],
                 va="center",
                 fontweight="bold",
@@ -179,7 +181,7 @@ def plot_bump_chart(df: pd.DataFrame):
             0.5, 0.02,
             f"$\\rho_{{C,W}}$ = {rho_cw:.2f}{sig}",
             transform=ax.transAxes,
-            ha="center", fontsize=8,
+            ha="center", fontsize=6.5,
             bbox=dict(boxstyle="round,pad=0.3", fc="wheat", alpha=0.7),
         )
 
@@ -193,17 +195,13 @@ def plot_bump_chart(df: pd.DataFrame):
         ncol=4,
         bbox_to_anchor=(0.5, -0.02),
         frameon=True,
-        fontsize=8,
+        fontsize=6.5,
     )
 
-    fig.suptitle(
-        "Strategy Ranking Reversal Across Training Modes",
-        fontsize=12, fontweight="bold", y=1.02,
-    )
     plt.tight_layout()
 
-    out_path = OUT_DIR / "fig_ranking_reversal.png"
-    fig.savefig(out_path, bbox_inches="tight", facecolor="white")
+    out_path = OUT_DIR / "fig_ranking_reversal.svg"
+    fig.savefig(out_path, format="svg", bbox_inches="tight", facecolor="white")
     print(f"Saved: {out_path}")
 
     # Print Spearman results for verification

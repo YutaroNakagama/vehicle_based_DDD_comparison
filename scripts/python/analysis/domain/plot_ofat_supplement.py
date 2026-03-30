@@ -46,7 +46,7 @@ CSV_BASE = (
 )
 OUT_DIR = (
     PROJECT_ROOT / "results" / "analysis" / "exp2_domain_shift"
-    / "figures" / "png" / "split2" / "journal_v2"
+    / "figures" / "svg" / "split2" / "journal_v2"
 )
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -108,16 +108,19 @@ FACTORS = {
 # Distinct colours for fixed-condition lines (cycling palette)
 LINE_CMAP = plt.cm.tab20
 
+# IEEE T-IV style
+_TIV_TEXT_WIDTH = 7.16
 plt.rcParams.update({
     "font.family": "serif",
-    "font.size": 10,
-    "axes.titlesize": 11,
-    "axes.labelsize": 10,
-    "xtick.labelsize": 9,
-    "ytick.labelsize": 9,
-    "legend.fontsize": 7,
+    "font.size": 8,
+    "mathtext.fontset": "stix",
+    "svg.fonttype": "none",
+    "axes.titlesize": 8,
+    "axes.labelsize": 8,
+    "xtick.labelsize": 7,
+    "ytick.labelsize": 7,
+    "legend.fontsize": 6.5,
     "figure.dpi": 150,
-    "savefig.dpi": 300,
     "axes.grid": True,
     "grid.alpha": 0.3,
     "grid.linestyle": "--",
@@ -152,7 +155,7 @@ def load_all_data() -> pd.DataFrame:
 
 def _save(fig, name: str):
     out = OUT_DIR / name
-    fig.savefig(out, dpi=300, bbox_inches="tight", facecolor="white")
+    fig.savefig(out, format="svg", bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"  Saved: {out.relative_to(PROJECT_ROOT)}")
 
@@ -178,7 +181,7 @@ def plot_ofat(df: pd.DataFrame, target_factor: str):
         color_map = FAMILY_COLORS
         color_labels = COND_LABELS
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5), sharey=False)
+    fig, axes = plt.subplots(1, 3, figsize=(_TIV_TEXT_WIDTH, 3.0), sharey=False)
 
     for ax_idx, (metric, mlabel) in enumerate(PRIMARY_METRICS):
         ax = axes[ax_idx]
@@ -248,22 +251,22 @@ def plot_ofat(df: pd.DataFrame, target_factor: str):
         for j in range(len(levels)):
             col = all_lines[:, j]
             rng = np.nanmax(col) - np.nanmin(col)
-            ax.annotate(f"Δ={rng:.3f}",
+            ax.annotate(f"$\Delta$={rng:.3f}",
                         xy=(j, grand_mean[j] + grand_std[j]),
-                        xytext=(0, 8), textcoords="offset points",
-                        ha="center", fontsize=7, fontweight="bold",
+                        xytext=(0, 6), textcoords="offset points",
+                        ha="center", fontsize=5.5, fontweight="bold",
                         color="#c0392b")
 
         ax.set_xticks(range(len(levels)))
         ax.set_xticklabels([label_map[lev] for lev in levels],
-                           fontsize=9, rotation=30 if len(levels) > 4 else 0,
+                           fontsize=7, rotation=30 if len(levels) > 4 else 0,
                            ha="right" if len(levels) > 4 else "center")
         ax.set_ylabel(mlabel)
         ax.set_title(mlabel, fontweight="bold")
         if ax_idx == 0:
             # Build legend: OFAT mean + SD band + colour-factor entries
             handles = ax.get_legend_handles_labels()[0][:2]  # mean + band
-            labels_leg = ["OFAT mean", "±1 SD"]
+            labels_leg = ["OFAT mean", "$\pm$1 SD"]
             if target_factor != "mode":
                 # Colour by mode
                 for m_key, m_label in MODE_LABELS.items():
@@ -275,17 +278,11 @@ def plot_ofat(df: pd.DataFrame, target_factor: str):
                     handles.append(mpatches.Patch(color=fam_color, alpha=0.6))
                     labels_leg.append(fam_label)
             ax.legend(handles, labels_leg, loc="best", framealpha=0.9,
-                      fontsize=7, ncol=1)
+                      fontsize=6, ncol=1)
 
-    fig.suptitle(
-        f"OFAT Analysis: {display_name}\n"
-        f"Each line = one fixed combination of other factors "
-        f"({n_combos} combinations, averaged over 12 seeds)",
-        fontsize=11, fontweight="bold"
-    )
-    fig.tight_layout(rect=[0, 0, 1, 0.88])
+    fig.tight_layout()
 
-    fname = f"fig_s_ofat_{target_factor}.png"
+    fname = f"fig_s_ofat_{target_factor}.svg"
     _save(fig, fname)
 
 

@@ -317,7 +317,7 @@ Mean η² = 0.784 (large effect).
 
 > **Figure Reference — Fig. 2 (Effect Size Hierarchy)**
 >
-> ![Effect Size Hierarchy](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig2_effect_hierarchy.png)
+> ![Effect Size Hierarchy](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig2_effect_hierarchy.svg)
 >
 > Fig. 2 compares the η² effect sizes of three experimental factors (Condition, Mode, Distance) across F2-score, AUROC, and AUPRC. Across all three metrics, **Mode (training regime)** exhibits the largest effect size (η² > 0.6), followed by **Condition (imbalance handling method)**. In contrast, **Distance (domain split metric)** shows negligible effect sizes (η² < 0.1), visually confirming that the choice of distance metric has limited impact on model performance. This hierarchical structure is consistent with the test results for H5 (no distance effect) and H7 (large mode effect).
 
@@ -588,7 +588,7 @@ $$H_0: \mu_{r=0.1}^{(\text{method})} = \mu_{r=0.5}^{(\text{method})}$$
 
 > **Figure Reference — Fig. 5 (Distance Metric Violin Plot)**
 >
-> ![Distance Metric Violin](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig5_distance_violin.png)
+> ![Distance Metric Violin](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig5_distance_violin.svg)
 >
 > Fig. 5 displays violin plots of performance distributions for the three distance metrics (MMD, DTW, Wasserstein) under Within-domain and Mixed modes. For all three metrics — F2-score, AUROC, and AUPRC — the distributions overlap almost completely, consistent with the Mann-Whitney U test results (|δ| < 0.1, negligible for all pairs). This visually corroborates the failure to reject H5 (no distance effect), confirming that the choice of distance metric underlying the domain split has minimal impact on final model performance.
 
@@ -662,7 +662,7 @@ Mean performance by distance metric (pooled across conditions):
 
 > **Figure Reference — Fig. 6 (Training Mode Box Plot)**
 >
-> ![Mode Boxplot](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig6_mode_boxplot.png)
+> ![Mode Boxplot](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig6_mode_boxplot.svg)
 >
 > Fig. 6 compares the performance distributions of three training modes (Cross-domain, Within-domain, Mixed) using box plots. Cross-domain mode shows substantially lower medians and narrow IQRs across all three metrics (F2-score, AUROC, AUPRC), clearly separated from Within-domain and Mixed. Within-domain and Mixed exhibit nearly identical medians with largely overlapping distributions, consistent with the Mann-Whitney U result of δ = negligible (§ 7.1, 7.2). The Cliff's δ annotations directly confirm that the effect size between Cross-domain and Within/Mixed is large (δ > 0.8).
 
@@ -750,7 +750,7 @@ $$H_0: F_{\text{cross}} = F_{\text{within}} = F_{\text{mixed}}$$
 
 > **Figure Reference — Fig. 7 (Domain Shift Direction)**
 >
-> ![Domain Shift Reversal](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig7_domain_shift_reversal.png)
+> ![Domain Shift Reversal](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig7_domain_shift_reversal.svg)
 >
 > Fig. 7 visualizes the domain gap Δ = out-domain − in-domain for each Condition × Mode cell using diverging horizontal bars. Positive values (green) indicate that out-domain performance exceeds in-domain, representing a "gap reversal." Across all three panels (F2-score, AUROC, AUPRC), the majority of bars point in the positive (green) direction, indicating that no severe performance degradation occurs due to domain shift. This is consistent with the H10 test results (0/63 pairs show significant domain shift) and visually supports the conclusion that domain splitting does not cause practical performance loss. Notably, the Mixed mode exhibits the largest positive Δ values, suggesting a generalization benefit from mixed training data.
 
@@ -832,7 +832,7 @@ $$\rho_{\text{degradation}} = \frac{Y_{\text{out}}}{Y_{\text{in}}}$$
 
 > **Figure Reference — Fig. 3 (Condition × Mode Heatmap)**
 >
-> ![Condition × Mode Heatmap](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig3_condition_mode_heatmap.png)
+> ![Condition × Mode Heatmap](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig3_condition_mode_heatmap.svg)
 >
 > Fig. 3 displays the mean performance of 7 Conditions × 3 Modes as a heatmap. Across the three panels (F2-score, AUROC, AUPRC), the Cross-domain column consistently shows low values (dark shading), clearly revealing the dominant influence of the Mode factor. In the Within-domain and Mixed columns, sw_smote_r01 and smote_r01 achieve the highest values, while baseline and RUS methods remain moderate. In the Cross-domain column, inter-method differences are compressed and all conditions converge to low performance, intuitively explaining why H12 (Condition × Mode interaction) is statistically significant.
 
@@ -948,7 +948,7 @@ Mean rank across all 18 cells (3 modes × 2 levels × 3 distances). Rank 1 = bes
 
 > **Figure Reference — Fig. 4 (Critical Difference Diagrams)**
 >
-> ![CD Diagrams](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig4_cd_diagrams.png)
+> ![CD Diagrams](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig4_cd_diagrams.svg)
 >
 > Fig. 4 presents Critical Difference (CD) diagrams based on the Nemenyi post-hoc test for F2-score, AUROC, and AUPRC. Methods connected by a horizontal bar are not significantly different (α=0.05). A consistent pattern across all three metrics is that oversampling methods (smote, sw_smote) cluster on the left (better performance), while baseline and RUS methods are positioned on the right. However, sw_smote_r01 ranks first on F2-score, whereas smote_r01 takes the top position on AUROC and AUPRC, revealing subtle metric-dependent ranking differences. The CD value explicitly indicates the minimum rank difference required for statistical significance.
 
@@ -1455,7 +1455,7 @@ Condition labels are permuted within each (mode, distance, level) cell to preser
 
 > **Figure Reference — Fig. 8 (Seed Convergence Curve)**
 >
-> ![Seed Convergence](../../../../results/analysis/exp2_domain_shift/figures/png/split2/journal_v2/fig8_seed_convergence.png)
+> ![Seed Convergence](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig8_seed_convergence.svg)
 >
 > Fig. 8 shows how the ranking standard deviation $\sigma_{\text{rank}}(k)$ evolves as the number of seeds $k$ increases. Across all three panels (F2-score, AUROC, AUPRC), $\sigma_{\text{rank}}$ decreases monotonically with increasing $k$, confirming a clear convergence pattern. F2-score achieves full convergence ($\sigma=0$) at $k=9$, while AUROC stabilizes within the $\sigma < 0.5$ region by $k=11$. The per-condition traces (colored lines) reveal that oversampling methods (smote, sw_smote) converge more slowly than RUS and baseline, reflecting the intense ranking competition among top-performing methods. Overall, the figure visually confirms that n=12 seeds is sufficient for obtaining stable condition rankings.
 
