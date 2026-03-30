@@ -46,7 +46,7 @@ CSV_BASE = (
 )
 OUT_DIR = (
     PROJECT_ROOT / "results" / "analysis" / "exp2_domain_shift"
-    / "figures" / "png" / "split2" / "journal_v2"
+    / "figures" / "svg" / "split2" / "journal_v2"
 )
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -95,17 +95,22 @@ DISTANCES = ["mmd", "dtw", "wasserstein"]
 LEVELS = ["in_domain", "out_domain"]
 PRIMARY_METRICS = [("f2", "F2-score"), ("auc", "AUROC"), ("auc_pr", "AUPRC")]
 
-# Journal style
+# IEEE T-IV journal style (double-column: 7.16 in, single: 3.5 in)
+_TIV_COLUMN_WIDTH = 3.5      # inches (single column)
+_TIV_TEXT_WIDTH   = 7.16     # inches (double column)
 plt.rcParams.update({
     "font.family": "serif",
-    "font.size": 10,
-    "axes.titlesize": 11,
-    "axes.labelsize": 10,
-    "xtick.labelsize": 9,
-    "ytick.labelsize": 9,
-    "legend.fontsize": 8,
+    "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
+    "mathtext.fontset": "stix",
+    "font.size": 8,
+    "axes.titlesize": 8,
+    "axes.labelsize": 8,
+    "xtick.labelsize": 7,
+    "ytick.labelsize": 7,
+    "legend.fontsize": 7,
     "figure.dpi": 150,
     "savefig.dpi": 300,
+    "svg.fonttype": "none",       # keep text as text in SVG
     "axes.grid": True,
     "grid.alpha": 0.3,
     "grid.linestyle": "--",
@@ -145,7 +150,7 @@ def load_all_data() -> pd.DataFrame:
 
 def _save(fig, name: str):
     out = OUT_DIR / name
-    fig.savefig(out, dpi=300, bbox_inches="tight", facecolor="white")
+    fig.savefig(out, bbox_inches="tight", facecolor="white", format="svg")
     plt.close(fig)
     print(f"  Saved: {out.relative_to(PROJECT_ROOT)}")
 
@@ -176,7 +181,7 @@ def plot_effect_hierarchy(df: pd.DataFrame):
 
     si = pd.read_csv(csv_path)
 
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(_TIV_TEXT_WIDTH, 3.0))
 
     # Factor display labels (short)
     factor_display = {
@@ -228,23 +233,21 @@ def plot_effect_hierarchy(df: pd.DataFrame):
             if sv > 0.02:
                 ax.text(x[j] + offset, sv + max(yerr_hi[j], 0) + 0.015,
                         f"$S_T$={sv:.3f}",
-                        ha="center", va="bottom", fontsize=6.5,
+                        ha="center", va="bottom", fontsize=5.5,
                         fontweight="bold")
                 # Also show S1
                 ax.text(x[j] + offset, s1v / 2,
                         f"{s1v:.3f}",
-                        ha="center", va="center", fontsize=6,
+                        ha="center", va="center", fontsize=5,
                         color="white", fontweight="bold")
             else:
                 ax.text(x[j] + offset, sv + 0.008,
                         f"{sv:.4f}",
-                        ha="center", va="bottom", fontsize=5.5)
+                        ha="center", va="bottom", fontsize=5)
 
     ax.set_xticks(x)
-    ax.set_xticklabels([factor_display[f] for f in factor_order], fontsize=10)
-    ax.set_ylabel("Sobol Index (fraction of total variance)", fontsize=10)
-    ax.set_title("Variance-Based Sensitivity Analysis by Experimental Factor",
-                 fontweight="bold")
+    ax.set_xticklabels([factor_display[f] for f in factor_order])
+    ax.set_ylabel("Sobol Index (fraction of total variance)")
 
     # Custom legend
     from matplotlib.patches import Patch
@@ -257,11 +260,11 @@ def plot_effect_hierarchy(df: pd.DataFrame):
             Patch(facecolor=colors_inter[mlabel], alpha=0.7, hatch="//",
                   label=f"{mlabel} — interactions ($S_{{Ti}}-S_i$)"))
     ax.legend(handles=legend_elements, loc="upper left", framealpha=0.9,
-              fontsize=7, ncol=1)
+              fontsize=6, ncol=1)
     ax.set_ylim(0, 0.82)
 
     fig.tight_layout()
-    _save(fig, "fig2_effect_hierarchy.png")
+    _save(fig, "fig2_effect_hierarchy.svg")
 
 
 # ===================================================================
@@ -270,7 +273,7 @@ def plot_effect_hierarchy(df: pd.DataFrame):
 def plot_condition_mode_heatmap(df: pd.DataFrame):
     """Heatmap of mean performance: 7 rebalancing strategies × 3 modes."""
 
-    fig, axes = plt.subplots(1, 3, figsize=(17, 5))
+    fig, axes = plt.subplots(1, 3, figsize=(_TIV_TEXT_WIDTH, 2.8))
 
     for ax_idx, (metric, mlabel) in enumerate(PRIMARY_METRICS):
         ax = axes[ax_idx]
@@ -283,9 +286,9 @@ def plot_condition_mode_heatmap(df: pd.DataFrame):
         im = ax.imshow(mat.values, cmap="YlOrRd", aspect="auto",
                        vmin=0, vmax=mat.values.max() * 1.05)
         ax.set_xticks(range(len(MODES)))
-        ax.set_xticklabels([MODE_LABELS[m] for m in MODES], fontsize=9)
+        ax.set_xticklabels([MODE_LABELS[m] for m in MODES])
         ax.set_yticks(range(len(CONDITIONS_7)))
-        ax.set_yticklabels([COND_LABELS[c] for c in CONDITIONS_7], fontsize=9)
+        ax.set_yticklabels([COND_LABELS[c] for c in CONDITIONS_7])
 
         # Annotate cells
         for i in range(len(CONDITIONS_7)):
@@ -293,16 +296,13 @@ def plot_condition_mode_heatmap(df: pd.DataFrame):
                 v = mat.values[i, j]
                 color = "white" if v > mat.values.max() * 0.6 else "black"
                 ax.text(j, i, f"{v:.3f}", ha="center", va="center",
-                        fontsize=9, fontweight="bold", color=color)
+                        fontsize=6.5, fontweight="bold", color=color)
 
-        ax.set_title(mlabel, fontsize=12, fontweight="bold")
+        ax.set_title(mlabel, fontweight="bold")
         plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04, label=mlabel)
 
-    fig.suptitle("Mean Performance by Rebalancing Strategy and Training Mode\n"
-                 "(pooled across distances, levels, and 12 seeds)",
-                 fontsize=12, fontweight="bold")
-    fig.tight_layout(rect=[0, 0, 1, 0.92])
-    _save(fig, "fig3_condition_mode_heatmap.png")
+    fig.tight_layout()
+    _save(fig, "fig3_condition_mode_heatmap.svg")
 
 
 # ===================================================================
@@ -329,7 +329,7 @@ def _draw_cd_diagram(ax, ranks: dict, cd: float, title: str):
     # CD bar
     ax.hlines(1.72, lo, lo + cd, color="#c0392b", linewidth=2.5)
     ax.text(lo + cd / 2, 1.80, f"CD = {cd:.2f}", ha="center", va="bottom",
-            fontsize=8.5, color="#c0392b", fontweight="bold")
+            fontsize=7, color="#c0392b", fontweight="bold")
 
     # Split left/right
     mid = k / 2.0
@@ -342,14 +342,14 @@ def _draw_cd_diagram(ax, ranks: dict, cd: float, title: str):
         ax.plot(r, 1.4, "o", color="black", markersize=4, zorder=5)
         ax.vlines(r, y, 1.4, color="black", linewidth=0.6)
         ax.text(r + 0.12, y, f"{name} ({r:.2f})", ha="left", va="center",
-                fontsize=7.5)
+                fontsize=6.5)
 
     for i, (name, r) in enumerate(right_items):
         y = 1.2 - (i + 1) * y_step
         ax.plot(r, 1.4, "o", color="black", markersize=4, zorder=5)
         ax.vlines(r, y, 1.4, color="black", linewidth=0.6)
         ax.text(r - 0.12, y, f"({r:.2f}) {name}", ha="right", va="center",
-                fontsize=7.5)
+                fontsize=6.5)
 
     # Non-significant groups (|rank_i - rank_j| < CD)
     groups = []
@@ -393,7 +393,7 @@ def _draw_cd_diagram(ax, ranks: dict, cd: float, title: str):
         bar_y = -0.05 - gi * 0.12
         ax.hlines(bar_y, r_min, r_max, color="black", linewidth=3, alpha=0.6)
 
-    ax.set_title(title, fontsize=10, fontweight="bold", pad=30)
+    ax.set_title(title, fontweight="bold", pad=30)
     ax.axis("off")
 
 
@@ -401,7 +401,7 @@ def plot_cd_diagrams(df: pd.DataFrame):
     """Generate CD diagrams for F2, AUROC, AUPRC (pooled in/out)."""
     metrics_cd = [("f2", "F2-score"), ("auc", "AUROC"), ("auc_pr", "AUPRC")]
 
-    fig, axes = plt.subplots(3, 1, figsize=(10, 12))
+    fig, axes = plt.subplots(3, 1, figsize=(_TIV_TEXT_WIDTH, 7.5))
 
     for ax_idx, (metric, mlabel) in enumerate(metrics_cd):
         ax = axes[ax_idx]
@@ -438,10 +438,8 @@ def plot_cd_diagrams(df: pd.DataFrame):
         title = (f"{mlabel} — Friedman χ²={chi2:.1f}, p<0.0001, CD={cd:.2f}")
         _draw_cd_diagram(ax, ranks_dict, cd, title)
 
-    fig.suptitle("Critical Difference Diagrams (Nemenyi Post-Hoc)",
-                 fontsize=13, fontweight="bold", y=1.01)
     fig.tight_layout()
-    _save(fig, "fig4_cd_diagrams.png")
+    _save(fig, "fig4_cd_diagrams.svg")
 
 
 # ===================================================================
@@ -450,7 +448,7 @@ def plot_cd_diagrams(df: pd.DataFrame):
 def plot_distance_violin(df: pd.DataFrame):
     """Violin plots showing near-identical distributions across 3 distance metrics."""
 
-    fig, axes = plt.subplots(1, 3, figsize=(14, 5), sharey=False)
+    fig, axes = plt.subplots(1, 3, figsize=(_TIV_TEXT_WIDTH, 2.8), sharey=False)
     dist_labels = {"mmd": "MMD", "dtw": "DTW", "wasserstein": "Wasserstein"}
     dist_colors = {"mmd": "#e74c3c", "dtw": "#3498db", "wasserstein": "#2ecc71"}
 
@@ -484,22 +482,19 @@ def plot_distance_violin(df: pd.DataFrame):
         eta2 = eta_squared_from_H(H, n_total, 3)
 
         ax.set_xticks(range(3))
-        ax.set_xticklabels([dist_labels[d] for d in DISTANCES], fontsize=10)
-        ax.set_ylabel(mlabel, fontsize=10)
-        ax.set_title(f"{mlabel}\nKW H={H:.2f}, p={p:.3f}, η²={eta2:.4f}",
-                     fontsize=10, fontweight="bold")
+        ax.set_xticklabels([dist_labels[d] for d in DISTANCES])
+        ax.set_ylabel(mlabel)
+        ax.set_title(f"{mlabel}\nKW H={H:.2f}, p={p:.3f}, $\eta^2$={eta2:.4f}",
+                     fontweight="bold")
 
         # Annotate means
         for i, d in enumerate(DISTANCES):
             vals = df[df["distance"] == d][metric].dropna()
             ax.text(i, vals.mean() + 0.01, f"{vals.mean():.3f}",
-                    ha="center", va="bottom", fontsize=8, fontweight="bold")
+                    ha="center", va="bottom", fontsize=6.5, fontweight="bold")
 
-    fig.suptitle("Distance Metric Has Negligible Effect on Performance\n"
-                 "(η² < 0.004 — distributions nearly identical)",
-                 fontsize=12, fontweight="bold")
-    fig.tight_layout(rect=[0, 0, 1, 0.90])
-    _save(fig, "fig5_distance_violin.png")
+    fig.tight_layout()
+    _save(fig, "fig5_distance_violin.svg")
 
 
 # ===================================================================
@@ -508,7 +503,7 @@ def plot_distance_violin(df: pd.DataFrame):
 def plot_mode_boxplot(df: pd.DataFrame):
     """Box plots showing massive mode effect: within ≈ mixed >> cross."""
 
-    fig, axes = plt.subplots(1, 3, figsize=(14, 5.5))
+    fig, axes = plt.subplots(1, 3, figsize=(_TIV_TEXT_WIDTH, 3.0))
     mode_colors = {
         "source_only": "#e74c3c",
         "target_only": "#3498db",
@@ -538,18 +533,16 @@ def plot_mode_boxplot(df: pd.DataFrame):
             vals = df[df["mode"] == m][metric].dropna()
             ax.plot(i, vals.mean(), "D", color="white", markersize=7,
                     markeredgecolor="black", markeredgewidth=1.5, zorder=5)
-            ax.text(i, vals.mean() + 0.012, f"μ={vals.mean():.3f}",
-                    ha="center", va="bottom", fontsize=8, fontweight="bold")
+            ax.text(i, vals.mean() + 0.012, f"$\mu$={vals.mean():.3f}",
+                    ha="center", va="bottom", fontsize=6.5, fontweight="bold")
 
         ax.set_xticks(range(3))
-        ax.set_xticklabels([MODE_LABELS[m] for m in MODES], fontsize=10)
-        ax.set_ylabel(mlabel, fontsize=10)
-        ax.set_title(mlabel, fontsize=11, fontweight="bold")
+        ax.set_xticklabels([MODE_LABELS[m] for m in MODES])
+        ax.set_ylabel(mlabel)
+        ax.set_title(mlabel, fontweight="bold")
 
-    fig.suptitle("Training Mode Effect: Within-Domain ≈ Mixed >> Cross-Domain",
-                 fontsize=12, fontweight="bold")
-    fig.tight_layout(rect=[0, 0, 1, 0.90])
-    _save(fig, "fig6_mode_boxplot.png")
+    fig.tight_layout()
+    _save(fig, "fig6_mode_boxplot.svg")
 
 
 # ===================================================================
@@ -558,7 +551,7 @@ def plot_mode_boxplot(df: pd.DataFrame):
 def plot_domain_shift(df: pd.DataFrame):
     """Diverging bar chart showing Δ = out − in by mode × condition."""
 
-    fig, axes = plt.subplots(1, 3, figsize=(17, 6))
+    fig, axes = plt.subplots(1, 3, figsize=(_TIV_TEXT_WIDTH, 3.5))
 
     for ax_idx, (metric, mlabel) in enumerate(PRIMARY_METRICS):
         ax = axes[ax_idx]
@@ -607,9 +600,9 @@ def plot_domain_shift(df: pd.DataFrame):
 
         ax.set_yticks(y)
         ax.set_yticklabels([COND_LABELS[CONDITIONS_7[i % 7]]
-                            for i in range(len(deltas))], fontsize=7.5)
-        ax.set_xlabel(f"Δ{mlabel} (Out − In domain)", fontsize=10)
-        ax.set_title(mlabel, fontsize=11, fontweight="bold")
+                            for i in range(len(deltas))], fontsize=6)
+        ax.set_xlabel(f"$\Delta${mlabel} (Out $-$ In domain)")
+        ax.set_title(mlabel, fontweight="bold")
         ax.invert_yaxis()
 
     # Legend
@@ -619,13 +612,10 @@ def plot_domain_shift(df: pd.DataFrame):
         Patch(facecolor="#e74c3c", alpha=0.7, label="Δ < 0 (in > out)"),
     ]
     fig.legend(handles=legend_elements, loc="lower center", ncol=2,
-               fontsize=9, framealpha=0.9)
+               fontsize=7, framealpha=0.9)
 
-    fig.suptitle("Domain Shift Direction by Rebalancing Strategy × Mode\n"
-                 "Green = out-domain outperforms (gap reversal)",
-                 fontsize=12, fontweight="bold")
-    fig.tight_layout(rect=[0, 0.05, 1, 0.92])
-    _save(fig, "fig7_domain_shift_reversal.png")
+    fig.tight_layout(rect=[0, 0.05, 1, 1.0])
+    _save(fig, "fig7_domain_shift_reversal.svg")
 
 
 # ===================================================================
@@ -670,7 +660,7 @@ def plot_convergence(df: pd.DataFrame):
     seeds = sorted(int(s) for s in df["seed"].unique())
     rng = np.random.RandomState(42)
 
-    fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+    fig, axes = plt.subplots(1, 3, figsize=(_TIV_TEXT_WIDTH, 2.8))
 
     for ax_idx, (metric, mlabel) in enumerate(PRIMARY_METRICS):
         ax = axes[ax_idx]
@@ -698,24 +688,21 @@ def plot_convergence(df: pd.DataFrame):
                    alpha=0.6, label="σ = 0.5 threshold")
 
         # Annotate final values
-        ax.annotate(f"σ = {mean_stds[-1]:.3f}",
+        ax.annotate(f"$\sigma$ = {mean_stds[-1]:.3f}",
                     xy=(ks[-1], mean_stds[-1]),
                     xytext=(ks[-1] - 1.5, mean_stds[-1] + 0.08),
-                    fontsize=8, fontweight="bold",
+                    fontsize=6.5, fontweight="bold",
                     arrowprops=dict(arrowstyle="->", color="#2c3e50", lw=1))
 
-        ax.set_xlabel("Number of Seeds (k)", fontsize=10)
-        ax.set_ylabel("σ_rank", fontsize=10)
-        ax.set_title(mlabel, fontsize=11, fontweight="bold")
+        ax.set_xlabel("Number of Seeds ($k$)")
+        ax.set_ylabel("$\sigma_{\mathrm{rank}}$")
+        ax.set_title(mlabel, fontweight="bold")
         ax.set_xticks(ks)
-        ax.legend(fontsize=8, loc="upper right")
+        ax.legend(fontsize=6, loc="upper right")
         ax.set_ylim(bottom=-0.02)
 
-    fig.suptitle("Seed Count Convergence — Ranking Stability vs. Subset Size\n"
-                 f"({len(seeds)} official seeds: {seeds})",
-                 fontsize=12, fontweight="bold")
-    fig.tight_layout(rect=[0, 0, 1, 0.90])
-    _save(fig, "fig8_seed_convergence.png")
+    fig.tight_layout()
+    _save(fig, "fig8_seed_convergence.svg")
 
 
 # ===================================================================
