@@ -4,7 +4,7 @@
 
 ## Abstract
 
-Drowsy driving detection (DDD) using vehicle dynamics faces two intertwined challenges: severe class imbalance between alert and drowsy states, and domain shift across individual drivers. Existing studies address these problems in isolation, leaving practitioners without guidance on which design choice matters most. This study introduces a factorial experimental framework to quantify the relative importance of four design factors — rebalancing strategy ($R$, 7 levels), training mode ($M$, 3 levels), distance metric ($D$, 3 levels), and domain membership ($G$, 2 levels) — through a Sobol–Hoeffding variance decomposition over 1,512 random forest evaluations (87 drivers, 12 random seeds) on a public driving simulator dataset [35]. A one-factor-at-a-time (OFAT) analysis first reveals qualitative trends; the subsequent Sobol decomposition then quantifies each factor's contribution and exposes interactions. Training mode and rebalancing strategy jointly account for $> 95$% of systematic variance ($S_{TM} = 0.48$–$0.66$; $S_{TR} = 0.40$–$0.46$), with a substantial interaction ($S_{R \times M} = 0.12$–$0.21$) that causes a full strategy ranking reversal across modes (Spearman $\rho = -0.74$ to $-0.89$). In contrast, distance metric ($S_{TD} < 0.015$; $BF_{01} = 71$–$767$) and domain membership ($S_{TG} < 0.031$) are negligible. SW-SMOTE at ratio $r = 0.1$ achieves the best within-domain performance (F2 = 0.558, AUROC = 0.903, AUPRC = 0.648), improving over the no-rebalancing baseline by +159%, +43%, and +457%, respectively. Vehicle dynamics coupling (bicycle model), weak inter-subject discrimination (ICC = 0.111), and rebalancing absorption ($S_{TR}/S_{TD} > 27\times$) provide a physics-grounded explanation for domain-configuration irrelevance. These findings demonstrate that practitioners should prioritise training mode selection and class rebalancing over domain grouping optimisation.
+Drowsy driving detection (DDD) using vehicle dynamics faces two intertwined challenges: severe class imbalance between alert and drowsy states, and domain shift across individual drivers. Existing studies address these problems in isolation, leaving practitioners without guidance on which design choice matters most. This study introduces a factorial experimental framework to quantify the relative importance of four design factors — rebalancing strategy ($R$, 7 levels), training mode ($M$, 3 levels), distance metric ($D$, 3 levels), and domain membership ($G$, 2 levels) — through a Sobol–Hoeffding variance decomposition over 1,512 random forest evaluations (87 drivers, 12 random seeds) on a public driving simulator dataset [34]. A one-factor-at-a-time (OFAT) analysis first reveals qualitative trends; the subsequent Sobol decomposition then quantifies each factor's contribution and exposes interactions. Training mode and rebalancing strategy jointly account for $> 95$% of systematic variance ($S_{TM} = 0.48$–$0.66$; $S_{TR} = 0.40$–$0.46$), with a substantial interaction ($S_{R \times M} = 0.12$–$0.21$) that causes a full strategy ranking reversal across modes (Spearman $\rho = -0.74$ to $-0.89$). In contrast, distance metric ($S_{TD} < 0.015$; $BF_{01} = 71$–$767$) and domain membership ($S_{TG} < 0.031$) are negligible. SW-SMOTE at ratio $r = 0.1$ achieves the best within-domain performance (F2 = 0.558, AUROC = 0.903, AUPRC = 0.648), improving over the no-rebalancing baseline by +159%, +43%, and +457%, respectively. Vehicle dynamics coupling (bicycle model), weak inter-subject discrimination (ICC = 0.111), and rebalancing absorption ($S_{TR}/S_{TD} > 27\times$) provide a physics-grounded explanation for domain-configuration irrelevance. These findings demonstrate that practitioners should prioritise training mode selection and class rebalancing over domain grouping optimisation.
 
 **Keywords**: drowsy driving detection, class imbalance, domain shift, vehicle dynamics, Sobol sensitivity analysis, factorial experiment, SMOTE
 
@@ -46,21 +46,24 @@ Class imbalance is inherent in drowsy driving data: drowsy episodes are rare but
 
 ### 2.3 Domain Shift and Cross-Subject Generalisation
 
-Inter-subject variability creates domain shift in DDD [4], [12]. Kim et al. [13] proposed calibration-free drowsiness classification with prototype-based domain mixup for EEG signals. Luo et al. [14] developed cross-scenario and cross-subject domain adaptation methods. Li et al. [15] introduced MADNet for EEG-based cross-subject drowsiness diagnosis using domain generalisation. Aravinth et al. [16] proposed dynamic cross-domain transfer learning for driver fatigue monitoring. These studies focus on architectural innovations to mitigate domain shift but do not quantify the relative importance of domain-related design choices (distance metric, membership, training mode) compared to preprocessing choices (rebalancing).
+Inter-subject variability creates domain shift in DDD [4], [12]. Kim et al. [13] proposed calibration-free drowsiness classification with prototype-based domain mixup for EEG signals. Luo et al. [14] developed cross-scenario and cross-subject domain adaptation methods. Li et al. [15] introduced MADNet for EEG-based cross-subject drowsiness diagnosis using domain generalisation. These studies focus on architectural innovations to mitigate domain shift but do not quantify the relative importance of domain-related design choices (distance metric, membership, training mode) compared to preprocessing choices (rebalancing).
 
 ### 2.4 Sensitivity Analysis in Machine Learning
 
-Variance-based sensitivity analysis using Sobol indices [17] has been applied in engineering and biological modelling [18] but remains underutilised in machine learning. Taylor et al. [19] pioneered the application of Sobol indices to rank deep learning hyperparameter influence, demonstrating that learning rate and batch size dominate while architectural choices have lower impact. Kuhnt and Kalka [20] used Sobol indices with FANOVA graphs for ML model interpretation. These works demonstrate the power of Sobol decomposition for identifying dominant factors in complex systems, but no study has applied this methodology to DDD or to the interplay between data preprocessing and domain configuration.
+Variance-based sensitivity analysis using Sobol indices [16] has been applied in engineering and biological modelling [17] but remains underutilised in machine learning. Taylor et al. [18] pioneered the application of Sobol indices to rank deep learning hyperparameter influence, demonstrating that learning rate and batch size dominate while architectural choices have lower impact. Kuhnt and Kalka [19] used Sobol indices with FANOVA graphs for ML model interpretation. These works demonstrate the power of Sobol decomposition for identifying dominant factors in complex systems, but no study has applied this methodology to DDD or to the interplay between data preprocessing and domain configuration.
 
 ---
 
 ## 3. Methodology
 
-The proposed methodology proceeds in five stages: (1) data acquisition and feature engineering from vehicle dynamics; (2) domain grouping of subjects via pairwise distance metrics; (3) factorial enumeration of all design factor combinations; (4) independent RF training with Optuna hyperparameter optimisation for each cell; and (5) Sobol–Hoeffding variance decomposition to rank factor importance. Stages 1–4 produce a balanced observation matrix of 1,512 classification scores; stage 5 decomposes the variance of this matrix into attributable sources.
+The proposed methodology proceeds in five stages: (1) data acquisition and feature engineering from vehicle dynamics; (2) domain grouping of subjects via pairwise distance metrics; (3) factorial enumeration of all design factor combinations; (4) independent RF training with Optuna hyperparameter optimisation for each cell; and (5) Sobol–Hoeffding variance decomposition to rank factor importance. Stages 1–4 produce a balanced observation matrix of 1,512 classification scores; stage 5 decomposes the variance of this matrix into attributable sources. Fig. 1 provides a system overview.
+
+![Pipeline Overview](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig1_pipeline_overview.svg)
+*Fig. 1. System overview of the proposed factorial sensitivity analysis pipeline for vehicle-dynamics-based DDD. Raw simulator signals are featurised, subjects are grouped by pairwise distance, and all 126 factor combinations are evaluated over 12 seeds. The resulting 1,512 observations are decomposed via Sobol–Hoeffding analysis.*
 
 ### 3.1 Data Acquisition and Feature Extraction
 
-The publicly available multi-modal driving dataset of Aygun et al. [35] (Harvard Dataverse, DOI: 10.7910/DVN/HMZ5RG) is used, comprising 87 subjects with two sessions each recorded on the SIMlsl driving simulator at $f_s = 60$ Hz. Five raw signals are extracted:
+The publicly available multi-modal driving dataset of Aygun et al. [34] (Harvard Dataverse, DOI: 10.7910/DVN/HMZ5RG) is used, comprising 87 subjects with two sessions each recorded on the SIMlsl driving simulator at $f_s = 60$ Hz. Five raw signals are extracted:
 
 | Symbol | Signal | Unit |
 |:------:|--------|:----:|
@@ -70,7 +73,7 @@ The publicly available multi-modal driving dataset of Aygun et al. [35] (Harvard
 | $a_x(t)$ | Longitudinal acceleration | m/s$^2$ |
 | $e_{\mathrm{lane}}(t)$ | Lane offset | m |
 
-Under the linear bicycle model [21], lateral dynamics follow:
+Under the linear bicycle model [20], lateral dynamics follow:
 
 $$a_y = v \cdot \frac{\dot{\delta}}{L} \tag{1}$$
 
@@ -82,15 +85,15 @@ creating a four-signal causal chain $\delta \to \dot{\delta} \to a_y \to e_{\mat
 
 Raw signals are segmented into 3-second sliding windows with 50% overlap (1.5-second step). Each window is labelled using the Karolinska Sleepiness Scale (KSS): KSS $\in \{1, \ldots, 5\}$ maps to Alert (class 0) and KSS $\in \{8, 9\}$ to Drowsy (class 1); intermediate scores (6, 7) are excluded to maximise label reliability.
 
-A total of 135 features are extracted per window using four methods: (i) statistical and spectral features (22 features $\times$ 2 signals = 44 dimensions) from FFT power spectra in the $[0.5, 30]$ Hz band; (ii) smooth/std/prediction-error features (3 features $\times$ 5 signals = 15 dimensions) using 2nd-order Taylor approximation [22]; (iii) permutation entropy features (8 ordinal patterns $\times$ 5 signals = 40 dimensions) capturing signal complexity; and (iv) time-frequency domain features (36 dimensions) via continuous wavelet transform. To reduce dimensionality and mitigate overfitting, features are ranked by random forest importance (200 trees, balanced class weights) and the top $k = 10$ are retained for each training configuration.
+A total of 135 features are extracted per window using four methods: (i) statistical and spectral features (22 features $\times$ 2 signals = 44 dimensions) from FFT power spectra in the $[0.5, 30]$ Hz band; (ii) smooth/std/prediction-error features (3 features $\times$ 5 signals = 15 dimensions) using 2nd-order Taylor approximation [21]; (iii) permutation entropy features (8 ordinal patterns $\times$ 5 signals = 40 dimensions) capturing signal complexity; and (iv) time-frequency domain features (36 dimensions) via continuous wavelet transform. To reduce dimensionality and mitigate overfitting, features are ranked by random forest importance (200 trees, balanced class weights) and the top $k = 10$ are retained for each training configuration.
 
 ### 3.2 Domain Grouping
 
 Pairwise distances between all 87 subjects are computed on their mean feature vectors using three metrics:
 
-- **Maximum Mean Discrepancy (MMD)** [23]: measures distributional differences in a reproducing kernel Hilbert space.
-- **Dynamic Time Warping (DTW)** [24]: aligns temporal sequences to capture pattern similarity.
-- **Wasserstein Distance** [25]: computes the minimum transport cost between distributions.
+- **Maximum Mean Discrepancy (MMD)** [22]: measures distributional differences in a reproducing kernel Hilbert space.
+- **Dynamic Time Warping (DTW)** [23]: aligns temporal sequences to capture pattern similarity.
+- **Wasserstein Distance** [24]: computes the minimum transport cost between distributions.
 
 For each metric, a $K$-nearest-neighbour (KNN) score ($K = 5$) is computed per subject, and subjects are split at the median into **in-domain** (44 subjects, most typical) and **out-domain** (43 subjects, most dissimilar).
 
@@ -105,9 +108,9 @@ The experiment follows a four-factor full-factorial design:
 | Distance metric ($D$) | — | 3 | MMD, DTW, Wasserstein |
 | Domain membership ($G$) | — | 2 | In-domain, Out-domain |
 
-The $7 \times 3 \times 3 \times 2 = 126$ factor combinations are each evaluated over 12 fixed random seeds, yielding $N = 1{,}512$ total observations. Three primary evaluation metrics are used: **F2-score** (emphasising recall for safety-critical detection), **AUROC** (overall discrimination), and **AUPRC** (precision–recall trade-off under class imbalance) [26]. Data are split per subject in chronological order: 60% train, 20% validation, 20% test.
+The $7 \times 3 \times 3 \times 2 = 126$ factor combinations are each evaluated over 12 fixed random seeds, yielding $N = 1{,}512$ total observations. Three primary evaluation metrics are used: **F2-score** (emphasising recall for safety-critical detection), **AUROC** (overall discrimination), and **AUPRC** (precision–recall trade-off under class imbalance) [25]. Data are split per subject in chronological order: 60% train, 20% validation, 20% test.
 
-**Classifier and hyperparameter optimisation.** All 126 factor combinations use a random forest (RF) classifier (scikit-learn `RandomForestClassifier`) whose hyperparameters are tuned independently per cell via Optuna [36] with 100 Tree-structured Parzen Estimator (TPE) trials and 3-fold stratified cross-validation, optimising the F2-score. Table 1 summarises the search space. After Optuna selection, the classification threshold is swept over 1,001 equally spaced values in $[0, 1]$, retaining the threshold that maximises F2 on the validation set. The final model is calibrated via Platt scaling (5-fold) on the combined train + validation data.
+**Classifier and hyperparameter optimisation.** All 126 factor combinations use a random forest (RF) classifier (scikit-learn `RandomForestClassifier`) whose hyperparameters are tuned independently per cell via Optuna [35] with 100 Tree-structured Parzen Estimator (TPE) trials and 3-fold stratified cross-validation, optimising the F2-score. Table 1 summarises the search space. After Optuna selection, the classification threshold is swept over 1,001 equally spaced values in $[0, 1]$, retaining the threshold that maximises F2 on the validation set. The final model is calibrated via Platt scaling (5-fold) on the combined train + validation data.
 
 **Table 1.** Random forest hyperparameter search space (Optuna, 100 TPE trials).
 
@@ -129,7 +132,7 @@ Before the quantitative decomposition, we perform an OFAT analysis to build intu
 
 ### 3.5 Variance-Based Sensitivity Analysis (Sobol Indices)
 
-To quantify the relative importance of each factor and their interactions, we adopt the Sobol–Hoeffding functional ANOVA decomposition [17], [27]. For a model output $Y = f(X_1, \ldots, X_k)$, the total variance admits a unique orthogonal decomposition:
+To quantify the relative importance of each factor and their interactions, we adopt the Sobol–Hoeffding functional ANOVA decomposition [16], [26]. For a model output $Y = f(X_1, \ldots, X_k)$, the total variance admits a unique orthogonal decomposition:
 
 $$V(Y) = \sum_{i=1}^{k} V_i + \sum_{i<j} V_{ij} + \cdots + V_{1,2,\ldots,k} \tag{3}$$
 
@@ -145,7 +148,7 @@ The difference $S_{Ti} - S_i$ quantifies the fraction of variance attributable t
 
 ### 3.6 Statistical Framework
 
-Due to non-normality (Shapiro–Wilk rejects normality in 45–71% of cells), all analyses use non-parametric tests: Kruskal–Wallis $H$ for $k$-group comparisons, Friedman $\chi_F^2$ for paired rankings, Mann–Whitney $U$ for pairwise unpaired tests, and Wilcoxon signed-rank for paired tests. Effect sizes use Cliff's $\delta$ [28] ($< 0.147$ negligible, $< 0.33$ small, $< 0.474$ medium, $\geq 0.474$ large). All test families are Bonferroni-corrected ($\alpha' = \alpha/m$, $\alpha = 0.05$). For null claims (e.g., distance metric equivalence), we supplement with Bayes factors via BIC approximation [29], interpreted on the Jeffreys scale [30]. A global permutation test ($B = 10{,}000$) validates the rebalancing effect. Seed convergence analysis confirms ranking stability.
+Due to non-normality (Shapiro–Wilk rejects normality in 45–71% of cells), all analyses use non-parametric tests: Kruskal–Wallis $H$ for $k$-group comparisons, Friedman $\chi_F^2$ for paired rankings, Mann–Whitney $U$ for pairwise unpaired tests, and Wilcoxon signed-rank for paired tests. Effect sizes use Cliff's $\delta$ [27] ($< 0.147$ negligible, $< 0.33$ small, $< 0.474$ medium, $\geq 0.474$ large). All test families are Bonferroni-corrected ($\alpha' = \alpha/m$, $\alpha = 0.05$). For null claims (e.g., distance metric equivalence), we supplement with Bayes factors via BIC approximation [28], interpreted on the Jeffreys scale [29]. A global permutation test ($B = 10{,}000$) validates the rebalancing effect. Seed convergence analysis confirms ranking stability.
 
 ---
 
@@ -153,33 +156,33 @@ Due to non-normality (Shapiro–Wilk rejects normality in 45–71% of cells), al
 
 ### 4.1 Intuitive Factor Analysis via OFAT
 
-Before the quantitative variance decomposition, we examine each factor's effect using OFAT spaghetti plots (Figs. 1–4). Each thin line represents one fixed combination of the other three factors (averaged over 12 seeds); the bold black line shows the grand OFAT mean, and the grey band indicates $\pm 1$ SD across conditions.
+Before the quantitative variance decomposition, we examine each factor's effect using OFAT spaghetti plots (Figs. 2–5). Each thin line represents one fixed combination of the other three factors (averaged over 12 seeds); the bold black line shows the grand OFAT mean, and the grey band indicates $\pm 1$ SD across conditions.
 
-**Rebalancing ($R$; Fig. 1).** SMOTE and SW-SMOTE variants consistently outperform Baseline and RUS across all 18 fixed conditions ($D \times G \times M$). The inter-condition spread ($\Delta = 0.08$–$0.55$ for F2-score) reflects strong mode-dependence: cross-domain conditions cluster at the bottom with small rebalancing gains, while within-domain and mixed conditions fan upward with large SMOTE-driven improvements. This visual pattern already suggests a substantial $R \times M$ interaction.
+**Rebalancing ($R$; Fig. 2).** SMOTE and SW-SMOTE variants consistently outperform Baseline and RUS across all 18 fixed conditions ($D \times G \times M$). The inter-condition spread ($\Delta = 0.08$–$0.55$ for F2-score) reflects strong mode-dependence: cross-domain conditions cluster at the bottom with small rebalancing gains, while within-domain and mixed conditions fan upward with large SMOTE-driven improvements. This visual pattern already suggests a substantial $R \times M$ interaction.
 
 ![OFAT Rebalancing](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_s_ofat_condition.svg)
-*Fig. 1. OFAT analysis for Rebalancing ($R$). Each line represents one of 18 fixed conditions ($D \times G \times M$), averaged over 12 seeds. Bold line: grand OFAT mean; grey band: $\pm 1$ SD. The large spread and mode-dependent fan confirm $R$'s strong, context-dependent effect.*
+*Fig. 2. OFAT analysis for Rebalancing ($R$). Each line represents one of 18 fixed conditions ($D \times G \times M$), averaged over 12 seeds. Bold line: grand OFAT mean; grey band: $\pm 1$ SD. The large spread and mode-dependent fan confirm $R$'s strong, context-dependent effect.*
 
-**Distance ($D$; Fig. 2).** The OFAT mean is flat across MMD, DTW, and Wasserstein, and individual condition lines remain nearly parallel. This confirms that $D$ is negligible regardless of which other factors are fixed.
+**Distance ($D$; Fig. 3).** The OFAT mean is flat across MMD, DTW, and Wasserstein, and individual condition lines remain nearly parallel. This confirms that $D$ is negligible regardless of which other factors are fixed.
 
 ![OFAT Distance](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_s_ofat_distance.svg)
-*Fig. 2. OFAT analysis for Distance ($D$). Each line represents one of 42 fixed conditions ($R \times G \times M$). The flat trajectories confirm metric irrelevance.*
+*Fig. 3. OFAT analysis for Distance ($D$). Each line represents one of 42 fixed conditions ($R \times G \times M$). The flat trajectories confirm metric irrelevance.*
 
-**Mode ($M$; Fig. 3).** Every condition shows a monotonic rise from cross-domain to within-domain/mixed. At the Cross level, all lines converge near floor performance (F2 $\approx 0.05$–$0.20$); at Within and Mixed, lines fan out according to rebalancing strategy — further evidence of the $R \times M$ interaction.
+**Mode ($M$; Fig. 4).** Every condition shows a monotonic rise from cross-domain to within-domain/mixed. At the Cross level, all lines converge near floor performance (F2 $\approx 0.05$–$0.20$); at Within and Mixed, lines fan out according to rebalancing strategy — further evidence of the $R \times M$ interaction.
 
 ![OFAT Mode](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_s_ofat_mode.svg)
-*Fig. 3. OFAT analysis for Mode ($M$). The monotonic rise and fan-out pattern visualise the dominant main effect and $R \times M$ interaction.*
+*Fig. 4. OFAT analysis for Mode ($M$). The monotonic rise and fan-out pattern visualise the dominant main effect and $R \times M$ interaction.*
 
-**Membership ($G$; Fig. 4).** The OFAT mean shows a slight upward slope from In-domain to Out-domain, but individual lines diverge in both directions. The effect averages to near zero, confirming negligibility.
+**Membership ($G$; Fig. 5).** The OFAT mean shows a slight upward slope from In-domain to Out-domain, but individual lines diverge in both directions. The effect averages to near zero, confirming negligibility.
 
 ![OFAT Membership](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_s_ofat_level.svg)
-*Fig. 4. OFAT analysis for Membership ($G$). Divergent lines and near-flat mean confirm the negligible main effect.*
+*Fig. 5. OFAT analysis for Membership ($G$). Divergent lines and near-flat mean confirm the negligible main effect.*
 
 **OFAT summary.** The visual analysis establishes a clear hierarchy: $M$ and $R$ are the dominant factors with a visible interaction, while $D$ and $G$ are negligible. The next section quantifies these observations.
 
 ### 4.2 Quantitative Factor Decomposition via Sobol Indices
 
-The Sobol–Hoeffding decomposition (Fig. 5) quantifies each factor's contribution to total variance. The permutation test confirms a significant global rebalancing effect for all three metrics ($p < 0.001$).
+The Sobol–Hoeffding decomposition (Fig. 6) quantifies each factor's contribution to total variance. The permutation test confirms a significant global rebalancing effect for all three metrics ($p < 0.001$).
 
 **Mode** contributes the largest main effect ($S_M = 0.31$–$0.50$), followed by **Rebalancing** ($S_R = 0.24$–$0.29$). Both factors participate in a substantial $R \times M$ interaction (21.2% of F2-score variance, 13.8% of AUROC variance). The total-order indices show that Mode accounts for $S_{TM} = 0.48$–$0.66$ and Rebalancing for $S_{TR} = 0.40$–$0.46$ of total variance.
 
@@ -192,7 +195,7 @@ $$\frac{S_M + S_R + S_{R \times M}}{1 - S_{\varepsilon}} = \frac{0.368 + 0.243 +
 Analogous ratios are 95.8% (AUROC) and 96.1% (AUPRC), confirming that $M$, $R$, and their interaction account for $> 95$% of systematic variance across all three metrics.
 
 ![Sensitivity Analysis](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig2_effect_hierarchy.svg)
-*Fig. 5. Sobol sensitivity indices for the four factors. Solid bars: first-order indices ($S_i$); hatched bars: interaction contributions ($S_{Ti} - S_i$). Error bars: 95% bootstrap CIs on $S_{Ti}$. Mode and Rebalancing dominate; Distance and Membership are negligible.*
+*Fig. 6. Sobol sensitivity indices for the four factors. Solid bars: first-order indices ($S_i$); hatched bars: interaction contributions ($S_{Ti} - S_i$). Error bars: 95% bootstrap CIs on $S_{Ti}$. Mode and Rebalancing dominate; Distance and Membership are negligible.*
 
 **$R \times M$ interaction concentration.** The coupling between $R$ and $M$ is not only the largest interaction but effectively the *only* one. The interaction concentration ratio $C_{R \times M}^{(i)} = S_{R \times M} / (S_{Ti} - S_i)$ — the share of factor $i$'s total interaction attributable to the $R \times M$ term — yields:
 
@@ -212,10 +215,10 @@ The factorial design's $2^k - k - 1 = 11$ interaction terms collapse into a sing
 | AUROC | 71 | Very strong evidence for $H_0$ |
 | AUPRC | 381 | Extreme evidence for $H_0$ |
 
-All Bayes factors provide "very strong" to "extreme" evidence on the Jeffreys scale [30] that the distance metric has no effect, affirming the Sobol result ($S_{TD} < 0.015$).
+All Bayes factors provide "very strong" to "extreme" evidence on the Jeffreys scale [29] that the distance metric has no effect, affirming the Sobol result ($S_{TD} < 0.015$).
 
 ![Distance Metric Violin](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig5_distance_violin.svg)
-*Fig. 6. Performance distributions by distance metric (within-domain and mixed modes). The three metrics produce virtually indistinguishable distributions ($|\delta| < 0.15$ for all pairwise comparisons).*
+*Fig. 7. Performance distributions by distance metric (within-domain and mixed modes). The three metrics produce virtually indistinguishable distributions ($|\delta| < 0.15$ for all pairwise comparisons).*
 
 ### 4.3 Inter-Factor Interactions
 
@@ -238,7 +241,7 @@ Table 2 shows mean performance by rebalancing strategy, disaggregated by trainin
 | SW-SMOTE $r{=}0.5$ | 0.304 $\pm$ 0.233 | 0.745 $\pm$ 0.166 | 0.274 $\pm$ 0.223 | 0.042 | 0.468 | 0.402 |
 
 ![Strategy Comparison](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig4_strategy_comparison.svg)
-*Fig. 7. Performance distributions of the 7 strategies by training mode (rows: F2, AUROC, AUPRC; columns: Cross, Within, Mixed). In Cross-domain, all strategies compress to a narrow low-performance band. In Within/Mixed, SMOTE-based strategies separate sharply from Baseline and RUS.*
+*Fig. 8. Performance distributions of the 7 strategies by training mode (rows: F2, AUROC, AUPRC; columns: Cross, Within, Mixed). In Cross-domain, all strategies compress to a narrow low-performance band. In Within/Mixed, SMOTE-based strategies separate sharply from Baseline and RUS.*
 
 #### 4.3.2 Strategy Ranking Reversal
 
@@ -249,25 +252,25 @@ $$\rho_{\mathrm{cross,within}} = -0.74 \;\text{to}\; -0.89 \tag{7}$$
 while within- vs. mixed yields $\rho \geq +0.99$ ($p < 0.001$). Kendall's $W$ across the three modes is $0.17$–$0.22$ (non-significant), confirming that modes do *not* agree on strategy rankings.
 
 ![Ranking Reversal](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_ranking_reversal.svg)
-*Fig. 8. Strategy ranking reversal — bump chart of Friedman mean ranks across training modes. In Cross-domain, RUS variants rank highest; in Within/Mixed, SMOTE-based strategies dominate. The near-perfect overlap of Within and Mixed ($\rho \geq 0.99$) contrasts with the complete inversion of Cross vs. Within ($\rho = -0.74$ to $-0.89$).*
+*Fig. 9. Strategy ranking reversal — bump chart of Friedman mean ranks across training modes. In Cross-domain, RUS variants rank highest; in Within/Mixed, SMOTE-based strategies dominate. The near-perfect overlap of Within and Mixed ($\rho \geq 0.99$) contrasts with the complete inversion of Cross vs. Within ($\rho = -0.74$ to $-0.89$).*
 
 The practical consequence is that a practitioner who selects a rebalancing strategy based on cross-domain results would deploy the *worst* strategy for within-domain operation, and vice versa (Table 2).
 
 #### 4.3.3 Domain Gap Reversal
 
-An unexpected finding is that the domain gap reverses in within-domain and mixed training: out-domain subjects sometimes outperform in-domain subjects ($\Delta > 0$). Fig. 9 visualises this through diverging bars for each $R \times M \times G$ cell. Green bars (positive $\Delta$) indicate out-domain outperformance.
+An unexpected finding is that the domain gap reverses in within-domain and mixed training: out-domain subjects sometimes outperform in-domain subjects ($\Delta > 0$). Fig. 10 visualises this through diverging bars for each $R \times M \times G$ cell. Green bars (positive $\Delta$) indicate out-domain outperformance.
 
 ![Domain Shift Direction](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig7_domain_shift_reversal.svg)
-*Fig. 9. Domain gap direction ($\Delta = \mathrm{out} - \mathrm{in}$) by $R \times M$. Green bars = out-domain outperforms in-domain (gap reversal). The prevalence of green bars in Mixed mode confirms that domain membership does not cause systematic degradation.*
+*Fig. 10. Domain gap direction ($\Delta = \mathrm{out} - \mathrm{in}$) by $R \times M$. Green bars = out-domain outperforms in-domain (gap reversal). The prevalence of green bars in Mixed mode confirms that domain membership does not cause systematic degradation.*
 
 The Sobol decomposition confirms that while the direction reversal is qualitatively notable, its magnitude is small: $S_{G \times M} = 0.006$–$0.009$ (0.6–0.9% of total variance), an order of magnitude below $S_{R \times M}$.
 
 ### 4.4 Robustness Validation
 
-**Seed convergence.** Ranking stability ($\sigma_{\mathrm{rank}}$) decreases monotonically with the number of seeds, reaching 0 (F2, AUPRC) or 0.147 (AUROC) by $k = 11$ of 12 seeds (Fig. 10), confirming sufficient seed count.
+**Seed convergence.** Ranking stability ($\sigma_{\mathrm{rank}}$) decreases monotonically with the number of seeds, reaching 0 (F2, AUPRC) or 0.147 (AUROC) by $k = 11$ of 12 seeds (Fig. 11), confirming sufficient seed count.
 
 ![Seed Convergence](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig8_seed_convergence.svg)
-*Fig. 10. Ranking stability ($\sigma_{\mathrm{rank}}$) as a function of seed subset size $k$. Monotonic convergence confirms that $n = 12$ seeds is sufficient.*
+*Fig. 11. Ranking stability ($\sigma_{\mathrm{rank}}$) as a function of seed subset size $k$. Monotonic convergence confirms that $n = 12$ seeds is sufficient.*
 
 **Cross-metric concordance.** Kendall's $W = 0.643$ across scores; AUROC–AUPRC $\rho = 0.929$. Results are consistent across 5 metrics and 2 sampling ratios (91% directional agreement).
 
@@ -325,7 +328,7 @@ The findings prescribe a clear decision hierarchy for practitioners deploying ve
 
 ### 5.4 Comparison with Prior Work
 
-Our finding that class imbalance handling is the dominant design factor aligns with Taylor et al. [19], who showed that data-related hyperparameters dominate architectural choices in deep learning. However, our study is the first to demonstrate this in the DDD context and, crucially, to reveal the interaction with training mode that causes strategy ranking reversal. Prior DDD studies that compare rebalancing methods under a single training mode [11] risk selecting a suboptimal strategy for deployment.
+Our finding that class imbalance handling is the dominant design factor aligns with Taylor et al. [18], who showed that data-related hyperparameters dominate architectural choices in deep learning. However, our study is the first to demonstrate this in the DDD context and, crucially, to reveal the interaction with training mode that causes strategy ranking reversal. Prior DDD studies that compare rebalancing methods under a single training mode [11] risk selecting a suboptimal strategy for deployment.
 
 The best within-domain performance (F2 = 0.558, AUROC = 0.903) is competitive with recent vehicle-dynamics-based methods. Wang et al. [7] reported comparable AUROC (0.91) using an LSTM on the same dataset, but under a single fixed split without systematic factor variation. He et al. [11] achieved higher EEG-based accuracy, but on a different modality with inherently stronger discriminative signals. Direct comparison is difficult because no prior study evaluates the same factorial design space; however, the absolute performance level confirms that our RF-based pipeline is a credible baseline, and the methodology contribution — the Sobol decomposition framework — is orthogonal to classifier choice.
 
@@ -359,7 +362,7 @@ This study presents the first factorial experimental analysis of drowsy driving 
 
 For practitioners, these results prescribe a simple decision rule: prioritise within-domain training and SMOTE-based class rebalancing; distance metric and domain grouping strategy require no optimisation. The factorial sensitivity analysis framework introduced here can be extended to other safety-critical detection tasks where multiple design factors interact.
 
-**Data and Code Availability.** The driving simulator dataset is publicly available at Harvard Dataverse (DOI: [10.7910/DVN/HMZ5RG](https://doi.org/10.7910/DVN/HMZ5RG)) [35]. Analysis code and trained models will be released upon publication.
+**Data and Code Availability.** The driving simulator dataset is publicly available at Harvard Dataverse (DOI: [10.7910/DVN/HMZ5RG](https://doi.org/10.7910/DVN/HMZ5RG)) [34]. Analysis code and trained models will be released upon publication.
 
 ---
 
@@ -395,42 +398,42 @@ For practitioners, these results prescribe a simple decision rule: prioritise wi
 
 [15] S. Li, H. Wang, X. Liu, and R. Zhu, "MADNet: EEG modality augmentation for domain-generalized cross-subject drowsiness diagnosis," *ACM Trans. Multimedia Comput. Commun. Appl.*, 2026.
 
-[16] S. S. Aravinth *et al.*, "Dynamic cross-domain transfer learning for driver fatigue monitoring: Multi-modal sensor fusion with adaptive real-time personalizations," *Sci. Rep.*, vol. 15, p. 92701, 2025.
+[16] I. M. Sobol', "Sensitivity estimates for nonlinear mathematical models," *Math. Model. Comput. Exp.*, vol. 1, no. 4, pp. 407–414, 1993.
 
-[17] I. M. Sobol', "Sensitivity estimates for nonlinear mathematical models," *Math. Model. Comput. Exp.*, vol. 1, no. 4, pp. 407–414, 1993.
+[17] M. Tosin, A. M. A. Côrtes, and A. Cunha Jr., "A tutorial on Sobol' global sensitivity analysis applied to biological models," in *Networks in Systems Biology*, Springer, 2020, pp. 93–118.
 
-[18] M. Tosin, A. M. A. Côrtes, and A. Cunha Jr., "A tutorial on Sobol' global sensitivity analysis applied to biological models," in *Networks in Systems Biology*, Springer, 2020, pp. 93–118.
+[18] R. Taylor, V. Ojha, I. Martino, and G. Nicosia, "Sensitivity analysis for deep learning: Ranking hyper-parameter influence," in *Proc. IEEE Symp. Ser. Comput. Intell.*, 2021, pp. 1–10.
 
-[19] R. Taylor, V. Ojha, I. Martino, and G. Nicosia, "Sensitivity analysis for deep learning: Ranking hyper-parameter influence," in *Proc. IEEE Symp. Ser. Comput. Intell.*, 2021, pp. 1–10.
+[19] S. Kuhnt and A. Kalka, "Global sensitivity analysis for the interpretation of machine learning algorithms," in *Artificial Intelligence, Big Data and Data Science in Statistics*, Springer, 2022, pp. 135–164.
 
-[20] S. Kuhnt and A. Kalka, "Global sensitivity analysis for the interpretation of machine learning algorithms," in *Artificial Intelligence, Big Data and Data Science in Statistics*, Springer, 2022, pp. 135–164.
+[20] R. Rajamani, *Vehicle Dynamics and Control*, 2nd ed. New York, NY, USA: Springer, 2012.
 
-[21] R. Rajamani, *Vehicle Dynamics and Control*, 2nd ed. New York, NY, USA: Springer, 2012.
+[21] M. Atiquzzaman *et al.*, "Real-time detection of drivers' texting and eating behavior based on vehicle dynamics," *Transp. Res. Part F*, vol. 58, pp. 594–604, 2018.
 
-[22] M. Atiquzzaman *et al.*, "Real-time detection of drivers' texting and eating behavior based on vehicle dynamics," *Transp. Res. Part F*, vol. 58, pp. 594–604, 2018.
+[22] A. Gretton *et al.*, "A kernel two-sample test," *J. Mach. Learn. Res.*, vol. 13, no. 1, pp. 723–773, 2012.
 
-[23] A. Gretton *et al.*, "A kernel two-sample test," *J. Mach. Learn. Res.*, vol. 13, no. 1, pp. 723–773, 2012.
+[23] D. J. Berndt and J. Clifford, "Using dynamic time warping to find patterns in time series," in *AAAI Workshop Knowl. Discov. Databases*, 1994, pp. 359–370.
 
-[24] D. J. Berndt and J. Clifford, "Using dynamic time warping to find patterns in time series," in *AAAI Workshop Knowl. Discov. Databases*, 1994, pp. 359–370.
+[24] C. Villani, *Optimal Transport: Old and New*. Berlin, Germany: Springer, 2009.
 
-[25] C. Villani, *Optimal Transport: Old and New*. Berlin, Germany: Springer, 2009.
+[25] T. Saito and M. Rehmsmeier, "The precision–recall plot is more informative than the ROC plot when evaluating binary classifiers on imbalanced datasets," *PLOS ONE*, vol. 10, no. 3, e0118432, 2015.
 
-[26] T. Saito and M. Rehmsmeier, "The precision–recall plot is more informative than the ROC plot when evaluating binary classifiers on imbalanced datasets," *PLOS ONE*, vol. 10, no. 3, e0118432, 2015.
+[26] A. Saltelli, M. Ratto, T. Andres, F. Campolongo, J. Cariboni, D. Gatelli, M. Saisana, and S. Tarantola, *Global Sensitivity Analysis: The Primer*. Chichester, UK: Wiley, 2008.
 
-[27] A. Saltelli, M. Ratto, T. Andres, F. Campolongo, J. Cariboni, D. Gatelli, M. Saisana, and S. Tarantola, *Global Sensitivity Analysis: The Primer*. Chichester, UK: Wiley, 2008.
+[27] N. Cliff, "Dominance statistics: Ordinal analyses to answer ordinal questions," *Psychol. Bull.*, vol. 114, no. 3, pp. 494–509, 1993.
 
-[28] N. Cliff, "Dominance statistics: Ordinal analyses to answer ordinal questions," *Psychol. Bull.*, vol. 114, no. 3, pp. 494–509, 1993.
+[28] E.-J. Wagenmakers, "A practical solution to the pervasive problems of $p$ values," *Psychon. Bull. Rev.*, vol. 14, no. 5, pp. 779–804, 2007.
 
-[29] E.-J. Wagenmakers, "A practical solution to the pervasive problems of $p$ values," *Psychon. Bull. Rev.*, vol. 14, no. 5, pp. 779–804, 2007.
+[29] H. Jeffreys, *Theory of Probability*, 3rd ed. Oxford, UK: Oxford Univ. Press, 1961.
 
-[30] H. Jeffreys, *Theory of Probability*, 3rd ed. Oxford, UK: Oxford Univ. Press, 1961.
+[30] W. H. Kruskal and W. A. Wallis, "Use of ranks in one-criterion variance analysis," *J. Amer. Stat. Assoc.*, vol. 47, no. 260, pp. 583–621, 1952.
 
-[31] W. H. Kruskal and W. A. Wallis, "Use of ranks in one-criterion variance analysis," *J. Amer. Stat. Assoc.*, vol. 47, no. 260, pp. 583–621, 1952.
+[31] M. Friedman, "The use of ranks to avoid the assumption of normality," *J. Amer. Stat. Assoc.*, vol. 32, no. 200, pp. 675–701, 1937.
 
-[32] M. Friedman, "The use of ranks to avoid the assumption of normality," *J. Amer. Stat. Assoc.*, vol. 32, no. 200, pp. 675–701, 1937.
+[32] P. Nemenyi, "Distribution-free multiple comparisons," Ph.D. dissertation, Princeton Univ., Princeton, NJ, USA, 1963.
 
-[33] P. Nemenyi, "Distribution-free multiple comparisons," Ph.D. dissertation, Princeton Univ., Princeton, NJ, USA, 1963.
+[33] M. E. J. Masson, "A tutorial on a practical Bayesian alternative to null-hypothesis significance testing," *Behav. Res. Methods*, vol. 43, no. 3, pp. 679–690, 2011.
 
-[34] M. E. J. Masson, "A tutorial on a practical Bayesian alternative to null-hypothesis significance testing," *Behav. Res. Methods*, vol. 43, no. 3, pp. 679–690, 2011.[35] A. Aygun *et al.*, “Multi-modal data acquisition platform for behavioral evaluation,” Harvard Dataverse, 2024. DOI: 10.7910/DVN/HMZ5RG.
+[34] A. Aygun *et al.*, "Multi-modal data acquisition platform for behavioral evaluation," Harvard Dataverse, 2024. DOI: 10.7910/DVN/HMZ5RG.
 
-[36] T. Akiba, S. Sano, T. Yanase, T. Ohta, and M. Koyama, “Optuna: A next-generation hyperparameter optimization framework,” in *Proc. ACM SIGKDD Int. Conf. Knowl. Discov. Data Mining*, 2019, pp. 2623–2631.
+[35] T. Akiba, S. Sano, T. Yanase, T. Ohta, and M. Koyama, “Optuna: A next-generation hyperparameter optimization framework,” in *Proc. ACM SIGKDD Int. Conf. Knowl. Discov. Data Mining*, 2019, pp. 2623–2631.
