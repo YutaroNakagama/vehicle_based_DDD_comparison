@@ -68,21 +68,22 @@ COND_LABELS = {
     "sw_smote_r01":  "SW-SMOTE r=0.1",
     "sw_smote_r05":  "SW-SMOTE r=0.5",
 }
+# Okabe-Ito colorblind-safe palette
 COND_COLORS = {
-    "baseline":      "#95a5a6",
-    "rus_r01":       "#27ae60",
-    "rus_r05":       "#1e8449",
-    "smote_r01":     "#3498db",
-    "smote_r05":     "#2980b9",
-    "sw_smote_r01":  "#e67e22",
-    "sw_smote_r05":  "#d35400",
+    "baseline":      "#999999",   # grey
+    "rus_r01":       "#E69F00",   # orange
+    "rus_r05":       "#D55E00",   # vermilion
+    "smote_r01":     "#0072B2",   # blue
+    "smote_r05":     "#56B4E9",   # sky blue
+    "sw_smote_r01":  "#CC79A7",   # reddish purple
+    "sw_smote_r05":  "#F0E442",   # yellow
 }
 # Condition family colors for grouped visuals
 FAMILY_COLORS = {
-    "baseline": "#95a5a6",
-    "rus":      "#27ae60",
-    "smote":    "#3498db",
-    "sw_smote": "#e67e22",
+    "baseline": "#999999",
+    "rus":      "#E69F00",
+    "smote":    "#0072B2",
+    "sw_smote": "#CC79A7",
 }
 MODE_LABELS = {
     "source_only": "Cross-domain",
@@ -192,8 +193,8 @@ def plot_effect_hierarchy(df: pd.DataFrame):
     }
     factor_order = ["condition", "distance", "level", "mode"]
     metric_names = ["F2-score", "AUROC", "AUPRC"]
-    colors_s1 = {"F2-score": "#e74c3c", "AUROC": "#3498db", "AUPRC": "#2ecc71"}
-    colors_inter = {"F2-score": "#f5b7b1", "AUROC": "#aed6f1", "AUPRC": "#abebc6"}
+    colors_s1 = {"F2-score": "#D55E00", "AUROC": "#0072B2", "AUPRC": "#009E73"}
+    colors_inter = {"F2-score": "#E69F00", "AUROC": "#56B4E9", "AUPRC": "#66C2A5"}
 
     x = np.arange(len(factor_order))
     width = 0.22
@@ -283,7 +284,7 @@ def plot_condition_mode_heatmap(df: pd.DataFrame):
         mat = pivot.pivot(index="condition", columns="mode", values=metric)
         mat = mat.reindex(index=CONDITIONS_7, columns=MODES)
 
-        im = ax.imshow(mat.values, cmap="YlOrRd", aspect="auto",
+        im = ax.imshow(mat.values, cmap="viridis", aspect="auto",
                        vmin=0, vmax=mat.values.max() * 1.05)
         ax.set_xticks(range(len(MODES)))
         ax.set_xticklabels([MODE_LABELS[m] for m in MODES])
@@ -327,9 +328,9 @@ def _draw_cd_diagram(ax, ranks: dict, cd: float, title: str):
         ax.text(r, 1.52, str(r), ha="center", va="bottom", fontsize=8)
 
     # CD bar
-    ax.hlines(1.72, lo, lo + cd, color="#c0392b", linewidth=2.5)
+    ax.hlines(1.72, lo, lo + cd, color="#D55E00", linewidth=2.5)
     ax.text(lo + cd / 2, 1.80, f"CD = {cd:.2f}", ha="center", va="bottom",
-            fontsize=7, color="#c0392b", fontweight="bold")
+            fontsize=7, color="#D55E00", fontweight="bold")
 
     # Split left/right
     mid = k / 2.0
@@ -450,7 +451,7 @@ def plot_distance_violin(df: pd.DataFrame):
 
     fig, axes = plt.subplots(1, 3, figsize=(_TIV_TEXT_WIDTH, 2.8), sharey=False)
     dist_labels = {"mmd": "MMD", "dtw": "DTW", "wasserstein": "Wasserstein"}
-    dist_colors = {"mmd": "#e74c3c", "dtw": "#3498db", "wasserstein": "#2ecc71"}
+    dist_colors = {"mmd": "#D55E00", "dtw": "#0072B2", "wasserstein": "#009E73"}
 
     for ax_idx, (metric, mlabel) in enumerate(PRIMARY_METRICS):
         ax = axes[ax_idx]
@@ -473,7 +474,7 @@ def plot_distance_violin(df: pd.DataFrame):
             pc.set_facecolor(dist_colors[d])
             pc.set_alpha(0.4)
         parts["cmeans"].set_color("black")
-        parts["cmedians"].set_color("#c0392b")
+        parts["cmedians"].set_color("#D55E00")
 
         # Compute KW for annotation
         groups = [df[df["distance"] == d][metric].dropna().values for d in DISTANCES]
@@ -505,9 +506,9 @@ def plot_mode_boxplot(df: pd.DataFrame):
 
     fig, axes = plt.subplots(1, 3, figsize=(_TIV_TEXT_WIDTH, 3.0))
     mode_colors = {
-        "source_only": "#e74c3c",
-        "target_only": "#3498db",
-        "mixed":       "#2ecc71",
+        "source_only": "#D55E00",   # vermilion
+        "target_only": "#0072B2",   # blue
+        "mixed":       "#009E73",   # bluish green
     }
 
     for ax_idx, (metric, mlabel) in enumerate(PRIMARY_METRICS):
@@ -576,7 +577,7 @@ def plot_domain_shift(df: pd.DataFrame):
                 colors.append(COND_COLORS[cond])
 
         y = np.arange(len(deltas))
-        bar_colors = ["#27ae60" if d >= 0 else "#e74c3c" for d in deltas]
+        bar_colors = ["#0072B2" if d >= 0 else "#D55E00" for d in deltas]
 
         ax.barh(y, deltas, color=bar_colors, alpha=0.7, edgecolor="white",
                 linewidth=0.5, height=0.7)
@@ -608,8 +609,8 @@ def plot_domain_shift(df: pd.DataFrame):
     # Legend
     from matplotlib.patches import Patch
     legend_elements = [
-        Patch(facecolor="#27ae60", alpha=0.7, label="Δ > 0 (out > in)"),
-        Patch(facecolor="#e74c3c", alpha=0.7, label="Δ < 0 (in > out)"),
+        Patch(facecolor="#0072B2", alpha=0.7, label="Δ > 0 (out > in)"),
+        Patch(facecolor="#D55E00", alpha=0.7, label="Δ < 0 (in > out)"),
     ]
     fig.legend(handles=legend_elements, loc="lower center", ncol=2,
                fontsize=7, framealpha=0.9)
@@ -673,8 +674,8 @@ def plot_convergence(df: pd.DataFrame):
 
         ax.plot(ks, mean_stds, "o-", color="#2c3e50", linewidth=2.5,
                 markersize=9, label="Mean σ_rank", zorder=5)
-        ax.fill_between(ks, 0, max_stds, alpha=0.12, color="#3498db")
-        ax.plot(ks, max_stds, "s--", color="#3498db", linewidth=1.2,
+        ax.fill_between(ks, 0, max_stds, alpha=0.12, color="#0072B2")
+        ax.plot(ks, max_stds, "s--", color="#0072B2", linewidth=1.2,
                 markersize=6, alpha=0.7, label="Max σ_rank")
 
         # Per-condition lines
@@ -684,7 +685,7 @@ def plot_convergence(df: pd.DataFrame):
                     linewidth=0.8, alpha=0.4)
 
         # Reference
-        ax.axhline(0.5, color="#e74c3c", linewidth=0.8, linestyle=":",
+        ax.axhline(0.5, color="#D55E00", linewidth=0.8, linestyle=":",
                    alpha=0.6, label="σ = 0.5 threshold")
 
         # Annotate final values

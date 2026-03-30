@@ -6,7 +6,7 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-03-31T00:45:38.786760</dc:date>
+    <dc:date>2026-03-31T01:05:57.615764</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -40,7 +40,7 @@ Q 7.509181 14.145 7.509181 16.686
 L 7.509181 92.916 
 Q 7.509181 95.457 9.506821 95.457 
 z
-" clip-path="url(#p22395b6575)" style="fill: #d4e6f1; stroke: #2980b9; stroke-width: 1.2; stroke-linejoin: miter"/>
+" clip-path="url(#p9b81b656f6)" style="fill: #cce5ff; stroke: #0072b2; stroke-width: 1.2; stroke-linejoin: miter"/>
    </g>
    <g id="patch_3">
     <path d="M 75.428941 95.457 
@@ -53,7 +53,7 @@ Q 73.431301 14.145 73.431301 16.686
 L 73.431301 92.916 
 Q 73.431301 95.457 75.428941 95.457 
 z
-" clip-path="url(#p22395b6575)" style="fill: #fdebd0; stroke: #e67e22; stroke-width: 1.2; stroke-linejoin: miter"/>
+" clip-path="url(#p9b81b656f6)" style="fill: #fff2cc; stroke: #e69f00; stroke-width: 1.2; stroke-linejoin: miter"/>
    </g>
    <g id="patch_4">
     <path d="M 141.351061 95.457 
@@ -66,7 +66,7 @@ Q 139.353421 14.145 139.353421 16.686
 L 139.353421 92.916 
 Q 139.353421 95.457 141.351061 95.457 
 z
-" clip-path="url(#p22395b6575)" style="fill: #d5f5e3; stroke: #27ae60; stroke-width: 1.2; stroke-linejoin: miter"/>
+" clip-path="url(#p9b81b656f6)" style="fill: #d5f5e3; stroke: #009e73; stroke-width: 1.2; stroke-linejoin: miter"/>
    </g>
    <g id="patch_5">
     <path d="M 207.273181 95.457 
@@ -79,7 +79,7 @@ Q 205.275541 14.145 205.275541 16.686
 L 205.275541 92.916 
 Q 205.275541 95.457 207.273181 95.457 
 z
-" clip-path="url(#p22395b6575)" style="fill: #e8daef; stroke: #8e44ad; stroke-width: 1.2; stroke-linejoin: miter"/>
+" clip-path="url(#p9b81b656f6)" style="fill: #e8daef; stroke: #8e44ad; stroke-width: 1.2; stroke-linejoin: miter"/>
    </g>
    <g id="patch_6">
     <path d="M 281.185861 95.457 
@@ -92,7 +92,7 @@ Q 279.188221 14.145 279.188221 16.686
 L 279.188221 92.916 
 Q 279.188221 95.457 281.185861 95.457 
 z
-" clip-path="url(#p22395b6575)" style="fill: #fadbd8; stroke: #c0392b; stroke-width: 1.2; stroke-linejoin: miter"/>
+" clip-path="url(#p9b81b656f6)" style="fill: #fadbd8; stroke: #d55e00; stroke-width: 1.2; stroke-linejoin: miter"/>
    </g>
    <g id="patch_7">
     <path d="M 347.107981 95.457 
@@ -105,7 +105,7 @@ Q 345.110341 14.145 345.110341 16.686
 L 345.110341 92.916 
 Q 345.110341 95.457 347.107981 95.457 
 z
-" clip-path="url(#p22395b6575)" style="fill: #fcf3cf; stroke: #f39c12; stroke-width: 1.2; stroke-linejoin: miter"/>
+" clip-path="url(#p9b81b656f6)" style="fill: #fcf3cf; stroke: #f0e442; stroke-width: 1.2; stroke-linejoin: miter"/>
    </g>
    <g id="patch_8">
     <path d="M 65.441716 53.551 
@@ -117,7 +117,7 @@ L 68.42363 56.051
 Q 66.932673 56.051 65.441716 56.051 
 L 65.441716 53.551 
 z
-" clip-path="url(#p22395b6575)" style="fill: #555555; stroke: #555555; stroke-linecap: round"/>
+" clip-path="url(#p9b81b656f6)" style="fill: #555555; stroke: #555555; stroke-linecap: round"/>
    </g>
    <g id="patch_9">
     <path d="M 131.363836 53.551 
@@ -129,7 +129,7 @@ L 134.34575 56.051
 Q 132.854793 56.051 131.363836 56.051 
 L 131.363836 53.551 
 z
-" clip-path="url(#p22395b6575)" style="fill: #555555; stroke: #555555; stroke-linecap: round"/>
+" clip-path="url(#p9b81b656f6)" style="fill: #555555; stroke: #555555; stroke-linecap: round"/>
    </g>
    <g id="patch_10">
     <path d="M 197.285956 53.551 
@@ -141,7 +141,7 @@ L 200.26787 56.051
 Q 198.776913 56.051 197.285956 56.051 
 L 197.285956 53.551 
 z
-" clip-path="url(#p22395b6575)" style="fill: #555555; stroke: #555555; stroke-linecap: round"/>
+" clip-path="url(#p9b81b656f6)" style="fill: #555555; stroke: #555555; stroke-linecap: round"/>
    </g>
    <g id="patch_11">
     <path d="M 271.198636 53.551 
@@ -153,7 +153,7 @@ L 274.18055 56.051
 Q 272.689593 56.051 271.198636 56.051 
 L 271.198636 53.551 
 z
-" clip-path="url(#p22395b6575)" style="fill: #555555; stroke: #555555; stroke-linecap: round"/>
+" clip-path="url(#p9b81b656f6)" style="fill: #555555; stroke: #555555; stroke-linecap: round"/>
    </g>
    <g id="patch_12">
     <path d="M 337.120756 53.551 
@@ -165,10 +165,10 @@ L 340.10267 56.051
 Q 338.611713 56.051 337.120756 56.051 
 L 337.120756 53.551 
 z
-" clip-path="url(#p22395b6575)" style="fill: #555555; stroke: #555555; stroke-linecap: round"/>
+" clip-path="url(#p9b81b656f6)" style="fill: #555555; stroke: #555555; stroke-linecap: round"/>
    </g>
    <g id="text_1">
-    <text style="fill: #2980b9; font: 700 7.5px 'Times New Roman', 'Times', 'DejaVu Serif', serif; text-anchor: middle" x="36.474961" y="31.532428" transform="rotate(-0 36.474961 31.532428)">Data Acquisition</text>
+    <text style="fill: #0072b2; font: 700 7.5px 'Times New Roman', 'Times', 'DejaVu Serif', serif; text-anchor: middle" x="36.474961" y="31.532428" transform="rotate(-0 36.474961 31.532428)">Data Acquisition</text>
    </g>
    <g id="text_2">
     <text style="fill: #333333; font: 6.5px 'Times New Roman', 'Times', 'DejaVu Serif', serif; text-anchor: middle" x="36.474961" y="43.477584" transform="rotate(-0 36.474961 43.477584)">Driving simulator</text>
@@ -209,7 +209,7 @@ z
     </g>
    </g>
    <g id="text_7">
-    <text style="fill: #e67e22; font: 700 7.5px 'Times New Roman', 'Times', 'DejaVu Serif', serif; text-anchor: middle" x="102.397081" y="31.532428" transform="rotate(-0 102.397081 31.532428)">Feature Engineering</text>
+    <text style="fill: #e69f00; font: 700 7.5px 'Times New Roman', 'Times', 'DejaVu Serif', serif; text-anchor: middle" x="102.397081" y="31.532428" transform="rotate(-0 102.397081 31.532428)">Feature Engineering</text>
    </g>
    <g id="text_8">
     <text style="fill: #333333; font: 6.5px 'Times New Roman', 'Times', 'DejaVu Serif', serif; text-anchor: middle" x="102.397081" y="43.477584" transform="rotate(-0 102.397081 43.477584)">3 s window, 50% overlap</text>
@@ -230,7 +230,7 @@ z
     <text style="fill: #333333; font: 6.5px 'Times New Roman', 'Times', 'DejaVu Serif', serif; text-anchor: middle" x="102.397081" y="77.018784" transform="rotate(-0 102.397081 77.018784)">smooth/std/PE, CWT</text>
    </g>
    <g id="text_12">
-    <text style="fill: #27ae60; font: 700 7.5px 'Times New Roman', 'Times', 'DejaVu Serif', serif; text-anchor: middle" x="168.319201" y="31.532428" transform="rotate(-0 168.319201 31.532428)">Domain Grouping</text>
+    <text style="fill: #009e73; font: 700 7.5px 'Times New Roman', 'Times', 'DejaVu Serif', serif; text-anchor: middle" x="168.319201" y="31.532428" transform="rotate(-0 168.319201 31.532428)">Domain Grouping</text>
    </g>
    <g id="text_13">
     <text style="fill: #333333; font: 6.5px 'Times New Roman', 'Times', 'DejaVu Serif', serif; text-anchor: middle" x="168.319201" y="43.477584" transform="rotate(-0 168.319201 43.477584)">MMD / DTW / Wass.</text>
@@ -287,7 +287,7 @@ z
     <text style="fill: #333333; font: 6.5px 'Times New Roman', 'Times', 'DejaVu Serif', serif; text-anchor: middle" x="238.236601" y="77.018784" transform="rotate(-0 238.236601 77.018784)">= 1,512 observations</text>
    </g>
    <g id="text_22">
-    <text style="fill: #c0392b; font: 700 7.5px 'Times New Roman', 'Times', 'DejaVu Serif', serif; text-anchor: middle" x="308.154001" y="31.532428" transform="rotate(-0 308.154001 31.532428)">Classification</text>
+    <text style="fill: #d55e00; font: 700 7.5px 'Times New Roman', 'Times', 'DejaVu Serif', serif; text-anchor: middle" x="308.154001" y="31.532428" transform="rotate(-0 308.154001 31.532428)">Classification</text>
    </g>
    <g id="text_23">
     <text style="fill: #333333; font: 6.5px 'Times New Roman', 'Times', 'DejaVu Serif', serif; text-anchor: middle" x="308.154001" y="43.477584" transform="rotate(-0 308.154001 43.477584)">RF + Optuna (100 TPE)</text>
@@ -302,7 +302,7 @@ z
     <text style="fill: #333333; font: 6.5px 'Times New Roman', 'Times', 'DejaVu Serif', serif; text-anchor: middle" x="308.154001" y="77.018784" transform="rotate(-0 308.154001 77.018784)">Platt calibration</text>
    </g>
    <g id="text_27">
-    <text style="fill: #f39c12; font: 700 7.5px 'Times New Roman', 'Times', 'DejaVu Serif', serif; text-anchor: middle" x="375.074941" y="31.532428" transform="rotate(-0 375.074941 31.532428)">Sensitivity Analysis</text>
+    <text style="fill: #f0e442; font: 700 7.5px 'Times New Roman', 'Times', 'DejaVu Serif', serif; text-anchor: middle" x="375.074941" y="31.532428" transform="rotate(-0 375.074941 31.532428)">Sensitivity Analysis</text>
    </g>
    <g id="text_28">
     <!-- OFAT spaghetti $\rightarrow$ -->
@@ -332,7 +332,7 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="p22395b6575">
+  <clipPath id="p9b81b656f6">
    <rect x="7.509181" y="1.44" width="399.528" height="121.968"/>
   </clipPath>
  </defs>

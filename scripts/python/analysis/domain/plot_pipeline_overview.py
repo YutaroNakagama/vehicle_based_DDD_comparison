@@ -44,22 +44,22 @@ plt.rcParams.update({
     "svg.fonttype": "none",
 })
 
-# Colour palette (pastel, print-friendly)
+# Colour palette (Okabe-Ito-aligned pastels, colorblind-safe)
 COLORS = {
-    "data":     "#d4e6f1",  # light blue
-    "feature":  "#fdebd0",  # light orange
-    "domain":   "#d5f5e3",  # light green
-    "factorial": "#e8daef", # light purple
-    "classify": "#fadbd8",  # light red
-    "analyse":  "#fcf3cf",  # light yellow
+    "data":     "#CCE5FF",  # light blue
+    "feature":  "#FFF2CC",  # light yellow
+    "domain":   "#D5F5E3",  # light green
+    "factorial": "#E8DAEF", # light purple
+    "classify": "#FADBD8",  # light pink
+    "analyse":  "#FCF3CF",  # light gold
 }
 BORDER = {
-    "data":     "#2980b9",
-    "feature":  "#e67e22",
-    "domain":   "#27ae60",
-    "factorial": "#8e44ad",
-    "classify": "#c0392b",
-    "analyse":  "#f39c12",
+    "data":     "#0072B2",  # Okabe-Ito blue
+    "feature":  "#E69F00",  # Okabe-Ito orange
+    "domain":   "#009E73",  # Okabe-Ito bluish green
+    "factorial": "#8e44ad", # purple
+    "classify": "#D55E00",  # Okabe-Ito vermilion
+    "analyse":  "#F0E442",  # Okabe-Ito yellow
 }
 
 

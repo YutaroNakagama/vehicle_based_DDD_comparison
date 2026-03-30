@@ -72,24 +72,24 @@ LEVEL_LABELS = {"in_domain": "In", "out_domain": "Out"}
 
 # Colour-coding by the most informative other factor
 MODE_COLORS = {
-    "source_only": "#e74c3c",   # red
-    "target_only": "#2ecc71",   # green
-    "mixed":       "#3498db",   # blue
+    "source_only": "#D55E00",   # vermilion
+    "target_only": "#0072B2",   # blue
+    "mixed":       "#009E73",   # bluish green
 }
 FAMILY_COLORS = {
-    "baseline":      "#95a5a6",  # grey
-    "rus_r01":       "#27ae60",  # green bright
-    "rus_r05":       "#1e8449",  # green dark
-    "smote_r01":     "#3498db",  # blue bright
-    "smote_r05":     "#2980b9",  # blue dark
-    "sw_smote_r01":  "#e67e22",  # orange bright
-    "sw_smote_r05":  "#d35400",  # orange dark
+    "baseline":      "#999999",   # grey
+    "rus_r01":       "#E69F00",   # orange
+    "rus_r05":       "#D55E00",   # vermilion
+    "smote_r01":     "#0072B2",   # blue
+    "smote_r05":     "#56B4E9",   # sky blue
+    "sw_smote_r01":  "#CC79A7",   # reddish purple
+    "sw_smote_r05":  "#F0E442",   # yellow
 }
 FAMILY_LEGEND = {
-    "BL":       "#95a5a6",
-    "RUS":      "#27ae60",
-    "SMOTE":    "#3498db",
-    "SW-SMOTE": "#e67e22",
+    "BL":       "#999999",
+    "RUS":      "#E69F00",
+    "SMOTE":    "#0072B2",
+    "SW-SMOTE": "#CC79A7",
 }
 
 MODES     = ["source_only", "target_only", "mixed"]
@@ -255,7 +255,7 @@ def plot_ofat(df: pd.DataFrame, target_factor: str):
                         xy=(j, grand_mean[j] + grand_std[j]),
                         xytext=(0, 6), textcoords="offset points",
                         ha="center", fontsize=5.5, fontweight="bold",
-                        color="#c0392b")
+                        color="#D55E00")
 
         ax.set_xticks(range(len(levels)))
         ax.set_xticklabels([label_map[lev] for lev in levels],
