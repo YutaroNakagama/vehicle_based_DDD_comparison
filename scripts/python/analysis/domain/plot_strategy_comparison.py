@@ -58,13 +58,13 @@ COND_LABELS = {
     "sw_smote_r05":  "SW-SM\nr=0.5",
 }
 COND_COLORS = {
-    "baseline":      "#95a5a6",
-    "rus_r01":       "#27ae60",
-    "rus_r05":       "#1e8449",
-    "smote_r01":     "#3498db",
-    "smote_r05":     "#2980b9",
-    "sw_smote_r01":  "#e67e22",
-    "sw_smote_r05":  "#d35400",
+    "baseline":      "#999999",   # grey
+    "rus_r01":       "#E69F00",   # orange
+    "rus_r05":       "#D55E00",   # vermilion
+    "smote_r01":     "#0072B2",   # blue
+    "smote_r05":     "#56B4E9",   # sky blue
+    "sw_smote_r01":  "#CC79A7",   # reddish purple
+    "sw_smote_r05":  "#F0E442",   # yellow
 }
 MODE_ORDER = ["source_only", "target_only", "mixed"]
 MODE_LABELS = {
