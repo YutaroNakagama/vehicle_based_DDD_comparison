@@ -111,11 +111,10 @@ LINE_CMAP = plt.cm.tab20
 # IEEE T-IV style
 _TIV_TEXT_WIDTH = 7.16
 plt.rcParams.update({
-    "font.family": "serif",
-    "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
+    "font.family": "sans-serif",
+    "font.sans-serif": ["Arial", "DejaVu Sans"],
     "font.size": 8,
-    "mathtext.fontset": "stix",
-    "svg.fonttype": "none",
+    "mathtext.fontset": "dejavusans",
     "axes.titlesize": 8,
     "axes.labelsize": 8,
     "xtick.labelsize": 7,
@@ -156,7 +155,7 @@ def load_all_data() -> pd.DataFrame:
 
 def _save(fig, name: str):
     out = OUT_DIR / name
-    fig.savefig(out, format="svg", bbox_inches="tight", facecolor="white")
+    fig.savefig(out.with_suffix('.pdf'), format="pdf", bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"  Saved: {out.relative_to(PROJECT_ROOT)}")
 

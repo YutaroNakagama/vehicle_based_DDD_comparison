@@ -30,9 +30,9 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # IEEE T-IV journal style
 plt.rcParams.update({
-    "font.family": "serif",
-    "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
-    "mathtext.fontset": "stix",
+    "font.family": "sans-serif",
+    "font.sans-serif": ["Arial", "DejaVu Sans"],
+    "mathtext.fontset": "dejavusans",
     "font.size": 8,
     "axes.titlesize": 8,
     "axes.labelsize": 8,
@@ -41,7 +41,6 @@ plt.rcParams.update({
     "legend.fontsize": 7,
     "figure.dpi": 150,
     "savefig.dpi": 300,
-    "svg.fonttype": "none",
 })
 
 # Colour palette (Okabe-Ito-aligned pastels, colorblind-safe)
@@ -155,10 +154,10 @@ def draw_pipeline():
         ax.add_patch(arrow)
 
     fig.savefig(
-        OUT_DIR / "fig1_pipeline_overview.svg",
-        format="svg", bbox_inches="tight", pad_inches=0.02,
+        OUT_DIR / "fig1_pipeline_overview.pdf",
+        format="pdf", bbox_inches="tight", pad_inches=0.02,
     )
-    print(f"Saved: {OUT_DIR / 'fig1_pipeline_overview.svg'}")
+    print(f"Saved: {OUT_DIR / 'fig1_pipeline_overview.pdf'}")
     plt.close(fig)
 
 

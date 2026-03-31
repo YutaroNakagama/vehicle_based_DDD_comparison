@@ -54,11 +54,10 @@ METRICS = {"f2": "F2-score", "auc": "AUROC", "auc_pr": "AUPRC"}
 # ── IEEE T-IV style ────────────────────────────────────────────────────
 _TIV_TEXT_WIDTH = 7.16
 plt.rcParams.update({
-    "font.family": "serif",
-    "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
+    "font.family": "sans-serif",
+    "font.sans-serif": ["Arial", "DejaVu Sans"],
     "font.size": 8,
-    "mathtext.fontset": "stix",
-    "svg.fonttype": "none",
+    "mathtext.fontset": "dejavusans",
     "axes.titlesize": 8,
     "axes.labelsize": 8,
     "xtick.labelsize": 7,
@@ -201,8 +200,8 @@ def plot_bump_chart(df: pd.DataFrame):
 
     plt.tight_layout()
 
-    out_path = OUT_DIR / "fig_ranking_reversal.svg"
-    fig.savefig(out_path, format="svg", bbox_inches="tight", facecolor="white")
+    out_path = OUT_DIR / "fig_ranking_reversal.pdf"
+    fig.savefig(out_path, format="pdf", bbox_inches="tight", facecolor="white")
     print(f"Saved: {out_path}")
 
     # Print Spearman results for verification

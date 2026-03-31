@@ -77,11 +77,10 @@ PRIMARY_METRICS = [("f2", "F2-score"), ("auc", "AUROC"), ("auc_pr", "AUPRC")]
 # IEEE T-IV style
 _TIV_TEXT_WIDTH = 7.16   # double-column inches
 plt.rcParams.update({
-    "font.family": "serif",
-    "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
+    "font.family": "sans-serif",
+    "font.sans-serif": ["Arial", "DejaVu Sans"],
     "font.size": 8,
-    "mathtext.fontset": "stix",
-    "svg.fonttype": "none",
+    "mathtext.fontset": "dejavusans",
     "axes.titlesize": 8,
     "axes.labelsize": 8,
     "xtick.labelsize": 7,
@@ -229,8 +228,8 @@ def plot_strategy_comparison(df: pd.DataFrame):
 
     fig.tight_layout(rect=[0, 0.03, 1, 1])
 
-    out = OUT_DIR / "fig4_strategy_comparison.svg"
-    fig.savefig(out, format="svg", bbox_inches="tight", facecolor="white")
+    out = OUT_DIR / "fig4_strategy_comparison.pdf"
+    fig.savefig(out, format="pdf", bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"  Saved: {out.relative_to(PROJECT_ROOT)}")
 
