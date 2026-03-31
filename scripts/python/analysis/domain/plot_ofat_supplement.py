@@ -112,6 +112,7 @@ LINE_CMAP = plt.cm.tab20
 _TIV_TEXT_WIDTH = 7.16
 plt.rcParams.update({
     "font.family": "serif",
+    "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
     "font.size": 8,
     "mathtext.fontset": "stix",
     "svg.fonttype": "none",
