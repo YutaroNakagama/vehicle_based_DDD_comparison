@@ -78,6 +78,7 @@ PRIMARY_METRICS = [("f2", "F2-score"), ("auc", "AUROC"), ("auc_pr", "AUPRC")]
 _TIV_TEXT_WIDTH = 7.16   # double-column inches
 plt.rcParams.update({
     "font.family": "serif",
+    "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
     "font.size": 8,
     "mathtext.fontset": "stix",
     "svg.fonttype": "none",

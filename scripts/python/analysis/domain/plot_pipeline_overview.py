@@ -57,7 +57,7 @@ BORDER = {
     "data":     "#0072B2",  # Okabe-Ito blue
     "feature":  "#E69F00",  # Okabe-Ito orange
     "domain":   "#009E73",  # Okabe-Ito bluish green
-    "factorial": "#8e44ad", # purple
+    "factorial": "#CC79A7", # Okabe-Ito reddish purple
     "classify": "#D55E00",  # Okabe-Ito vermilion
     "analyse":  "#F0E442",  # Okabe-Ito yellow
 }

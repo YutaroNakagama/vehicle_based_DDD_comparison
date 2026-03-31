@@ -55,6 +55,7 @@ METRICS = {"f2": "F2-score", "auc": "AUROC", "auc_pr": "AUPRC"}
 _TIV_TEXT_WIDTH = 7.16
 plt.rcParams.update({
     "font.family": "serif",
+    "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
     "font.size": 8,
     "mathtext.fontset": "stix",
     "svg.fonttype": "none",
@@ -182,7 +183,7 @@ def plot_bump_chart(df: pd.DataFrame):
             f"$\\rho_{{C,W}}$ = {rho_cw:.2f}{sig}",
             transform=ax.transAxes,
             ha="center", fontsize=6.5,
-            bbox=dict(boxstyle="round,pad=0.3", fc="wheat", alpha=0.7),
+            bbox=dict(boxstyle="round,pad=0.3", fc="#f0f0f0", alpha=0.8),
         )
 
     axes[0].set_ylabel("Friedman Mean Rank")
