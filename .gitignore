@@ -8,6 +8,7 @@ models/**
 
 # ===== Results (generated, not tracked) =====
 results/**
+!results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/*.pdf
 !results/README.md
 
 # ===== Reports (only final figures/tables tracked) =====
