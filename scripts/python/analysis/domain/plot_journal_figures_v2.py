@@ -100,9 +100,9 @@ PRIMARY_METRICS = [("f2", "F2-score"), ("auc", "AUROC"), ("auc_pr", "AUPRC")]
 _TIV_COLUMN_WIDTH = 3.5      # inches (single column)
 _TIV_TEXT_WIDTH   = 7.16     # inches (double column)
 plt.rcParams.update({
-    "font.family": "serif",
-    "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
-    "mathtext.fontset": "stix",
+    "font.family": "sans-serif",
+    "font.sans-serif": ["Arial", "DejaVu Sans"],
+    "mathtext.fontset": "dejavusans",
     "font.size": 8,
     "axes.titlesize": 8,
     "axes.labelsize": 8,
@@ -111,7 +111,6 @@ plt.rcParams.update({
     "legend.fontsize": 7,
     "figure.dpi": 150,
     "savefig.dpi": 300,
-    "svg.fonttype": "none",       # keep text as text in SVG
     "axes.grid": True,
     "grid.alpha": 0.3,
     "grid.linestyle": "--",
@@ -150,8 +149,8 @@ def load_all_data() -> pd.DataFrame:
 
 
 def _save(fig, name: str):
-    out = OUT_DIR / name
-    fig.savefig(out, bbox_inches="tight", facecolor="white", format="svg")
+    out = OUT_DIR / Path(name).with_suffix(".pdf")
+    fig.savefig(out, bbox_inches="tight", facecolor="white", format="pdf")
     plt.close(fig)
     print(f"  Saved: {out.relative_to(PROJECT_ROOT)}")
 
