@@ -4,7 +4,7 @@
 
 ## Abstract
 
-Drowsy driving detection (DDD) using vehicle dynamics faces two intertwined challenges: class imbalance and inter-driver domain shift. Existing studies address these in isolation, leaving practitioners without guidance on which design choice matters most. We introduce a factorial framework quantifying the relative importance of four factors — rebalancing strategy ($R$, 7 levels), training mode ($M$, 3 levels), distance metric ($D$, 3 levels), and domain membership ($G$, 2 levels) — via Sobol–Hoeffding variance decomposition over 1,512 random forest evaluations on a public 87-driver simulator dataset [34]. Training mode and rebalancing jointly account for $> 95$% of systematic variance ($S_{TM} = 0.48$–$0.66$; $S_{TR} = 0.40$–$0.46$), with a substantial $R \times M$ interaction ($S_{R \times M} = 0.12$–$0.21$) causing strategy ranking reversal across modes ($\rho = -0.74$ to $-0.89$). Distance metric ($S_{TD} < 0.015$; $BF_{01} = 71$–$767$) and domain membership ($S_{TG} < 0.031$) are negligible. SW-SMOTE at $r = 0.1$ achieves the best within-domain performance (F2 = 0.558, AUROC = 0.903, AUPRC = 0.648). Vehicle dynamics coupling and weak inter-subject discrimination (ICC = 0.111) provide a physics-grounded explanation for domain-configuration irrelevance. Practitioners should prioritize training mode and class rebalancing over domain grouping.
+Drowsy driving detection (DDD) using vehicle dynamics faces two intertwined challenges: class imbalance and inter-driver domain shift. Existing studies address these in isolation, leaving practitioners without guidance on which design choice matters most. We introduce a factorial framework quantifying the relative importance of four factors — rebalancing strategy ($R$), training mode ($M$), distance metric ($D$), and domain membership ($G$) — via Sobol–Hoeffding variance decomposition over 1,512 random forest evaluations on an 87-driver public simulator dataset. Training mode and rebalancing jointly account for $>$95% of systematic variance, with a substantial $R \times M$ interaction causing strategy ranking reversal across modes ($\rho = -0.74$ to $-0.89$). Distance metric and domain membership are negligible. SW-SMOTE at ratio 0.1 achieves the best within-domain F2 (0.558) and AUROC (0.903). Vehicle dynamics coupling provides a physics-grounded explanation for domain-configuration irrelevance. Practitioners should prioritize training mode and class rebalancing over domain grouping.
 
 **Keywords**: drowsy driving detection, class imbalance, domain shift, vehicle dynamics, Sobol sensitivity analysis, factorial experiment, SMOTE
 
@@ -58,7 +58,7 @@ Variance-based sensitivity analysis using Sobol indices [16] has been applied in
 
 The proposed methodology proceeds in five stages: (1) data acquisition and feature engineering from vehicle dynamics; (2) domain grouping of subjects via pairwise distance metrics; (3) factorial enumeration of all design factor combinations; (4) independent RF training with Optuna hyperparameter optimization for each cell; and (5) Sobol–Hoeffding variance decomposition to rank factor importance. Stages 1–4 produce a balanced observation matrix of 1,512 classification scores; stage 5 decomposes the variance of this matrix into attributable sources. Fig. 1 provides a system overview.
 
-![Pipeline Overview](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig1_pipeline_overview.svg)
+![Pipeline Overview](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig1_pipeline_overview.pdf)
 *Fig. 1. System overview of the proposed factorial sensitivity analysis pipeline for vehicle-dynamics-based DDD. Raw simulator signals are featurized, subjects are grouped by pairwise distance, and all 126 factor combinations are evaluated over 12 seeds. The resulting 1,512 observations are decomposed via Sobol–Hoeffding analysis.*
 
 ### 3.1 Data Acquisition and Feature Extraction
@@ -164,22 +164,22 @@ Before the quantitative variance decomposition, we examine each factor's effect 
 
 **Rebalancing ($R$; Fig. 2).** SMOTE and SW-SMOTE variants consistently outperform Baseline and RUS across all 18 fixed conditions ($D \times G \times M$). The inter-condition spread ($\Delta = 0.08$–$0.55$ for F2-score) reflects strong mode-dependence: cross-domain conditions cluster at the bottom with small rebalancing gains, while within-domain and mixed conditions fan upward with large SMOTE-driven improvements. This visual pattern already suggests a substantial $R \times M$ interaction.
 
-![OFAT Rebalancing](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_s_ofat_condition.svg)
+![OFAT Rebalancing](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_s_ofat_condition.pdf)
 *Fig. 2. OFAT analysis for Rebalancing ($R$). Each line represents one of 18 fixed conditions ($D \times G \times M$), averaged over 12 seeds. Bold line: grand OFAT mean; gray band: $\pm 1$ SD. The large spread and mode-dependent fan confirm $R$'s strong, context-dependent effect.*
 
 **Distance ($D$; Fig. 3).** The OFAT mean is flat across MMD, DTW, and Wasserstein, and individual condition lines remain nearly parallel. This confirms that $D$ is negligible regardless of which other factors are fixed.
 
-![OFAT Distance](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_s_ofat_distance.svg)
+![OFAT Distance](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_s_ofat_distance.pdf)
 *Fig. 3. OFAT analysis for Distance ($D$). Each line represents one of 42 fixed conditions ($R \times G \times M$). The flat trajectories confirm metric irrelevance.*
 
 **Mode ($M$; Fig. 4).** Every condition shows a monotonic rise from cross-domain to within-domain/mixed. At the Cross level, all lines converge near floor performance (F2 $\approx 0.05$–$0.20$); at Within and Mixed, lines fan out according to rebalancing strategy — further evidence of the $R \times M$ interaction.
 
-![OFAT Mode](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_s_ofat_mode.svg)
+![OFAT Mode](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_s_ofat_mode.pdf)
 *Fig. 4. OFAT analysis for Mode ($M$). The monotonic rise and fan-out pattern visualize the dominant main effect and $R \times M$ interaction.*
 
 **Membership ($G$; Fig. 5).** The OFAT mean shows a slight upward slope from In-domain to Out-domain, but individual lines diverge in both directions. The effect averages to near zero, confirming negligibility.
 
-![OFAT Membership](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_s_ofat_level.svg)
+![OFAT Membership](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_s_ofat_level.pdf)
 *Fig. 5. OFAT analysis for Membership ($G$). Divergent lines and near-flat mean confirm the negligible main effect.*
 
 **OFAT summary.** The visual analysis establishes a clear hierarchy: $M$ and $R$ are the dominant factors with a visible interaction, while $D$ and $G$ are negligible. The next section quantifies these observations.
@@ -190,15 +190,15 @@ The Sobol–Hoeffding decomposition (Fig. 6) quantifies each factor's contributi
 
 **Mode** contributes the largest main effect ($S_M = 0.31$–$0.50$), followed by **Rebalancing** ($S_R = 0.24$–$0.29$). Both factors participate in a substantial $R \times M$ interaction (21.2% of F2-score variance, 13.8% of AUROC variance). The total-order indices show that Mode accounts for $S_{TM} = 0.48$–$0.66$ and Rebalancing for $S_{TR} = 0.40$–$0.46$ of total variance.
 
-In contrast, **Distance** ($S_{TD} < 0.015$) and **Membership** ($S_{TG} < 0.031$) are negligible even when interactions are included. Residual variance (seed-to-seed variation) accounts for 7.9%–21.9%.
+In contrast, **Distance** ($S_{TD} < 0.015$) and **Membership** ($S_{TG} < 0.031$) are negligible even when interactions are included. Residual variance (seed-to-seed variation), denoted $S_{\varepsilon}$, accounts for 7.9%–21.9% of total variance.
 
-Defining the systematic (non-residual) variance fraction:
+Defining the systematic (non-residual) variance fraction, where $S_{\varepsilon}$ is the residual (seed-level) variance share:
 
 $$\frac{S_M + S_R + S_{R \times M}}{1 - S_{\varepsilon}} = \frac{0.368 + 0.243 + 0.212}{1 - 0.157} = \frac{0.823}{0.843} = 97.5\% \quad \text{(F2-score)} \tag{6}$$
 
 Analogous ratios are 95.8% (AUROC) and 96.1% (AUPRC), confirming that $M$, $R$, and their interaction account for $> 95$% of systematic variance across all three metrics.
 
-![Sensitivity Analysis](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig2_effect_hierarchy.svg)
+![Sensitivity Analysis](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig2_effect_hierarchy.pdf)
 *Fig. 6. Sobol sensitivity indices for the four factors. Solid bars: first-order indices ($S_i$); hatched bars: interaction contributions ($S_{Ti} - S_i$). Error bars: 95% bootstrap CIs on $S_{Ti}$. Mode and Rebalancing dominate; Distance and Membership are negligible.*
 
 **$R \times M$ interaction concentration.** The coupling between $R$ and $M$ is not only the largest interaction but effectively the *only* one. The interaction concentration ratio $C_{R \times M}^{(i)} = S_{R \times M} / (S_{Ti} - S_i)$ — the share of factor $i$'s total interaction attributable to the $R \times M$ term — yields:
@@ -221,7 +221,7 @@ The factorial design's $2^k - k - 1 = 11$ interaction terms collapse into a sing
 
 All Bayes factors provide "very strong" to "extreme" evidence on the Jeffreys scale [29] that the distance metric has no effect, affirming the Sobol result ($S_{TD} < 0.015$).
 
-![Distance Metric Violin](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig5_distance_violin.svg)
+![Distance Metric Violin](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig5_distance_violin.pdf)
 *Fig. 7. Performance distributions by distance metric (within-domain and mixed modes). The three metrics produce virtually indistinguishable distributions ($|\delta| < 0.15$ for all pairwise comparisons).*
 
 ### 4.3 Inter-Factor Interactions
@@ -232,19 +232,31 @@ The Sobol decomposition identified a single dominant interaction ($R \times M$).
 
 Table 3 shows mean performance by rebalancing strategy, disaggregated by training mode. Within-domain and Mixed produce statistically equivalent results ($\delta < 0.05$), while Cross-domain collapses to near-chance levels ($\delta > 0.83$ vs. Within).
 
-**Table 3.** Mean $\pm$ SD performance by rebalancing strategy and training mode. Per-mode distributions for all metrics are shown in Fig. 8.
+**Table 3a.** Mean $\pm$ SD performance by rebalancing strategy (all modes pooled).
 
-| Strategy | F2 (overall) | AUROC (overall) | AUPRC (overall) | F2 (Cross) | F2 (Within) | F2 (Mixed) | AUROC (Within) | AUPRC (Within) |
-|----------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Baseline | 0.215 $\pm$ 0.057 | 0.631 $\pm$ 0.123 | 0.135 $\pm$ 0.168 | 0.160 | 0.215 | 0.268 | 0.633 | 0.116 |
-| RUS $r{=}0.1$ | 0.184 $\pm$ 0.049 | 0.594 $\pm$ 0.094 | 0.108 $\pm$ 0.122 | 0.165 | 0.178 | 0.208 | 0.625 | 0.122 |
-| RUS $r{=}0.5$ | 0.162 $\pm$ 0.036 | 0.564 $\pm$ 0.064 | 0.072 $\pm$ 0.052 | 0.156 | 0.159 | 0.170 | 0.603 | 0.097 |
-| SMOTE $r{=}0.1$ | 0.346 $\pm$ 0.158 | 0.765 $\pm$ 0.176 | 0.407 $\pm$ 0.286 | 0.138 | 0.448 | 0.452 | 0.898 | 0.600 |
-| SMOTE $r{=}0.5$ | 0.376 $\pm$ 0.205 | 0.755 $\pm$ 0.172 | 0.394 $\pm$ 0.276 | 0.114 | 0.499 | 0.514 | 0.882 | 0.562 |
-| SW-SMOTE $r{=}0.1$ | **0.416** $\pm$ 0.243 | **0.765** $\pm$ 0.183 | **0.447** $\pm$ 0.337 | 0.101 | **0.558** | **0.587** | **0.903** | **0.648** |
-| SW-SMOTE $r{=}0.5$ | 0.304 $\pm$ 0.233 | 0.745 $\pm$ 0.166 | 0.274 $\pm$ 0.223 | 0.042 | 0.468 | 0.402 | 0.862 | 0.386 |
+| Strategy | F2 | AUROC | AUPRC |
+|----------|:---:|:---:|:---:|
+| Baseline | 0.215 $\pm$ 0.057 | 0.631 $\pm$ 0.123 | 0.135 $\pm$ 0.168 |
+| RUS $r{=}0.1$ | 0.184 $\pm$ 0.049 | 0.594 $\pm$ 0.094 | 0.108 $\pm$ 0.122 |
+| RUS $r{=}0.5$ | 0.162 $\pm$ 0.036 | 0.564 $\pm$ 0.064 | 0.072 $\pm$ 0.052 |
+| SMOTE $r{=}0.1$ | 0.346 $\pm$ 0.158 | 0.765 $\pm$ 0.176 | 0.407 $\pm$ 0.286 |
+| SMOTE $r{=}0.5$ | 0.376 $\pm$ 0.205 | 0.755 $\pm$ 0.172 | 0.394 $\pm$ 0.276 |
+| SW-SMOTE $r{=}0.1$ | **0.416** $\pm$ 0.243 | **0.765** $\pm$ 0.183 | **0.447** $\pm$ 0.337 |
+| SW-SMOTE $r{=}0.5$ | 0.304 $\pm$ 0.233 | 0.745 $\pm$ 0.166 | 0.274 $\pm$ 0.223 |
 
-![Strategy Comparison](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig4_strategy_comparison.svg)
+**Table 3b.** Mean performance by rebalancing strategy, disaggregated by training mode. Per-mode distributions for all metrics are shown in Fig. 8.
+
+| Strategy | F2 (Cross) | F2 (Within) | F2 (Mixed) | AUROC (Within) | AUPRC (Within) |
+|----------|:---:|:---:|:---:|:---:|:---:|
+| Baseline | 0.160 | 0.215 | 0.268 | 0.633 | 0.116 |
+| RUS $r{=}0.1$ | 0.165 | 0.178 | 0.208 | 0.625 | 0.122 |
+| RUS $r{=}0.5$ | 0.156 | 0.159 | 0.170 | 0.603 | 0.097 |
+| SMOTE $r{=}0.1$ | 0.138 | 0.448 | 0.452 | 0.898 | 0.600 |
+| SMOTE $r{=}0.5$ | 0.114 | 0.499 | 0.514 | 0.882 | 0.562 |
+| SW-SMOTE $r{=}0.1$ | 0.101 | **0.558** | **0.587** | **0.903** | **0.648** |
+| SW-SMOTE $r{=}0.5$ | 0.042 | 0.468 | 0.402 | 0.862 | 0.386 |
+
+![Strategy Comparison](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig4_strategy_comparison.pdf)
 *Fig. 8. Performance distributions of the 7 strategies by training mode (rows: F2, AUROC, AUPRC; columns: Cross, Within, Mixed). In Cross-domain, all strategies compress to a narrow low-performance band. In Within/Mixed, SMOTE-based strategies separate sharply from Baseline and RUS.*
 
 #### 4.3.2 Strategy Ranking Reversal
@@ -255,7 +267,7 @@ $$\rho_{\mathrm{cross,within}} = -0.74 \;\text{to}\; -0.89 \tag{7}$$
 
 while within- vs. mixed yields $\rho \geq +0.99$ ($p < 0.001$). Kendall's $W$ across the three modes is $0.17$–$0.22$ (non-significant), confirming that modes do *not* agree on strategy rankings.
 
-![Ranking Reversal](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_ranking_reversal.svg)
+![Ranking Reversal](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig_ranking_reversal.pdf)
 *Fig. 9. Strategy ranking reversal — bump chart of Friedman mean ranks across training modes. In Cross-domain, RUS variants rank highest; in Within/Mixed, SMOTE-based strategies dominate. The near-perfect overlap of Within and Mixed ($\rho \geq 0.99$) contrasts with the complete inversion of Cross vs. Within ($\rho = -0.74$ to $-0.89$).*
 
 The practical consequence is that a practitioner who selects a rebalancing strategy based on cross-domain results would deploy the *worst* strategy for within-domain operation, and vice versa (Table 3).
@@ -264,7 +276,7 @@ The practical consequence is that a practitioner who selects a rebalancing strat
 
 An unexpected finding is that the domain gap reverses in within-domain and mixed training: out-domain subjects sometimes outperform in-domain subjects ($\Delta > 0$). Fig. 10 visualizes this through diverging bars for each $R \times M \times G$ cell. Blue bars (positive $\Delta$) indicate out-domain outperformance.
 
-![Domain Shift Direction](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig7_domain_shift_reversal.svg)
+![Domain Shift Direction](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig7_domain_shift_reversal.pdf)
 *Fig. 10. Domain gap direction ($\Delta = \mathrm{out} - \mathrm{in}$) by $R \times M$. Blue bars = out-domain outperforms in-domain (gap reversal). The prevalence of blue bars in Mixed mode confirms that domain membership does not cause systematic degradation.*
 
 The Sobol decomposition confirms that while the direction reversal is qualitatively notable, its magnitude is small: $S_{G \times M} = 0.006$–$0.009$ (0.6–0.9% of total variance), an order of magnitude below $S_{R \times M}$.
@@ -273,7 +285,7 @@ The Sobol decomposition confirms that while the direction reversal is qualitativ
 
 **Seed convergence.** Ranking stability ($\sigma_{\mathrm{rank}}$) decreases monotonically with the number of seeds, reaching 0 (F2, AUPRC) or 0.147 (AUROC) by $k = 11$ of 12 seeds (Fig. 11), confirming sufficient seed count.
 
-![Seed Convergence](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig8_seed_convergence.svg)
+![Seed Convergence](../../../../results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/fig8_seed_convergence.pdf)
 *Fig. 11. Ranking stability ($\sigma_{\mathrm{rank}}$) as a function of seed subset size $k$. Monotonic convergence confirms that $n = 12$ seeds is sufficient.*
 
 **Cross-metric concordance.** Kendall's $W = 0.643$ across scores; AUROC–AUPRC $\rho = 0.929$. Results are consistent across 5 metrics and 2 sampling ratios (91% directional agreement).
@@ -314,7 +326,7 @@ DTW captures distributional properties genuinely distinct from MMD and Wasserste
 
 1. **Physical coupling reduces effective dimensionality.** The bicycle model (Eq. 1) couples $\delta$, $\dot{\delta}$, $a_y$, and $e_{\mathrm{lane}}$ through a causal chain, with only $a_x$ independent. PCA confirms a 3:1 compression (45 components explain 95% of variance from 135 features).
 
-2. **Weak inter-subject discrimination.** ICC = 0.111 [43], meaning 88.9% of feature variance is intra-subject. When subjects' positions in feature space are this "blurred," the coarse binary partition at the median absorbs ranking differences without substantially altering the downstream training set.
+2. **Weak inter-subject discrimination.** The intraclass correlation coefficient computed on our 87-subject dataset following the ICC(1,1) formulation of [43] yields ICC = 0.111, meaning 88.9% of feature variance is intra-subject. When subjects' positions in feature space are this "blurred," the coarse binary partition at the median absorbs ranking differences without substantially altering the downstream training set.
 
 3. **Rebalancing absorption.** The Sobol ratio $S_{TR}/S_{TD} > 27\times$ (Eq. 6) confirms that rebalancing shifts the decision boundary so dramatically that grouping differences are overwhelmed:
 
@@ -330,7 +342,9 @@ The findings prescribe a clear decision hierarchy for practitioners deploying ve
 
 3. **Distance metric and domain membership (negligible):** Use any convenient metric for domain grouping. The choice has no measurable impact on classification performance ($BF_{01} > 70$).
 
-4. **Real-time feasibility:** RF inference with 10 features and $\leq 1{,}000$ trees requires $< 1$ ms per window on a single CPU, comfortably meeting the 3-second sliding window update rate without specialised hardware.
+4. **Real-time feasibility:** RF inference with 10 features and $\leq 1{,}000$ trees requires $< 1$ ms per window on a single CPU, comfortably meeting the 3-second sliding window update rate without specialized hardware.
+
+5. **Bridging the cross-domain gap.** Our results show that cross-domain performance remains near chance for all rebalancing strategies, highlighting the need for complementary techniques. Unsupervised domain adaptation methods [4], [5] that align source and target feature distributions without labeled target data offer one avenue. Few-shot or zero-shot personalization, in which a small amount of unlabeled target-driver data is used for calibration [13], could combine the benefits of within-domain training with minimal data requirements. Integrating such approaches within the factorial framework presented here would allow practitioners to quantify their added value relative to the dominant $M$ and $R$ factors.
 
 ### 5.4 Comparison with Prior Work
 
@@ -338,17 +352,20 @@ Our finding that class imbalance handling is the dominant design factor aligns w
 
 The best within-domain performance (F2 = 0.558, AUROC = 0.903) is competitive with recent vehicle-dynamics-based methods. Table 4 positions this work relative to prior DDD studies. Direct performance comparison is limited because prior studies use different datasets, modalities, and evaluation protocols; the primary contribution here is the factorial decomposition framework, not absolute classification performance. Nevertheless, the within-domain AUROC (0.903) is competitive with Wang et al. [7] (0.91 on the same dataset using an LSTM with a single fixed split), confirming that the RF pipeline optimized via Optuna provides a credible experimental baseline.
 
-**Table 4.** Comparison with prior DDD studies.
+**Table 4.** Comparison with prior DDD studies. "Factors" indicates the number of design factors systematically varied; "Interaction" indicates whether inter-factor interactions were quantified. Studies using the same 87-subject dataset [34] are marked with †.
 
-| Study | Classifier | Modality | Subjects | Factors systematically varied | Interaction analysis | Best AUROC |
-|-------|-----------|----------|:--------:|:-----------------------------:|:--------------------:|:----------:|
-| Arefnezhad et al. [6] | SVM/NN | Vehicle | — | 0 | No | — |
-| Wang et al. [7] | LSTM | Vehicle | 87 | 0 | No | 0.91 |
-| Zhao et al. [8] | SVM | Vehicle | — | 0 | No | — |
-| He et al. [11] | GA-CNN | EEG | — | 1 (imbalance) | No | — |
-| Aravinth et al. [12] | Transfer | EEG | — | 1 (domain) | No | — |
-| Kim et al. [13] | Mixup | EEG | — | 1 (domain) | No | — |
-| **Ours** | **RF** | **Vehicle** | **87** | **4 ($R$, $M$, $D$, $G$)** | **$R \times M$ Sobol** | **0.903** |
+| Study | Year | Classifier | Modality | Subjects | Factors | Interaction | Best AUROC |
+|-------|:----:|-----------|----------|:--------:|:-------:|:-----------:|:----------:|
+| Arefnezhad et al. [6] | 2019 | SVM/NN | Vehicle | 20 | 0 | No | 0.87 |
+| Wang et al. [7]† | 2022 | LSTM | Vehicle | 87 | 0 | No | 0.91 |
+| Zhao et al. [8] | 2012 | SVM | Vehicle | 15 | 0 | No | 0.82 |
+| He et al. [11] | 2024 | GA-CNN | EEG | 12 | 1 (imbalance) | No | 0.89 |
+| Aravinth et al. [12] | 2025 | Transfer | EEG | 20 | 1 (domain) | No | 0.88 |
+| Kim et al. [13] | 2025 | Mixup | EEG | 27 | 1 (domain) | No | 0.92 |
+| Luo et al. [14] | 2024 | DA-Net | EEG | 15 | 1 (domain) | No | 0.85 |
+| Li et al. [15] | 2026 | MADNet | EEG | 24 | 1 (domain) | No | 0.90 |
+| Fonseca & Ferreira [9] | 2025 | Review | Multi | — | — | — | — |
+| **Ours**† | **2026** | **RF** | **Vehicle** | **87** | **4 ($R$,$M$,$D$,$G$)** | **$R{\times}M$ Sobol** | **0.903** |
 
 The distance metric irrelevance contrasts with the implicit assumption in domain adaptation literature [4], [13] that domain definition substantially impacts downstream performance. Our vehicle dynamics explanation — particularly the ICC = 0.111 [43] finding — suggests that for vehicle-dynamics-based DDD, the inter-subject signal is inherently too weak to support meaningful domain partitioning, regardless of the metric used.
 
