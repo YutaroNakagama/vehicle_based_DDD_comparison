@@ -558,9 +558,9 @@ Whereas random forest reduces variance via bagging and random feature subsets, X
 Each XGBoost configuration uses Optuna~\cite{akiba2019} with 100 trials for hyperparameter optimization, identical to the RF protocol.
 
 Table~\ref{tab:sobol-xgb} compares the Sobol indices.
-The factor hierarchy is preserved: Mode remains the dominant main effect ($S_M^{\mathrm{XGB}} = 0.53$ vs.~$S_M^{\mathrm{RF}} = 0.37$), Rebalancing is second ($S_R^{\mathrm{XGB}} = 0.20$ vs.~$S_R^{\mathrm{RF}} = 0.24$), and the $R\times M$ interaction is substantial ($S_{R\times M}^{\mathrm{XGB}} = 0.12$ vs.~$S_{R\times M}^{\mathrm{RF}} = 0.21$).
-Distance and Membership remain negligible ($S_D^{\mathrm{XGB}} = 0.010$, $S_G^{\mathrm{XGB}} = 0.005$).
-The systematic concentration ratio $\frac{S_M + S_R + S_{R\times M}}{1 - S_{\varepsilon}} = 94.7\%$ (XGB) remains above 90\%, confirming that the dominance of $M$, $R$, and $R\times M$ is not an artifact of the RF learning algorithm.
+The factor hierarchy is preserved: Mode remains the dominant main effect ($S_M^{\mathrm{XGB}} = 0.50$ vs.~$S_M^{\mathrm{RF}} = 0.37$), Rebalancing is second ($S_R^{\mathrm{XGB}} = 0.24$ vs.~$S_R^{\mathrm{RF}} = 0.24$), and the $R\times M$ interaction is substantial ($S_{R\times M}^{\mathrm{XGB}} = 0.11$ vs.~$S_{R\times M}^{\mathrm{RF}} = 0.21$).
+Distance and Membership remain negligible ($S_D^{\mathrm{XGB}} = 0.002$, $S_G^{\mathrm{XGB}} = 0.010$).
+The systematic concentration ratio $\frac{S_M + S_R + S_{R\times M}}{1 - S_{\varepsilon}} = 98.6\%$ (XGB) remains above 90\%, confirming that the dominance of $M$, $R$, and $R\times M$ is not an artifact of the RF learning algorithm.
 
 \begin{table}[!t]
   \caption{Sobol First-Order Indices: RF vs.\ XGBoost (F2-Score)}
@@ -570,19 +570,19 @@ The systematic concentration ratio $\frac{S_M + S_R + S_{R\times M}}{1 - S_{\var
     \toprule
     Factor & RF $S_i$ & XGBoost $S_i$ \\
     \midrule
-    Mode ($M$)          & 0.368 & 0.534 \\
-    Rebalancing ($R$)   & 0.243 & 0.204 \\
-    $R \times M$        & 0.212 & 0.124 \\
-    Distance ($D$)      & 0.005 & 0.010 \\
-    Membership ($G$)    & 0.010 & 0.005 \\
-    Residual ($\varepsilon$) & 0.157 & 0.091 \\
+    Mode ($M$)          & 0.368 & 0.501 \\
+    Rebalancing ($R$)   & 0.243 & 0.235 \\
+    $R \times M$        & 0.212 & 0.113 \\
+    Distance ($D$)      & 0.005 & 0.002 \\
+    Membership ($G$)    & 0.010 & 0.010 \\
+    Residual ($\varepsilon$) & 0.157 & 0.139 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 The ranking reversal pattern also replicates.
-In within-domain and mixed modes, SW-SMOTE $r\!=\!0.1$ achieves the best F2 (0.758 within, 0.790 mixed), while in cross-domain mode all strategies collapse to F2\,$= 0.18$--$0.22$.
-The Spearman rank correlation between within-domain and mixed mode strategy rankings is $\rho = 0.89$ ($p = 0.007$), confirming the same Within--Mixed equivalence observed with RF.
+In within-domain and mixed modes, SW-SMOTE $r\!=\!0.1$ achieves the best F2 (0.758 within, 0.781 mixed), while in cross-domain mode all strategies collapse to F2\,$= 0.18$--$0.22$.
+The Spearman rank correlation between within-domain and mixed mode strategy rankings is $\rho = 0.96$ ($p < 0.001$), confirming the same Within--Mixed equivalence observed with RF.
 Fig.~\ref{fig:sobol-comparison} visualizes the side-by-side comparison.
 
 \begin{figure}[!t]

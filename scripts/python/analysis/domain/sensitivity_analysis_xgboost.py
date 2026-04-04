@@ -108,13 +108,14 @@ def generate_comparison_report(xgb_results: dict, rf_sobol: pd.DataFrame | None)
         res = xgb_results[metric]
 
         # Build comparison table
-        w("| Factor | XGBoost $S_i$ | XGBoost $S_{Ti}$ |", end="")
+        header = "| Factor | XGBoost $S_i$ | XGBoost $S_{Ti}$ |"
 
         if rf_sobol is not None:
-            w(" RF $S_i$ | RF $S_{Ti}$ | $\\Delta S_{Ti}$ |")
+            header += " RF $S_i$ | RF $S_{Ti}$ | $\\Delta S_{Ti}$ |"
+            w(header)
             w("|--------|-------------|-----------------|---------|-------------|-----------------|")
         else:
-            w("")
+            w(header)
             w("|--------|-------------|-----------------|")
 
         for f in FACTORS:
