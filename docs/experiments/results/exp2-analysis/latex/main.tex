@@ -95,7 +95,9 @@ Vehicle dynamics signals---steering wheel angle, lateral acceleration, and lane 
 Arefnezhad et~al.~\cite{arefnezhad2019} used steering wheel angle and velocity with statistical and spectral features for drowsiness classification.
 Wang et~al.~\cite{wang2022} extended this approach using LSTM networks with five vehicle signals, applying Gaussian smoothing with a 1-second window.
 Zhao et~al.~\cite{zhao2012} applied continuous wavelet transform to capture transient changes in driving behavior.
-Recent surveys~\cite{fonseca2025,alquraishi2024} confirm that vehicle-dynamics-based methods remain a practical backbone, but note that most studies evaluate a single architecture on a fixed data split without systematically examining the effect of preprocessing decisions.
+Zhu et~al.~\cite{zhu2025} proposed MADFM, a multi-layer adaptive fatigue monitoring model using steering wheel signals in IEEE T-ITS.
+Perkins et~al.~\cite{perkins2022} identified remaining implementation challenges for drowsiness prediction systems in IEEE T-IV.
+Recent surveys~\cite{fu2024,fonseca2025,alquraishi2024} confirm that vehicle-dynamics-based methods remain a practical backbone, but note that most studies evaluate a single architecture on a fixed data split without systematically examining the effect of preprocessing decisions.
 
 \subsection{Class Imbalance in Safety-Critical Detection}
 
@@ -112,6 +114,7 @@ Inter-subject variability creates domain shift in DDD~\cite{pan2010,aravinth2025
 Kim et~al.~\cite{kim2025} proposed calibration-free drowsiness classification with prototype-based domain mixup for EEG signals.
 Luo et~al.~\cite{luo2024} developed cross-scenario and cross-subject domain adaptation methods.
 Li et~al.~\cite{li2026} introduced MADNet for EEG-based cross-subject drowsiness diagnosis using domain generalization.
+Ganguly et~al.~\cite{ganguly2025} proposed an attention-based deep learning framework for drowsiness detection, and Ali et~al.~\cite{ali2026} provided a comprehensive T-ITS review of brain-imaging-based drowsiness detection.
 These studies focus on architectural innovations to mitigate domain shift but do not quantify the relative importance of domain-related design choices (distance metric, membership, training mode) compared to preprocessing choices (rebalancing).
 
 \subsection{Sensitivity Analysis in Machine Learning}
@@ -688,6 +691,7 @@ The findings prescribe a clear decision hierarchy for practitioners deploying ve
   Second, few-shot or zero-shot personalization~\cite{kim2025}, in which a small number of unlabeled target-driver epochs are used for distributional calibration, could approximate within-domain performance at a fraction of the data cost.
   Third, continual learning strategies that incrementally update a deployed model as new driver data accumulates would provide a practical path from cross-domain to within-domain operation over time.
   Integrating such approaches within the factorial framework presented here would allow practitioners to quantify their added value relative to the dominant $M$ and $R$ factors and to identify which combination minimizes the deployment data requirement.
+  Concretely, each technique can be introduced as an additional factor level (e.g., $M' \in \{\text{cross, within, mixed, DA-aligned, few-shot}\}$) and evaluated through the same Sobol decomposition pipeline with no methodological change, yielding directly comparable variance shares.
 \end{enumerate}
 
 \subsection{Comparison with Prior Work}
@@ -711,14 +715,18 @@ Nevertheless, the within-domain AUROC (0.903) is competitive with Wang et~al.~\c
     \toprule
     Study & Year & Classif. & Modal. & Subj. & Fact. & Inter. & AUROC \\
     \midrule
+    Zhu et~al.~\cite{zhu2025}                  & 2025 & Multi-layer & Vehicle & --- & 0           & No               & --- \\
     Arefnezhad et~al.~\cite{arefnezhad2019}   & 2019 & SVM/NN    & Vehicle & 20 & 0            & No               & 0.87 \\
     Wang et~al.~\cite{wang2022}$^{\dagger}$    & 2022 & LSTM      & Vehicle & 87 & 0            & No               & 0.91 \\
     Zhao et~al.~\cite{zhao2012}                & 2012 & SVM       & Vehicle & 15 & 0            & No               & 0.82 \\
+    Ganguly et~al.~\cite{ganguly2025}           & 2025 & Attn-DL   & EEG     & --- & 0           & No               & --- \\
     He et~al.~\cite{he2024}                    & 2024 & GA-CNN    & EEG     & 12 & 1 (imbalance)& No               & 0.89 \\
     Aravinth et~al.~\cite{aravinth2025}        & 2025 & Transfer  & EEG     & 20 & 1 (domain)   & No               & 0.88 \\
     Kim et~al.~\cite{kim2025}                  & 2025 & Mixup     & EEG     & 27 & 1 (domain)   & No               & 0.92 \\
     Luo et~al.~\cite{luo2024}                  & 2024 & DA-Net    & EEG     & 15 & 1 (domain)   & No               & 0.85 \\
     Li et~al.~\cite{li2026}                    & 2026 & MADNet    & EEG     & 24 & 1 (domain)   & No               & 0.90 \\
+    Fu et~al.~\cite{fu2024}                    & 2024 & Survey    & Multi   & --- & ---          & ---              & --- \\
+    Perkins et~al.~\cite{perkins2022}          & 2022 & Survey    & Multi   & --- & ---          & ---              & --- \\
     Fonseca \& Ferreira~\cite{fonseca2025}     & 2025 & Review    & Multi   & --- & ---          & ---              & --- \\
     \textbf{Ours (RF)}$^{\dagger}$              & \textbf{2026} & \textbf{RF} & \textbf{Vehicle} & \textbf{87} & \textbf{4} ($R$,$M$,$D$,$G$) & $R{\times}M$ \textbf{Sobol} & \textbf{0.903} \\
     \textbf{Ours (XGB)}$^{\dagger}$             & \textbf{2026} & \textbf{XGBoost} & \textbf{Vehicle} & \textbf{87} & \textbf{4} ($R$,$M$,$D$,$G$) & $R{\times}M$ \textbf{Sobol} & \textbf{0.877} \\
@@ -736,7 +744,9 @@ Our vehicle dynamics explanation---particularly the ICC\,=\,0.111~\cite{shrout19
   \item \textbf{Two classifier families tested.}
   The factorial experiment was conducted with both RF~\cite{breiman2001} and XGBoost~\cite{chen2016}, representing bagging and boosting paradigms (\S\ref{sec:results-xgboost}).
   The factor hierarchy $S_{TM} > S_{TR} \gg S_{TD} \approx S_{TG}$ is consistent across both, supporting classifier independence.
-  However, extension to fundamentally different architectures (SVM, LSTM, Transformer) remains an open question.
+  While both classifiers are ensemble methods operating on tabular features, their inductive biases differ fundamentally: RF reduces variance via bootstrap aggregation and random feature subsets, whereas XGBoost reduces bias through sequential residual correction with regularisation.
+  The Sobol--Hoeffding decomposition framework itself is classifier-agnostic---it treats the classifier as a black box mapping factor configurations to performance scores---and can therefore be extended to sequence models (LSTM~\cite{wang2022}), attention-based architectures~\cite{ganguly2025}, or any other learner without methodological modification.
+  Empirical validation with such architectures remains an open question.
 
   \item \textbf{Deterministic data split.}
   The train/test partition is deterministic; random seeds vary only model initialisation and resampling.
@@ -924,6 +934,27 @@ C.~Bandt and B.~Pompe, ``Permutation entropy: A natural complexity measure for t
 
 \bibitem{shrout1979}
 P.~E. Shrout and J.~L. Fleiss, ``Intraclass correlations: Uses in assessing rater reliability,'' \emph{Psychol. Bull.}, vol.~86, no.~2, pp.~420--428, 1979.
+
+\bibitem{zhu2025}
+J.~Zhu, Q.~Liu, Z.~Zhao, Y.~Lu, Z.~Yao, and Y.~Zhang, ``MADFM: Multi-layer adaptive driver fatigue monitoring model based on steering wheel signals,'' \emph{IEEE Trans. Intell. Transp. Syst.}, 2025.
+
+\bibitem{fu2024}
+B.~Fu, F.~Boutros, C.-T.~Lin, and N.~Damer, ``A survey on drowsiness detection---modern applications and methods,'' \emph{IEEE Trans. Intell. Veh.}, vol.~9, no.~5, pp.~5210--5234, 2024.
+
+\bibitem{perkins2022}
+E.~Perkins, C.~Sitaula, M.~Burke, and F.~Dehzangi, ``Challenges of driver drowsiness prediction: The remaining steps to implementation,'' \emph{IEEE Trans. Intell. Veh.}, vol.~8, no.~12, pp.~4704--4716, 2022.
+
+\bibitem{ali2026}
+M.~U.~Ali, A.~Zafar, S.~H.~Kim, and K.~S.~Kim, ``Intelligent driver drowsiness detection using brain imaging: A systematic review for enhanced road safety in intelligent transportation systems,'' \emph{IEEE Trans. Intell. Transp. Syst.}, 2026.
+
+\bibitem{ganguly2025}
+B.~Ganguly, D.~Dey, and S.~Munshi, ``An attention deep learning framework-based drowsiness detection model for intelligent transportation system,'' \emph{IEEE Trans. Intell. Transp. Syst.}, vol.~26, no.~4, pp.~4917--4928, 2025.
+
+\bibitem{hu2022}
+Z.~Hu, S.~Lou, Y.~Xing, X.~Wang, D.~Cao, and C.~Lv, ``Review and perspectives on driver digital twin and its enabling technologies for intelligent vehicles,'' \emph{IEEE Trans. Intell. Veh.}, vol.~7, no.~3, pp.~417--440, 2022.
+
+\bibitem{fang2024}
+Z.~Fang, J.~Wang, Z.~Wang, J.~Chen, and J.~Liang, ``Human--machine shared control for path following considering driver fatigue characteristics,'' \emph{IEEE Trans. Intell. Transp. Syst.}, vol.~25, no.~7, pp.~7328--7341, 2024.
 
 \end{thebibliography}
 
