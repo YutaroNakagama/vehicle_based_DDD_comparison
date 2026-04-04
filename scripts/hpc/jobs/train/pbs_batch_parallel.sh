@@ -85,6 +85,8 @@ run_task() {
         baseline)
             if [[ "$SCRIPT_TYPE" == "unified" ]]; then
                 TAG="prior_${MODEL}_baseline_${RANKING}_${DISTANCE}_${DOMAIN}_domain_train_split2_s${SEED}"
+            elif [[ "$SCRIPT_TYPE" == "xgb" ]]; then
+                TAG="xgb_baseline_domain_${RANKING}_${DISTANCE}_${DOMAIN}_${MODE}_split2_s${SEED}"
             else
                 TAG="prior_${MODEL}_baseline_${RANKING}_${DISTANCE}_${DOMAIN}_${MODE}_split2_s${SEED}"
             fi
@@ -92,6 +94,8 @@ run_task() {
         smote)
             if [[ "$SCRIPT_TYPE" == "unified" ]]; then
                 TAG="prior_${MODEL}_imbalv3_${RANKING}_${DISTANCE}_${DOMAIN}_domain_train_split2_subjectwise_ratio${RATIO}_s${SEED}"
+            elif [[ "$SCRIPT_TYPE" == "xgb" ]]; then
+                TAG="xgb_imbalv3_${RANKING}_${DISTANCE}_${DOMAIN}_${MODE}_split2_subjectwise_ratio${RATIO}_s${SEED}"
             else
                 TAG="prior_${MODEL}_imbalv3_${RANKING}_${DISTANCE}_${DOMAIN}_${MODE}_split2_subjectwise_ratio${RATIO}_s${SEED}"
             fi
@@ -99,6 +103,8 @@ run_task() {
         smote_plain)
             if [[ "$SCRIPT_TYPE" == "unified" ]]; then
                 TAG="prior_${MODEL}_smote_plain_${RANKING}_${DISTANCE}_${DOMAIN}_domain_train_split2_ratio${RATIO}_s${SEED}"
+            elif [[ "$SCRIPT_TYPE" == "xgb" ]]; then
+                TAG="xgb_smote_plain_${RANKING}_${DISTANCE}_${DOMAIN}_${MODE}_split2_ratio${RATIO}_s${SEED}"
             else
                 TAG="prior_${MODEL}_smote_plain_${RANKING}_${DISTANCE}_${DOMAIN}_${MODE}_split2_ratio${RATIO}_s${SEED}"
             fi
@@ -106,6 +112,8 @@ run_task() {
         undersample)
             if [[ "$SCRIPT_TYPE" == "unified" ]]; then
                 TAG="prior_${MODEL}_undersample_rus_${RANKING}_${DISTANCE}_${DOMAIN}_domain_train_split2_ratio${RATIO}_s${SEED}"
+            elif [[ "$SCRIPT_TYPE" == "xgb" ]]; then
+                TAG="xgb_undersample_rus_${RANKING}_${DISTANCE}_${DOMAIN}_${MODE}_split2_ratio${RATIO}_s${SEED}"
             else
                 TAG="prior_${MODEL}_undersample_rus_${RANKING}_${DISTANCE}_${DOMAIN}_${MODE}_split2_ratio${RATIO}_s${SEED}"
             fi
@@ -147,7 +155,13 @@ run_task() {
 
     # Evaluation
     if [[ "$RUN_EVAL" == "true" ]]; then
-        if [[ "$SCRIPT_TYPE" == "unified" ]]; then
+        if [[ "$SCRIPT_TYPE" == "xgb" ]]; then
+            # XGBoost validation: standard split2 eval
+            python scripts/python/evaluation/evaluate.py \
+                --model "$MODEL" --tag "$TAG" --mode "$MODE" \
+                --target_file "$TARGET_FILE" --seed "$SEED" \
+                --jobid "$PBS_JOBID" || echo "[TASK-$TASK_IDX][WARN] Evaluation failed"
+        elif [[ "$SCRIPT_TYPE" == "unified" ]]; then
             # Within-domain eval
             python scripts/python/evaluation/evaluate.py \
                 --model "$MODEL" --tag "$TAG" --mode domain_train \
