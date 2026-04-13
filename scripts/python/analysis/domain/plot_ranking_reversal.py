@@ -40,10 +40,29 @@ COND_COLORS = {
     "baseline":      "#999999",   # grey
     "rus_r01":       "#E69F00",   # orange
     "rus_r05":       "#D55E00",   # vermilion
-    "smote_r01":     "#0072B2",   # blue
-    "smote_r05":     "#56B4E9",   # sky blue
+    "smote_r01":     "#56B4E9",   # sky blue
+    "smote_r05":     "#0072B2",   # blue
     "sw_smote_r01":  "#CC79A7",   # reddish purple
-    "sw_smote_r05":  "#F0E442",   # yellow
+    "sw_smote_r05":  "#332288",   # dark indigo
+}
+# CVD-safe: distinct markers + line styles per strategy
+COND_MARKERS = {
+    "baseline":      "s",
+    "rus_r01":       "^",
+    "rus_r05":       "v",
+    "smote_r01":     "D",
+    "smote_r05":     "o",
+    "sw_smote_r01":  "P",
+    "sw_smote_r05":  "X",
+}
+COND_LINESTYLES = {
+    "baseline":      "-",
+    "rus_r01":       "--",
+    "rus_r05":       "--",
+    "smote_r01":     "-.",
+    "smote_r05":     "-.",
+    "sw_smote_r01":  ":",
+    "sw_smote_r05":  ":",
 }
 
 MODE_ORDER = ["source_only", "target_only", "mixed"]
@@ -52,21 +71,28 @@ MODE_LABELS = {"source_only": "Cross", "target_only": "Within", "mixed": "Mixed"
 METRICS = {"f2": "F2-score", "auc": "AUROC", "auc_pr": "AUPRC"}
 
 # ── IEEE T-IV style ────────────────────────────────────────────────────
-_TIV_TEXT_WIDTH = 7.16
+_TIV_COLUMN_WIDTH = 3.5   # inches (single column)
+_TIV_TEXT_WIDTH   = 7.16  # inches (double column)
 plt.rcParams.update({
     "font.family": "sans-serif",
-    "font.sans-serif": ["Arial", "DejaVu Sans"],
-    "font.size": 8,
-    "mathtext.fontset": "dejavusans",
-    "axes.titlesize": 8,
-    "axes.labelsize": 8,
-    "xtick.labelsize": 7,
-    "ytick.labelsize": 7,
+    "font.sans-serif": ["Liberation Sans", "Arial", "DejaVu Sans"],
+    "mathtext.fontset": "custom",
+    "mathtext.rm": "Liberation Sans",
+    "mathtext.it": "Liberation Sans:italic",
+    "mathtext.bf": "Liberation Sans:bold",
+    "font.size": 9,
+    "axes.titlesize": 10,
+    "axes.labelsize": 9,
+    "xtick.labelsize": 9,
+    "ytick.labelsize": 9,
     "legend.fontsize": 7,
     "figure.dpi": 150,
-    "axes.grid": True,
-    "grid.alpha": 0.3,
-    "grid.linestyle": "--",
+    "savefig.dpi": 300,
+    "axes.grid": False,
+    "xtick.direction": "in",
+    "ytick.direction": "in",
+    "xtick.major.size": 3,
+    "ytick.major.size": 3,
 })
 
 
@@ -135,68 +161,36 @@ def compute_spearman(rank_df: pd.DataFrame):
 
 # ── plotting ───────────────────────────────────────────────────────────
 def plot_bump_chart(df: pd.DataFrame):
-    fig, axes = plt.subplots(1, 3, figsize=(_TIV_TEXT_WIDTH, 2.5), sharey=True)
+    # Column-width figure (3.5 in) — displayed at \columnwidth, no scaling
+    fig, axes = plt.subplots(3, 1, figsize=(_TIV_COLUMN_WIDTH, 5.0))
 
-    for ax, (metric, metric_label) in zip(axes, METRICS.items()):
-        rank_df = compute_per_mode_ranks(df, metric)
+    for ax_idx, (ax, (metric, metric_label)) in enumerate(
+        zip(axes, METRICS.items())
+    ):
         x_positions = np.arange(len(MODE_ORDER))
 
+        # Compute mean metric value per (condition, mode)
         for cond in CONDITIONS_7:
-            cond_data = rank_df[rank_df["condition"] == cond]
-            ranks = [
-                cond_data[cond_data["mode"] == m]["mean_rank"].values[0]
-                for m in MODE_ORDER
-            ]
+            means = []
+            for mode in MODE_ORDER:
+                val = df[(df["condition"] == cond) & (df["mode"] == mode)][metric].mean()
+                means.append(val)
             ax.plot(
-                x_positions, ranks,
-                marker="o", markersize=4,
+                x_positions, means,
+                marker=COND_MARKERS[cond], markersize=5,
                 color=COND_COLORS[cond],
+                linestyle=COND_LINESTYLES[cond],
                 linewidth=1.5, alpha=0.85,
-                label=LABELS[cond],
-            )
-            # Label on right side
-            ax.annotate(
-                LABELS[cond],
-                xy=(x_positions[-1], ranks[-1]),
-                xytext=(4, 0),
-                textcoords="offset points",
-                fontsize=5.5,
-                color=COND_COLORS[cond],
-                va="center",
-                fontweight="bold",
             )
 
         ax.set_xticks(x_positions)
-        ax.set_xticklabels([MODE_LABELS[m] for m in MODE_ORDER])
-        ax.set_title(metric_label)
-        ax.set_ylim(7.5, 0.5)  # rank 1 at top
-        ax.set_yticks(range(1, 8))
-
-        # Spearman annotation
-        spearman = compute_spearman(rank_df)
-        rho_cw = spearman["Cross vs Within"][0]
-        p_cw = spearman["Cross vs Within"][1]
-        sig = "*" if p_cw < 0.05 else ""
-        ax.text(
-            0.5, 0.02,
-            f"$\\rho_{{C,W}}$ = {rho_cw:.2f}{sig}",
-            transform=ax.transAxes,
-            ha="center", fontsize=6.5,
-            bbox=dict(boxstyle="round,pad=0.3", fc="#f0f0f0", alpha=0.8),
-        )
-
-    axes[0].set_ylabel("Friedman Mean Rank")
-
-    # Single legend at bottom
-    handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(
-        handles, labels,
-        loc="lower center",
-        ncol=4,
-        bbox_to_anchor=(0.5, -0.02),
-        frameon=True,
-        fontsize=6.5,
-    )
+        # Only show x-tick labels on the bottom subplot
+        if ax_idx == len(METRICS) - 1:
+            ax.set_xticklabels([MODE_LABELS[m] for m in MODE_ORDER])
+        else:
+            ax.set_xticklabels([])
+        ax.tick_params(axis="x", length=0)  # categorical axis
+        ax.set_ylabel(metric_label)
 
     plt.tight_layout()
 

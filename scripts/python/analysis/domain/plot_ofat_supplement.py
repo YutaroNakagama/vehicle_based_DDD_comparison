@@ -71,25 +71,38 @@ DIST_LABELS  = {"mmd": "MMD", "dtw": "DTW", "wasserstein": "Wass."}
 LEVEL_LABELS = {"in_domain": "In", "out_domain": "Out"}
 
 # Colour-coding by the most informative other factor
+# IEEE CVD-accessible: colour + line style + marker shape
+# Palette: Bang Wong (Nature Methods 2011) — NO blue-green pair;
+# grey-scale luminance spread verified: vermilion ≈ 47 %, sky blue ≈ 72 %,
+# reddish purple ≈ 55 %  →  all separable in B/W.
 MODE_COLORS = {
-    "source_only": "#D55E00",   # vermilion
-    "target_only": "#0072B2",   # blue
-    "mixed":       "#009E73",   # bluish green
+    "source_only": "#D55E00",   # vermilion  (dark,  lum ≈ 47 %)
+    "target_only": "#56B4E9",   # sky blue   (light, lum ≈ 72 %)
+    "mixed":       "#CC79A7",   # reddish purple (medium, lum ≈ 55 %)
+}
+MODE_LINESTYLES = {
+    "source_only": ("-",  "o"),   # solid, circle
+    "target_only": ("--", "s"),   # dashed, square
+    "mixed":       (":",  "^"),   # dotted, triangle up
 }
 FAMILY_COLORS = {
-    "baseline":      "#999999",   # grey
-    "rus_r01":       "#E69F00",   # orange
-    "rus_r05":       "#D55E00",   # vermilion
-    "smote_r01":     "#0072B2",   # blue
-    "smote_r05":     "#56B4E9",   # sky blue
-    "sw_smote_r01":  "#CC79A7",   # reddish purple
-    "sw_smote_r05":  "#F0E442",   # yellow
+    "baseline":      "#666666",   # dark grey
+    "rus_r01":       "#E69F00",   # orange  (bright)
+    "rus_r05":       "#D55E00",   # vermilion (darker orange)
+    "smote_r01":     "#56B4E9",   # sky blue (light)
+    "smote_r05":     "#0072B2",   # blue     (darker sky blue)
+    "sw_smote_r01":  "#CC79A7",   # reddish purple (light)
+    "sw_smote_r05":  "#882255",   # dark purple
 }
-FAMILY_LEGEND = {
-    "BL":       "#999999",
-    "RUS":      "#E69F00",
-    "SMOTE":    "#0072B2",
-    "SW-SMOTE": "#CC79A7",
+# Map each condition to its family style (linestyle, marker)
+FAMILY_LINESTYLES = {
+    "baseline":      ("-",  "o"),   # solid, circle
+    "rus_r01":       ("--", "s"),   # dashed, square
+    "rus_r05":       ("--", "s"),
+    "smote_r01":     (":",  "D"),   # dotted, diamond
+    "smote_r05":     (":",  "D"),
+    "sw_smote_r01":  ("-.", "^"),   # dashdot, triangle
+    "sw_smote_r05":  ("-.", "^"),
 }
 
 MODES     = ["source_only", "target_only", "mixed"]
@@ -108,22 +121,27 @@ FACTORS = {
 # Distinct colours for fixed-condition lines (cycling palette)
 LINE_CMAP = plt.cm.tab20
 
-# IEEE T-IV style
-_TIV_TEXT_WIDTH = 7.16
+# IEEE T-IV style — full-width figure (figure*)
+_TIV_TEXT_WIDTH = 7.16   # IEEE two-column text width (inches)
 plt.rcParams.update({
     "font.family": "sans-serif",
-    "font.sans-serif": ["Arial", "DejaVu Sans"],
+    "font.sans-serif": ["Liberation Sans", "Arial", "DejaVu Sans"],
     "font.size": 8,
-    "mathtext.fontset": "dejavusans",
-    "axes.titlesize": 8,
+    "mathtext.fontset": "custom",
+    "mathtext.rm": "Liberation Sans",
+    "mathtext.it": "Liberation Sans:italic",
+    "mathtext.bf": "Liberation Sans:bold",
+    "axes.titlesize": 9,
     "axes.labelsize": 8,
-    "xtick.labelsize": 7,
-    "ytick.labelsize": 7,
-    "legend.fontsize": 6.5,
+    "xtick.labelsize": 8,
+    "ytick.labelsize": 8,
+    "legend.fontsize": 7,
     "figure.dpi": 150,
-    "axes.grid": True,
-    "grid.alpha": 0.3,
-    "grid.linestyle": "--",
+    "axes.grid": False,
+    "xtick.direction": "in",
+    "ytick.direction": "in",
+    "xtick.major.size": 3,
+    "ytick.major.size": 3,
 })
 
 
@@ -161,146 +179,168 @@ def _save(fig, name: str):
 
 
 # ---------------------------------------------------------------------------
-def plot_ofat(df: pd.DataFrame, target_factor: str):
-    """OFAT spaghetti plot for one factor.
+# Column order: dominant factors first, then negligible
+FACTOR_ORDER = ["condition", "mode", "distance", "level"]
 
-    For each combination of the *other* three factors (averaged over seeds),
-    plot the mean metric across the target factor's levels as one line.
-    Also overlay a bold line for the grand OFAT mean ± SD band.
-    """
-    levels, label_map, display_name = FACTORS[target_factor]
+
+def _compute_ofat_lines(df, target_factor):
+    """Return per-metric OFAT lines for one factor."""
+    levels, _, _ = FACTORS[target_factor]
     other_factors = [f for f in FACTORS if f != target_factor]
 
-    # Choose a colour-coding factor: Mode when available, else Rebalancing
-    if target_factor != "mode":
-        color_factor = "mode"
-        color_map = MODE_COLORS
-        color_labels = MODE_LABELS
-    else:
-        color_factor = "condition"
-        color_map = FAMILY_COLORS
-        color_labels = COND_LABELS
+    other_combos = (
+        df.groupby(other_factors).size().reset_index()
+        [other_factors].drop_duplicates()
+    )
 
-    fig, axes = plt.subplots(1, 3, figsize=(_TIV_TEXT_WIDTH, 3.0), sharey=False)
+    results = {}
+    combo_labels_raw = []
 
-    for ax_idx, (metric, mlabel) in enumerate(PRIMARY_METRICS):
-        ax = axes[ax_idx]
-
-        # Build all fixed conditions (cartesian product of other factors)
-        other_combos = (
-            df.groupby(other_factors)
-            .size()
-            .reset_index()
-            [other_factors]
-            .drop_duplicates()
-        )
-
-        all_lines = []   # list of arrays, each shape = (n_levels,)
-        combo_labels = []
-        combo_labels_raw = []  # raw dict per combo for colour lookup
-
+    for metric, _ in PRIMARY_METRICS:
+        all_lines = []
+        clr = []
         for _, combo_row in other_combos.iterrows():
             combo_dict = combo_row.to_dict()
             mask = pd.Series(True, index=df.index)
             for f, v in combo_dict.items():
                 mask &= (df[f] == v)
             sub = df[mask]
-
-            # Mean over seeds for each level of the target factor
             means = []
             for lev in levels:
                 vals = sub[sub[target_factor] == lev][metric].dropna()
                 means.append(vals.mean() if len(vals) > 0 else np.nan)
             all_lines.append(means)
+            if metric == PRIMARY_METRICS[0][0]:
+                clr.append(combo_dict)
+        all_lines = np.array(all_lines)
+        results[metric] = (all_lines, np.nanmean(all_lines, axis=0),
+                           np.nanstd(all_lines, axis=0))
+        if metric == PRIMARY_METRICS[0][0]:
+            combo_labels_raw = clr
 
-            # Build a short label for this fixed condition
-            parts = []
-            for f in other_factors:
-                flevels, flabels, _ = FACTORS[f]
-                parts.append(flabels[combo_dict[f]])
-            combo_labels.append("/".join(parts))
-            combo_labels_raw.append(combo_dict)
+    return results, combo_labels_raw
 
-        all_lines = np.array(all_lines)  # shape (n_combos, n_levels)
 
-        # Plot each fixed-condition line, coloured by color_factor
-        n_combos = len(all_lines)
-        for i in range(n_combos):
-            cf_val = combo_labels_raw[i][color_factor]
-            color = color_map[cf_val]
-            ax.plot(range(len(levels)), all_lines[i], "-o",
-                    color=color, alpha=0.40, linewidth=0.8, markersize=3,
-                    zorder=2)
+def plot_ofat_combined(df: pd.DataFrame):
+    """Combined 3-row × 4-column OFAT spaghetti plot."""
+    n_rows = len(PRIMARY_METRICS)
+    n_cols = len(FACTOR_ORDER)
 
-        # Compute grand OFAT mean and SD across fixed conditions
-        grand_mean = np.nanmean(all_lines, axis=0)
-        grand_std  = np.nanstd(all_lines, axis=0)
+    fig, axes = plt.subplots(
+        n_rows, n_cols,
+        figsize=(_TIV_TEXT_WIDTH, 4.2),
+        sharey=True,
+    )
 
-        # Bold mean line
-        ax.plot(range(len(levels)), grand_mean, "-s",
-                color="black", linewidth=2.5, markersize=7, zorder=5,
-                label="OFAT mean")
+    for col_idx, target_factor in enumerate(FACTOR_ORDER):
+        levels, label_map, display_name = FACTORS[target_factor]
 
-        # ±1 SD band
-        ax.fill_between(range(len(levels)),
-                        grand_mean - grand_std, grand_mean + grand_std,
-                        alpha=0.15, color="black", zorder=3,
-                        label="±1 SD across\nfixed conditions")
+        if target_factor != "mode":
+            color_factor = "mode"
+            color_map, style_map = MODE_COLORS, MODE_LINESTYLES
+        else:
+            color_factor = "condition"
+            color_map, style_map = FAMILY_COLORS, FAMILY_LINESTYLES
 
-        # Annotate the range (max - min across fixed conditions) per level
-        for j in range(len(levels)):
-            col = all_lines[:, j]
-            rng = np.nanmax(col) - np.nanmin(col)
-            ax.annotate(f"$\Delta$={rng:.3f}",
-                        xy=(j, grand_mean[j] + grand_std[j]),
-                        xytext=(0, 6), textcoords="offset points",
-                        ha="center", fontsize=5.5, fontweight="bold",
-                        color="#D55E00")
+        results, combo_labels_raw = _compute_ofat_lines(df, target_factor)
 
-        ax.set_xticks(range(len(levels)))
-        ax.set_xticklabels([label_map[lev] for lev in levels],
-                           fontsize=7, rotation=30 if len(levels) > 4 else 0,
-                           ha="right" if len(levels) > 4 else "center")
-        ax.set_ylabel(mlabel)
-        ax.set_title(mlabel, fontweight="bold")
-        if ax_idx == 0:
-            # Build legend: OFAT mean + SD band + colour-factor entries
-            handles = ax.get_legend_handles_labels()[0][:2]  # mean + band
-            labels_leg = ["OFAT mean", "$\pm$1 SD"]
-            if target_factor != "mode":
-                # Colour by mode
-                for m_key, m_label in MODE_LABELS.items():
-                    handles.append(mpatches.Patch(color=MODE_COLORS[m_key], alpha=0.6))
-                    labels_leg.append(m_label)
+        for row_idx, (metric, mlabel) in enumerate(PRIMARY_METRICS):
+            ax = axes[row_idx, col_idx]
+            all_lines, grand_mean, grand_std = results[metric]
+
+            for i in range(len(all_lines)):
+                cf_val = combo_labels_raw[i][color_factor]
+                ls, mk = style_map[cf_val]
+                ax.plot(range(len(levels)), all_lines[i],
+                        linestyle=ls, marker=mk,
+                        color=color_map[cf_val], alpha=0.45,
+                        linewidth=1.0, markersize=3.0, zorder=2)
+
+            ax.plot(range(len(levels)), grand_mean,
+                    linestyle="-", marker="P",
+                    color="black", linewidth=2.2, markersize=5.5, zorder=5,
+                    label="OFAT mean")
+            ax.fill_between(range(len(levels)),
+                            grand_mean - grand_std, grand_mean + grand_std,
+                            alpha=0.15, color="black", zorder=3,
+                            label="$\\pm$1 SD")
+
+            ax.set_ylim(0, 1)
+
+            # Column title — top row only
+            if row_idx == 0:
+                ax.set_title(display_name, fontsize=9, fontweight="bold")
+
+            # Legend in F2-score row (row_idx==0) for each column
+            if row_idx == 0:
+                from matplotlib.lines import Line2D
+                _leg_kw = dict(
+                    loc="upper left", fontsize=5.5, handlelength=2.0,
+                    framealpha=1.0, fancybox=False,
+                    edgecolor="black", facecolor="white",
+                )
+                if target_factor != "mode":
+                    # Mode legend for R, D, G columns
+                    handles = [
+                        Line2D([0], [0], color=MODE_COLORS[m],
+                               linestyle=ls, marker=mk,
+                               markersize=3.5, linewidth=1.0,
+                               label=MODE_LABELS[m])
+                        for m, (ls, mk) in MODE_LINESTYLES.items()
+                    ]
+                    ax.legend(handles=handles, **_leg_kw)
+                else:
+                    # Family legend for M column (one entry per family)
+                    _family_repr = {
+                        "BL":       ("baseline",     "-",  "o"),
+                        "RUS":      ("rus_r01",      "--", "s"),
+                        "SMOTE":    ("smote_r01",    ":",  "D"),
+                        "SW-SMOTE": ("sw_smote_r01", "-.", "^"),
+                    }
+                    handles = [
+                        Line2D([0], [0],
+                               color=FAMILY_COLORS[cond],
+                               linestyle=ls, marker=mk,
+                               markersize=3.5, linewidth=1.0,
+                               label=fname)
+                        for fname, (cond, ls, mk) in _family_repr.items()
+                    ]
+                    ax.legend(handles=handles, **_leg_kw)
+
+            # Y-axis label — leftmost column only
+            if col_idx == 0:
+                ax.set_ylabel(mlabel)
             else:
-                # Colour by rebalancing family
-                for fam_label, fam_color in FAMILY_LEGEND.items():
-                    handles.append(mpatches.Patch(color=fam_color, alpha=0.6))
-                    labels_leg.append(fam_label)
-            ax.legend(handles, labels_leg, loc="best", framealpha=0.9,
-                      fontsize=6, ncol=1)
+                ax.set_ylabel("")
+                ax.tick_params(axis="y", labelleft=False)
 
-    fig.tight_layout()
+            # X-axis ticks — bottom row only
+            ax.set_xticks(range(len(levels)))
+            if row_idx == n_rows - 1:
+                ax.set_xticklabels(
+                    [label_map[lev] for lev in levels],
+                    fontsize=8,
+                    rotation=35 if len(levels) > 4 else 0,
+                    ha="right" if len(levels) > 4 else "center",
+                )
+            else:
+                ax.set_xticklabels([])
 
-    fname = f"fig_s_ofat_{target_factor}.svg"
-    _save(fig, fname)
+    fig.tight_layout(h_pad=0.4, w_pad=0.4)
+    _save(fig, "fig_ofat_combined.svg")
 
 
 # ---------------------------------------------------------------------------
 def main():
     print("=" * 60)
-    print("OFAT Supplementary Analysis")
+    print("OFAT Combined Analysis (3×4 grid)")
     print("=" * 60)
 
     df = load_all_data()
-
-    for i, factor in enumerate(["condition", "distance", "level", "mode"], 1):
-        _, _, display = FACTORS[factor]
-        print(f"\n[{i}/4] OFAT for {display}...")
-        plot_ofat(df, factor)
+    plot_ofat_combined(df)
 
     print("\n" + "=" * 60)
-    print("All 4 OFAT figures saved.")
+    print("Combined OFAT figure saved.")
     print("=" * 60)
 
 
