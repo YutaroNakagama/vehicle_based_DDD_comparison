@@ -1,72 +1,54 @@
 #!/bin/bash
 # ============================================================
-# Re-execution daemon — submit pooled jobs for 15 seeds × all conditions × 2 ratios
+# Re-execution daemon — batch-submit pooled jobs (15 seeds per batch)
 # ============================================================
-# Submits pooled training+eval for all models × conditions × seeds × ratios.
+# Groups configs by (model, condition, ratio) and submits ONE batch
+# PBS job per group.  Each batch runs up to 15 tasks in parallel.
 #
-# Target:
-#   - 3 models (SvmW, SvmA, Lstm)
-#   - 4 conditions (baseline, smote_plain, smote/sw_smote, undersample)
-#   - 15 seeds
-#   - 2 ratios for non-baseline (0.1, 0.5)
-#   - Total: 3 × (15 + 15×2 ×3) = 3 × 105 = 315 configs
+# Target: 3 models × 7 condition/ratio combos × 15 seeds = 315 configs
+#         → 21 batch jobs (vs 315 individual jobs)
 #
 # Usage:
 #   nohup bash scripts/hpc/launchers/rerun_pooled_15seeds.sh > /dev/null 2>&1 &
 #   tail -f /tmp/rerun_pooled_15seeds.log
 # ============================================================
 
-set -euo pipefail
+set -u
 
 PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
 cd "$PROJECT_ROOT"
 
-JOB_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/train/pbs_prior_research.sh"
+BATCH_JOB_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/train/pbs_prior_research_batch.sh"
+TASK_DIR="$PROJECT_ROOT/scripts/hpc/logs/train/task_files/pooled_batch"
 LOG="/tmp/rerun_pooled_15seeds.log"
 SUBMITTED_KEYS="/tmp/rerun_pooled_15seeds_keys.txt"
-POLL_INTERVAL=300  # 5 minutes
+POLL_INTERVAL=300   # 5 min
+
+mkdir -p "$TASK_DIR"
+touch "$SUBMITTED_KEYS"
 
 # ---- Error trap ----
 trap 'echo "[$(date +%H:%M)] TRAP: daemon exiting (line $LINENO, exit=$?)" >> "$LOG"' EXIT
 trap 'echo "[$(date +%H:%M)] TRAP: received signal, exiting" >> "$LOG"; exit 1' INT TERM HUP
 
-# ---- Queue limits ----
+# ---- Queue limits (CPU only) ----
 declare -A QUEUE_MAX=( [SINGLE]=40 [DEFAULT]=40 [SMALL]=30 [LONG]=15 )
 declare -A QUEUE_CURRENT=()
 CPU_QUEUES=("SINGLE" "DEFAULT" "SMALL" "LONG")
-
-# GPU queues for Lstm
-declare -A GPU_QUEUE_MAX=( [GPU-1]=4 [GPU-1A]=4 [GPU-S]=4 [GPU-L]=4 [GPU-LA]=4 )
-declare -A GPU_QUEUE_CURRENT=()
-GPU_QUEUES=("GPU-1" "GPU-1A" "GPU-S" "GPU-L" "GPU-LA")
-
-# ---- Max total jobs in queue ----
 MAX_TOTAL_JOBS=165
-
-touch "$SUBMITTED_KEYS"
+TOTAL_IN_QUEUE=0
 
 # ---- Check if evaluation result exists ----
 has_eval_result() {
     local model="$1" cond="$2" seed="$3" ratio="$4"
     local eval_dir="results/outputs/evaluation/${model}"
-
     local pattern
     case "$cond" in
-        baseline)
-            pattern="eval_results_${model}_pooled_prior_${model}_baseline_s${seed}"
-            ;;
-        smote_plain)
-            pattern="eval_results_${model}_pooled_prior_${model}_smote_plain_ratio${ratio}_s${seed}"
-            ;;
-        smote)
-            pattern="eval_results_${model}_pooled_prior_${model}_imbalv3_subjectwise_ratio${ratio}_s${seed}"
-            ;;
-        undersample)
-            pattern="eval_results_${model}_pooled_prior_${model}_undersample_rus_ratio${ratio}_s${seed}"
-            ;;
+        baseline)    pattern="eval_results_${model}_pooled_prior_${model}_baseline_s${seed}" ;;
+        smote_plain) pattern="eval_results_${model}_pooled_prior_${model}_smote_plain_ratio${ratio}_s${seed}" ;;
+        smote)       pattern="eval_results_${model}_pooled_prior_${model}_imbalv3_subjectwise_ratio${ratio}_s${seed}" ;;
+        undersample) pattern="eval_results_${model}_pooled_prior_${model}_undersample_rus_ratio${ratio}_s${seed}" ;;
     esac
-
-    # Check if matching file exists (excluding invalidated)
     find "$eval_dir" -name "${pattern}*.json" 2>/dev/null | grep -v _invalidated | grep -q .
 }
 
@@ -74,169 +56,148 @@ has_eval_result() {
 get_queue_counts() {
     local qstat_output
     qstat_output=$(qstat -u s2240011 2>/dev/null | tail -n +6 || true)
-
-    TOTAL_IN_QUEUE=$(echo "$qstat_output" | grep -c "s2240011" || echo 0)
-
+    TOTAL_IN_QUEUE=$(echo "$qstat_output" | grep -c "s2240011" 2>/dev/null || echo 0)
     for q in "${CPU_QUEUES[@]}"; do
-        QUEUE_CURRENT[$q]=$(echo "$qstat_output" | awk -v q="$q" '$3==q' | wc -l || echo 0)
-    done
-    for q in "${GPU_QUEUES[@]}"; do
-        GPU_QUEUE_CURRENT[$q]=$(echo "$qstat_output" | awk -v q="$q" '$3==q' | wc -l || echo 0)
+        QUEUE_CURRENT[$q]=$(echo "$qstat_output" | awk -v q="$q" '$3==q' | wc -l 2>/dev/null || echo 0)
     done
 }
 
 find_available_queue() {
-    # Check total limit first
-    if (( TOTAL_IN_QUEUE >= MAX_TOTAL_JOBS )); then
-        return 1
-    fi
+    if (( TOTAL_IN_QUEUE >= MAX_TOTAL_JOBS )); then return 1; fi
     for q in "${CPU_QUEUES[@]}"; do
         local current="${QUEUE_CURRENT[$q]:-0}"
         local max="${QUEUE_MAX[$q]:-0}"
-        if (( current < max )); then
-            echo "$q"
-            return 0
-        fi
+        if (( current < max )); then echo "$q"; return 0; fi
     done
     return 1
 }
 
-find_available_gpu_queue() {
-    # Check total limit first
-    if (( TOTAL_IN_QUEUE >= MAX_TOTAL_JOBS )); then
-        return 1
-    fi
-    for q in "${GPU_QUEUES[@]}"; do
-        local current="${GPU_QUEUE_CURRENT[$q]:-0}"
-        local max="${GPU_QUEUE_MAX[$q]:-0}"
-        if (( current < max )); then
-            echo "$q"
-            return 0
-        fi
-    done
-    return 1
-}
-
-# ---- Enumerate all experiment conditions ----
-ALL_JOBS=()
+# ---- All experiment configs ----
 MODELS=("SvmW" "SvmA" "Lstm")
 CONDITIONS=("baseline" "smote_plain" "smote" "undersample")
 SEEDS=(42 123 0 1 3 7 13 99 256 512 777 999 1337 2024 1234)
 
-for MODEL in "${MODELS[@]}"; do
-    for COND in "${CONDITIONS[@]}"; do
-        if [[ "$COND" == "baseline" ]]; then
-            for SEED in "${SEEDS[@]}"; do
-                ALL_JOBS+=("${MODEL}|${COND}|${SEED}|")
-            done
-        else
-            for RATIO in 0.1 0.5; do
-                for SEED in "${SEEDS[@]}"; do
-                    ALL_JOBS+=("${MODEL}|${COND}|${SEED}|${RATIO}")
-                done
-            done
-        fi
-    done
-done
-
-echo "[$(date +%H:%M)] Pooled-15seeds daemon started. Total configs: ${#ALL_JOBS[@]}" >> "$LOG"
-echo "[$(date +%H:%M)] Models: ${MODELS[*]}" >> "$LOG"
-echo "[$(date +%H:%M)] Conditions: ${CONDITIONS[*]}" >> "$LOG"
-echo "[$(date +%H:%M)] Seeds: ${SEEDS[*]}" >> "$LOG"
-echo "[$(date +%H:%M)] Ratios: 0.1, 0.5 (for non-baseline)" >> "$LOG"
-echo "[$(date +%H:%M)] Polling every ${POLL_INTERVAL}s" >> "$LOG"
+echo "[$(date +%H:%M)] Pooled-15seeds BATCH daemon started." >> "$LOG"
+echo "[$(date +%H:%M)] Models: ${MODELS[*]}  Conditions: ${CONDITIONS[*]}" >> "$LOG"
+echo "[$(date +%H:%M)] Batch job script: $BATCH_JOB_SCRIPT" >> "$LOG"
 
 # ---- Main loop ----
 while true; do
     get_queue_counts || true
 
+    # ---- Phase 1: collect pending configs, grouped by (model,cond,ratio) ----
+    declare -A PENDING_SEEDS       # group_key → "seed1 seed2 ..."
+    TOTAL_REMAINING=0
+
+    for MODEL in "${MODELS[@]}"; do
+        for COND in "${CONDITIONS[@]}"; do
+            if [[ "$COND" == "baseline" ]]; then
+                RATIOS=("")
+            else
+                RATIOS=("0.1" "0.5")
+            fi
+            for RATIO in "${RATIOS[@]}"; do
+                RATIO="${RATIO:-0.5}"
+                for SEED in "${SEEDS[@]}"; do
+                    # Build tracking key (same format as before for compatibility)
+                    KEY=""
+                    if [[ "$COND" == "baseline" ]]; then
+                        KEY="${MODEL}:${COND}:s${SEED}"
+                    else
+                        KEY="${MODEL}:${COND}:r${RATIO}:s${SEED}"
+                    fi
+
+                    # Skip if eval exists
+                    if has_eval_result "$MODEL" "$COND" "$SEED" "$RATIO"; then
+                        continue
+                    fi
+
+                    ((TOTAL_REMAINING++)) || true
+
+                    # Skip if already submitted
+                    if grep -qF "$KEY" "$SUBMITTED_KEYS" 2>/dev/null; then
+                        continue
+                    fi
+
+                    # Add to pending group
+                    GROUP_KEY="${MODEL}|${COND}|${RATIO}"
+                    PENDING_SEEDS[$GROUP_KEY]+="${SEED}|${KEY} "
+                done
+            done
+        done
+    done
+
+    # ---- Phase 2: submit batch jobs for pending groups ----
     SUBMITTED_THIS_ROUND=0
-    REMAINING=0
 
-    for job_spec in "${ALL_JOBS[@]}"; do
-        IFS='|' read -r MODEL COND SEED RATIO <<< "$job_spec"
+    for GROUP_KEY in "${!PENDING_SEEDS[@]}"; do
+        IFS='|' read -r MODEL COND RATIO <<< "$GROUP_KEY"
+        ENTRIES="${PENDING_SEEDS[$GROUP_KEY]}"
 
-        # Default ratio for baseline
-        RATIO="${RATIO:-0.5}"
-
-        KEY="${MODEL}:${COND}:r${RATIO}:s${SEED}"
-        [[ "$COND" == "baseline" ]] && KEY="${MODEL}:${COND}:s${SEED}"
-
-        # Skip if eval result already exists
-        if has_eval_result "$MODEL" "$COND" "$SEED" "$RATIO"; then
+        # Check queue availability
+        QUEUE
+        QUEUE=$(find_available_queue) || {
+            echo "[$(date +%H:%M)] Queue full — deferring group ${GROUP_KEY}" >> "$LOG"
             continue
-        fi
+        }
 
-        # Skip if already submitted
-        if grep -qF "$KEY" "$SUBMITTED_KEYS" 2>/dev/null; then
-            ((REMAINING++)) || true
-            continue
-        fi
+        # Write task file
+        TIMESTAMP
+        TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+        COND_SHORT="${COND:0:5}"
+        TASK_FILE="${TASK_DIR}/${MODEL}_${COND_SHORT}_r${RATIO}_${TIMESTAMP}.txt"
+        BATCH_COUNT=0
 
-        # Find available queue (GPU for Lstm, CPU for others)
-        QUEUE=""
-        if [[ "$MODEL" == "Lstm" ]]; then
-            QUEUE=$(find_available_gpu_queue) || true
-        else
-            QUEUE=$(find_available_queue) || true
-        fi
-        if [[ -z "$QUEUE" ]]; then
-            ((REMAINING++)) || true
-            continue
-        fi
+        for entry in $ENTRIES; do
+            SEED="${entry%%|*}"
+            echo "${MODEL}|${COND}|${SEED}|${RATIO}" >> "$TASK_FILE"
+            ((BATCH_COUNT++)) || true
+        done
 
-        # Resources
-        if [[ "$MODEL" == "Lstm" ]]; then
-            NCPUS_MEM="ncpus=4:ngpus=1:mem=8gb"
-        else
-            NCPUS_MEM="ncpus=4:mem=16gb"
-        fi
-        WALLTIME="24:00:00"
+        # Compute resources: 1 core per task + 1 spare, 4 GB per task
+        NCPUS=$((BATCH_COUNT + 1))
+        MEM_GB=$((BATCH_COUNT * 4 + 4))
 
-        # Compact job name
-        COND_SHORT="${COND:0:3}"
-        JOB_NAME="P_${MODEL:0:2}_${COND_SHORT}_s${SEED}"
+        # Job name
+        JOB_NAME="PB_${MODEL:0:2}_${COND_SHORT}"
 
-        # Submit
+        # Submit batch job
+        JID
         JID=$(qsub -N "$JOB_NAME" \
             -q "$QUEUE" \
-            -l "select=1:${NCPUS_MEM}" \
-            -l "walltime=${WALLTIME}" \
-            -v "MODEL=${MODEL},CONDITION=${COND},SEED=${SEED},RATIO=${RATIO}" \
-            "$JOB_SCRIPT" 2>&1) || {
-            echo "[$(date +%H:%M)] SUBMIT FAILED: $KEY → $JID" >> "$LOG"
+            -l "select=1:ncpus=${NCPUS}:mem=${MEM_GB}gb" \
+            -l "walltime=24:00:00" \
+            -v "TASK_FILE=${TASK_FILE}" \
+            "$BATCH_JOB_SCRIPT" 2>&1) || {
+            echo "[$(date +%H:%M)] SUBMIT FAILED: ${GROUP_KEY} (${BATCH_COUNT} tasks) → $JID" >> "$LOG"
+            rm -f "$TASK_FILE"
             continue
         }
 
         JID_NUM="${JID%%.*}"
-        echo "$KEY" >> "$SUBMITTED_KEYS"
+
+        # Record all individual keys as submitted
+        for entry in $ENTRIES; do
+            TRACK_KEY="${entry#*|}"
+            echo "$TRACK_KEY" >> "$SUBMITTED_KEYS"
+        done
+
         TOTAL_IN_QUEUE=$(( TOTAL_IN_QUEUE + 1 ))
-        if [[ "$MODEL" == "Lstm" ]]; then
-            GPU_QUEUE_CURRENT[$QUEUE]=$(( ${GPU_QUEUE_CURRENT[$QUEUE]:-0} + 1 ))
-        else
-            QUEUE_CURRENT[$QUEUE]=$(( ${QUEUE_CURRENT[$QUEUE]:-0} + 1 ))
-        fi
+        QUEUE_CURRENT[$QUEUE]=$(( ${QUEUE_CURRENT[$QUEUE]:-0} + 1 ))
         ((SUBMITTED_THIS_ROUND++)) || true
 
-        echo "[$(date +%H:%M)] SUBMITTED: $KEY → $JID_NUM ($QUEUE)" >> "$LOG"
+        echo "[$(date +%H:%M)] BATCH SUBMITTED: ${GROUP_KEY} → $JID_NUM ($QUEUE) [${BATCH_COUNT} tasks]" >> "$LOG"
     done
 
-    # Count truly remaining
-    TOTAL_REMAINING=0
-    for job_spec in "${ALL_JOBS[@]}"; do
-        IFS='|' read -r MODEL COND SEED RATIO <<< "$job_spec"
-        RATIO="${RATIO:-0.5}"
-        if ! has_eval_result "$MODEL" "$COND" "$SEED" "$RATIO"; then
-            ((TOTAL_REMAINING++)) || true
-        fi
-    done
+    unset PENDING_SEEDS
 
+    # ---- Check completion ----
     if (( TOTAL_REMAINING == 0 )); then
-        echo "[$(date +%H:%M)] ALL DONE – all ${#ALL_JOBS[@]} pooled configs have eval results." >> "$LOG"
+        echo "[$(date +%H:%M)] ALL DONE — all pooled configs have eval results." >> "$LOG"
         break
     fi
 
-    echo "[$(date +%H:%M)] Poll: submitted=$SUBMITTED_THIS_ROUND remaining=$TOTAL_REMAINING queue=$TOTAL_IN_QUEUE" >> "$LOG"
+    echo "[$(date +%H:%M)] Poll: batch_submitted=$SUBMITTED_THIS_ROUND remaining=$TOTAL_REMAINING queue=$TOTAL_IN_QUEUE" >> "$LOG"
 
     sleep "$POLL_INTERVAL"
 done

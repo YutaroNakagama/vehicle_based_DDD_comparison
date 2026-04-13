@@ -26,6 +26,9 @@ export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
 module load hpc_sdk/22.2 2>/dev/null || true
 export TF_FORCE_GPU_ALLOW_GROWTH=true
 export TF_CPP_MIN_LOG_LEVEL=2
+# Disable XLA JIT to avoid libdevice.10.bc not found error on some GPU nodes
+export TF_XLA_FLAGS="--tf_xla_auto_jit=0"
+export XLA_FLAGS="--xla_gpu_cuda_data_dir=/usr/local/cuda"
 
 TASK_FILE="${TASK_FILE:-}"
 if [[ -z "$TASK_FILE" || ! -f "$TASK_FILE" ]]; then
