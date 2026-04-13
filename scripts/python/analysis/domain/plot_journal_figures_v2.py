@@ -101,19 +101,24 @@ _TIV_COLUMN_WIDTH = 3.5      # inches (single column)
 _TIV_TEXT_WIDTH   = 7.16     # inches (double column)
 plt.rcParams.update({
     "font.family": "sans-serif",
-    "font.sans-serif": ["Arial", "DejaVu Sans"],
-    "mathtext.fontset": "dejavusans",
-    "font.size": 8,
-    "axes.titlesize": 8,
-    "axes.labelsize": 8,
-    "xtick.labelsize": 7,
-    "ytick.labelsize": 7,
+    "font.sans-serif": ["Liberation Sans", "Arial", "DejaVu Sans"],
+    "mathtext.fontset": "custom",
+    "mathtext.rm": "Liberation Sans",
+    "mathtext.it": "Liberation Sans:italic",
+    "mathtext.bf": "Liberation Sans:bold",
+    "font.size": 9,
+    "axes.titlesize": 10,
+    "axes.labelsize": 9,
+    "xtick.labelsize": 9,
+    "ytick.labelsize": 9,
     "legend.fontsize": 7,
     "figure.dpi": 150,
     "savefig.dpi": 300,
-    "axes.grid": True,
-    "grid.alpha": 0.3,
-    "grid.linestyle": "--",
+    "axes.grid": False,
+    "xtick.direction": "in",
+    "ytick.direction": "in",
+    "xtick.major.size": 3,
+    "ytick.major.size": 3,
 })
 
 
@@ -181,19 +186,24 @@ def plot_effect_hierarchy(df: pd.DataFrame):
 
     si = pd.read_csv(csv_path)
 
-    fig, ax = plt.subplots(figsize=(_TIV_TEXT_WIDTH, 3.0))
+    fig, ax = plt.subplots(figsize=(_TIV_COLUMN_WIDTH, 2.8))
 
-    # Factor display labels (short)
+    # Factor display labels — order matches paper narrative
     factor_display = {
+        "mode": "Mode\n($M$)",
         "condition": "Rebalancing\n($R$)",
         "distance": "Distance\n($D$)",
         "level": "Membership\n($G$)",
-        "mode": "Mode\n($M$)",
     }
-    factor_order = ["condition", "distance", "level", "mode"]
+    factor_order = ["mode", "condition", "distance", "level"]
     metric_names = ["F2-score", "AUROC", "AUPRC"]
-    colors_s1 = {"F2-score": "#D55E00", "AUROC": "#0072B2", "AUPRC": "#009E73"}
-    colors_inter = {"F2-score": "#E69F00", "AUROC": "#56B4E9", "AUPRC": "#66C2A5"}
+    # CVD-safe 3-colour palette with max hue + luminance separation
+    # Greyscale luminance: vermilion ~47%, sky blue ~72%, indigo ~25%
+    colors_s1 = {"F2-score": "#D55E00", "AUROC": "#56B4E9", "AUPRC": "#332288"}
+    colors_inter = {"F2-score": "#E69F00", "AUROC": "#89CFF0", "AUPRC": "#6655AA"}
+    # Hatch patterns per metric for B/W distinguishability
+    hatches_s1 = {"F2-score": "", "AUROC": "", "AUPRC": ""}
+    hatches_inter = {"F2-score": "//", "AUROC": "\\\\", "AUPRC": "xx"}
 
     x = np.arange(len(factor_order))
     width = 0.22
@@ -214,40 +224,37 @@ def plot_effect_hierarchy(df: pd.DataFrame):
         # Bottom bar: S1 (main effect)
         bars_s1 = ax.bar(x + offset, s1_vals, width,
                          color=colors_s1[mlabel], alpha=0.9,
-                         edgecolor="white", linewidth=0.8,
+                         edgecolor="black", linewidth=0.5,
+                         hatch=hatches_s1[mlabel],
                          label=f"{mlabel} (main)" if i == 0 else "")
         # Top bar: interaction (ST - S1)
         bars_inter = ax.bar(x + offset, inter_vals, width,
                             bottom=s1_vals,
                             color=colors_inter[mlabel], alpha=0.7,
-                            edgecolor="white", linewidth=0.8,
-                            hatch="//",
+                            edgecolor="black", linewidth=0.5,
+                            hatch=hatches_inter[mlabel],
                             label=f"{mlabel} (interaction)" if i == 0 else "")
         # Error bars on total ST
         ax.errorbar(x + offset, st_vals,
                     yerr=[yerr_lo, yerr_hi],
                     fmt="none", ecolor="black", elinewidth=0.8, capsize=2)
 
-        # Annotate ST value
+        # Annotate ST value above each bar
         for j, (sv, s1v) in enumerate(zip(st_vals, s1_vals)):
-            if sv > 0.02:
-                ax.text(x[j] + offset, sv + max(yerr_hi[j], 0) + 0.015,
-                        f"$S_T$={sv:.3f}",
-                        ha="center", va="bottom", fontsize=5.5,
+            if sv > 0.05:
+                ax.text(x[j] + offset, sv + max(yerr_hi[j], 0) + 0.01,
+                        f".{int(round(sv*100)):02d}",
+                        ha="center", va="bottom", fontsize=7,
                         fontweight="bold")
-                # Also show S1
-                ax.text(x[j] + offset, s1v / 2,
-                        f"{s1v:.3f}",
-                        ha="center", va="center", fontsize=5,
-                        color="white", fontweight="bold")
-            else:
-                ax.text(x[j] + offset, sv + 0.008,
-                        f"{sv:.4f}",
-                        ha="center", va="bottom", fontsize=5)
+            elif sv > 0.005:
+                ax.text(x[j] + offset, sv + max(yerr_hi[j], 0) + 0.01,
+                        f".{int(round(sv*1000)):03d}",
+                        ha="center", va="bottom", fontsize=6)
 
     ax.set_xticks(x)
     ax.set_xticklabels([factor_display[f] for f in factor_order])
-    ax.set_ylabel("Sobol Index (fraction of total variance)")
+    ax.tick_params(axis="x", length=0)   # no tick marks on categorical axis
+    ax.set_ylabel("Sobol Index")
 
     # Custom legend
     from matplotlib.patches import Patch
@@ -255,13 +262,17 @@ def plot_effect_hierarchy(df: pd.DataFrame):
     for mlabel in metric_names:
         legend_elements.append(
             Patch(facecolor=colors_s1[mlabel], alpha=0.9,
-                  label=f"{mlabel} — main effect ($S_i$)"))
+                  edgecolor="black", linewidth=0.5,
+                  hatch=hatches_s1[mlabel],
+                  label=f"{mlabel} — main ($S_i$)"))
         legend_elements.append(
-            Patch(facecolor=colors_inter[mlabel], alpha=0.7, hatch="//",
-                  label=f"{mlabel} — interactions ($S_{{Ti}}-S_i$)"))
-    ax.legend(handles=legend_elements, loc="upper left", framealpha=0.9,
+            Patch(facecolor=colors_inter[mlabel], alpha=0.7,
+                  edgecolor="black", linewidth=0.5,
+                  hatch=hatches_inter[mlabel],
+                  label=f"{mlabel} — inter. ($S_{{Ti}}$$-$$S_i$)"))
+    ax.legend(handles=legend_elements, loc="upper right", framealpha=0.9,
               fontsize=6, ncol=1)
-    ax.set_ylim(0, 0.82)
+    ax.set_ylim(0, 0.80)
 
     fig.tight_layout()
     _save(fig, "fig2_effect_hierarchy.svg")
@@ -448,9 +459,13 @@ def plot_cd_diagrams(df: pd.DataFrame):
 def plot_distance_violin(df: pd.DataFrame):
     """Violin plots showing near-identical distributions across 3 distance metrics."""
 
-    fig, axes = plt.subplots(1, 3, figsize=(_TIV_TEXT_WIDTH, 2.8), sharey=False)
+    # Column-width figure (3.5 in) — displayed at \columnwidth, no scaling
+    fig, axes = plt.subplots(3, 1, figsize=(_TIV_COLUMN_WIDTH, 4.8), sharey=False)
     dist_labels = {"mmd": "MMD", "dtw": "DTW", "wasserstein": "Wasserstein"}
-    dist_colors = {"mmd": "#D55E00", "dtw": "#0072B2", "wasserstein": "#009E73"}
+    # CVD-safe Okabe-Ito colours (no blue-green pair)
+    dist_colors = {"mmd": "#D55E00", "dtw": "#56B4E9", "wasserstein": "#332288"}
+    # Hatch patterns for greyscale distinguishability
+    dist_hatches = {"mmd": "//", "dtw": "\\\\", "wasserstein": "xx"}
 
     for ax_idx, (metric, mlabel) in enumerate(PRIMARY_METRICS):
         ax = axes[ax_idx]
@@ -471,27 +486,27 @@ def plot_distance_violin(df: pd.DataFrame):
         )
         for pc, d in zip(parts["bodies"], DISTANCES):
             pc.set_facecolor(dist_colors[d])
-            pc.set_alpha(0.4)
+            pc.set_edgecolor("black")
+            pc.set_alpha(0.45)
+            pc.set_hatch(dist_hatches[d])
         parts["cmeans"].set_color("black")
-        parts["cmedians"].set_color("#D55E00")
-
-        # Compute KW for annotation
-        groups = [df[df["distance"] == d][metric].dropna().values for d in DISTANCES]
-        H, p = stats.kruskal(*groups)
-        n_total = sum(len(g) for g in groups)
-        eta2 = eta_squared_from_H(H, n_total, 3)
+        parts["cmedians"].set_color("black")
+        parts["cmedians"].set_linestyle("--")
 
         ax.set_xticks(range(3))
-        ax.set_xticklabels([dist_labels[d] for d in DISTANCES])
+        # Only show x-tick labels on bottom subplot
+        if ax_idx == len(PRIMARY_METRICS) - 1:
+            ax.set_xticklabels([dist_labels[d] for d in DISTANCES])
+        else:
+            ax.set_xticklabels([])
+        ax.tick_params(axis="x", length=0)  # categorical axis — no tick marks
         ax.set_ylabel(mlabel)
-        ax.set_title(f"{mlabel}\nKW H={H:.2f}, p={p:.3f}, $\eta^2$={eta2:.4f}",
-                     fontweight="bold")
 
         # Annotate means
         for i, d in enumerate(DISTANCES):
             vals = df[df["distance"] == d][metric].dropna()
-            ax.text(i, vals.mean() + 0.01, f"{vals.mean():.3f}",
-                    ha="center", va="bottom", fontsize=6.5, fontweight="bold")
+            ax.text(i, vals.mean() + 0.01, f"{vals.mean():.2f}",
+                    ha="center", va="bottom", fontsize=8)
 
     fig.tight_layout()
     _save(fig, "fig5_distance_violin.svg")
@@ -660,7 +675,24 @@ def plot_convergence(df: pd.DataFrame):
     seeds = sorted(int(s) for s in df["seed"].unique())
     rng = np.random.RandomState(42)
 
-    fig, axes = plt.subplots(1, 3, figsize=(_TIV_TEXT_WIDTH, 2.8))
+    # Column-width figure (3.5 in) — displayed at \columnwidth, no scaling
+    fig, axes = plt.subplots(3, 1, figsize=(_TIV_COLUMN_WIDTH, 4.8))
+
+    # CVD-safe colours consistent with other figures
+    mean_color = "#2c3e50"    # dark slate (mean σ)
+    max_color  = "#56B4E9"    # sky blue (max σ)
+
+    # Per-strategy markers + line styles for greyscale distinguishability
+    _cond_markers = {
+        "baseline":     "s",  "rus_r01":      "^",  "rus_r05":     "v",
+        "smote_r01":    "D",  "smote_r05":    "o",
+        "sw_smote_r01": "P",  "sw_smote_r05": "X",
+    }
+    _cond_ls = {
+        "baseline":     "-",  "rus_r01":      "--", "rus_r05":     "--",
+        "smote_r01":    "-.", "smote_r05":    "-.",
+        "sw_smote_r01": ":",  "sw_smote_r05": ":",
+    }
 
     for ax_idx, (metric, mlabel) in enumerate(PRIMARY_METRICS):
         ax = axes[ax_idx]
@@ -671,34 +703,28 @@ def plot_convergence(df: pd.DataFrame):
         mean_stds = [conv[k]["mean_std"] for k in ks]
         max_stds = [conv[k]["max_std"] for k in ks]
 
-        ax.plot(ks, mean_stds, "o-", color="#2c3e50", linewidth=2.5,
-                markersize=9, label="Mean σ_rank", zorder=5)
-        ax.fill_between(ks, 0, max_stds, alpha=0.12, color="#0072B2")
-        ax.plot(ks, max_stds, "s--", color="#0072B2", linewidth=1.2,
-                markersize=6, alpha=0.7, label="Max σ_rank")
+        ax.plot(ks, mean_stds, "o-", color=mean_color, linewidth=2.5,
+                markersize=7, zorder=5)
+        ax.fill_between(ks, 0, max_stds, alpha=0.10, color=max_color)
+        ax.plot(ks, max_stds, "s--", color=max_color, linewidth=1.2,
+                markersize=5, alpha=0.7)
 
-        # Per-condition lines
+        # Per-condition lines with unique marker + linestyle
         for cond in CONDITIONS_7:
             per_cond = [conv[k]["per_cond_std"].get(cond, np.nan) for k in ks]
-            ax.plot(ks, per_cond, "-", color=COND_COLORS[cond],
-                    linewidth=0.8, alpha=0.4)
+            ax.plot(ks, per_cond,
+                    color=COND_COLORS[cond],
+                    marker=_cond_markers[cond], markersize=4,
+                    linestyle=_cond_ls[cond],
+                    linewidth=1.0, alpha=0.6)
 
-        # Reference
-        ax.axhline(0.5, color="#D55E00", linewidth=0.8, linestyle=":",
-                   alpha=0.6, label="σ = 0.5 threshold")
-
-        # Annotate final values
-        ax.annotate(f"$\sigma$ = {mean_stds[-1]:.3f}",
-                    xy=(ks[-1], mean_stds[-1]),
-                    xytext=(ks[-1] - 1.5, mean_stds[-1] + 0.08),
-                    fontsize=6.5, fontweight="bold",
-                    arrowprops=dict(arrowstyle="->", color="#2c3e50", lw=1))
-
-        ax.set_xlabel("Number of Seeds ($k$)")
-        ax.set_ylabel("$\sigma_{\mathrm{rank}}$")
-        ax.set_title(mlabel, fontweight="bold")
+        ax.set_ylabel("$\\sigma_{\\mathrm{rank}}$" + f" ({mlabel})")
         ax.set_xticks(ks)
-        ax.legend(fontsize=6, loc="upper right")
+        # Only show x-tick labels on bottom subplot
+        if ax_idx == len(PRIMARY_METRICS) - 1:
+            ax.set_xlabel("Number of seeds ($k$)")
+        else:
+            ax.set_xticklabels([])
         ax.set_ylim(bottom=-0.02)
 
     fig.tight_layout()
