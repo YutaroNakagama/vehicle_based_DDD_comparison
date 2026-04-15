@@ -9,26 +9,34 @@
 
 \begin{document}
 \begin{tikzpicture}[
-  every node/.style={font=\sffamily\footnotesize},  % ~8pt base → ~9–10pt at IEEE col width
+  % ---- Base font: 8pt Helvetica → ~9–10pt when printed at IEEE column width ----
+  every node/.style={font=\sffamily\footnotesize},
   >=Latex,
   % ---- Node styles ----
   db/.style={draw, thick, cylinder, cylinder uses custom fill,
-    cylinder body fill=white, shape border rotate=90, aspect=0.12,
-    minimum width=2.6cm, minimum height=0.9cm, align=center},
+    cylinder body fill=white, shape border rotate=90, aspect=0.08,
+    minimum width=2.6cm, minimum height=0.9cm, align=center,
+    font=\sffamily\footnotesize},
   dbsm/.style={draw, semithick, cylinder, cylinder uses custom fill,
-    cylinder body fill=white, shape border rotate=90, aspect=0.10,
-    minimum width=1.6cm, minimum height=0.65cm, text width=1.3cm,
-    align=center, font=\sffamily\scriptsize},
+    cylinder body fill=white, shape border rotate=90, aspect=0.08,
+    minimum width=1.5cm, minimum height=0.65cm, text width=1.25cm,
+    align=center, font=\sffamily\footnotesize},
   % Experimental-factor box (rounded corners, light gray)
-  fbox/.style={draw, thick, rounded corners=2pt, minimum width=6.2cm,
-    minimum height=0.6cm, align=center, fill=gray!12},
+  fbox/.style={draw, thick, rounded corners=2pt,
+    text width=6.6cm, minimum width=7.1cm,
+    minimum height=0.6cm, align=center, fill=gray!12,
+    font=\sffamily\footnotesize},
   % Processing-step box (sharp corners, white)
-  pbox/.style={draw, thick, minimum width=6.2cm, minimum height=0.6cm,
-    align=center, fill=white},
+  pbox/.style={draw, thick,
+    text width=6.6cm, minimum width=7.1cm,
+    minimum height=0.6cm, align=center, fill=white,
+    font=\sffamily\footnotesize},
   % ---- Arrow styles (distinguishable in greyscale) ----
   arr/.style ={-{Latex[length=2mm, width=1.5mm]}, thick},
   darr/.style={-{Latex[length=2mm, width=1.5mm]}, semithick, dashed},           % validation
   dtarr/.style={-{Latex[length=2mm, width=1.5mm]}, semithick, densely dotted},  % test
+  % ---- Annotation font (consistent secondary size) ----
+  annot/.style={font=\sffamily\scriptsize},
 ]
 
 %%% ============================================================
@@ -36,176 +44,170 @@
 %%% ============================================================
 \node[db] (dataset) at (0,0)
   {\textbf{Dataset}\; $\mathcal{S}$\\[1pt]
-   $N{=}87$ subjects, 5 vehicle signals + EEG labels};
+   {\scriptsize $N{=}87$ subjects, 5 vehicle signals, KSS labels}};
 
 %%% ============================================================
 %%% ROW 1 — Domain Split  (factor D)
 %%% ============================================================
-\node[fbox, minimum width=6.5cm] (dsplit) at (0,-1.45)
+\node[fbox] (dsplit) at (0,-1.6)
   {\textbf{Domain Split ($D$)}\\[1pt]
-   \scriptsize Pairwise distance
-   (MMD\,$|$\,DTW\,$|$\,Wasserstein)\;$\to$\;KNN ranking};
+   {\scriptsize Pairwise distance
+   (MMD\,$|$\,DTW\,$|$\,$W_1$)\;$\to$\;KNN ranking}};
 \draw[arr] (dataset.south) -- (dsplit.north);
 
 %%% ============================================================
-%%% ROW 2 — In-Domain / Out-of-Domain
+%%% ROW 2 — In-Domain / Out-Domain  (factor G)
 %%% ============================================================
-\node[db, text width=2.4cm] (src) at (-4.2,-3.05)
-  {\textbf{In-Domain}\\[1pt] $\mathcal{G}_{\mathrm{src}}$ (44\,subj.)};
-\node[db, text width=2.4cm] (tgt) at ( 4.2,-3.05)
-  {\textbf{Out-of-Domain}\\[1pt] $\mathcal{G}_{\mathrm{tgt}}$ (43\,subj.)};
+\node[db, text width=2.4cm] (src) at (-4.6,-3.4)
+  {\textbf{In-Domain}\\[1pt] {\scriptsize $\mathcal{G}_{\mathrm{src}}$ (44\,subj.)}};
+\node[db, text width=2.4cm] (tgt) at ( 4.6,-3.4)
+  {\textbf{Out-Domain}\\[1pt] {\scriptsize $\mathcal{G}_{\mathrm{tgt}}$ (43\,subj.)}};
 
-\coordinate (forkTop) at (0,-2.2);
+\coordinate (forkTop) at (0,-2.5);
 \draw[thick] (dsplit.south) -- (forkTop);
-\draw[thick] (-4.2,-2.2) -- (4.2,-2.2);
-\draw[arr]   (-4.2,-2.2) -- (src.north);
-\draw[arr]   ( 4.2,-2.2) -- (tgt.north);
+\draw[thick] (-4.6,-2.5) -- (4.6,-2.5);
+\draw[arr]   (-4.6,-2.5) -- (src.north);
+\draw[arr]   ( 4.6,-2.5) -- (tgt.north);
 
 %%% ============================================================
 %%% ROW 3 — Subject-level temporal split  (70 / 15 / 15)
 %%% ============================================================
 % Source side: Test (outer) — Val — Train (inner)
-\node[dbsm] (test_s)  at (-5.8,-4.55) {Test\\[-1pt] $\mathcal{D}_s^{\mathrm{te}}$\,(15\%)};
-\node[dbsm] (val_s)   at (-4.2,-4.55) {Val\\[-1pt]  $\mathcal{D}_s^{\mathrm{val}}$\,(15\%)};
-\node[dbsm] (train_s) at (-2.6,-4.55) {Train\\[-1pt] $\mathcal{D}_s^{\mathrm{tr}}$\,(70\%)};
+\node[dbsm] (test_s)  at (-6.6,-5.1)
+  {\scriptsize Test\\[-1pt] $\mathcal{D}_s^{\mathrm{te}}$\,(15\%)};
+\node[dbsm] (val_s)   at (-4.6,-5.1)
+  {\scriptsize Val\\[-1pt]  $\mathcal{D}_s^{\mathrm{val}}$\,(15\%)};
+\node[dbsm] (train_s) at (-2.6,-5.1)
+  {\scriptsize Train\\[-1pt] $\mathcal{D}_s^{\mathrm{tr}}$\,(70\%)};
 
-\coordinate (forkS) at (-4.2,-3.9);
+\coordinate (forkS) at (-4.6,-4.25);
 \draw[semithick] (src.south) -- (forkS);
-\draw[semithick] (-5.8,-3.9) -- (-2.6,-3.9);
-\draw[arr] (-5.8,-3.9) -- (test_s.north);
-\draw[arr] (-4.2,-3.9) -- (val_s.north);
-\draw[arr] (-2.6,-3.9) -- (train_s.north);
+\draw[semithick] (-6.6,-4.25) -- (-2.6,-4.25);
+\draw[arr] (-6.6,-4.25) -- (test_s.north);
+\draw[arr] (-4.6,-4.25) -- (val_s.north);
+\draw[arr] (-2.6,-4.25) -- (train_s.north);
 
 % Target side: Train (inner) — Val — Test (outer)
-\node[dbsm] (train_t) at (2.6,-4.55) {Train\\[-1pt] $\mathcal{D}_t^{\mathrm{tr}}$\,(70\%)};
-\node[dbsm] (val_t)   at (4.2,-4.55) {Val\\[-1pt]   $\mathcal{D}_t^{\mathrm{val}}$\,(15\%)};
-\node[dbsm] (test_t)  at (5.8,-4.55) {Test\\[-1pt]  $\mathcal{D}_t^{\mathrm{te}}$\,(15\%)};
+\node[dbsm] (train_t) at (2.6,-5.1)
+  {\scriptsize Train\\[-1pt] $\mathcal{D}_t^{\mathrm{tr}}$\,(70\%)};
+\node[dbsm] (val_t)   at (4.6,-5.1)
+  {\scriptsize Val\\[-1pt]   $\mathcal{D}_t^{\mathrm{val}}$\,(15\%)};
+\node[dbsm] (test_t)  at (6.6,-5.1)
+  {\scriptsize Test\\[-1pt]  $\mathcal{D}_t^{\mathrm{te}}$\,(15\%)};
 
-\coordinate (forkT) at (4.2,-3.9);
+\coordinate (forkT) at (4.6,-4.25);
 \draw[semithick] (tgt.south) -- (forkT);
-\draw[semithick] (2.6,-3.9) -- (5.8,-3.9);
-\draw[arr] (2.6,-3.9) -- (train_t.north);
-\draw[arr] (4.2,-3.9) -- (val_t.north);
-\draw[arr] (5.8,-3.9) -- (test_t.north);
+\draw[semithick] (2.6,-4.25) -- (6.6,-4.25);
+\draw[arr] (2.6,-4.25) -- (train_t.north);
+\draw[arr] (4.6,-4.25) -- (val_t.north);
+\draw[arr] (6.6,-4.25) -- (test_t.north);
 
 % Split annotation
-\node[font=\sffamily\tiny\itshape, anchor=east, align=right]
-  at (-6.35,-3.9) {Subject-level\\[-1pt]temporal split};
+\node[annot, anchor=east, align=right, text=black!80]
+  at (-7.15,-4.25) {\itshape Subject-level\\[-1pt]temporal split};
 
 %%% ============================================================
 %%% ROW 4 — Training Mode  (factor M)
 %%% ============================================================
-\node[fbox, minimum width=6.5cm] (mode) at (0,-6.15)
+\node[fbox] (mode) at (0,-6.9)
   {\textbf{Training Mode ($M$)}\\[1pt]
-   \scriptsize source\_only\,$|$\,target\_only\,$|$\,mixed};
+   {\scriptsize Cross\,$|$\,Within\,$|$\,Mixed}};
 
-\draw[arr] (train_s.south) -- ++(0,-0.25) -| ([xshift=-1.3cm]mode.north);
-\draw[arr] (train_t.south) -- ++(0,-0.25) -| ([xshift= 1.3cm]mode.north);
+\draw[arr] (train_s.south) -- ++(0,-0.35) -| ([xshift=-1.3cm]mode.north);
+\draw[arr] (train_t.south) -- ++(0,-0.35) -| ([xshift= 1.3cm]mode.north);
 
 %%% ============================================================
 %%% ROW 5 — Feature Selection
 %%% ============================================================
-\node[pbox, minimum width=6.5cm] (fs) at (0,-7.3)
+\node[pbox] (fs) at (0,-8.5)
   {\textbf{Feature Selection}\\[1pt]
-   \scriptsize 145 vehicle features
+   {\scriptsize $p{=}90$ features
    ($\delta,\dot{\delta},a_y,a_x,e_{\mathrm{lane}}$)\;$\to$\;top\,$k{=}10$
-   by RF importance};
+   by RF importance}};
 \draw[arr] (mode.south) -- (fs.north);
 
 %%% ============================================================
 %%% ROW 6 — Rebalancing  (factor R)
 %%% ============================================================
-\node[fbox, minimum width=6.5cm] (reb) at (0,-8.4)
+\node[fbox] (reb) at (0,-10.1)
   {\textbf{Rebalancing ($R$)}\\[1pt]
-   \scriptsize None\,$|$\,SMOTE\,$|$\,SW-SMOTE\,$|$\,RUS\,$|$\,BalancedRF};
+   {\scriptsize BL\,$|$\,RUS\,$|$\,SMOTE\,$|$\,SW-SMOTE\;\;
+   ($r{\in}\{0.1,0.5\}$)}};
 \draw[arr] (fs.south) -- (reb.north);
 
 %%% ============================================================
 %%% ROW 7 — RF Classification  (Optuna HPO)
 %%% ============================================================
-\node[pbox, minimum width=6.5cm] (cls) at (0,-9.6)
+\node[pbox] (cls) at (0,-11.7)
   {\textbf{RF Classification}\\[1pt]
-   \scriptsize $\hat{\boldsymbol{\theta}}$ via Optuna
-   (100 trials, 3-fold CV, $F_2$ objective)};
+   {\scriptsize $\hat{\boldsymbol{\theta}}$ via Optuna
+   (100 TPE trials, 3-fold CV, $F_2$ objective)}};
 \draw[arr] (reb.south) -- (cls.north);
-
-\node[font=\sffamily\scriptsize, anchor=west, text=black!55]
-  at ($(cls.east)+(0.12,0)$) {$y\!\in\!\{0,1\}$: EEG labels};
 
 %%% ============================================================
 %%% ROW 8 — Calibration & Threshold
 %%% ============================================================
-\node[pbox, minimum width=6.5cm] (cal) at (0,-10.8)
+\node[pbox] (cal) at (0,-13.3)
   {\textbf{Calibration \& Threshold}\\[1pt]
-   \scriptsize Sigmoid scaling (train+val);\;
-   $\hat{\tau}=\arg\max_\tau F_2(\mathcal{D}^{\mathrm{val}})$};
+   {\scriptsize Platt scaling (5-fold, train{+}val);\;
+   $\hat{\tau}{=}\arg\max_\tau F_2(\mathcal{D}^{\mathrm{val}})$}};
 \draw[arr] (cls.south) -- (cal.north);
 
 %%% ============================================================
 %%% ROW 9 — Prediction
 %%% ============================================================
-\node[pbox, minimum width=5.5cm] (pred) at (0,-11.9)
+\node[pbox] (pred) at (0,-14.9)
   {\textbf{Prediction}:\;
    $\hat{y}_w = \mathbb{1}[\hat{p}_w^{\mathrm{cal}} \!\geq\! \hat{\tau}]$\\[1pt]
-   \scriptsize Driver state (\textit{Drowsy\,/\,Awake})};
+   {\scriptsize Driver state (\textit{Drowsy\,/\,Alert})}};
 \draw[arr] (cal.south) -- (pred.north);
 
 %%% ============================================================
 %%% ROW 10 — Evaluation
 %%% ============================================================
-\node[fbox, fill=gray!8, minimum width=7.0cm] (eval) at (0,-13.0)
-  {\textbf{Domain Generalization Evaluation}\\[1pt]
-   \scriptsize AUROC,\;$F_2$,\;$F_1$,\;AUPRC};
+\node[fbox, fill=gray!8] (eval) at (0,-16.5)
+  {\textbf{Evaluation}\\[1pt]
+   {\scriptsize $F_2$,\;AUROC,\;AUPRC}};
 \draw[arr] (pred.south) -- (eval.north);
 
 %%% ============================================================
 %%% SECONDARY FLOWS  (Val → Calibration;  Test → Evaluation)
 %%% ============================================================
-% Validation paths  (dashed)
-\draw[darr, rounded corners=3pt]
-  (val_s.south) -- (-4.2,-10.8) -- (cal.west);
-\draw[darr, rounded corners=3pt]
-  (val_t.south) -- ( 4.2,-10.8) -- (cal.east);
+% Validation paths
+\draw[arr, rounded corners=3pt]
+  (val_s.south) -- (-4.6,-13.3) -- (cal.west);
+\draw[arr, rounded corners=3pt]
+  (val_t.south) -- ( 4.6,-13.3) -- (cal.east);
 
-% Test paths  (dotted)
-\draw[dtarr, rounded corners=3pt]
-  (test_s.south) -- (-5.8,-13.0) -- (eval.west);
-\draw[dtarr, rounded corners=3pt]
-  (test_t.south) -- ( 5.8,-13.0) -- (eval.east);
+% Test paths
+\draw[arr, rounded corners=3pt]
+  (test_s.south) -- (-6.6,-16.5) -- (eval.west);
+\draw[arr, rounded corners=3pt]
+  (test_t.south) -- ( 6.6,-16.5) -- (eval.east);
 
 % Rotated labels along secondary lines
-\node[font=\sffamily\tiny, text=black!40, rotate=90, anchor=south]
-  at (-3.85,-7.8)  {Calibration \& threshold};
-\node[font=\sffamily\tiny, text=black!40, rotate=-90, anchor=south]
-  at ( 3.85,-7.8)  {Calibration \& threshold};
-\node[font=\sffamily\tiny, text=black!40, rotate=90, anchor=south]
-  at (-5.45,-8.8)  {Generalization test};
-\node[font=\sffamily\tiny, text=black!40, rotate=-90, anchor=south]
-  at ( 5.45,-8.8)  {Generalization test};
+\node[annot, text=black!65, rotate=90, anchor=south]
+  at (-4.25,-9.2)  {Calibration \& threshold};
+\node[annot, text=black!65, rotate=-90, anchor=south]
+  at ( 4.25,-9.2)  {Calibration \& threshold};
+\node[annot, text=black!65, rotate=90, anchor=south]
+  at (-6.25,-10.8)  {Generalization test};
+\node[annot, text=black!65, rotate=-90, anchor=south]
+  at ( 6.25,-10.8)  {Generalization test};
 
 %%% ============================================================
 %%% FACTOR ANNOTATIONS  (left braces)
 %%% ============================================================
 \draw[decorate, decoration={brace, amplitude=5pt, mirror}]
-  (-7.8, 0.35) -- (-7.8,-3.6)
-  node[midway, left=7pt, align=center, font=\sffamily\scriptsize]
+  (-8.6, 0.35) -- (-8.6,-4.0)
+  node[midway, left=7pt, align=center, annot]
   {\textit{Distance}\;($D$)\\[1pt]\textit{Membership}\;($G$)};
 
 \draw[decorate, decoration={brace, amplitude=5pt, mirror}]
-  (-7.8,-5.5) -- (-7.8,-9.0)
-  node[midway, left=7pt, align=center, font=\sffamily\scriptsize]
+  (-8.6,-6.2) -- (-8.6,-10.8)
+  node[midway, left=7pt, align=center, annot]
   {\textit{Mode}\;($M$)\\[1pt]\textit{Rebalancing}\;($R$)};
 
-%%% ============================================================
-%%% LEGEND  (bottom-right, explains line types)
-%%% ============================================================
-\coordinate (leg) at (4.2,-14.0);
-\draw[arr]   (leg)                 -- ++(1.0,0)
-             node[right, font=\sffamily\tiny] {Training data flow};
-\draw[darr]  ([yshift=-3.5mm]leg)  -- ++(1.0,0)
-             node[right, font=\sffamily\tiny] {Validation data};
-\draw[dtarr] ([yshift=-7.0mm]leg)  -- ++(1.0,0)
-             node[right, font=\sffamily\tiny] {Test data};
 
 \end{tikzpicture}
 \end{document}
