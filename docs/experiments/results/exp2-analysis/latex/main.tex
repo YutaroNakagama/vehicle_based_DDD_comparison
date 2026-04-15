@@ -646,17 +646,17 @@ For comparison, switching distance metric yields $|\Delta\text{F2}| < 0.01$---tw
 Three fundamentally different metrics---MMD (distributional), DTW (temporal), and Wasserstein (geometric)---produce equivalent downstream performance ($S_{TD} < 0.015$, $BF_{01} = 71$--$767$) despite generating different subject rankings (Table~\ref{tab:spearman}; DTW vs.\ MMD: $\rho = 0.12$, $p = 0.29$).
 
 \begin{table}[!t]
-\caption{Pairwise Spearman Correlations Between Distance Metrics\label{tab:spearman}}
+\caption{Pairwise Rank Correlation and Domain Partition Overlap Between Distance Metrics. Jaccard index is computed on the 44-subject in-domain group; the switcher count is the number of subjects reassigned between in- and out-domain.\label{tab:spearman}}
 \centering
-\begin{tabular}{|l|c|}
+\begin{tabular}{|l|c|c|c|}
 \hline
-Pair & Spearman $\rho$ \\
+Pair & Spearman $\rho$ & Jaccard & Switchers \\
 \hline
-MMD vs.\ Wasserstein & 0.757 \\
+MMD vs.\ $W_1$  & 0.757 & 0.544 & 26 (29.9\%) \\
 \hline
-MMD vs.\ DTW         & 0.116 (n.s.) \\
+MMD vs.\ DTW    & 0.116 (n.s.) & 0.443 & 34 (39.1\%) \\
 \hline
-Wasserstein vs.\ DTW & 0.444 \\
+$W_1$ vs.\ DTW  & 0.444 & 0.725 & 14 (16.1\%) \\
 \hline
 \end{tabular}
 \end{table}
@@ -665,6 +665,7 @@ A three-layer mechanism explains this decoupling.
 First, the bicycle model (Eqs.~\ref{eq:bicycle}--\ref{eq:lane_offset}) couples four of the five signals through a single degree of freedom $\delta(t)$, compressing the effective intrinsic dimensionality of the full vehicle-dynamics feature space to $p_{\mathrm{eff}} = 45$ out of 135 total features (95\% PCA variance threshold).
 In this low-dimensional subspace, the three distance functionals converge because the dimensions along which they would disagree carry negligible variance.
 Second, the intraclass correlation is low ($\mathrm{ICC} = 0.111$), meaning 88.9\% of feature variance is intra-subject; consequently, even when metric choice relabels up to 42.5\% of subjects across domain partitions, the resulting training-set composition changes only marginally.
+Table~\ref{tab:spearman} quantifies this relabelling: MMD vs.\ DTW yields a Jaccard index of only 0.443 on the in-domain group (34 of 87 subjects switch domain), yet all three metrics produce statistically indistinguishable classification performance.
 Third, the rebalancing factor dominates residual grouping differences: $S_{TR}/S_{TD} = 27$--$31\times$ (Eq.~\ref{eq:ratio}), so once a strategy is chosen, grouping effects are absorbed ($BF_{01} > 70$).
 \begin{equation}
 \label{eq:ratio}
