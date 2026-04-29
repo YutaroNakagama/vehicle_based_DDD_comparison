@@ -37,8 +37,11 @@ conda activate python310
 export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
 export PBS_JOBID="${PBS_JOBID:-manual_$(date +%Y%m%d_%H%M%S)}"
 
-# Load CUDA via hpc_sdk module
-module load hpc_sdk/22.2 2>/dev/null || true
+# CUDA 12.8 + cuDNN 9 (hpc_sdk/22.2 was replaced by nvhpc/26.3 which lacks cuDNN;
+# kagayaki CUDA 12.8u1 provides libcudart.so.12 + libcudnn.so.9 needed by TF 2.19)
+CUDA12_TARGET="/app/kagayaki/CUDA/12.8u1/targets/x86_64-linux/lib"
+CUDA12_LIB="/app/kagayaki/CUDA/12.8u1/lib64"
+export LD_LIBRARY_PATH="${CUDA12_TARGET}:${CUDA12_LIB}:${LD_LIBRARY_PATH:-}"
 
 # Thread optimization for HPC (keep CPU threads low, let GPU do the work)
 export OMP_NUM_THREADS=1
@@ -122,7 +125,13 @@ echo "SPLIT: 70/15/15 (train/val/test)"
 # Report GPU info
 echo "--- GPU Info ---"
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader 2>/dev/null || echo "(nvidia-smi not available on this node)"
-python -c "import tensorflow as tf; gpus=tf.config.list_physical_devices('GPU'); print(f'TF GPUs: {gpus}')" 2>/dev/null || echo "(TF GPU check failed)"
+GPU_COUNT=$(python -c "import tensorflow as tf; gpus=tf.config.list_physical_devices('GPU'); print(len(gpus))" 2>/dev/null || echo "0")
+echo "TF GPU count: $GPU_COUNT"
+if [[ "$GPU_COUNT" -lt 1 ]]; then
+    echo "[ERROR] No GPU detected by TensorFlow — aborting to avoid silent CPU fallback"
+    echo "[DEBUG] LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+    exit 1
+fi
 echo "============================================================"
 
 # Verify target files exist
