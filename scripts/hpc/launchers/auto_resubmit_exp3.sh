@@ -20,7 +20,10 @@ ONCE=false
 [[ "${1:-}" == "--once" ]] && ONCE=true
 
 INTERVAL_SEC=900     # 15 min between passes
-THRESHOLD=100        # only submit when active < THRESHOLD (leaves ~13 slots)
+# Threshold raised to 200 so the loop keeps trying — per-queue limits, not the
+# overall queue depth, are the actual bottleneck. The submitter dedups against
+# already-queued jobs, so re-runs are cheap when no slots free up.
+THRESHOLD=200
 MAX_PASSES=200
 
 pass=0
