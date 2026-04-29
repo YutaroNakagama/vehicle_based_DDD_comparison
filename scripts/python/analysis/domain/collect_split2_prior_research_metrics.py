@@ -57,6 +57,12 @@ logger = logging.getLogger(__name__)
 PRIOR_MODELS = ["SvmW", "SvmA", "Lstm"]
 METRICS = ["accuracy", "precision", "recall", "f1", "f2", "auc", "auc_pr"]
 
+# Canonical seeds for Exp3 prior-research replication (per design doc).
+# Older exploratory runs may have left eval JSONs for other seeds (0, 1, 3, ...)
+# that contain only partial coverage; they would render as mostly-empty plots.
+# Filter to canonical seeds by default.
+CANONICAL_SEEDS = (42, 123)
+
 # --- Paths ------------------------------------------------------------
 EVAL_BASE = Path(cfg.RESULTS_EVALUATION_PATH)
 FIG_BASE = Path(cfg.RESULTS_PRIOR_RESEARCH_ANALYSIS_PATH) / "figures"
@@ -337,6 +343,7 @@ def load_eval_json(path: Path) -> dict:
 def collect_all_split2(
     model_filter: str | None = None,
     condition_filter: str | None = None,
+    keep_mixed: bool = False,
 ) -> pd.DataFrame:
     """Scan evaluation JSONs and return a tidy DataFrame."""
     records = []
@@ -397,10 +404,24 @@ def collect_all_split2(
         key_cols = ["model", "mode", "condition", "distance", "level", "ratio", "seed"]
         df = df.sort_values("job_id").drop_duplicates(subset=key_cols, keep="last")
 
-        # For models with domain_train data, the legacy source_only /
-        # target_only rows are superseded by the newer domain_train
-        # rows (higher job_id), so dedup already keeps the latest.
-        # No special mixed-dropping logic is needed.
+        # For models with domain_train data (canonical Exp3 setup),
+        # the legacy 'mixed' mode is orphaned: domain_train only produces
+        # source_only (cross) and target_only (within) evaluations, and
+        # the surviving 'mixed' rows are from old failed runs that render
+        # as degenerate base-rate predictors. Drop them by default.
+        if not keep_mixed and models_with_domain_train:
+            before = len(df)
+            mask_drop = (
+                df["model"].isin(models_with_domain_train) & (df["mode"] == "mixed")
+            )
+            n_drop = int(mask_drop.sum())
+            if n_drop:
+                df = df.loc[~mask_drop].reset_index(drop=True)
+                logger.info(
+                    f"Dropped {n_drop} legacy 'mixed'-mode rows for models with "
+                    f"domain_train data: {sorted(models_with_domain_train)} "
+                    f"({before}→{len(df)} rows). Use --keep-mixed to retain."
+                )
 
         logger.info(
             f"Collected {len(df)} records – models={sorted(df['model'].unique())}, "
@@ -517,7 +538,11 @@ def save_csvs(df: pd.DataFrame) -> dict[str, Path]:
 # =====================================================================
 # Step 3: Generate plots
 # =====================================================================
-def generate_plots(df: pd.DataFrame, df_pooled: pd.DataFrame) -> list[Path]:
+def generate_plots(
+    df: pd.DataFrame,
+    df_pooled: pd.DataFrame,
+    min_coverage: float = 0.5,
+) -> list[Path]:
     """Generate summary bar-chart PNGs per model × condition × ratio × seed.
 
     For baseline (no ratio), one plot per seed.
@@ -526,8 +551,15 @@ def generate_plots(df: pd.DataFrame, df_pooled: pd.DataFrame) -> list[Path]:
     Pooled data (mode='pooled') is merged into each plot so that
     ``plot_grouped_bar_chart_raw`` can draw the 4th row (Pooled baseline)
     and dashed horizontal reference lines in Rows 1-3.
+
+    Args:
+        min_coverage: minimum fraction of expected cells
+            (3 distances × 2 domains × 2 modes = 12) that must be present;
+            plots below this threshold are skipped with a warning.
     """
+    EXPECTED_CELLS = 3 * 2 * 2  # distance × domain × (source_only/target_only)
     generated = []
+    skipped = []
 
     # Group keys depend on whether ratio is present
     for (model, cond), model_cond_df in df.groupby(["model", "condition"]):
@@ -552,6 +584,19 @@ def generate_plots(df: pd.DataFrame, df_pooled: pd.DataFrame) -> list[Path]:
                 seed = group_key if not isinstance(group_key, tuple) else group_key[0]
                 ratio_val = ""
                 ratio_tag = ""
+
+            # --- Coverage check: skip plots that lack enough data ---
+            n_cells = len(sub)
+            coverage = n_cells / EXPECTED_CELLS
+            if coverage < min_coverage:
+                skipped.append(
+                    (model, cond, ratio_val, seed, n_cells, EXPECTED_CELLS)
+                )
+                logger.warning(
+                    f"  SKIP plot (coverage {coverage:.0%} = {n_cells}/{EXPECTED_CELLS} < "
+                    f"{min_coverage:.0%}): {model}/{cond} ratio={ratio_val} seed={seed}"
+                )
+                continue
 
             # Build filename – Exp2-aligned short style:
             #   {cond_short}{ratio_tag}_s{seed}.png
@@ -600,6 +645,16 @@ def generate_plots(df: pd.DataFrame, df_pooled: pd.DataFrame) -> list[Path]:
                 generated.append(out_path)
                 logger.info(f"  PNG saved: {out_path}")
 
+    if skipped:
+        logger.warning(
+            f"\n  Skipped {len(skipped)} plot(s) due to insufficient coverage "
+            f"(< {min_coverage:.0%}). Re-run after pending jobs complete."
+        )
+        for model, cond, ratio_val, seed, got, exp in skipped:
+            logger.warning(
+                f"    - {model}/{cond}  ratio={ratio_val}  seed={seed}  : {got}/{exp} cells"
+            )
+
     return generated
 
 
@@ -623,7 +678,35 @@ def main():
         "--dry-run", action="store_true",
         help="Collect & print summary but do not write files",
     )
+    parser.add_argument(
+        "--seeds", default=",".join(str(s) for s in CANONICAL_SEEDS),
+        help=(
+            "Comma-separated list of seeds to keep "
+            f"(default: canonical {CANONICAL_SEEDS}). "
+            "Use 'all' to disable filtering and include every seed found on disk."
+        ),
+    )
+    parser.add_argument(
+        "--min-coverage", type=float, default=0.5,
+        help=(
+            "Minimum fraction of expected cells (12 = 3 distances × 2 domains × "
+            "2 modes) required to render a plot. Default 0.5. Use 0.0 to render all."
+        ),
+    )
+    parser.add_argument(
+        "--keep-mixed", action="store_true",
+        help=(
+            "Keep legacy 'mixed' (Multi-domain) mode rows even for models with "
+            "domain_train data. Default: drop them (they are orphaned from "
+            "older failed runs and render as degenerate base-rate bars)."
+        ),
+    )
     args = parser.parse_args()
+
+    if args.seeds.strip().lower() == "all":
+        seed_filter = None
+    else:
+        seed_filter = {int(s) for s in args.seeds.split(",") if s.strip()}
 
     logger.info("=" * 70)
     logger.info("Collect split2 prior-research metrics (Exp3: SvmW/SvmA/Lstm)")
@@ -636,13 +719,25 @@ def main():
     df = collect_all_split2(
         model_filter=args.model,
         condition_filter=args.condition,
+        keep_mixed=args.keep_mixed,
     )
     if df.empty:
         logger.error("No data found. Exiting.")
         return 1
 
+    # Apply seed filter (default: canonical seeds only)
+    if seed_filter is not None:
+        before = len(df)
+        df = df[df["seed"].astype(int).isin(seed_filter)].reset_index(drop=True)
+        logger.info(
+            f"Seed filter {sorted(seed_filter)}: kept {len(df)}/{before} rows "
+            f"(use --seeds all to disable)"
+        )
+
     # Step 1b: Collect pooled (all-subjects) reference data
     df_pooled = collect_pooled_data(model_filter=args.model)
+    if seed_filter is not None and not df_pooled.empty and "seed" in df_pooled.columns:
+        df_pooled = df_pooled[df_pooled["seed"].astype(int).isin(seed_filter)].reset_index(drop=True)
 
     logger.info(f"\nModels     : {sorted(df['model'].unique())}")
     logger.info(f"Conditions : {sorted(df['condition'].unique())}")
@@ -667,7 +762,7 @@ def main():
 
     # Step 3: Generate plots (with pooled reference)
     logger.info("\n--- Generating plots ---")
-    plots = generate_plots(df, df_pooled)
+    plots = generate_plots(df, df_pooled, min_coverage=args.min_coverage)
 
     logger.info("\n" + "=" * 70)
     logger.info(f"DONE — {len(df)} records, {len(plots)} plots generated")
