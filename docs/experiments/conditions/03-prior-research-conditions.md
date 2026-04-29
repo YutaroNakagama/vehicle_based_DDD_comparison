@@ -30,11 +30,16 @@ This file lists the experiment conditions used in "Experiment 3: Prior research 
 | Distance metrics | mmd, dtw, wasserstein (3) |
 | Domain groups | in_domain (44 subjects), out_domain (43 subjects) (2) |
 | Training mode | domain_train (1) |
-| Seeds | 42, 123 (2) |
+| Seeds | 0, 1, 3, 7, 13, 42, 99, 123, 256, 512, 777, 999, 1234, 1337, 2024 (**15**) |
 | Imbalance methods | baseline, smote_plain, smote, undersample (4) |
 | Target ratios | 0.1, 0.5 (for ratio-based methods only) (2) |
 | Distance ranking | knn |
 | Optuna trials | 100 (SvmW only) |
+
+> **Seed strategy:**
+> - **Canonical (initial)**: 2 seeds (42, 123) → 84 tags / model = 252 total — used for the first audit pass.
+> - **Expanded (current target)**: 15 seeds (matching exp2 + 5 extra for stability) → 630 tags / model = **1890 total**.
+> - Seed expansion submitter: [`scripts/hpc/launchers/submit_exp3_seed_expansion.sh`](../../../scripts/hpc/launchers/submit_exp3_seed_expansion.sh).
 
 ### Training Mode
 
@@ -63,16 +68,27 @@ This file lists the experiment conditions used in "Experiment 3: Prior research 
 All models use the same 4 conditions (baseline, smote_plain, smote, undersample).
 domain_train mode uses 1 mode (unified from the old version's 2 modes: source_only/target_only).
 
+**Per-seed totals (84 jobs / model / seed):**
+
 ```
-baseline:    3 dist x 2 dom x 1 mode x 2 seed x 1           = 12
-smote_plain: 3 dist x 2 dom x 1 mode x 2 seed x 2 ratios    = 24
-smote:       3 dist x 2 dom x 1 mode x 2 seed x 2 ratios    = 24
-undersample: 3 dist x 2 dom x 1 mode x 2 seed x 2 ratios    = 24
+baseline:    3 dist x 2 dom x 1 mode x 1 seed x 1           = 6
+smote_plain: 3 dist x 2 dom x 1 mode x 1 seed x 2 ratios    = 12
+smote:       3 dist x 2 dom x 1 mode x 1 seed x 2 ratios    = 12
+undersample: 3 dist x 2 dom x 1 mode x 1 seed x 2 ratios    = 12
 ------------------------------------------------------------
-Total: 84 jobs/model x 3 models = 252 jobs
+Subtotal: 42 jobs/model/seed → 84 (single-seed counted across modes? see note)
 ```
 
-> **Note:** The old split2 version had 168 jobs/model x 3 = 504 jobs, halved by the domain_train migration.
+Counted as 84 unique tags per model when both `_within` and `_cross` evaluations are produced from each `domain_train` job.
+
+**Across seeds:**
+
+| Scope | Seeds | Tags / model | Models | Total jobs |
+|---|---|---|---|---|
+| Canonical (historical) | 2 (42, 123) | 84 | 3 | 252 |
+| **Expanded (current target)** | **15** | **630** | **3** | **1890** |
+
+> **Note:** The old split2 version had 168 jobs/model x 3 = 504 jobs (canonical 2-seed scope), halved by the domain_train migration to 252.
 
 ---
 
