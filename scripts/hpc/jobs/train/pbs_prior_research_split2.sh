@@ -34,7 +34,17 @@ export PATH=~/conda/bin:$PATH
 source ~/conda/etc/profile.d/conda.sh
 conda activate python310
 export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
-export PBS_JOBID="${PBS_JOBID:-manual_$(date +%Y%m%d_%H%M%S)}"
+# PBS_JOBID must be a pure numeric ID — savers.py's regex `\d{5,}\[\d+\]`
+# treats the LAST numeric run before [N] as the jobid, so a "manual_yyyymmdd_hhmmss"
+# prefix gets stripped at save time but kept at eval time, breaking lookup.
+# Prefer SLURM's job id when available; fall back to epoch+PID for manual runs.
+if [[ -n "${SLURM_JOB_ID:-}" ]]; then
+    export PBS_JOBID="${SLURM_JOB_ID}"
+elif [[ -n "${SLURM_JOBID:-}" ]]; then
+    export PBS_JOBID="${SLURM_JOBID}"
+elif [[ -z "${PBS_JOBID:-}" ]]; then
+    export PBS_JOBID="$(date +%s)$$"
+fi
 
 # Thread optimization for HPC
 export OMP_NUM_THREADS=1
