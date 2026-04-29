@@ -164,19 +164,18 @@
   (test_t.south) -- ( 7.0,-5.95) -- ( 7.0,-15.1) -- (eval.east);
 
 %% Legend
-%% Solid arrows cover the entire forward pipeline: pre-split data
-%% (dataset -> domain split -> in/out groups), the rebalanced
-%% training-pool flow (mode -> feature selection -> rebalancing ->
-%% RF training), and downstream model passes (calibration -> threshold
-%% -> evaluation). Dashed arrows are reserved for val/test data
-%% routes that branch off the per-subject 70/15/15 split and rejoin
-%% only at their consumption points (calibration, threshold, eval);
-%% these are never rebalanced.
+%% Solid arrows: forward pipeline flow (default direction of the
+%% process; the training-pool segment is rebalanced by R, while the
+%% remaining solid arrows cover pre-split data partitioning and the
+%% trained-model path through calibration, threshold tuning, and
+%% evaluation). Dashed arrows: val/test data routes that branch off
+%% the per-subject 70/15/15 split and never enter the rebalancing
+%% step.
 \node[font=\sffamily\normalsize, align=left, anchor=north west]
   at (-7.6,-16.0)
   {\begin{tabular}{@{}ll@{}}
    \tikz[baseline=-0.5ex]{\draw[arr] (0,0) -- (0.6,0);} &
-     solid: main pipeline (training pool is rebalanced by $R$)\\[1pt]
+     solid: pipeline flow (training pool is rebalanced by $R$)\\[1pt]
    \tikz[baseline=-0.5ex]{\draw[auxarr] (0,0) -- (0.6,0);} &
      dashed: validation / test data flow (never rebalanced)\\
    \end{tabular}};

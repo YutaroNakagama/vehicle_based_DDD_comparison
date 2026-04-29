@@ -120,7 +120,7 @@ Fig.~\ref{fig:framework_general} sketches the generic processing pipeline that i
 \begin{figure}[!t]
 \centering
 \resizebox{\columnwidth}{!}{\input{fig/framework_general_tikz}}
-\caption{Generic vehicle-dynamics-based DDD pipeline. Per-subject vehicle signals are segmented into labeled windows, features are extracted, and a chronological train/validation/test split is applied. Solid arrows trace the main pipeline flow---raw-data processing, training-data fitting, and downstream model passes through threshold tuning and evaluation; dashed arrows trace the auxiliary validation flow (used for decision-threshold tuning) and the test flow (reserved for final evaluation). This pipeline is shared, with minor variations, across most prior DDD studies; the four experimental factors specific to this work are introduced in Section~\ref{sec:framework} (Fig.~\ref{fig:framework_factors}).}
+\caption{Generic vehicle-dynamics-based DDD pipeline. Per-subject vehicle signals are segmented into labeled windows, features are extracted, and a chronological train/validation/test split is applied. Solid arrows denote the forward pipeline flow; dashed arrows denote the auxiliary validation flow (used for decision-threshold tuning) and the test flow (reserved for final evaluation). This pipeline is shared, with minor variations, across most prior DDD studies; the four experimental factors specific to this work are introduced in Section~\ref{sec:framework} (Fig.~\ref{fig:framework_factors}).}
 \label{fig:framework_general}
 \end{figure}
 
@@ -336,7 +336,7 @@ Because $\dot{\delta} = d\delta/dt$ and $a_y \propto \delta$, four of the five s
 \begin{figure}[!t]
 \centering
 \resizebox{\columnwidth}{!}{\input{fig/framework_factors_tikz}}
-\caption{Factorial experimental framework. The four study-specific factors---distance metric ($D$), domain membership ($G$), training mode ($M$), and rebalancing strategy ($R$)---are highlighted (amber boxes) on the same generic DDD pipeline of Fig.~\ref{fig:framework_general}. Solid arrows trace the main pipeline flow---pre-split data partitioning, the rebalanced training-pool flow, and downstream model passes through calibration, threshold tuning, and evaluation; dashed arrows trace the validation and test flows that branch off the per-subject 70/15/15 split and rejoin only at their consumption points (calibration, threshold, evaluation), and are never rebalanced. Each factorial cell is uniquely determined by a quadruple $(R, M, D, G)$.}
+\caption{Factorial experimental framework. The four study-specific factors---distance metric ($D$), domain membership ($G$), training mode ($M$), and rebalancing strategy ($R$)---are highlighted (amber boxes) on the same generic DDD pipeline of Fig.~\ref{fig:framework_general}. Solid arrows denote the forward pipeline flow; the training-pool segment is rebalanced by $R$, while the remaining solid arrows cover pre-split data partitioning and the trained-model path through calibration, threshold tuning, and evaluation. Dashed arrows denote the validation and test data flows, which branch off the per-subject 70/15/15 split and never enter the rebalancing step. Each factorial cell is uniquely determined by a quadruple $(R, M, D, G)$.}
 \label{fig:framework_factors}
 \end{figure}
 
