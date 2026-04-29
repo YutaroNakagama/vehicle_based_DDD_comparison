@@ -1,0 +1,122 @@
+\documentclass[tikz,border=3mm]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{amsmath,amssymb}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, positioning, decorations.pathreplacing,
+                arrows.meta, calc}
+
+\begin{document}
+\begin{tikzpicture}[
+  every node/.style={font=\sffamily\large},
+  >=Latex,
+  db/.style={draw, thick, cylinder, cylinder uses custom fill,
+    cylinder body fill=white, shape border rotate=90, aspect=0.08,
+    minimum width=3.4cm, minimum height=1.0cm, align=center,
+    font=\sffamily\large},
+  dbsm/.style={draw, semithick, cylinder, cylinder uses custom fill,
+    cylinder body fill=white, shape border rotate=90, aspect=0.08,
+    minimum width=1.7cm, minimum height=0.75cm, text width=1.5cm,
+    align=center, font=\sffamily\large},
+  pbox/.style={draw, thick,
+    text width=9.0cm, minimum width=9.4cm,
+    minimum height=0.7cm, align=center, fill=white,
+    font=\sffamily\large},
+  arr/.style ={-{Latex[length=2mm, width=1.5mm]}, thick},
+  auxarr/.style={-{Latex[length=2mm, width=1.5mm]}, semithick, dashed},
+]
+
+%% ROW 0 — Dataset
+\node[db] (dataset) at (0,0)
+  {\textbf{Driving Dataset}};
+
+%% ROW 1 — Window segmentation \& labeling
+\node[pbox] (label) at (0,-1.3)
+  {\textbf{Window Segmentation \& Labeling}};
+\draw[arr] (dataset.south) -- (label.north);
+
+%% ROW 2 — Feature extraction
+\node[pbox] (feat) at (0,-2.5)
+  {\textbf{Feature Extraction}};
+\draw[arr] (label.south) -- (feat.north);
+
+%% ROW 3 — Train / Val / Test split (per-subject, chronological)
+\node[dbsm] (train) at (-3.0,-4.1) {Train};
+\node[dbsm] (val)   at ( 0.0,-4.1) {Val};
+\node[dbsm] (test)  at ( 3.0,-4.1) {Test};
+
+%% Fork: trunk down from Feature Extraction, then horizontal split
+\coordinate (forkF) at (0,-3.35);
+\draw[semithick] (feat.south) -- (forkF);
+\draw[semithick] (-3.0,-3.35) -- (3.0,-3.35);
+%% Train branch: solid (becomes the main training-data flow)
+\draw[arr]    (-3.0,-3.35) -- (train.north);
+%% Val and Test branches: dashed (auxiliary data, never enters classifier fitting)
+\draw[auxarr] ( 0.0,-3.35) -- (val.north);
+\draw[auxarr] ( 3.0,-3.35) -- (test.north);
+
+%% ROW 4 — Classifier Training (HPO and probability calibration are
+%%         standard sub-steps absorbed into this single block; val data
+%%         supports them via the dashed auxiliary path on the right)
+\node[pbox] (cls) at (0,-5.7)
+  {\textbf{Classifier Training \& Calibration}};
+%% Train -> cls: horizontal turn at y=-4.975 (well below the val/test
+%% trunks; below all dashed horizontals to avoid visual collision).
+\draw[arr]
+  (train.south) -- ++(0,-0.5) -| (cls.north);
+
+%% ROW 5 — Threshold optimization (val joins via dashed)
+\node[pbox] (thr) at (0,-7.0)
+  {\textbf{Threshold Optimization}};
+\draw[arr] (cls.south) -- (thr.north);
+
+%% ROW 6 — Evaluation (test joins via dashed)
+\node[pbox] (eval) at (0,-8.2)
+  {\textbf{Evaluation}};
+\draw[arr] (thr.south) -- (eval.north);
+
+%% ============================================================
+%% Auxiliary flows  (entirely on the right; y-coordinates strictly
+%% staggered so val/test trunks never share any (x,y) point and
+%% never cross each other).
+%%   - Test  horizontal (dashed): y = -4.55 (x in [+3, +7.0]) — closest
+%%     to the box row; trunk vertical at x=+7.0
+%%   - Val   horizontal (dashed): y = -4.80 (x in [0,  +5.6]) — below
+%%     test_horiz; trunk vertical at x=+5.6
+%%   - Train horizontal (solid):  y = -4.975 (x in [-3, 0]) — below
+%%     val_horiz; lands on cls.north
+%% Note: test_vert (x=+3, y in [-4.55,-4.475]) lies *above* val_horiz
+%% (y=-4.80), so the two paths never intersect.
+%% ============================================================
+%% Val trunk: in a generic DDD pipeline, validation data are typically
+%% used only for decision-threshold tuning (and, optionally, HPO scoring
+%% which does not consume val as training input). The val flow therefore
+%% terminates at Threshold Optimization.
+\draw[semithick, dashed, rounded corners=3pt]
+  (val.south) -- (0.0,-4.80) -- (5.6,-4.80) -- (5.6,-7.0);
+\draw[auxarr] (5.6,-7.0) -- (thr.east);
+
+%% Test trunk: enters only the Evaluation block. Routed at y=-4.55,
+%% strictly above val_horiz to avoid a (3, -4.80) crossing.
+\draw[semithick, dashed, rounded corners=3pt]
+  (test.south) -- (3.0,-4.55) -- (7.0,-4.55) -- (7.0,-8.2);
+\draw[auxarr] (7.0,-8.2) -- (eval.east);
+
+%% Legend
+%% Solid arrows: forward pipeline flow (the default direction of the
+%% process; covers raw-data processing, training-pool fitting, and the
+%% trained-model path through threshold tuning and evaluation).
+%% Dashed arrows: auxiliary val/test data routes that branch off the
+%% per-subject split and rejoin only at their consumption points.
+\node[font=\sffamily\normalsize, align=left, anchor=north west]
+  at (-5.6,-9.0)
+  {\begin{tabular}{@{}ll@{}}
+   \tikz[baseline=-0.5ex]{\draw[arr]    (0,0) -- (0.6,0);} &
+     solid: pipeline flow\\[1pt]
+   \tikz[baseline=-0.5ex]{\draw[auxarr] (0,0) -- (0.6,0);} &
+     dashed: validation / test data flow\\
+   \end{tabular}};
+
+\end{tikzpicture}
+\end{document}

@@ -8,12 +8,19 @@
 \usepackage{graphicx}
 \usepackage{cite}
 \usepackage{xcolor}
+\usepackage{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, positioning, decorations.pathreplacing,
+                arrows.meta, calc}
+% Highlight colors for the four study-specific factors (used by fig/framework_factors_tikz)
+\definecolor{factorfill}{RGB}{255,236,179}   % light amber
+\definecolor{factordraw}{RGB}{191,127,0}     % dark amber
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
 \hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
 
 \begin{document}
 
-\title{Sensitivity Analysis of Class Imbalance and Domain Shift in Vehicle-Dynamics-Based Drowsy Driving Detection}
+\title{Class Imbalance and Domain Shift in Vehicle-Dynamics-Based Drowsy Driving Detection}
 
 \author{Yutaro~Nakagama,
 Daisuke~Ishii,~\IEEEmembership{Member,~IEEE,} and~Kazuki~Yoshizoe
@@ -22,16 +29,16 @@ Daisuke~Ishii,~\IEEEmembership{Member,~IEEE,} and~Kazuki~Yoshizoe
 \thanks{K.~Yoshizoe is with the Research Institute for Information Technology, Kyushu University, Fukuoka 819-0395, Japan (e-mail: yoshizoe@cc.kyushu-u.ac.jp).}}
 
 \markboth{IEEE Transactions on Intelligent Vehicles,~Vol.~XX, No.~XX, XXXX~2026}%
-{Nakagama \MakeLowercase{\textit{et al.}}: Sensitivity Analysis of Class Imbalance and Domain Shift in Vehicle-Dynamics-Based DDD}
+{Nakagama \MakeLowercase{\textit{et al.}}: Class Imbalance and Domain Shift in Vehicle-Dynamics-Based DDD}
 
 \maketitle
 
 \begin{abstract}
 Vehicle-dynamics-based drowsy driving detection (DDD) is a non-intrusive and practical approach to driver monitoring, but its performance may be degraded by two issues: class imbalance, because drowsy samples are rare, and domain shift, because driving behavior varies across drivers.
 In vehicle-dynamics-based DDD, however, it remains unclear whether these issues materially affect detection performance and which countermeasures are effective.
-To address this question, we construct a DDD framework using a public 87-driver simulator dataset and conduct a four-factor factorial experiment---varying rebalancing strategy ($R$), training mode ($M$), distance metric ($D$), and domain membership ($G$)---over 1,512 random forest runs.
+To address this question, we construct a DDD framework using a public 87-driver simulator dataset and conduct a four-factor factorial experiment varying rebalancing strategy ($R$), training mode ($M$), distance metric ($D$), and domain membership ($G$)
 Sobol--Hoeffding variance decomposition shows that training mode and rebalancing account for more than 95\% of systematic variance, with a substantial $R \times M$ interaction that reverses the optimal rebalancing strategy across training modes.
-In contrast, distance metric ($BF_{01} = 71$--$767$) and domain membership are negligible.
+In contrast, distance metric and domain membership have no measurable effect on performance.
 A subject-wise variant of SMOTE (SW-SMOTE) at ratio $r = 0.1$ with within-domain training achieves the best performance (F2 = 0.558, AUROC = 0.903, AUPRC = 0.648).
 These results establish a clear design priority for vehicle-dynamics-based DDD: class rebalancing and training mode selection are the dominant performance levers, whereas domain grouping configuration can be safely omitted from the optimization process.
 \end{abstract}
@@ -46,19 +53,20 @@ Drowsy driving detection, class imbalance, domain shift, vehicle dynamics, Sobol
 
 Two challenges are potentially critical for vehicle-dynamics-based DDD.
 First, \textbf{class imbalance}: drowsy episodes are inherently rare in driving data, with alert states far outnumbering drowsy states, which may bias classifiers toward the majority class and impair detection of safety-critical events.
-Second, \textbf{domain shift}: driving behavior varies across individuals, and this inter-driver variability may cause performance degradation when a model trained on one group of drivers is applied to another.
+Second, \textbf{domain shift}: driving behavior varies across individuals. Because training data typically cover only a subset of potential drivers (in-domain), a deployed model must generalize to unseen drivers (out-domain), whose driving patterns may differ substantially. This inter-driver variability may degrade detection performance.
 
+Improving detection performance under these conditions is a practical priority, yet the degree to which each factor actually degrades performance has not been quantified.
 Although class imbalance handling~\cite{chawla2002,he2009} and domain adaptation~\cite{pan2010,weiss2016} have been studied extensively in other contexts, their importance in vehicle-dynamics-based DDD remains unclear.
 In particular, it is not known whether these issues materially degrade performance in this modality, whether they warrant dedicated countermeasures, and how they interact when both are present.
 To this end, we pose the following research questions:
 \begin{description}
-\item[\textbf{RQ1.}] To what extent do class rebalancing strategy ($R$) and training mode ($M$) affect vehicle-dynamics-based DDD performance?
-\item[\textbf{RQ2.}] Does the choice of distance metric ($D$) or domain membership ($G$) materially impact detection performance?
-\item[\textbf{RQ3.}] Do the experimental factors interact, and if so, how does the interaction affect practical design decisions?
+\item[\textbf{RQ1.}] To what extent do class imbalance and domain shift each affect vehicle-dynamics-based DDD performance, as quantified through the four design factors ($R$, $M$, $D$, $G$)?
+\item[\textbf{RQ2.}] Do the contributing factors interact, and if so, what is the optimal factor combination?
 \end{description}
 
 This paper addresses these research questions by constructing a DDD framework using a public open dataset and conducting a \textbf{four-factor factorial experiment} to quantify the effects of class imbalance handling and domain configuration on detection performance.
 The four factors---rebalancing strategy ($R$), training mode ($M$), distance metric ($D$), and domain membership ($G$)---are systematically varied across 1,512 random forest runs, and Sobol--Hoeffding variance decomposition is applied to identify which factors significantly affect performance and which combinations are practically effective.
+Of these, rebalancing strategy ($R$) addresses class imbalance, while training mode ($M$), distance metric ($D$), and domain membership ($G$) address domain configuration.
 The main contributions are:
 
 \begin{enumerate}
@@ -83,7 +91,8 @@ Section~\ref{sec:conclusion} concludes with a summary and future directions.
 
 \subsection{Vehicle-Dynamics-Based Drowsy Driving Detection}
 Vehicle dynamics signals---steering wheel angle, lateral acceleration, and lane position---are widely used for DDD because they enable non-intrusive monitoring.
-Arefnezhad et~al.~\cite{arefnezhad2019} used statistical and spectral features with SVM, Wang et~al.~\cite{wang2022} used LSTM with five vehicle signals, and Zhao et~al.~\cite{zhao2012} used continuous wavelet transform to capture transient driving changes.
+Arefnezhad et~al.~\cite{arefnezhad2019} used statistical and spectral features with SVM, Baccour et~al.~\cite{baccour2022} compared vehicle-based and driver-based features for drowsiness monitoring using SVM with class weighting, and Sun et~al.~\cite{sun2021} optimized per-driver calculation parameters to account for driver fingerprinting differences.
+Zhao et~al.~\cite{zhao2012} applied continuous wavelet transform features to steering signals with SVM, and Wang et~al.~\cite{wang2022} used LSTM on five vehicle signals, although their study targeted driver distraction rather than drowsiness.
 More recently, Zhu et~al.~\cite{zhu2025} proposed MADFM, a multi-layer adaptive fatigue monitoring model based on steering wheel signals.
 Recent surveys~\cite{fu2024,fonseca2025,alquraishi2024,perkins2022} confirm the practical relevance of this modality.
 However, most studies evaluate a single method on a fixed split, and the sensitivity of detection performance to data preprocessing choices has received little attention.
@@ -93,91 +102,71 @@ Class imbalance is inherent in drowsy driving data because drowsy episodes are r
 He and Garcia~\cite{he2009} summarize major countermeasures such as random under-sampling (RUS), Synthetic Minority Over-sampling Technique (SMOTE)~\cite{chawla2002}, and cost-sensitive learning, but none of these standard techniques account for the multi-subject structure of pooled driving data.
 In vehicle-dynamics-based DDD, only a few studies explicitly mention imbalance handling: Yadawadkar et~al.~\cite{yadawadkar2018} compared SMOTE with no resampling, Schwarz et~al.~\cite{schwarz2019} used SMOTE in steering-based detection, and Baccour et~al.~\cite{baccour2022} used class weighting when comparing vehicle-dynamics-based and driver-based features.
 However, these studies treat imbalance handling as an auxiliary choice rather than the main object of study, and systematic comparison of multiple countermeasures remains lacking.
+Moreover, the effectiveness of resampling may depend on the characteristics of the target class, such as temporal clustering and inter-subject variability in drowsy episodes, which require dedicated treatment beyond standard techniques.
 
 \subsection{Domain Shift in Drowsy Driving Detection}
 Inter-subject variability creates domain shift in DDD~\cite{pan2010,aravinth2025}.
 In vehicle-dynamics-based DDD and related driver-state studies, Sun et~al.~\cite{sun2021} examined subject-independent drowsiness detection while highlighting driver fingerprinting differences, and Maritsch et~al.~\cite{maritsch2022} used leave-one-subject-out evaluation for vehicle-dynamics-based driver-state prediction.
 These studies recognize cross-subject variability, but systematic comparison of domain-related design choices in vehicle-dynamics-based DDD remains limited.
 
-\subsection{Sensitivity Analysis in Machine Learning}
-Variance-based sensitivity analysis using Sobol indices~\cite{sobol1993} decomposes output variance into additive contributions of input factors and their interactions.
-It has been widely applied in engineering and biological modeling~\cite{tosin2020}.
-In machine learning, Taylor et~al.~\cite{taylor2021} used Sobol decomposition to show that data-related hyperparameters dominate architectural choices in deep learning pipelines.
-Probst et~al.~\cite{probst2019} applied functional ANOVA to quantify the relative importance of random forest hyperparameters, demonstrating that a small subset of tuning decisions accounts for most performance variance.
-Van~Rijn and Hutter~\cite{vanrijn2018} performed a large-scale hyperparameter importance study across hundreds of datasets, confirming that the effect of individual hyperparameters varies with dataset characteristics---a finding analogous to our observation that the optimal rebalancing strategy depends on training mode.
-Despite these advances, Sobol-based sensitivity analysis has not been applied to DDD, particularly to quantify the joint and interactive importance of class imbalance handling and domain configuration.
-
 %% ====================================================================
 \section{Problem Formulation}
 \label{sec:formulation}
 
-This section presents the DDD framework (Section~\ref{sec:ddd_overview}), then formalizes the two data challenges---class imbalance (Section~\ref{sec:class_imbalance}) and domain shift (Section~\ref{sec:domain_shift})---that motivate the factorial experiment in Section~\ref{sec:framework}.
-
 \subsection{DDD Framework Overview}\label{sec:ddd_overview}
-The publicly available driving dataset of Aygun et~al.~\cite{aygun2024} is used, comprising 87 subjects each recorded over two sessions on the SIMlsl driving simulator at $f_s = 60$~Hz.
-Five raw signals are extracted (Table~\ref{tab:signals}):
-
-\begin{table}[!t]
-\caption{Vehicle Dynamics Signals\label{tab:signals}}
-\centering
-\begin{tabular}{|c|l|c|}
-\hline
-Symbol & Signal & Unit \\
-\hline
-$\delta(t)$ & Steering angle & rad \\
-\hline
-$\dot{\delta}(t)$ & Steering speed & rad/s \\
-\hline
-$a_y(t)$ & Lateral acceleration & m/s$^2$ \\
-\hline
-$a_x(t)$ & Longitudinal acceleration & m/s$^2$ \\
-\hline
-$e_{\text{lane}}(t)$ & Lane offset & m \\
-\hline
-\end{tabular}
-\end{table}
-
-Under the kinematic bicycle model~\cite{rajamani2012}, lateral acceleration follows:
-\begin{equation}
-\label{eq:bicycle}
-a_y = \frac{v^2}{L}\,\delta
-\end{equation}
-where $v$ is vehicle speed and $L$ is the wheelbase.
-Lane offset evolves as:
-\begin{equation}
-\label{eq:lane_offset}
-\ddot{e}_{\text{lane}}(t) = a_y(t) - a_{y,\text{road}}(t)
-\end{equation}
-Because $\dot{\delta} = d\delta/dt$ and $a_y \propto \delta$, four of the five signals ($\delta$, $\dot{\delta}$, $a_y$, $e_{\text{lane}}$) are deterministically coupled through a single degree of freedom $\delta(t)$, with only $a_x$ dynamically independent.
-
-Raw signals are segmented into 3-second sliding windows with 50\% overlap (1.5-second step).
-Each window is labeled using the Karolinska Sleepiness Scale (KSS)~\cite{akerstedt1990}: KSS~$\in \{1, \ldots, 5\}$ maps to Alert (class~0) and KSS~$\in \{8, 9\}$ to Drowsy (class~1); intermediate scores (6, 7) are excluded to maximize label reliability.
-
-For each window, the 18 statistical and spectral descriptors of Arefnezhad et~al.~\cite{arefnezhad2019} are extracted from each of the five vehicle signals ($\delta$, $\dot{\delta}$, $a_y$, $a_x$, $e_{\text{lane}}$), yielding $p = 90$ candidate features.
-Each signal's raw waveform and its FFT power spectrum in the $[0.5, 30]$~Hz band produce 18 descriptors: Range, StdDev, Energy, Zero-Crossing Rate, Quartiles (Q25, Median, Q75), Skewness, Kurtosis, Katz Fractal Dimension, Shannon Entropy, Frequency Variance, Spectral Entropy, Spectral Flux, Frequency Center of Gravity, Dominant Frequency, Average PSD, and Sample Entropy.
-To reduce dimensionality and mitigate overfitting, features are ranked by random forest feature importance~\cite{breiman2001} (200 trees, balanced class weights) and the top $k = 10$ are retained for each training configuration, balancing discriminative power against overfitting given the per-cell sample sizes.
-
-Let $\mathcal{S} = \{s_1, \ldots, s_N\}$ denote the set of $N = 87$ subjects.
-The windowing, labeling, and feature extraction procedures above yield, for each subject~$s$, a dataset $\mathcal{D}_s = \{(\mathbf{x}_w, y_w)\}_{w=1}^{n_s}$, where $\mathbf{x}_w \in \mathbb{R}^p$ is a feature vector and $y_w \in \{0, 1\}$ is the binary drowsiness label.
-The DDD task is to learn a classifier $f\colon \mathbb{R}^p \to \{0, 1\}$ from pooled training data that generalizes across subjects.
-Fig.~\ref{fig:framework} illustrates the overall processing pipeline.
+Vehicle-dynamics-based DDD monitors vehicle signals---such as steering angle, lateral acceleration, and lane position---to infer the driver's alertness level without requiring on-body sensors.
+Fig.~\ref{fig:framework_general} sketches the generic processing pipeline that is shared, with minor variations, across most prior vehicle-dynamics-based DDD studies: per-subject signal segmentation and labeling, feature extraction, chronological train/validation/test split, classifier training, probability calibration, threshold optimization, and held-out test-set evaluation.
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=\columnwidth]{fig/framework_tikz}
-\caption{Experimental framework overview. Vehicle dynamics signals from the 87-subject dataset are segmented into windows and labeled via KSS thresholds. Features are extracted, ranked by RF importance ($p{=}90 \to k{=}10$), and classified by an Optuna-tuned random forest. The four experimental factors---distance metric ($D$), domain membership ($G$), training mode ($M$), and rebalancing strategy ($R$)---determine each factorial cell.}
-\label{fig:framework}
+\resizebox{\columnwidth}{!}{\input{fig/framework_general_tikz}}
+\caption{Generic vehicle-dynamics-based DDD pipeline. Per-subject vehicle signals are segmented into labeled windows, features are extracted, and a chronological train/validation/test split is applied. Solid arrows trace the main pipeline flow---raw-data processing, training-data fitting, and downstream model passes through threshold tuning and evaluation; dashed arrows trace the auxiliary validation flow (used for decision-threshold tuning) and the test flow (reserved for final evaluation). This pipeline is shared, with minor variations, across most prior DDD studies; the four experimental factors specific to this work are introduced in Section~\ref{sec:framework} (Fig.~\ref{fig:framework_factors}).}
+\label{fig:framework_general}
 \end{figure}
 
+% Notation verified: \mathcal{S}, \mathcal{D}_s, \mathbf{x}_w, y_w \in {0,1}
+%   — standard ML dataset notation (He \& Garcia 2009; Chawla et al. 2002)
+%   — y=0 (alert), y=1 (drowsy): positive class = minority, consistent with
+%     He \& Garcia (2009) convention
+Let $\mathcal{S} = \{s_1, \ldots, s_N\}$ denote the set of $N$ subjects.
+For each subject~$s$, vehicle signals are segmented into fixed-length time windows, and each window is assigned a binary drowsiness label based on a subjective sleepiness scale, yielding a per-subject dataset $\mathcal{D}_s = \{(\mathbf{x}_w, y_w)\}_{w=1}^{n_s}$, where $\mathbf{x}_w \in \mathbb{R}^p$ is a feature vector extracted from the window and $y_w \in \{0, 1\}$ is the drowsiness label ($0$: alert, $1$: drowsy).
+
+Each subject's dataset is split chronologically into three disjoint portions:
+% Notation verified: \dot{\cup} (disjoint union)
+%   — standard set-theoretic notation for partition into mutually exclusive subsets
+%   — clearer than plain \cup for emphasizing no overlap (data leakage prevention)
+\begin{equation}
+\label{eq:split}
+\mathcal{D}_s = \mathcal{D}_s^{\mathrm{tr}} \,\dot{\cup}\, \mathcal{D}_s^{\mathrm{val}} \,\dot{\cup}\, \mathcal{D}_s^{\mathrm{te}}
+\end{equation}
+with a 70/15/15 ratio, preserving temporal order to prevent data leakage from future windows.
+The \emph{training set} $\mathcal{D}_s^{\mathrm{tr}}$ is used to fit the classifier, the \emph{validation set} $\mathcal{D}_s^{\mathrm{val}}$ for hyperparameter selection and threshold tuning, and the \emph{test set} $\mathcal{D}_s^{\mathrm{te}}$ for final performance evaluation.
+
+% Notation verified: f: R^p -> {0,1}, D_pool = \bigcup D_s^{tr}
+%   — classifier mapping notation standard in He \& Garcia (2009)
+%   — pooled training set with subset S' \subseteq S deferred to Sec.4 (Eq. train_pool)
+The DDD task is to learn a classifier $f\colon \mathbb{R}^p \to \{0, 1\}$ from pooled training data $\mathcal{D}_{\mathrm{pool}} = \bigcup_{s \in \mathcal{S}'} \mathcal{D}_s^{\mathrm{tr}}$ (where $\mathcal{S}' \subseteq \mathcal{S}$ depends on the training mode) that generalizes to unseen test windows.
+The specific dataset, signal set, and preprocessing parameters are detailed in Section~\ref{sec:common_settings}.
+
 \subsection{Class Imbalance}\label{sec:class_imbalance}
-Let $n_c = |\{w : y_w = c\}|$ denote the number of windows with label~$c$ in a training set.
+% Notation verified: n_c(D), \rho = n_1/n_0, rebalancing operator D -> \tilde{D}
+%   — set-cardinality class count: consistent with He \& Garcia (2009), Chawla et al. (2002)
+%   — imbalance ratio \rho: standard definition (minority/majority < 1)
+%   — rebalancing operator with target ratio r: aligns with SMOTE (Chawla et al. 2002)
+%     and RUS formulations in He \& Garcia (2009)
+For a given dataset $\mathcal{D}$, let $n_c(\mathcal{D}) = |\{(\mathbf{x}_w, y_w) \in \mathcal{D} : y_w = c\}|$ denote the number of windows with label~$c$, where $c = 0$ (alert) and $c = 1$ (drowsy).
 Because drowsy episodes are rare, $n_1 \ll n_0$, yielding an imbalance ratio $\rho = n_1 / n_0 \ll 1$.
-Rebalancing strategies adjust this ratio toward a target value~$r$ by under-sampling the majority class or over-sampling the minority class.
+A rebalancing operator transforms the training set $\mathcal{D}$ into $\tilde{\mathcal{D}}$ so that the adjusted ratio $\tilde{n}_1 / \tilde{n}_0$ approaches a target value~$r$, either by under-sampling the majority class or over-sampling the minority class.
 
 \subsection{Domain Shift}\label{sec:domain_shift}
-Each subject induces a marginal feature distribution $P_s(\mathbf{x})$.
-Inter-driver variability means that $P_{s_i}(\mathbf{x}) \neq P_{s_j}(\mathbf{x})$ in general.
-When subjects are partitioned into a source group $\mathcal{G}_{\mathrm{src}}$ and a target group $\mathcal{G}_{\mathrm{tgt}}$ ($\mathcal{G}_{\mathrm{src}} \cap \mathcal{G}_{\mathrm{tgt}} = \emptyset$), a classifier trained on $\bigcup_{s \in \mathcal{G}_{\mathrm{src}}} \mathcal{D}_s$ may degrade on $\bigcup_{s \in \mathcal{G}_{\mathrm{tgt}}} \mathcal{D}_s$ due to this distributional mismatch.
+% Notation verified: P_s(x), covariate shift P(y|x) shared, G_src \cap G_tgt = \emptyset
+%   — per-domain marginal P_s(x): follows Pan \& Yang (2010, Sec. 2) notation
+%   — covariate shift (P_s(x) differs, P(y|x) shared): Pan \& Yang (2010, Definition 1)
+%   — source/target partition with empty intersection: standard transfer learning setup
+%     (Pan \& Yang 2010; Gretton et al. 2012)
+Each subject~$s$ induces a marginal feature distribution $P_s(\mathbf{x})$.
+Inter-driver variability means that $P_{s_i}(\mathbf{x}) \neq P_{s_j}(\mathbf{x})$ in general; following the transfer-learning taxonomy of Pan and Yang~\cite{pan2010}, this constitutes covariate shift when the labeling mechanism $P(y \mid \mathbf{x})$ is approximately shared across subjects.
+When subjects are partitioned into a source group $\mathcal{G}_{\mathrm{src}}$ and a target group $\mathcal{G}_{\mathrm{tgt}}$ with $\mathcal{G}_{\mathrm{src}} \cap \mathcal{G}_{\mathrm{tgt}} = \emptyset$, a classifier trained on $\bigcup_{s \in \mathcal{G}_{\mathrm{src}}} \mathcal{D}_s$ may degrade on $\bigcup_{s \in \mathcal{G}_{\mathrm{tgt}}} \mathcal{D}_s$ because the pooled training distribution differs from the target distribution.
 
 These two issues are treated here not as fixed nuisances but as explicit design factors whose practical importance is quantified through the factorial experiment in Section~\ref{sec:framework}.
 
@@ -185,10 +174,29 @@ These two issues are treated here not as fixed nuisances but as explicit design 
 \section{Experimental Framework}
 \label{sec:framework}
 
-This section describes the factorial experiment. Section~\ref{sec:design_overview} provides an overview; Section~\ref{sec:factor_defs} defines each factor; Section~\ref{sec:common_settings} describes common experimental settings; and Section~\ref{sec:analysis_methods} presents the analysis methods.
+To answer the two research questions posed in Section~I---which factors materially affect performance (RQ1) and whether their interactions determine the optimal design (RQ2)---we design a four-factor factorial experiment.
+Sobol--Hoeffding variance decomposition (Section~\ref{sec:analysis_methods}) quantifies each factor's individual and interactive contribution, enabling a principled answer to both questions from a single unified experiment.
+
+Section~\ref{sec:design_overview} provides an overview of the factorial design; Section~\ref{sec:factor_defs} defines each factor; Section~\ref{sec:common_settings} describes common experimental settings; and Section~\ref{sec:analysis_methods} presents the analysis methods.
 
 \subsection{Overview of the Factorial Experiment}\label{sec:design_overview}
-The experiment follows a four-factor full-factorial design as shown in Table~\ref{tab:factorial}.
+The experiment follows a four-factor full-factorial design.
+Fig.~\ref{fig:framework_factors} extends the generic DDD pipeline of Fig.~\ref{fig:framework_general} by highlighting the four study-specific decision points---$D$, $G$, $M$, and $R$---superimposed on the same processing chain, and operationalizes the formulation of Section~\ref{sec:formulation} as follows.
+
+Starting from the subject set $\mathcal{S}$ with per-subject datasets $\mathcal{D}_s = \{(\mathbf{x}_w, y_w)\}$ (Section~\ref{sec:ddd_overview}), a \emph{distance metric}~$D$ first computes pairwise inter-subject distances and partitions $\mathcal{S}$ into an in-domain group $\mathcal{G}_{\mathrm{src}}$ (44~subjects) and an out-domain group $\mathcal{G}_{\mathrm{tgt}}$ (43~subjects), instantiating the domain split of Section~\ref{sec:domain_shift}.
+\emph{Domain membership}~$G$ then selects which of these two groups serves as the evaluation target $\mathcal{G}_{\mathrm{eval}}$.
+Each subject's data is split chronologically into $(\mathcal{D}_s^{\mathrm{tr}}, \mathcal{D}_s^{\mathrm{val}}, \mathcal{D}_s^{\mathrm{te}})$ per Eq.~\eqref{eq:split} (70/15/15 ratio).
+\emph{Training mode}~$M$ assembles the pooled training set $\mathcal{D}_{\mathrm{pool}} = \bigcup_{s \in \mathcal{S}_M} \mathcal{D}_s^{\mathrm{tr}}$ from a subset $\mathcal{S}_M \subseteq \mathcal{S}$ determined by the partition.
+After feature extraction and selection ($p = 90 \to k = 10$), \emph{rebalancing strategy}~$R$ applies the operator of Section~\ref{sec:class_imbalance} to produce $\tilde{\mathcal{D}}$ with adjusted class ratio approaching the target~$r$.
+The classifier $f\colon \mathbb{R}^p \to \{0,1\}$ (Section~\ref{sec:ddd_overview}) is trained on $\tilde{\mathcal{D}}$, calibrated, and evaluated on $\mathcal{D}_{\mathrm{test}} = \bigcup_{s \in \mathcal{G}_{\mathrm{eval}}} \mathcal{D}_s^{\mathrm{te}}$.
+
+The four factors thus form a dependency chain $D \to G \to M \to R$, where each downstream factor operates on the data subset constructed by its predecessors.
+Each factorial cell is uniquely determined by a quadruple $(R, M, D, G)$; Section~\ref{sec:factor_defs} defines the levels of each factor (summarized in Table~\ref{tab:factorial}) and the total number of observations.
+
+\subsection{Factor Definitions}\label{sec:factor_defs}
+Table~\ref{tab:factorial} summarizes the four factors and their levels.
+The $7 \times 3 \times 3 \times 2 = 126$ factor combinations are each evaluated over 12 fixed random seeds, yielding $N = 1{,}512$ total observations.
+The following subsubsections define each factor in detail.
 
 \begin{table}[!t]
 \caption{Factorial Experiment Design\label{tab:factorial}}
@@ -208,12 +216,6 @@ Membership & $G$ & 2 & In-domain, Out-domain \\
 \hline
 \end{tabular}
 \end{table}
-
-Each factorial cell is determined by a quadruple $(R, M, D, G)$.
-The factors form a dependency chain: $D$ determines the domain partition $(\mathcal{G}_{\mathrm{src}}, \mathcal{G}_{\mathrm{tgt}})$ via the KNN median split (Section~\ref{sec:grouping}); $G$ selects the evaluation-target group; $M$ assembles the training pool from that partition; and $R$ transforms the pool before classifier fitting.
-Each subject's dataset $\mathcal{D}_s$ is split chronologically into training, validation, and test portions $(\mathcal{D}_s^{\mathrm{tr}}, \mathcal{D}_s^{\mathrm{val}}, \mathcal{D}_s^{\mathrm{te}})$ with a 70/15/15 ratio (detailed in Section~\ref{sec:metrics}).
-
-\subsection{Factor Definitions}\label{sec:factor_defs}
 
 \subsubsection{Distance Metric ($D$) and Domain Grouping}\label{sec:grouping}
 To instantiate the source/target partition $(\mathcal{G}_{\mathrm{src}}, \mathcal{G}_{\mathrm{tgt}})$ defined in Section~\ref{sec:formulation}, pairwise distances $d(s_i, s_j)$ between all 87 subjects are computed from the per-subject window sets $\mathcal{D}_{s_i}$ and $\mathcal{D}_{s_j}$ using three metrics:
@@ -291,9 +293,60 @@ so that synthetic samples preserve individual driving patterns rather than inter
 \end{itemize}
 
 The classifier $f$ is trained on $\tilde{\mathcal{D}}$ and evaluated on $\mathcal{D}_{\mathrm{test}} = \bigcup_{s \in \mathcal{G}_{\mathrm{eval}}} \mathcal{D}_s^{\mathrm{te}}$.
-The $7 \times 3 \times 3 \times 2 = 126$ factor combinations are each evaluated over 12 fixed random seeds, yielding $N = 1{,}512$ total observations.
 
 \subsection{Common Experimental Settings}\label{sec:common_settings}
+
+\subsubsection{Dataset and Signals}\label{sec:dataset}
+The publicly available driving dataset of Aygun et~al.~\cite{aygun2024} is used, comprising $N = 87$ subjects each recorded over two sessions on the SIMlsl driving simulator at $f_s = 60$~Hz.
+Five raw signals are extracted (Table~\ref{tab:signals}).
+
+\begin{table}[!t]
+\caption{Vehicle Dynamics Signals\label{tab:signals}}
+\centering
+\begin{tabular}{|c|l|c|}
+\hline
+Symbol & Signal & Unit \\
+\hline
+$\delta(t)$ & Steering angle & rad \\
+\hline
+$\dot{\delta}(t)$ & Steering speed & rad/s \\
+\hline
+$a_y(t)$ & Lateral acceleration & m/s$^2$ \\
+\hline
+$a_x(t)$ & Longitudinal acceleration & m/s$^2$ \\
+\hline
+$e_{\text{lane}}(t)$ & Lane offset & m \\
+\hline
+\end{tabular}
+\end{table}
+
+Under the kinematic bicycle model~\cite{rajamani2012}, lateral acceleration follows:
+\begin{equation}
+\label{eq:bicycle}
+a_y = \frac{v^2}{L}\,\delta
+\end{equation}
+where $v$ is vehicle speed and $L$ is the wheelbase.
+Lane offset evolves as:
+\begin{equation}
+\label{eq:lane_offset}
+\ddot{e}_{\text{lane}}(t) = a_y(t) - a_{y,\text{road}}(t)
+\end{equation}
+Because $\dot{\delta} = d\delta/dt$ and $a_y \propto \delta$, four of the five signals ($\delta$, $\dot{\delta}$, $a_y$, $e_{\text{lane}}$) are deterministically coupled through a single degree of freedom $\delta(t)$, with only $a_x$ dynamically independent.
+
+\begin{figure}[!t]
+\centering
+\resizebox{\columnwidth}{!}{\input{fig/framework_factors_tikz}}
+\caption{Factorial experimental framework. The four study-specific factors---distance metric ($D$), domain membership ($G$), training mode ($M$), and rebalancing strategy ($R$)---are highlighted (amber boxes) on the same generic DDD pipeline of Fig.~\ref{fig:framework_general}. Solid arrows trace the main pipeline flow---pre-split data partitioning, the rebalanced training-pool flow, and downstream model passes through calibration, threshold tuning, and evaluation; dashed arrows trace the validation and test flows that branch off the per-subject 70/15/15 split and rejoin only at their consumption points (calibration, threshold, evaluation), and are never rebalanced. Each factorial cell is uniquely determined by a quadruple $(R, M, D, G)$.}
+\label{fig:framework_factors}
+\end{figure}
+
+\subsubsection{Data Preprocessing}\label{sec:preprocessing}
+Raw signals are segmented into 3-second sliding windows with 50\% overlap (1.5-second step).
+Each window is labeled using the Karolinska Sleepiness Scale (KSS)~\cite{akerstedt1990}: KSS~$\in \{1, \ldots, 5\}$ maps to Alert (class~0) and KSS~$\in \{8, 9\}$ to Drowsy (class~1); intermediate scores (6, 7) are excluded to maximize label reliability.
+
+For each window, the 18 statistical and spectral descriptors of Arefnezhad et~al.~\cite{arefnezhad2019} are extracted from each of the five vehicle signals ($\delta$, $\dot{\delta}$, $a_y$, $a_x$, $e_{\text{lane}}$), yielding $p = 90$ candidate features.
+Each signal's raw waveform and its FFT power spectrum in the $[0.5, 30]$~Hz band produce 18 descriptors: Range, StdDev, Energy, Zero-Crossing Rate, Quartiles (Q25, Median, Q75), Skewness, Kurtosis, Katz Fractal Dimension, Shannon Entropy, Frequency Variance, Spectral Entropy, Spectral Flux, Frequency Center of Gravity, Dominant Frequency, Average PSD, and Sample Entropy.
+To reduce dimensionality and mitigate overfitting, features are ranked by random forest feature importance~\cite{breiman2001} (200 trees, balanced class weights) and the top $k = 10$ are retained for each training configuration, balancing discriminative power against overfitting given the per-cell sample sizes.
 
 \subsubsection{Classifier and Hyperparameter Optimization}
 The classifier $f\colon \mathbb{R}^p \to \{0,1\}$ introduced in Section~\ref{sec:formulation} is instantiated as a random forest (RF)~\cite{breiman2001} and trained on the rebalanced pool $\tilde{\mathcal{D}}$ defined above.
@@ -375,10 +428,8 @@ It complements F2 by assessing whether the model ranks drowsy windows above aler
 
 Together, these three metrics form a minimal sufficient set: one threshold-dependent recall-focused metric (F2), one threshold-free global metric (AUROC), and one threshold-free imbalance-aware metric (AUPRC).
 
-The chronological 70/15/15 split introduced in the preceding subsection preserves temporal order within each subject, preventing data leakage from future windows into the training or validation sets.
-
 \subsection{Analysis Methods}\label{sec:analysis_methods}
-Three analysis methods are applied to the 1,512 evaluation results: an intuitive OFAT scan, a Sobol--Hoeffding variance decomposition, and non-parametric statistical tests.
+Three analysis methods are applied to the 1,512 evaluation results: an intuitive OFAT scan, a Sobol--Hoeffding variance decomposition, and a statistical framework for effect sizes and null-claim support.
 
 \subsubsection{One-Factor-at-a-Time (OFAT) Analysis}
 Before the quantitative decomposition, we perform an OFAT analysis to build intuition.
@@ -404,25 +455,14 @@ and the total-order index aggregates the main effect with all interactions invol
 \label{eq:sobol_total}
 S_{Ti} = 1 - \frac{V_{\sim i}}{V(Y)}
 \end{equation}
-
+where $V_{\sim i} = \mathrm{Var}_{X_{\sim i}}\bigl[\mathbb{E}_{X_i}(Y \mid X_{\sim i})\bigr]$ is the variance explained by all factors \emph{except}~$i$.
 The difference $S_{Ti} - S_i$ quantifies the fraction of variance attributable to interactions involving factor~$i$.
 Because our design is balanced, all sum-of-squares terms are computed exactly via marginal means without Monte Carlo sampling.
 Confidence intervals (95\%) are obtained by percentile bootstrap ($B = 2{,}000$) resampling over the 12 seeds.
 
 \subsubsection{Statistical Framework}
-Due to non-normality (Shapiro--Wilk rejects normality in 45--71\% of cells), all pairwise and multi-group comparisons use non-parametric tests.
-
-\textbf{Multi-group comparisons.}
-Kruskal--Wallis $H$~\cite{kruskal1952} tests for differences across $k$ independent groups (e.g., seven rebalancing strategies pooled over modes).
-Friedman $\chi_F^2$~\cite{friedman1937} tests for differences across $k$ matched conditions (e.g., strategy rankings within each mode).
-
-\textbf{Pairwise comparisons.}
-Mann--Whitney $U$ for unpaired tests and Wilcoxon signed-rank for paired tests, both Bonferroni-corrected ($\alpha' = \alpha/m$, $\alpha = 0.05$).
-Effect sizes use Cliff's $\delta$~\cite{cliff1993} ($< 0.147$ negligible, $< 0.33$ small, $< 0.474$ medium, $\geq 0.474$ large).
-Post-hoc clustering uses Nemenyi critical difference tests~\cite{nemenyi1963}.
-
-\textbf{Null-claim support.}
-Because frequentist tests can only fail to reject $H_0$, claims of factor irrelevance (e.g., distance metric equivalence) are supplemented with Bayes factors via BIC approximation~\cite{wagenmakers2007}, interpreted on the Jeffreys scale~\cite{jeffreys1961}.
+Effect sizes between factor levels are measured by Cliff's $\delta$~\cite{cliff1993} ($< 0.147$ negligible, $< 0.33$ small, $< 0.474$ medium, $\geq 0.474$ large).
+Claims of factor irrelevance (e.g., distance metric equivalence) are supplemented with Bayes factors via BIC approximation~\cite{wagenmakers2007}, interpreted on the Jeffreys scale~\cite{jeffreys1961}.
 
 \textbf{Global validation.}
 A permutation test ($B = 10{,}000$) validates the overall rebalancing effect.
@@ -488,6 +528,7 @@ Defining the systematic (non-residual) variance fraction, where $S_{\varepsilon}
 \end{equation}
 where $S_M{=}0.368$, $S_R{=}0.243$, $S_{R{\times}M}{=}0.212$, and $S_{\varepsilon}{=}0.157$.
 Analogous ratios are 95.8\% (AUROC) and 96.1\% (AUPRC), confirming that $M$, $R$, and their interaction account for $> 95$\% of systematic variance across all three metrics.
+The interaction concentration ratio $C_{R \times M}^{(i)} = S_{R \times M} / (S_{Ti} - S_i) = 87$--$96$\% indicates that the $R \times M$ pair absorbs nearly all interaction variance.
 
 \begin{figure}[!t]
 \centering
@@ -496,38 +537,16 @@ Analogous ratios are 95.8\% (AUROC) and 96.1\% (AUPRC), confirming that $M$, $R$
 \label{fig:effect_hierarchy}
 \end{figure}
 
-\textbf{$R \times M$ interaction concentration.}
-The interaction concentration ratio $C_{R \times M}^{(i)} = S_{R \times M} / (S_{Ti} - S_i)$ shows that 87--96\% of each dominant factor's interaction variance is attributable to the $R \times M$ term alone, meaning that the factorial design's $2^k - k - 1 = 11$ interaction terms effectively collapse into a single dominant pairwise effect.
-
-\textbf{Distance metric equivalence---Bayesian confirmation.}
-Because frequentist tests can only fail to reject $H_0$, we supplement with Bayes factors:
-
-\begin{table}[!t]
-\caption{Bayes Factors for Distance Metric Equivalence\label{tab:bayes}}
-\centering
-\begin{tabular}{|l|c|l|}
-\hline
-Metric & $BF_{01}$ & Interpretation \\
-\hline
-F2-score & 767 & Extreme evidence for $H_0$ \\
-\hline
-AUROC & 71 & Very strong evidence for $H_0$ \\
-\hline
-AUPRC & 381 & Extreme evidence for $H_0$ \\
-\hline
-\end{tabular}
-\end{table}
-
-All Bayes factors (Table~\ref{tab:bayes}) provide ``very strong'' to ``extreme'' evidence on the Jeffreys scale~\cite{jeffreys1961} that the distance metric has no effect, affirming the Sobol result ($S_{TD} < 0.015$).
+Bayes factors further confirm distance metric equivalence, providing ``very strong'' to ``extreme'' evidence for $H_0$ on the Jeffreys scale~\cite{jeffreys1961} ($BF_{01} = 71$--$767$).
 
 \subsection{$R \times M$ Interaction Analysis}
 \label{sec:interaction_results}
 The Sobol decomposition identified a single dominant interaction ($R \times M$).
-This section characterizes its structure using two complementary analyses.
+Table~\ref{tab:permode} and Fig.~\ref{fig:ranking_reversal} characterize its structure.
 
-\subsubsection{Performance by Strategy and Mode}
-Table~\ref{tab:permode} shows mean performance disaggregated by rebalancing strategy and training mode.
-Within-domain and Mixed produce statistically equivalent results ($\delta < 0.05$), while Cross-domain collapses to near-chance levels ($\delta > 0.83$ vs.\ Within).
+Within-domain and Mixed produce statistically equivalent results (Cliff's $\delta < 0.05$), while Cross-domain collapses to near-chance levels ($\delta > 0.83$ vs.\ Within).
+The best strategy also reverses across modes: RUS $r{=}0.1$ ranks first in Cross-domain, whereas SW-SMOTE $r{=}0.1$ ranks first in Within and Mixed (Fig.~\ref{fig:ranking_reversal}).
+SW-SMOTE $r{=}0.1$ with within-domain training achieves the highest overall performance (F2 = 0.558, AUROC = 0.903, AUPRC = 0.648).
 
 \begin{table*}[!t]
 \caption{Mean Performance by Rebalancing Strategy, Disaggregated by Training Mode. Cross-domain results (all $\text{F2} < 0.17$) are shown for completeness; the $R \times M$ interaction analysis focuses on Within and Mixed modes where strategy differentiation is meaningful.\label{tab:permode}}
@@ -537,34 +556,22 @@ Within-domain and Mixed produce statistically equivalent results ($\delta < 0.05
  & & \multicolumn{2}{c|}{F2-score} & \multicolumn{2}{c|}{AUROC} & \multicolumn{2}{c|}{AUPRC} \\
 Strategy & F2 (Cross) & Within & Mixed & Within & Mixed & Within & Mixed \\
 \hline
-Baseline              & \color{gray}0.160 & 0.215 & 0.268 & 0.633 & 0.660 & 0.116 & 0.139 \\
+Baseline              & 0.160 & 0.215 & 0.268 & 0.633 & 0.660 & 0.116 & 0.139 \\
 \hline
-RUS $r\!=\!0.1$       & \color{gray}0.165 & 0.178 & 0.208 & 0.625 & 0.643 & 0.122 & 0.126 \\
+RUS $r\!=\!0.1$       & 0.165 & 0.178 & 0.208 & 0.625 & 0.643 & 0.122 & 0.126 \\
 \hline
-RUS $r\!=\!0.5$       & \color{gray}0.156 & 0.159 & 0.170 & 0.603 & 0.614 & 0.097 & 0.101 \\
+RUS $r\!=\!0.5$       & 0.156 & 0.159 & 0.170 & 0.603 & 0.614 & 0.097 & 0.101 \\
 \hline
-SMOTE $r\!=\!0.1$     & \color{gray}0.138 & 0.448 & 0.452 & 0.898 & 0.895 & 0.600 & 0.593 \\
+SMOTE $r\!=\!0.1$     & 0.138 & 0.448 & 0.452 & 0.898 & 0.895 & 0.600 & 0.593 \\
 \hline
-SMOTE $r\!=\!0.5$     & \color{gray}0.114 & 0.499 & 0.514 & 0.882 & 0.879 & 0.562 & 0.558 \\
+SMOTE $r\!=\!0.5$     & 0.114 & 0.499 & 0.514 & 0.882 & 0.879 & 0.562 & 0.558 \\
 \hline
-SW-SMOTE $r\!=\!0.1$  & \color{gray}0.101 & $\mathbf{0.558}$ & $\mathbf{0.587}$ & $\mathbf{0.903}$ & $\mathbf{0.901}$ & $\mathbf{0.648}$ & $\mathbf{0.641}$ \\
+SW-SMOTE $r\!=\!0.1$  & 0.101 & $\mathbf{0.558}$ & $\mathbf{0.587}$ & $\mathbf{0.903}$ & $\mathbf{0.901}$ & $\mathbf{0.648}$ & $\mathbf{0.641}$ \\
 \hline
-SW-SMOTE $r\!=\!0.5$  & \color{gray}0.042 & 0.468 & 0.402 & 0.862 & 0.855 & 0.386 & 0.371 \\
+SW-SMOTE $r\!=\!0.5$  & 0.042 & 0.468 & 0.402 & 0.862 & 0.855 & 0.386 & 0.371 \\
 \hline
 \end{tabular}
 \end{table*}
-
-\subsubsection{Mode-Dependent Strategy Ranking}
-The $R \times M$ interaction manifests as a mode-dependent strategy ranking effect: the \emph{identity} of the best strategy differs across modes.
-Per-mode Friedman tests (all $p < 10^{-5}$) show RUS $r{=}0.1$ ranks first in cross-domain, while SW-SMOTE $r{=}0.1$ ranks first in within-domain and mixed.
-Cross-mode Spearman $\rho$ confirms the shift:
-\begin{equation}
-\label{eq:ranking_reversal}
-\rho_{\text{cross,within}} = -0.74 \;\text{to}\; -0.89
-\end{equation}
-while within- vs.\ mixed yields $\rho \geq +0.99$ ($p < 0.001$).
-Kendall's $W$ across the three modes is $0.17$--$0.22$ (non-significant), confirming that modes do \emph{not} agree on strategy rankings.
-Fig.~\ref{fig:ranking_reversal} visualizes this reversal.
 
 \begin{figure}[!t]
 \centering
@@ -576,15 +583,6 @@ Fig.~\ref{fig:ranking_reversal} visualizes this reversal.
 
 \subsection{Robustness Validation}
 \label{sec:robustness}
-
-\textbf{Cross-metric concordance.}
-Kendall's $W = 0.618$ across seven evaluation metrics; AUROC--AUPRC $\rho = 0.857$.
-Results are consistent across three metrics and two sampling ratios (91\% directional agreement).
-
-\textbf{Post-hoc power.}
-The pooled design ($n = 36$) detects $|\delta| \geq 0.53$, well below all reported large effects ($|\delta| > 0.8$).
-
-\textbf{Seed convergence.}
 Ranking stability ($\sigma_{\text{rank}}$) decreases monotonically with the number of seeds, reaching 0 (F2, AUPRC) or 0.147 (AUROC) by $k = 11$ of 12 seeds (Fig.~\ref{fig:seed_convergence}), confirming sufficient seed count.
 
 \begin{figure}[!t]
@@ -606,44 +604,19 @@ Monotonic convergence confirms that $n = 12$ seeds is sufficient.}
 \section{Discussion}
 \label{sec:discussion}
 
-\subsection{Answer to RQ1: Dominance of Training Mode and Rebalancing}\label{sec:rq1}
+\subsection{Answer to RQ1: Relative Contribution of Each Factor}\label{sec:rq1}
 The Sobol decomposition reveals a concentrated variance structure: $M$, $R$, and $R \times M$ jointly explain $> 95$\% of systematic variance (Eq.~\ref{eq:systematic}), while $D$ and $G$ together contribute $< 5$\%.
-This concentration can be explained by a mode-dependent performance bottleneck, formalized as follows.
 
-Define the \emph{subject overlap ratio} between the training pool $\mathcal{S}_M$ (Eq.~\eqref{eq:train_pool}) and the evaluation group $\mathcal{G}_{\mathrm{eval}}$ (Eq.~\eqref{eq:eval_group}):
+To understand why training mode dominates, define the \emph{subject overlap ratio} between the training pool $\mathcal{S}_M$ (Eq.~\eqref{eq:train_pool}) and the evaluation group $\mathcal{G}_{\mathrm{eval}}$ (Eq.~\eqref{eq:eval_group}):
 \begin{equation}
 \label{eq:overlap}
 \omega_M = \frac{|\mathcal{S}_M \cap \mathcal{G}_{\mathrm{eval}}|}{|\mathcal{G}_{\mathrm{eval}}|}
 \end{equation}
 By construction, $\omega_{\mathrm{Cross}} = 0$ (training excludes evaluation subjects), while $\omega_{\mathrm{Within}} = \omega_{\mathrm{Mixed}} = 1$ (evaluation subjects are included).
-The mode-dependent rebalancing gain, averaged over $D$ and $G$, is:
-\begin{equation}
-\label{eq:rebalancing_gain}
-\Delta Y_R^{(M)} = \mathbb{E}_{D,G}\!\left[Y_{R,M,D,G} - Y_{\mathrm{BL},M,D,G}\right]
-\end{equation}
-For the best strategy (SW-SMOTE $r{=}0.1$), the empirical values are:
-\begin{equation}
-\label{eq:bottleneck}
-\Delta Y_{\text{SW-SM.}}^{(M)} =
-\begin{cases}
-+0.343\;(+159\%) & M = \mathrm{Within}\;(\omega = 1) \\
-+0.319\;(+119\%) & M = \mathrm{Mixed}\;\;(\omega = 1) \\
--0.059\;(-37\%)   & M = \mathrm{Cross}\;\;\;(\omega = 0)
-\end{cases}
-\end{equation}
-When $\omega_M = 1$, the training distribution includes target-subject patterns, so the performance bottleneck is class imbalance ($\rho \ll 1$).
-SMOTE generates synthetic minority-class samples along the feature manifold, enriching the decision boundary without discarding majority-class information.
-RUS, by contrast, discards majority-class samples ($\delta_{\text{RUS vs.\ BL}} = -0.84$), destroying subject-specific calibration.
+This binary switch between $\omega = 0$ and $\omega = 1$ determines whether target-subject patterns are available during training, which in turn governs the performance bottleneck and the effectiveness of rebalancing (Section~\ref{sec:rq2}).
 
-When $\omega_M = 0$, target-subject data is entirely absent, and the bottleneck shifts to distributional mismatch ($P_{\mathrm{pool}}(\mathbf{x}) \neq P_{\mathrm{test}}(\mathbf{x})$).
-Oversampling amplifies source-domain patterns that do not transfer, while RUS's information loss is less damaging because the majority-class signal was already misaligned.
-All strategies collapse to near-chance levels (F2 $= 0.04$--$0.17$).
-
-This sign reversal of $\Delta Y_R^{(M)}$ between $\omega = 0$ and $\omega = 1$ (Eq.~\ref{eq:bottleneck}) is the mechanistic origin of the $R \times M$ interaction and the ranking shift (Eq.~\ref{eq:ranking_reversal}).
-For comparison, switching distance metric yields $|\Delta\text{F2}| < 0.01$---two orders of magnitude below the rebalancing effect, consistent with $S_{TR}/S_{TD} > 27\times$.
-
-\subsection{Answer to RQ2: Irrelevance of Distance Metric and Domain Membership}\label{sec:rq2}
-Three fundamentally different metrics---MMD (distributional), DTW (temporal), and Wasserstein (geometric)---produce equivalent downstream performance ($S_{TD} < 0.015$, $BF_{01} = 71$--$767$) despite generating different subject rankings (Table~\ref{tab:spearman}; DTW vs.\ MMD: $\rho = 0.12$, $p = 0.29$).
+In contrast, distance metric and domain membership are negligible ($S_{TD} < 0.015$, $S_{TG} < 0.031$; $BF_{01} = 71$--$767$).
+Three fundamentally different metrics---MMD (distributional), DTW (temporal), and Wasserstein (geometric)---produce equivalent downstream performance despite generating different subject rankings (Table~\ref{tab:spearman}; DTW vs.\ MMD: $\rho = 0.12$, $p = 0.29$).
 
 \begin{table}[!t]
 \caption{Pairwise Rank Correlation and Domain Partition Overlap Between Distance Metrics. Jaccard index is computed on the 44-subject in-domain group; the switcher count is the number of subjects reassigned between in- and out-domain.\label{tab:spearman}}
@@ -661,23 +634,34 @@ $W_1$ vs.\ DTW  & 0.444 & 0.725 & 14 (16.1\%) \\
 \end{tabular}
 \end{table}
 
-A three-layer mechanism explains this decoupling.
-First, the bicycle model (Eqs.~\ref{eq:bicycle}--\ref{eq:lane_offset}) couples four of the five signals through a single degree of freedom $\delta(t)$, compressing the effective intrinsic dimensionality of the full vehicle-dynamics feature space to $p_{\mathrm{eff}} = 45$ out of 135 total features (95\% PCA variance threshold).
-In this low-dimensional subspace, the three distance functionals converge because the dimensions along which they would disagree carry negligible variance.
-Second, the intraclass correlation is low ($\mathrm{ICC} = 0.111$), meaning 88.9\% of feature variance is intra-subject; consequently, even when metric choice relabels up to 42.5\% of subjects across domain partitions, the resulting training-set composition changes only marginally.
-Table~\ref{tab:spearman} quantifies this relabelling: MMD vs.\ DTW yields a Jaccard index of only 0.443 on the in-domain group (34 of 87 subjects switch domain), yet all three metrics produce statistically indistinguishable classification performance.
-Third, the rebalancing factor dominates residual grouping differences: $S_{TR}/S_{TD} = 27$--$31\times$ (Eq.~\ref{eq:ratio}), so once a strategy is chosen, grouping effects are absorbed ($BF_{01} > 70$).
-\begin{equation}
-\label{eq:ratio}
-\frac{S_{TR}}{S_{TD}} \approx \frac{0.40\text{--}0.46}{<0.015} = 27\text{--}31\times
-\end{equation}
+This metric invariance stems from three factors: the bicycle model (Eqs.~\ref{eq:bicycle}--\ref{eq:lane_offset}) compresses the effective feature dimensionality to $p_{\mathrm{eff}} = 45$ out of 135 (95\% PCA variance), low intraclass correlation ($\mathrm{ICC} = 0.111$) makes partition relabelling inconsequential despite up to 39\% of subjects switching domain (Table~\ref{tab:spearman}), and the dominant rebalancing factor absorbs residual grouping differences ($S_{TR}/S_{TD} = 27$--$31\times$; $BF_{01} > 70$).
 
-\subsection{Answer to RQ3: Mode-Dependent Strategy Reversal}\label{sec:rq3}
-The $R \times M$ interaction ($S_{R \times M} = 0.212$ for F2, concentrated at 87--96\% of each dominant factor's interaction variance) confirms that the four factors do not act independently.
-This interaction manifests as a mode-dependent strategy reversal: the \emph{identity} of the best rebalancing strategy changes across training modes (Eq.~\ref{eq:ranking_reversal}; Table~\ref{tab:permode}).
+\subsection{Answer to RQ2: Interaction and Optimal Factor Combination}\label{sec:rq2}
+The $R \times M$ interaction ($S_{R \times M} = 0.212$ for F2, concentrated at 87--96\% of each dominant factor's interaction variance) confirms that the contributing factors do not act independently.
+This interaction manifests as a mode-dependent strategy reversal: the \emph{identity} of the best rebalancing strategy changes across training modes (Table~\ref{tab:permode}; Fig.~\ref{fig:ranking_reversal}).
 A practitioner who selects a rebalancing strategy based on cross-domain results would deploy the \emph{worst} strategy for within-domain operation, and vice versa.
-The mechanistic origin is the sign reversal of $\Delta Y_R^{(M)}$ between $\omega_M = 0$ and $\omega_M = 1$ (Eq.~\ref{eq:bottleneck}): when target-subject data is present ($\omega_M = 1$), the bottleneck is class imbalance and SMOTE-based strategies excel; when absent ($\omega_M = 0$), the bottleneck shifts to distributional mismatch and no strategy helps.
-Although the domain gap occasionally reverses (out-domain outperforming in-domain), the Sobol decomposition shows this effect is negligible: $S_{G \times M} = 0.006$--$0.009$, an order of magnitude below $S_{R \times M}$.
+
+The mechanistic origin is a mode-dependent performance bottleneck.
+The mode-dependent rebalancing gain, averaged over $D$ and $G$, is:
+\begin{equation}
+\label{eq:rebalancing_gain}
+\Delta Y_R^{(M)} = \mathbb{E}_{D,G}\!\left[Y_{R,M,D,G} - Y_{\mathrm{BL},M,D,G}\right]
+\end{equation}
+For the best strategy (SW-SMOTE $r{=}0.1$), the empirical values are:
+\begin{equation}
+\label{eq:bottleneck}
+\Delta Y_{\text{SW-SM.}}^{(M)} =
+\begin{cases}
++0.343\;(+159\%) & M = \mathrm{Within}\;(\omega = 1) \\
++0.319\;(+119\%) & M = \mathrm{Mixed}\;\;(\omega = 1) \\
+-0.059\;(-37\%)   & M = \mathrm{Cross}\;\;\;(\omega = 0)
+\end{cases}
+\end{equation}
+When $\omega_M = 1$, the performance bottleneck is class imbalance ($\rho \ll 1$), and oversampling is effective.
+When $\omega_M = 0$, the bottleneck shifts to distributional mismatch ($P_{\mathrm{pool}}(\mathbf{x}) \neq P_{\mathrm{test}}(\mathbf{x})$), and all strategies collapse to near-chance levels (F2 $= 0.04$--$0.17$).
+This sign reversal of $\Delta Y_R^{(M)}$ (Eq.~\ref{eq:bottleneck}) is the mechanistic origin of the $R \times M$ interaction.
+The $G \times M$ interaction is negligible ($S_{G \times M} = 0.006$--$0.009$), an order of magnitude below $S_{R \times M}$.
+The optimal factor combination is therefore SW-SMOTE $r{=}0.1$ with within-domain training ($\omega_M = 1$), achieving F2 = 0.558, AUROC = 0.903, AUPRC = 0.648.
 
 \subsection{Practical Implications}
 The Sobol total-order indices establish a strict factor priority ordering for practitioners deploying vehicle-dynamics-based DDD systems:
@@ -715,65 +699,62 @@ Each can be introduced as an additional factor level within the same Sobol decom
 \subsection{Comparison with Prior Work}\label{sec:comparison}
 Our finding that class imbalance handling is the dominant design factor aligns with Taylor et~al.~\cite{taylor2021}, who showed that data-related hyperparameters dominate architectural choices in deep learning.
 However, our study is the first to demonstrate this in the DDD context and to reveal the interaction with training mode that causes mode-dependent strategy ranking change.
-Prior DDD studies that compare rebalancing methods under a single training mode~\cite{he2024} risk selecting a suboptimal strategy for deployment.
+Prior DDD studies that compare rebalancing methods under a single training mode~\cite{he2024,yadawadkar2018} risk selecting a suboptimal strategy for deployment.
 
 The best within-domain performance (F2\,=\,0.558, AUROC\,=\,0.903) is competitive with recent vehicle-dynamics-based methods.
 Table~\ref{tab:comparison} positions this work relative to prior DDD studies.
 Direct performance comparison is limited because prior studies use different datasets, modalities, and evaluation protocols; the primary contribution here is the factorial decomposition framework, not absolute classification performance.
-Nevertheless, the within-domain AUROC (0.903) is competitive with Wang et~al.~\cite{wang2022} (0.91 on the same dataset using an LSTM with a single fixed split), confirming that the RF pipeline optimized via Optuna provides a credible experimental baseline.
 
 \begin{table*}[!t]
-\caption{Comparison with Prior DDD Studies. ``Factors'' Indicates the Number of Design Factors Systematically Varied; ``Interaction'' Indicates Whether Inter-Factor Interactions Were Quantified. Studies Using the Same 87-Subject Dataset~\cite{aygun2024} Are Marked with~$\dagger$.\label{tab:comparison}}
+\caption{Comparison with Prior DDD Studies. ``Factors'' Indicates the Number of Design Factors Systematically Varied; ``Interaction'' Indicates Whether Inter-Factor Interactions Were Quantified.\label{tab:comparison}}
 \centering
 \footnotesize
-\begin{tabular}{|l|c|l|l|c|c|c|c|}
+\begin{tabular}{|l|c|l|l|c|c|c|c|c|c|}
 \hline
-Study & Year & Classif. & Modal. & Subj. & Fact. & Inter. & AUROC \\
+Study & Year & Classif. & Modal. & Subj. & Fact. & Inter. & F2 & AUROC & AUPRC \\
 \hline
-Zhu et~al.~\cite{zhu2025}                  & 2025 & Multi-layer & Vehicle & --- & 0           & No               & --- \\
+Arefnezhad et~al.~\cite{arefnezhad2019}   & 2019 & SVM       & Vehicle & 39 & 0            & No               & --- & 0.97  & --- \\
 \hline
-Arefnezhad et~al.~\cite{arefnezhad2019}   & 2019 & SVM/NN    & Vehicle & 20 & 0            & No               & 0.87 \\
+Zhu et~al.~\cite{zhu2025}                  & 2025 & RF        & Vehicle & 25 & 0            & No               & --- & ---   & --- \\
 \hline
-Wang et~al.~\cite{wang2022}$^{\dagger}$    & 2022 & LSTM      & Vehicle & 87 & 0            & No               & 0.91 \\
+Baccour et~al.~\cite{baccour2022}          & 2022 & SVM       & Vehicle & 70 & 0            & No               & --- & ---   & --- \\
 \hline
-Zhao et~al.~\cite{zhao2012}                & 2012 & SVM       & Vehicle & 15 & 0            & No               & 0.82 \\
+Sun et~al.~\cite{sun2021}                  & 2021 & Fisher    & Vehicle & 35 & 0            & No               & --- & ---   & --- \\
 \hline
-He et~al.~\cite{he2024}                    & 2024 & GA-CNN    & EEG     & 12 & 1 (imbalance)& No               & 0.89 \\
+Yadawadkar et~al.~\cite{yadawadkar2018}   & 2018 & NB        & Vehicle & ---& 1 (imbalance)& No               & --- & ---   & --- \\
 \hline
-Kim et~al.~\cite{kim2025}                  & 2025 & Mixup     & EEG     & 27 & 1 (domain)   & No               & 0.92 \\
+Schwarz et~al.~\cite{schwarz2019}          & 2019 & RF        & Vehicle & 20 & 0            & No               & --- & ---   & --- \\
 \hline
-\textbf{Ours}$^{\dagger}$              & \textbf{2026} & \textbf{RF} & \textbf{Vehicle} & \textbf{87} & \textbf{4} ($R$,$M$,$D$,$G$) & $R{\times}M$ \textbf{Sobol} & \textbf{0.903} \\
+He et~al.~\cite{he2024}                    & 2024 & GARMFCN   & EEG+EOG & 23 & 1 (imbalance)& No               & --- & ---   & --- \\
+\hline
+Kim et~al.~\cite{kim2025}                  & 2025 & PDMix     & EEG     & 27 & 1 (domain)   & No               & --- & 0.738 & --- \\
+\hline
+\textbf{Ours}                           & \textbf{2026} & \textbf{RF} & \textbf{Vehicle} & \textbf{87} & \textbf{4} ($R$,$M$,$D$,$G$) & $R{\times}M$ \textbf{Sobol} & \textbf{0.558} & \textbf{0.903} & \textbf{0.648} \\
 \hline
 \end{tabular}
 \end{table*}
 
-The distance metric irrelevance contrasts with the implicit assumption in domain adaptation literature~\cite{pan2010,kim2025} that domain definition substantially impacts downstream performance.
-As discussed in Section~\ref{sec:discussion}, the three-layer mechanism---low effective dimensionality ($p_{\mathrm{eff}} = 45/135$), weak inter-subject discrimination ($\mathrm{ICC} = 0.111$), and rebalancing absorption ($S_{TR}/S_{TD} > 27\times$)---ensures that even substantial partition relabelling produces no measurable change in classification performance.
+The distance metric irrelevance contrasts with the implicit assumption in domain adaptation literature~\cite{pan2010,kim2025} that domain definition substantially impacts downstream performance; the three-layer mechanism identified in Section~\ref{sec:rq1} explains why this assumption does not hold for vehicle-dynamics features.
 
 \subsection{Limitations}\label{sec:limitations}
 
 \begin{enumerate}
 \item \textbf{Single classifier family.}
 The factorial experiment uses RF~\cite{breiman2001}.
-The Sobol--Hoeffding decomposition framework itself is classifier-agnostic---it treats the classifier as a black box mapping factor configurations to performance scores---and can therefore be extended to gradient boosting methods, sequence models (LSTM~\cite{wang2022}), attention-based architectures~\cite{ganguly2025}, or any other learner without methodological modification.
-Empirical validation with such architectures remains an open question.
+The Sobol--Hoeffding framework is classifier-agnostic and can be extended to other learners (e.g., LSTM, attention) without methodological modification.
 
 \item \textbf{Deterministic data split.}
 The train/test partition is deterministic; random seeds vary only model initialisation and resampling.
 
 \item \textbf{Simulator data.}
 All data come from a laboratory driving simulator.
-The five vehicle-dynamics signals used here ($\delta$, $\dot{\delta}$, $a_y$, $a_x$, $e_{\text{lane}}$) are governed by the same bicycle model (Eqs.~\ref{eq:bicycle}--\ref{eq:lane_offset}) in both simulated and real vehicles; the physical coupling that produces feature redundancy and low ICC (0.111) is intrinsic to vehicle dynamics, not an artifact of the simulator.
-Nevertheless, on-road conditions introduce additional variability (road surface, weather, traffic interactions) that may alter the absolute variance shares.
-Validation on naturalistic driving datasets---such as the SHRP~2 corpus---is an essential next step to confirm that the factor hierarchy $M > R \gg D \approx G$ transfers to real-world conditions.
+On-road conditions introduce additional variability that may alter the absolute variance shares; validation on naturalistic datasets (e.g., SHRP~2) is needed.
 
 \item \textbf{Sample size per cell.}
 With $n = 12$, only large effects ($|\delta| > 0.53$) are detectable after Bonferroni correction.
-Subtle distance metric effects may exist below the detection threshold, though the Bayes factors ($BF_{01} > 70$) argue strongly against this possibility.
 
 \item \textbf{Feature selection scope.}
-Only the top $k = 10$ features (by RF importance~\cite{breiman2001}) from the $p = 90$ candidate features are used per configuration.
-While this aggressive reduction mitigates overfitting for the per-cell sample sizes in this design, a sensitivity analysis over $k \in \{5, 10, 20\}$ and over the full 135-dimensional feature set (adding smooth/prediction-error and wavelet descriptors) would clarify whether the Sobol hierarchy is robust to feature set composition.
+Only the top $k = 10$ features from $p = 90$ candidates are used; sensitivity to $k$ and to the full feature set remains to be tested.
 
 \item \textbf{Binary labeling threshold.}
 KSS $\leq 5$ vs.\ KSS $\geq 8$ excludes intermediate drowsiness (KSS 6--7), which may limit applicability to graded drowsiness detection scenarios.
@@ -783,8 +764,9 @@ KSS $\leq 5$ vs.\ KSS $\geq 8$ excludes intermediate drowsiness (KSS 6--7), whic
 \section{Conclusion}
 \label{sec:conclusion}
 This study quantifies the relative importance of four design factors in vehicle-dynamics-based DDD through a factorial experiment with Sobol--Hoeffding variance decomposition over 1,512 random forest runs from 87 drivers.
-Training mode ($S_{TM} = 0.48$--$0.66$) and rebalancing ($S_{TR} = 0.40$--$0.46$), including their interaction ($S_{R \times M} = 0.21$), account for $> 97$\% of systematic variance, whereas distance metric ($S_{TD} < 0.015$; $BF_{01} = 71$--$767$) and domain membership ($S_{TG} < 0.031$) are negligible.
-The $R \times M$ interaction reverses the optimal strategy across modes ($\rho_{\text{cross,within}} = -0.74$ to $-0.89$), making SW-SMOTE $r{=}0.1$ with within-domain training the best overall configuration (F2 = 0.558, AUROC = 0.903).
+Training mode ($S_{TM} = 0.48$--$0.66$) and rebalancing ($S_{TR} = 0.40$--$0.46$), including their interaction ($S_{R \times M} = 0.21$), account for $> 95$\% of systematic variance, whereas distance metric ($S_{TD} < 0.015$; $BF_{01} = 71$--$767$) and domain membership ($S_{TG} < 0.031$) are negligible.
+The $R \times M$ interaction reverses the optimal strategy across modes ($\rho_{\text{cross,within}} = -0.74$ to $-0.89$): when evaluation subjects overlap with training data ($\omega_M = 1$), class imbalance is the bottleneck and oversampling is effective; when they do not ($\omega_M = 0$), distributional mismatch dominates and no tested rebalancing strategy helps.
+SW-SMOTE $r{=}0.1$ with within-domain training ($\omega_M = 1$) achieves the best overall performance (F2 = 0.558, AUROC = 0.903, AUPRC = 0.648).
 Practitioners should prioritize training mode and class rebalancing (Eq.~\ref{eq:priority}); domain configuration requires no optimization.
 
 Future work includes validation with other classifiers (LSTM, attention), on naturalistic driving data (SHRP~2), and incorporation of domain adaptation and few-shot methods as additional factor levels.
