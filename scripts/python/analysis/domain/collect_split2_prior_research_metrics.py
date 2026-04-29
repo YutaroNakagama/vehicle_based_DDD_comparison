@@ -343,7 +343,7 @@ def load_eval_json(path: Path) -> dict:
 def collect_all_split2(
     model_filter: str | None = None,
     condition_filter: str | None = None,
-    keep_mixed: bool = False,
+    drop_mixed: bool = False,
 ) -> pd.DataFrame:
     """Scan evaluation JSONs and return a tidy DataFrame."""
     records = []
@@ -404,12 +404,10 @@ def collect_all_split2(
         key_cols = ["model", "mode", "condition", "distance", "level", "ratio", "seed"]
         df = df.sort_values("job_id").drop_duplicates(subset=key_cols, keep="last")
 
-        # For models with domain_train data (canonical Exp3 setup),
-        # the legacy 'mixed' mode is orphaned: domain_train only produces
-        # source_only (cross) and target_only (within) evaluations, and
-        # the surviving 'mixed' rows are from old failed runs that render
-        # as degenerate base-rate predictors. Drop them by default.
-        if not keep_mixed and models_with_domain_train:
+        # 'mixed' (Multi-domain) is a distinct evaluation mode kept by default
+        # so plots can show all three comparisons (Cross / Within / Multi).
+        # Use drop_mixed=True if you only want the domain_train pair.
+        if drop_mixed and models_with_domain_train:
             before = len(df)
             mask_drop = (
                 df["model"].isin(models_with_domain_train) & (df["mode"] == "mixed")
@@ -418,9 +416,9 @@ def collect_all_split2(
             if n_drop:
                 df = df.loc[~mask_drop].reset_index(drop=True)
                 logger.info(
-                    f"Dropped {n_drop} legacy 'mixed'-mode rows for models with "
-                    f"domain_train data: {sorted(models_with_domain_train)} "
-                    f"({before}→{len(df)} rows). Use --keep-mixed to retain."
+                    f"Dropped {n_drop} 'mixed'-mode rows for models with "
+                    f"domain_train data (--drop-mixed): {sorted(models_with_domain_train)} "
+                    f"({before}→{len(df)} rows)."
                 )
 
         logger.info(
@@ -694,11 +692,10 @@ def main():
         ),
     )
     parser.add_argument(
-        "--keep-mixed", action="store_true",
+        "--drop-mixed", action="store_true",
         help=(
-            "Keep legacy 'mixed' (Multi-domain) mode rows even for models with "
-            "domain_train data. Default: drop them (they are orphaned from "
-            "older failed runs and render as degenerate base-rate bars)."
+            "Drop 'mixed' (Multi-domain) mode rows from plots. Default: keep "
+            "them so the bar chart shows Cross / Within / Multi side-by-side."
         ),
     )
     args = parser.parse_args()
@@ -719,7 +716,7 @@ def main():
     df = collect_all_split2(
         model_filter=args.model,
         condition_filter=args.condition,
-        keep_mixed=args.keep_mixed,
+        drop_mixed=args.drop_mixed,
     )
     if df.empty:
         logger.error("No data found. Exiting.")
