@@ -47,11 +47,22 @@ elif [[ -z "${PBS_JOBID:-}" ]]; then
     export PBS_JOBID="$(date +%s)$$"
 fi
 
-# CUDA 12.8 + cuDNN 9 (hpc_sdk/22.2 was replaced by nvhpc/26.3 which lacks cuDNN;
-# kagayaki CUDA 12.8u1 provides libcudart.so.12 + libcudnn.so.9 needed by TF 2.19)
-CUDA12_TARGET="/app/kagayaki/CUDA/12.8u1/targets/x86_64-linux/lib"
-CUDA12_LIB="/app/kagayaki/CUDA/12.8u1/lib64"
-export LD_LIBRARY_PATH="${CUDA12_TARGET}:${CUDA12_LIB}:${LD_LIBRARY_PATH:-}"
+# CUDA 12.8 + cuDNN 9 — use the cluster's cuda/12.8u1 module on the compute
+# node (it bundles cuDNN 9.10.0 at /app/CUDA/12.8u1/lib64/libcudnn.so.9).
+# Note: /app/kagayaki/CUDA/12.8u1 is only visible from the login node, not
+# from GPU compute nodes — the manual LD_LIBRARY_PATH there silently broke
+# TF GPU init for all jobs. The `module` function isn't pre-initialized in
+# non-interactive shells, so source /etc/profile.d/modules.sh first.
+# `module` references some internal vars unset under `set -u`; relax briefly.
+set +u
+source /etc/profile.d/modules.sh
+module load cuda/12.8u1
+MODULE_RC=$?
+set -u
+if [[ "$MODULE_RC" -ne 0 ]]; then
+    echo "[WARNING] cuda/12.8u1 module load failed (rc=$MODULE_RC); falling back"
+    export LD_LIBRARY_PATH="/app/kagayaki/CUDA/12.8u1/targets/x86_64-linux/lib:/app/kagayaki/CUDA/12.8u1/lib64:${LD_LIBRARY_PATH:-}"
+fi
 
 # Thread optimization for HPC (keep CPU threads low, let GPU do the work)
 export OMP_NUM_THREADS=1

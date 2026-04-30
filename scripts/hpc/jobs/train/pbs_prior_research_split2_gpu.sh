@@ -46,11 +46,18 @@ elif [[ -z "${PBS_JOBID:-}" ]]; then
     export PBS_JOBID="$(date +%s)$$"
 fi
 
-# CUDA 12.8 + cuDNN 9 (hpc_sdk/22.2 was replaced; kagayaki CUDA 12.8u1
-# provides libcudart.so.12 + libcudnn.so.9 needed by TF 2.19)
-CUDA12_TARGET="/app/kagayaki/CUDA/12.8u1/targets/x86_64-linux/lib"
-CUDA12_LIB="/app/kagayaki/CUDA/12.8u1/lib64"
-export LD_LIBRARY_PATH="${CUDA12_TARGET}:${CUDA12_LIB}:${LD_LIBRARY_PATH:-}"
+# CUDA 12.8 + cuDNN 9 — use cluster's cuda/12.8u1 module (bundles cuDNN).
+# /app/kagayaki/CUDA/12.8u1 is only visible from login, not compute nodes.
+# `module` references unset vars under `set -u`; relax briefly.
+set +u
+source /etc/profile.d/modules.sh
+module load cuda/12.8u1
+MODULE_RC=$?
+set -u
+if [[ "$MODULE_RC" -ne 0 ]]; then
+    echo "[WARNING] cuda/12.8u1 module load failed (rc=$MODULE_RC); falling back"
+    export LD_LIBRARY_PATH="/app/kagayaki/CUDA/12.8u1/targets/x86_64-linux/lib:/app/kagayaki/CUDA/12.8u1/lib64:${LD_LIBRARY_PATH:-}"
+fi
 
 # Thread optimization for HPC (keep CPU threads low, let GPU do the work)
 export OMP_NUM_THREADS=1
