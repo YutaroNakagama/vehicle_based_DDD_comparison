@@ -3,7 +3,7 @@
 set -uo pipefail
 
 PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
-SUBMITTER="$PROJECT_ROOT/scripts/hpc/launchers/eval_retry_all_lstm.sh"
+SUBMITTER="$PROJECT_ROOT/scripts/hpc/launchers/eval_retry_all_models.sh"
 cd "$PROJECT_ROOT"
 
 INTERVAL_SEC=900

@@ -3,10 +3,6 @@
 # Re-run eval-only for every completed SvmW / SvmA / Lstm tag using
 # the new F1-on-validation threshold tuner.
 #
-# After fix(eval): F1 threshold tuning on validation (commit ecc94dd):
-#   - lstm_eval, SvmA_eval, optimize_threshold_f2 all switched β=2→1
-#   - lstm_eval and SvmA_eval also moved from test-set to val-set tuning
-#
 # Pre-fix saved JSONs are detectable by the absence of `threshold_beta`
 # (or `threshold_beta != 1.0`); they are scheduled for retry. Models
 # already on disk are reused — no re-training.
@@ -23,49 +19,58 @@ cd "$PROJECT_ROOT"
 DRY_RUN=false
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
 
-# Build the (model, tag, jid, kind) list — for each tag whose existing eval
-# JSON pre-dates the F1 fix, plus has a model artifact on disk for eval-only.
+# Build an INDEX of all model artifacts first (one walk, then O(1) lookups
+# instead of glob-per-tag which would be 4M+ stats with 5k model dirs).
 python3 - <<'PY' > /tmp/eval_retry_all_targets.txt
 import os, glob, re, json
+from collections import defaultdict
 
-def is_pre_fix(path):
-    """A JSON is pre-fix iff threshold_beta is missing or != 1.0."""
-    try:
-        with open(path) as f: d = json.load(f)
-    except Exception: return False
-    return d.get('threshold_beta') != 1.0
+# 1) Index all model artifacts: tag -> jid (latest by mtime if multiple).
+# os.walk is faster than recursive glob for our deep-but-narrow tree.
+tag_to_jid = {}
+for model in ['SvmW', 'SvmA', 'Lstm']:
+    pat = '.keras' if model == 'Lstm' else '.pkl'
+    skip = ('scaler', 'feature', 'selected', 'pso_history') if model != 'Lstm' else ('fold',)
+    base = f'models/{model}'
+    if not os.path.isdir(base): continue
+    for root, _, files in os.walk(base):
+        for n in files:
+            if not n.endswith(pat): continue
+            if any(s in n for s in skip): continue
+            m = re.match(rf'{model}_domain_train_(.+)_(\d+)_(\d+)' + re.escape(pat), n)
+            if not m: continue
+            tag, jid, _ = m.groups()
+            key = (model, tag)
+            f = os.path.join(root, n)
+            mt = os.path.getmtime(f)
+            prev = tag_to_jid.get(key)
+            if prev is None or mt > prev[1]:
+                tag_to_jid[key] = (jid, mt)
 
-def find_model(model, tag):
-    """Return (jid, ext) tuple or None."""
-    if model == 'Lstm':
-        ks = glob.glob(f'models/Lstm/**/Lstm_domain_train_{tag}_*.keras', recursive=True)
-        if ks:
-            m = re.match(rf'Lstm_domain_train_{re.escape(tag)}_(\d+)_(\d+)\.keras', os.path.basename(ks[0]))
-            if m: return m.group(1), 'keras'
-    else:
-        # SvmW / SvmA: pickled model
-        ps = glob.glob(f'models/{model}/**/{model}_domain_train_{tag}_*.pkl', recursive=True)
-        ps = [p for p in ps if 'scaler' not in p and 'feature' not in p and 'selected' not in p and 'pso_history' not in p]
-        if ps:
-            m = re.match(rf'{model}_domain_train_{re.escape(tag)}_(\d+)_(\d+)\.pkl', os.path.basename(ps[0]))
-            if m: return m.group(1), 'pkl'
-    return None
-
+# 2) Scan eval JSONs; emit (model, tag, jid, kind) for those needing retry
 seen = set()
 for model in ['SvmW', 'SvmA', 'Lstm']:
-    for f in glob.glob(f'results/outputs/evaluation/{model}/**/eval_results_{model}_domain_train_*.json', recursive=True):
-        if '_invalidated' in f: continue
-        if not is_pre_fix(f): continue
-        n = os.path.basename(f)
-        m = re.match(rf'eval_results_{model}_domain_train_(.+)_(within|cross)\.json', n)
-        if not m: continue
-        tag, kind = m.group(1), m.group(2)
-        if (model, tag, kind) in seen: continue
-        seen.add((model, tag, kind))
-        info = find_model(model, tag)
-        if not info: continue
-        jid, ext = info
-        print(f"{model}\t{tag}\t{jid}\t{kind}")
+    base = f'results/outputs/evaluation/{model}'
+    if not os.path.isdir(base): continue
+    for root, _, files in os.walk(base):
+        if '_invalidated' in root: continue
+        for n in files:
+            if not (n.startswith(f'eval_results_{model}_domain_train_') and n.endswith('.json')):
+                continue
+            f = os.path.join(root, n)
+            try:
+                with open(f) as fh: d = json.load(fh)
+            except Exception: continue
+            if d.get('threshold_beta') == 1.0:
+                continue  # already post-fix
+            m = re.match(rf'eval_results_{model}_domain_train_(.+)_(within|cross)\.json', n)
+            if not m: continue
+            tag, kind = m.group(1), m.group(2)
+            if (model, tag, kind) in seen: continue
+            seen.add((model, tag, kind))
+            info = tag_to_jid.get((model, tag))
+            if not info: continue
+            print(f"{model}\t{tag}\t{info[0]}\t{kind}")
 PY
 
 N=$(wc -l < /tmp/eval_retry_all_targets.txt)
@@ -78,8 +83,10 @@ if $DRY_RUN; then
     exit 0
 fi
 
-# Submit one PBS job per tuple, distributed across CPU queues
-CPU_QUEUES=("SINGLE" "SMALL" "LONG" "LARGE" "DEF" "VM-CPU" "VM-LM" "LONG-L")
+# Eval-only is light (~5-15min CPU, <4GB resident). Distribute round-robin
+# across every CPU queue we can reach. TINY accepts ≤30min walltime which
+# matches the eval profile, so it's a great fit and usually under-used.
+CPU_QUEUES=("SINGLE" "SMALL" "LONG" "LARGE" "DEF" "VM-CPU" "VM-LM" "LONG-L" "TINY" "XLARGE" "X2LARGE")
 IDX=0
 N_SUB=0
 N_ERR=0
@@ -100,7 +107,7 @@ while IFS=$'\t' read -r MODEL TAG JID KIND; do
     JOBNAME="Re_${MODEL:0:2}${KIND:0:1}_${JID}_${SHORT_TAG}"
 
     OUT=$(qsub -N "$JOBNAME" \
-        -l select=1:ncpus=4:mem=16gb -l walltime=02:00:00 -q "$QUEUE" \
+        -l select=1:ncpus=2:mem=4gb -l walltime=00:30:00 -q "$QUEUE" \
         -v PROJECT=$PROJECT_ROOT,MODEL=$MODEL,TAG=$TAG,KIND=$KIND,JID=$JID,TGT=$TGT \
         scripts/hpc/jobs/train/pbs_lstm_eval_retry.sh 2>&1)
     if [[ $? -eq 0 ]]; then
@@ -110,7 +117,7 @@ while IFS=$'\t' read -r MODEL TAG JID KIND; do
         echo "[ERR] $JOBNAME -> $(echo "$OUT" | grep -oE 'QOS[A-Za-z]*|error[^,]*' | head -1)"
         ((N_ERR++))
     fi
-    sleep 0.2
+    # No artificial sleep — qsub itself rate-limits.
 done < /tmp/eval_retry_all_targets.txt
 
 echo ""
