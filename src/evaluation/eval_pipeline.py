@@ -185,7 +185,11 @@ def eval_pipeline(
 
     # Stage 7: Model-specific evaluation
     if model == "Lstm":
-        result = lstm_eval(X_test_prepared, y_test, model_name, clf, scaler)
+        result = lstm_eval(
+            X_test_prepared, y_test, model_name, clf, scaler,
+            X_val=X_val_prepared if 'X_val_prepared' in locals() else None,
+            y_val=y_val if 'y_val' in locals() else None,
+        )
     elif model == "SvmA":
         result = SvmA_eval(X_test_prepared, y_test, model_name, clf, features)
     else:
