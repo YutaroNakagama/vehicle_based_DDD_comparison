@@ -187,7 +187,7 @@ Starting from the subject set $\mathcal{S}$ with per-subject datasets $\mathcal{
 \emph{Domain membership}~$G$ then selects which of these two groups serves as the evaluation target $\mathcal{G}_{\mathrm{eval}}$.
 Each subject's data is split chronologically into $(\mathcal{D}_s^{\mathrm{tr}}, \mathcal{D}_s^{\mathrm{val}}, \mathcal{D}_s^{\mathrm{te}})$ per Eq.~\eqref{eq:split} (70/15/15 ratio).
 \emph{Training mode}~$M$ assembles the pooled training set $\mathcal{D}_{\mathrm{pool}} = \bigcup_{s \in \mathcal{S}_M} \mathcal{D}_s^{\mathrm{tr}}$ from a subset $\mathcal{S}_M \subseteq \mathcal{S}$ determined by the partition.
-After feature extraction and selection ($p = 90 \to k = 10$), \emph{rebalancing strategy}~$R$ applies the operator of Section~\ref{sec:class_imbalance} to produce $\tilde{\mathcal{D}}$ with adjusted class ratio approaching the target~$r$.
+After feature extraction and selection ($p = 145 \to k = 10$), \emph{rebalancing strategy}~$R$ applies the operator of Section~\ref{sec:class_imbalance} to produce $\tilde{\mathcal{D}}$ with adjusted class ratio approaching the target~$r$.
 The classifier $f\colon \mathbb{R}^p \to \{0,1\}$ (Section~\ref{sec:ddd_overview}) is trained on $\tilde{\mathcal{D}}$, calibrated, and evaluated on $\mathcal{D}_{\mathrm{test}} = \bigcup_{s \in \mathcal{G}_{\mathrm{eval}}} \mathcal{D}_s^{\mathrm{te}}$.
 
 The four factors thus form a dependency chain $D \to G \to M \to R$, where each downstream factor operates on the data subset constructed by its predecessors.
@@ -344,9 +344,9 @@ Because $\dot{\delta} = d\delta/dt$ and $a_y \propto \delta$, four of the five s
 Raw signals are segmented into 3-second sliding windows with 50\% overlap (1.5-second step).
 Each window is labeled using the Karolinska Sleepiness Scale (KSS)~\cite{akerstedt1990}: KSS~$\in \{1, \ldots, 5\}$ maps to Alert (class~0) and KSS~$\in \{8, 9\}$ to Drowsy (class~1); intermediate scores (6, 7) are excluded to maximize label reliability.
 
-For each window, the 18 statistical and spectral descriptors of Arefnezhad et~al.~\cite{arefnezhad2019} are extracted from each of the five vehicle signals ($\delta$, $\dot{\delta}$, $a_y$, $a_x$, $e_{\text{lane}}$), yielding $p = 90$ candidate features.
-Each signal's raw waveform and its FFT power spectrum in the $[0.5, 30]$~Hz band produce 18 descriptors: Range, StdDev, Energy, Zero-Crossing Rate, Quartiles (Q25, Median, Q75), Skewness, Kurtosis, Katz Fractal Dimension, Shannon Entropy, Frequency Variance, Spectral Entropy, Spectral Flux, Frequency Center of Gravity, Dominant Frequency, Average PSD, and Sample Entropy.
-To reduce dimensionality and mitigate overfitting, features are ranked by random forest feature importance~\cite{breiman2001} (200 trees, balanced class weights) and the top $k = 10$ are retained for each training configuration, balancing discriminative power against overfitting given the per-cell sample sizes.
+For each window, three groups of descriptors are extracted from the five vehicle signals ($\delta$, $\dot{\delta}$, $a_y$, $a_x$, $e_{\text{lane}}$): (i) the 18 statistical and spectral descriptors of Arefnezhad et~al.~\cite{arefnezhad2019} per signal, computed on each signal's raw waveform and its FFT power spectrum in the $[0.5, 30]$~Hz band---Range, StdDev, Energy, Zero-Crossing Rate, Quartiles (Q25, Median, Q75), Skewness, Kurtosis, Katz Fractal Dimension, Shannon Entropy, Frequency Variance, Spectral Entropy, Spectral Flux, Frequency Center of Gravity, Dominant Frequency, Average PSD, and Sample Entropy ($5 \times 18 = 90$ features); (ii) per-signal smoothed-trend, standard-deviation, and prediction-error descriptors ($5 \times 3 = 15$ features); and (iii) per-signal permutation entropy over the eight length-3 ordinal patterns ($5 \times 8 = 40$ features).
+The full candidate pool is therefore $p = 145$ features per window.
+To reduce dimensionality and mitigate overfitting, the candidate features are ranked by random forest feature importance~\cite{breiman2001} (200 trees, balanced class weights) and the top $k = 10$ are retained for each training configuration, balancing discriminative power against overfitting given the per-cell sample sizes.
 
 \subsubsection{Classifier and Hyperparameter Optimization}
 The classifier $f\colon \mathbb{R}^p \to \{0,1\}$ introduced in Section~\ref{sec:formulation} is instantiated as a random forest (RF)~\cite{breiman2001} and trained on the rebalanced pool $\tilde{\mathcal{D}}$ defined above.
@@ -634,7 +634,7 @@ $W_1$ vs.\ DTW  & 0.444 & 0.725 & 14 (16.1\%) \\
 \end{tabular}
 \end{table}
 
-This metric invariance stems from three factors: the bicycle model (Eqs.~\ref{eq:bicycle}--\ref{eq:lane_offset}) compresses the effective feature dimensionality to $p_{\mathrm{eff}} = 45$ out of 135 (95\% PCA variance), low intraclass correlation ($\mathrm{ICC} = 0.111$) makes partition relabelling inconsequential despite up to 39\% of subjects switching domain (Table~\ref{tab:spearman}), and the dominant rebalancing factor absorbs residual grouping differences ($S_{TR}/S_{TD} = 27$--$31\times$; $BF_{01} > 70$).
+This metric invariance stems from three factors: the bicycle model (Eqs.~\ref{eq:bicycle}--\ref{eq:lane_offset}) compresses the effective feature dimensionality to $p_{\mathrm{eff}} = 49$ out of 145 (95\% PCA variance, with the first principal component alone explaining 20.4\%), low intraclass correlation ($\mathrm{ICC} = 0.111$) makes partition relabelling inconsequential despite up to 39\% of subjects switching domain (Table~\ref{tab:spearman}), and the dominant rebalancing factor absorbs residual grouping differences ($S_{TR}/S_{TD} = 27$--$31\times$; $BF_{01} > 70$).
 
 \subsection{Answer to RQ2: Interaction and Optimal Factor Combination}\label{sec:rq2}
 The $R \times M$ interaction ($S_{R \times M} = 0.212$ for F2, concentrated at 87--96\% of each dominant factor's interaction variance) confirms that the contributing factors do not act independently.
@@ -754,7 +754,7 @@ On-road conditions introduce additional variability that may alter the absolute 
 With $n = 12$, only large effects ($|\delta| > 0.53$) are detectable after Bonferroni correction.
 
 \item \textbf{Feature selection scope.}
-Only the top $k = 10$ features from $p = 90$ candidates are used; sensitivity to $k$ and to the full feature set remains to be tested.
+Only the top $k = 10$ features from $p = 145$ candidates are used; sensitivity to $k$ and to the full feature set remains to be tested.
 
 \item \textbf{Binary labeling threshold.}
 KSS $\leq 5$ vs.\ KSS $\geq 8$ excludes intermediate drowsiness (KSS 6--7), which may limit applicability to graded drowsiness detection scenarios.
