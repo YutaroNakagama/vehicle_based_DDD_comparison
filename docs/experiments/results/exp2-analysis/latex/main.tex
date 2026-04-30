@@ -512,11 +512,11 @@ Left two columns show dominant factors with large spread; right two columns show
 The Sobol--Hoeffding decomposition (Fig.~\ref{fig:effect_hierarchy}) quantifies each factor's contribution to total variance.
 The permutation test confirms a significant global rebalancing effect for all three metrics ($p < 0.001$).
 
-\textbf{Mode} contributes the largest main effect ($S_M = 0.31$--$0.50$), followed by \textbf{Rebalancing} ($S_R = 0.24$--$0.29$).
+\textbf{Mode} contributes the largest main effect ($S_M = 0.31$--$0.51$), followed by \textbf{Rebalancing} ($S_R = 0.24$--$0.29$).
 Both factors participate in a substantial $R \times M$ interaction (21.2\% of F2-score variance, 13.8\% of AUROC variance).
-The total-order indices show that Mode accounts for $S_{TM} = 0.48$--$0.66$ and Rebalancing for $S_{TR} = 0.40$--$0.46$ of total variance.
+The total-order indices show that Mode accounts for $S_{TM} = 0.48$--$0.66$ and Rebalancing for $S_{TR} = 0.39$--$0.46$ of total variance.
 
-In contrast, \textbf{Distance} ($S_{TD} < 0.015$) and \textbf{Membership} ($S_{TG} < 0.031$) are negligible even when interactions are included.
+In contrast, \textbf{Distance} ($S_{TD} < 0.015$) and \textbf{Membership} ($S_{TG} \leq 0.031$) are negligible even when interactions are included.
 Residual variance (seed-to-seed variation), denoted $S_{\varepsilon}$, accounts for 7.9\%--21.9\% of total variance.
 
 Defining the systematic (non-residual) variance fraction, where $S_{\varepsilon}$ is the residual (seed-level) variance share:
@@ -544,7 +544,7 @@ Bayes factors further confirm distance metric equivalence, providing ``very stro
 The Sobol decomposition identified a single dominant interaction ($R \times M$).
 Table~\ref{tab:permode} and Fig.~\ref{fig:ranking_reversal} characterize its structure.
 
-Within-domain and Mixed produce statistically equivalent results (Cliff's $\delta < 0.05$), while Cross-domain collapses to near-chance levels ($\delta > 0.83$ vs.\ Within).
+Within-domain and Mixed are statistically equivalent in the pooled comparison ($|\delta_{\mathrm{F2}}| = 0.04$, $|\delta_{\mathrm{AUROC}}| = 0.05$, $|\delta_{\mathrm{AUPRC}}| = 0.03$), while Cross-domain collapses to near-chance levels ($|\delta| > 0.83$ vs.\ Within for F2; $|\delta| > 0.94$ for AUROC and AUPRC).
 The best strategy also reverses across modes: RUS $r{=}0.1$ ranks first in Cross-domain, whereas SW-SMOTE $r{=}0.1$ ranks first in Within and Mixed (Fig.~\ref{fig:ranking_reversal}).
 SW-SMOTE $r{=}0.1$ with within-domain training achieves the highest threshold-independent performance (AUROC = 0.903, AUPRC = 0.648; within-domain F2 = 0.558); Mixed-mode SW-SMOTE $r{=}0.1$ attains a slightly higher F2 (0.587) at a more recall-heavy operating point but a lower AUROC (0.879).
 
@@ -615,7 +615,7 @@ To understand why training mode dominates, define the \emph{subject overlap rati
 By construction, $\omega_{\mathrm{Cross}} = 0$ (training excludes evaluation subjects), while $\omega_{\mathrm{Within}} = \omega_{\mathrm{Mixed}} = 1$ (evaluation subjects are included).
 This binary switch between $\omega = 0$ and $\omega = 1$ determines whether target-subject patterns are available during training, which in turn governs the performance bottleneck and the effectiveness of rebalancing (Section~\ref{sec:rq2}).
 
-In contrast, distance metric and domain membership are negligible ($S_{TD} < 0.015$, $S_{TG} < 0.031$; $BF_{01} = 71$--$767$).
+In contrast, distance metric and domain membership are negligible ($S_{TD} < 0.015$, $S_{TG} \leq 0.031$; $BF_{01} = 71$--$767$).
 Three fundamentally different metrics---MMD (distributional), DTW (temporal), and Wasserstein (geometric)---produce equivalent downstream performance despite generating different subject rankings (Table~\ref{tab:spearman}; DTW vs.\ MMD: $\rho = 0.12$, $p = 0.29$).
 
 \begin{table}[!t]
@@ -634,7 +634,7 @@ $W_1$ vs.\ DTW  & 0.444 & 0.725 & 14 (16.1\%) \\
 \end{tabular}
 \end{table}
 
-This metric invariance stems from three factors: the bicycle model (Eqs.~\ref{eq:bicycle}--\ref{eq:lane_offset}) compresses the effective feature dimensionality to $p_{\mathrm{eff}} = 49$ out of 145 (95\% PCA variance, with the first principal component alone explaining 20.4\%), low intraclass correlation ($\mathrm{ICC} = 0.111$) makes partition relabelling inconsequential despite up to 39\% of subjects switching domain (Table~\ref{tab:spearman}), and the dominant rebalancing factor absorbs residual grouping differences ($S_{TR}/S_{TD} = 27$--$31\times$; $BF_{01} > 70$).
+This metric invariance stems from three factors: the bicycle model (Eqs.~\ref{eq:bicycle}--\ref{eq:lane_offset}) compresses the effective feature dimensionality to $p_{\mathrm{eff}} = 49$ out of 145 (95\% PCA variance, with the first principal component alone explaining 20.4\%), low intraclass correlation ($\mathrm{ICC} = 0.111$) makes partition relabelling inconsequential despite up to 39\% of subjects switching domain (Table~\ref{tab:spearman}), and the dominant rebalancing factor absorbs residual grouping differences ($S_{TR}/S_{TD} = 26$--$31\times$; $BF_{01} > 70$).
 
 \subsection{Answer to RQ2: Interaction and Optimal Factor Combination}\label{sec:rq2}
 The $R \times M$ interaction ($S_{R \times M} = 0.212$ for F2, concentrated at 87--96\% of each dominant factor's interaction variance) confirms that the contributing factors do not act independently.
@@ -667,8 +667,8 @@ The optimal factor combination is therefore SW-SMOTE $r{=}0.1$ with $\omega_M = 
 The Sobol total-order indices establish a strict factor priority ordering for practitioners deploying vehicle-dynamics-based DDD systems:
 \begin{multline}
 \label{eq:priority}
-S_{TM}\,(0.48\text{--}0.66) \;>\; S_{TR}\,(0.40\text{--}0.46) \\
-\gg\; S_{TG}\,({<}0.031) \;\approx\; S_{TD}\,({<}0.015)
+S_{TM}\,(0.48\text{--}0.66) \;>\; S_{TR}\,(0.39\text{--}0.46) \\
+\gg\; S_{TG}\,({\leq}0.031) \;\approx\; S_{TD}\,({<}0.015)
 \end{multline}
 This ordering, combined with the subject overlap ratio $\omega_M$ (Eq.~\ref{eq:overlap}), yields the following decision rules:
 
@@ -764,7 +764,7 @@ KSS $\leq 5$ vs.\ KSS $\geq 8$ excludes intermediate drowsiness (KSS 6--7), whic
 \section{Conclusion}
 \label{sec:conclusion}
 This study quantifies the relative importance of four design factors in vehicle-dynamics-based DDD through a factorial experiment with Sobol--Hoeffding variance decomposition over 1,512 random forest runs from 87 drivers.
-Training mode ($S_{TM} = 0.48$--$0.66$) and rebalancing ($S_{TR} = 0.40$--$0.46$), including their interaction ($S_{R \times M} = 0.21$), account for $> 95$\% of systematic variance, whereas distance metric ($S_{TD} < 0.015$; $BF_{01} = 71$--$767$) and domain membership ($S_{TG} < 0.031$) are negligible.
+Training mode ($S_{TM} = 0.48$--$0.66$) and rebalancing ($S_{TR} = 0.39$--$0.46$), including their interaction ($S_{R \times M} = 0.21$), account for $> 95$\% of systematic variance, whereas distance metric ($S_{TD} < 0.015$; $BF_{01} = 71$--$767$) and domain membership ($S_{TG} \leq 0.031$) are negligible.
 The $R \times M$ interaction reverses the optimal strategy across modes ($\rho_{\text{cross,within}} = -0.74$ to $-0.89$): when evaluation subjects overlap with training data ($\omega_M = 1$), class imbalance is the bottleneck and oversampling is effective; when they do not ($\omega_M = 0$), distributional mismatch dominates and no tested rebalancing strategy helps.
 SW-SMOTE $r{=}0.1$ with within-domain training ($\omega_M = 1$) achieves the highest threshold-independent performance (AUROC = 0.903, AUPRC = 0.648; within-domain F2 = 0.558).
 Practitioners should prioritize training mode and class rebalancing (Eq.~\ref{eq:priority}); domain configuration requires no optimization.
