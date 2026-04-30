@@ -21,10 +21,11 @@ export OMP_NUM_THREADS=4
 export MKL_NUM_THREADS=4
 
 set -u
-echo "[LSTM-EVAL-RETRY-CPU] tag=$TAG kind=$KIND jid=$JID target=$TGT"
+MODEL="${MODEL:-Lstm}"
+echo "[EVAL-RETRY-CPU] model=$MODEL tag=$TAG kind=$KIND jid=$JID target=$TGT"
 
 python scripts/python/evaluation/evaluate.py \
-    --model Lstm --tag "$TAG" --mode domain_train \
+    --model "$MODEL" --tag "$TAG" --mode domain_train \
     --target_file "$TGT" --eval_type "$KIND" --jobid "$JID"
 
-echo "[DONE] tag=$TAG kind=$KIND"
+echo "[DONE] model=$MODEL tag=$TAG kind=$KIND"
