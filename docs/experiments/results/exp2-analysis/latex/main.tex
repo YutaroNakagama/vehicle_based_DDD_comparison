@@ -331,7 +331,14 @@ Lane offset evolves as:
 \label{eq:lane_offset}
 \ddot{e}_{\text{lane}}(t) = a_y(t) - a_{y,\text{road}}(t)
 \end{equation}
-Because $\dot{\delta} = d\delta/dt$ and $a_y \propto \delta$, four of the five signals ($\delta$, $\dot{\delta}$, $a_y$, $e_{\text{lane}}$) are deterministically coupled through a single degree of freedom $\delta(t)$, with only $a_x$ dynamically independent.
+Because $\dot{\delta} = d\delta/dt$ and $a_y \propto \delta$, four of the five signals ($\delta$, $\dot{\delta}$, $a_y$, $e_{\text{lane}}$) are deterministically coupled through a single degree of freedom $\delta(t)$, with only $a_x$ dynamically independent (Fig.~\ref{fig:veh_dyn_mod}).
+
+\begin{figure}[!t]
+\centering
+\resizebox{0.85\columnwidth}{!}{\input{fig/veh_dyn_mod_tikz}}
+\caption{Kinematic bicycle model coupling structure of the five vehicle-dynamics signals listed in Table~\ref{tab:signals}. Four of the five signals ($\delta$, $\dot{\delta}$, $a_y$, $e_{\text{lane}}$) are tied to the steering input $\delta(t)$ through Eqs.~\eqref{eq:bicycle}--\eqref{eq:lane_offset}; only longitudinal acceleration $a_x$ is dynamically independent. Yaw angle $\theta$ and yaw rate $\dot{\theta}$ are shown for context but are not directly observed in this dataset.}
+\label{fig:veh_dyn_mod}
+\end{figure}
 
 \begin{figure}[!t]
 \centering
