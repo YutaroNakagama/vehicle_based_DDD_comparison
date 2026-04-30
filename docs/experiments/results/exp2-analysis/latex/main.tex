@@ -39,7 +39,7 @@ In vehicle-dynamics-based DDD, however, it remains unclear whether these issues 
 To address this question, we construct a DDD framework using a public 87-driver simulator dataset and conduct a four-factor factorial experiment varying rebalancing strategy ($R$), training mode ($M$), distance metric ($D$), and domain membership ($G$)
 Sobol--Hoeffding variance decomposition shows that training mode and rebalancing account for more than 95\% of systematic variance, with a substantial $R \times M$ interaction that reverses the optimal rebalancing strategy across training modes.
 In contrast, distance metric and domain membership have no measurable effect on performance.
-A subject-wise variant of SMOTE (SW-SMOTE) at ratio $r = 0.1$ with within-domain training achieves the best performance (F2 = 0.558, AUROC = 0.903, AUPRC = 0.648).
+A subject-wise variant of SMOTE (SW-SMOTE) at ratio $r = 0.1$ with within-domain training maximizes threshold-independent discrimination (AUROC = 0.903, AUPRC = 0.648; within-domain F2 = 0.558).
 These results establish a clear design priority for vehicle-dynamics-based DDD: class rebalancing and training mode selection are the dominant performance levers, whereas domain grouping configuration can be safely omitted from the optimization process.
 \end{abstract}
 
@@ -74,7 +74,7 @@ The main contributions are:
 
 \item Through a four-factor factorial experiment with Sobol--Hoeffding variance decomposition, we quantify the relative importance of these design factors and reveal that training mode and class rebalancing dominate ($> 95$\% of systematic variance), with a substantial $R \times M$ interaction that reverses the optimal strategy across training modes.
 
-\item We propose subject-wise SMOTE (SW-SMOTE), which applies oversampling independently within each driver's data to preserve individual driving patterns, and show through exhaustive factor-combination search that SW-SMOTE with within-domain training achieves the best performance (F2 = 0.558, AUROC = 0.903, AUPRC = 0.648).
+\item We propose subject-wise SMOTE (SW-SMOTE), which applies oversampling independently within each driver's data to preserve individual driving patterns, and show through exhaustive factor-combination search that SW-SMOTE with within-domain training maximizes threshold-independent discrimination (AUROC = 0.903, AUPRC = 0.648; within-domain F2 = 0.558).
 \end{enumerate}
 
 The remainder of this paper is organized as follows.
@@ -546,7 +546,7 @@ Table~\ref{tab:permode} and Fig.~\ref{fig:ranking_reversal} characterize its str
 
 Within-domain and Mixed produce statistically equivalent results (Cliff's $\delta < 0.05$), while Cross-domain collapses to near-chance levels ($\delta > 0.83$ vs.\ Within).
 The best strategy also reverses across modes: RUS $r{=}0.1$ ranks first in Cross-domain, whereas SW-SMOTE $r{=}0.1$ ranks first in Within and Mixed (Fig.~\ref{fig:ranking_reversal}).
-SW-SMOTE $r{=}0.1$ with within-domain training achieves the highest overall performance (F2 = 0.558, AUROC = 0.903, AUPRC = 0.648).
+SW-SMOTE $r{=}0.1$ with within-domain training achieves the highest threshold-independent performance (AUROC = 0.903, AUPRC = 0.648; within-domain F2 = 0.558); Mixed-mode SW-SMOTE $r{=}0.1$ attains a slightly higher F2 (0.587) at a more recall-heavy operating point but a lower AUROC (0.879).
 
 \begin{table*}[!t]
 \caption{Mean Performance by Rebalancing Strategy, Disaggregated by Training Mode. Cross-domain results (all $\text{F2} < 0.17$) are shown for completeness; the $R \times M$ interaction analysis focuses on Within and Mixed modes where strategy differentiation is meaningful.\label{tab:permode}}
@@ -556,19 +556,19 @@ SW-SMOTE $r{=}0.1$ with within-domain training achieves the highest overall perf
  & & \multicolumn{2}{c|}{F2-score} & \multicolumn{2}{c|}{AUROC} & \multicolumn{2}{c|}{AUPRC} \\
 Strategy & F2 (Cross) & Within & Mixed & Within & Mixed & Within & Mixed \\
 \hline
-Baseline              & 0.160 & 0.215 & 0.268 & 0.633 & 0.660 & 0.116 & 0.139 \\
+Baseline              & 0.160 & 0.215 & 0.268 & 0.633 & 0.737 & 0.116 & 0.241 \\
 \hline
-RUS $r\!=\!0.1$       & 0.165 & 0.178 & 0.208 & 0.625 & 0.643 & 0.122 & 0.126 \\
+RUS $r\!=\!0.1$       & 0.165 & 0.178 & 0.208 & 0.625 & 0.632 & 0.122 & 0.147 \\
 \hline
-RUS $r\!=\!0.5$       & 0.156 & 0.159 & 0.170 & 0.603 & 0.614 & 0.097 & 0.101 \\
+RUS $r\!=\!0.5$       & 0.156 & 0.159 & 0.170 & 0.603 & 0.568 & 0.097 & 0.068 \\
 \hline
-SMOTE $r\!=\!0.1$     & 0.138 & 0.448 & 0.452 & 0.898 & 0.895 & 0.600 & 0.593 \\
+SMOTE $r\!=\!0.1$     & 0.138 & 0.448 & 0.452 & 0.898 & 0.875 & 0.600 & 0.573 \\
 \hline
-SMOTE $r\!=\!0.5$     & 0.114 & 0.499 & 0.514 & 0.882 & 0.879 & 0.562 & 0.558 \\
+SMOTE $r\!=\!0.5$     & 0.114 & 0.499 & 0.514 & 0.882 & 0.865 & 0.562 & 0.570 \\
 \hline
-SW-SMOTE $r\!=\!0.1$  & 0.101 & $\mathbf{0.558}$ & $\mathbf{0.587}$ & $\mathbf{0.903}$ & $\mathbf{0.901}$ & $\mathbf{0.648}$ & $\mathbf{0.641}$ \\
+SW-SMOTE $r\!=\!0.1$  & 0.101 & $0.558$ & $\mathbf{0.587}$ & $\mathbf{0.903}$ & $0.879$ & $\mathbf{0.648}$ & $0.646$ \\
 \hline
-SW-SMOTE $r\!=\!0.5$  & 0.042 & 0.468 & 0.402 & 0.862 & 0.855 & 0.386 & 0.371 \\
+SW-SMOTE $r\!=\!0.5$  & 0.042 & 0.468 & 0.402 & 0.862 & 0.852 & 0.386 & 0.387 \\
 \hline
 \end{tabular}
 \end{table*}
@@ -661,7 +661,7 @@ When $\omega_M = 1$, the performance bottleneck is class imbalance ($\rho \ll 1$
 When $\omega_M = 0$, the bottleneck shifts to distributional mismatch ($P_{\mathrm{pool}}(\mathbf{x}) \neq P_{\mathrm{test}}(\mathbf{x})$), and all strategies collapse to near-chance levels (F2 $= 0.04$--$0.17$).
 This sign reversal of $\Delta Y_R^{(M)}$ (Eq.~\ref{eq:bottleneck}) is the mechanistic origin of the $R \times M$ interaction.
 The $G \times M$ interaction is negligible ($S_{G \times M} = 0.006$--$0.009$), an order of magnitude below $S_{R \times M}$.
-The optimal factor combination is therefore SW-SMOTE $r{=}0.1$ with within-domain training ($\omega_M = 1$), achieving F2 = 0.558, AUROC = 0.903, AUPRC = 0.648.
+The optimal factor combination is therefore SW-SMOTE $r{=}0.1$ with $\omega_M = 1$; within-domain training maximizes threshold-independent discrimination (AUROC = 0.903, AUPRC = 0.648; within-domain F2 = 0.558), while Mixed mode trades 0.024 AUROC for a higher recall-leaning F2 (0.587).
 
 \subsection{Practical Implications}
 The Sobol total-order indices establish a strict factor priority ordering for practitioners deploying vehicle-dynamics-based DDD systems:
@@ -766,7 +766,7 @@ KSS $\leq 5$ vs.\ KSS $\geq 8$ excludes intermediate drowsiness (KSS 6--7), whic
 This study quantifies the relative importance of four design factors in vehicle-dynamics-based DDD through a factorial experiment with Sobol--Hoeffding variance decomposition over 1,512 random forest runs from 87 drivers.
 Training mode ($S_{TM} = 0.48$--$0.66$) and rebalancing ($S_{TR} = 0.40$--$0.46$), including their interaction ($S_{R \times M} = 0.21$), account for $> 95$\% of systematic variance, whereas distance metric ($S_{TD} < 0.015$; $BF_{01} = 71$--$767$) and domain membership ($S_{TG} < 0.031$) are negligible.
 The $R \times M$ interaction reverses the optimal strategy across modes ($\rho_{\text{cross,within}} = -0.74$ to $-0.89$): when evaluation subjects overlap with training data ($\omega_M = 1$), class imbalance is the bottleneck and oversampling is effective; when they do not ($\omega_M = 0$), distributional mismatch dominates and no tested rebalancing strategy helps.
-SW-SMOTE $r{=}0.1$ with within-domain training ($\omega_M = 1$) achieves the best overall performance (F2 = 0.558, AUROC = 0.903, AUPRC = 0.648).
+SW-SMOTE $r{=}0.1$ with within-domain training ($\omega_M = 1$) achieves the highest threshold-independent performance (AUROC = 0.903, AUPRC = 0.648; within-domain F2 = 0.558).
 Practitioners should prioritize training mode and class rebalancing (Eq.~\ref{eq:priority}); domain configuration requires no optimization.
 
 Future work includes validation with other classifiers (LSTM, SVM), on naturalistic driving data (SHRP~2), and incorporation of domain adaptation and few-shot methods as additional factor levels.
