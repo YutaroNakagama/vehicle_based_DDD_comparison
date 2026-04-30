@@ -32,22 +32,25 @@
 
 %% ROW 0 — Dataset
 \node[db] (dataset) at (0,0)
-  {\textbf{Driving Dataset}};
+  {\textbf{Driving Dataset}\\[-1pt]
+   \footnotesize $\mathcal{S} = \{\mathcal{D}_s\}$};
 
 %% ROW 1 — Window segmentation \& labeling
 \node[pbox] (label) at (0,-1.3)
-  {\textbf{Window Segmentation \& Labeling}};
+  {\textbf{Window Segmentation \& Labeling}\\[-1pt]
+   \footnotesize $\mathcal{D}_s = \{(\mathbf{x}_w, y_w)\}$};
 \draw[arr] (dataset.south) -- (label.north);
 
 %% ROW 2 — Feature extraction
 \node[pbox] (feat) at (0,-2.5)
-  {\textbf{Feature Extraction}};
+  {\textbf{Feature Extraction}\\[-1pt]
+   \footnotesize $\mathbf{x}_w \in \mathbb{R}^p$};
 \draw[arr] (label.south) -- (feat.north);
 
 %% ROW 3 — Train / Val / Test split (per-subject, chronological)
-\node[dbsm] (train) at (-3.0,-4.1) {Train};
-\node[dbsm] (val)   at ( 0.0,-4.1) {Val};
-\node[dbsm] (test)  at ( 3.0,-4.1) {Test};
+\node[dbsm] (train) at (-3.0,-4.1) {Train\\[-1pt]\scriptsize $\mathcal{D}_s^{\mathrm{tr}}$};
+\node[dbsm] (val)   at ( 0.0,-4.1) {Val\\[-1pt]\scriptsize $\mathcal{D}_s^{\mathrm{val}}$};
+\node[dbsm] (test)  at ( 3.0,-4.1) {Test\\[-1pt]\scriptsize $\mathcal{D}_s^{\mathrm{te}}$};
 
 %% Fork: trunk down from Feature Extraction, then horizontal split
 \coordinate (forkF) at (0,-3.35);
@@ -57,21 +60,24 @@
 \draw[arr] ( 0.0,-3.35) -- (val.north);
 \draw[arr] ( 3.0,-3.35) -- (test.north);
 
-%% ROW 4 — Classifier Training & Calibration (train data fits the model;
-%% HPO and probability calibration are absorbed into this single block).
+%% ROW 4 — Classifier Training (HPO + Platt calibration absorbed into this
+%% block per caption; train data fits the model).
 \node[pbox] (cls) at (0,-5.7)
-  {\textbf{Classifier Training \& Calibration}};
+  {\textbf{Classifier Training}\\[-1pt]
+   \footnotesize $f(\mathbf{x};\,\hat{\boldsymbol{\theta}}) \to \hat{p}_w^{\mathrm{cal}}$};
 \draw[arr]
   (train.south) -- ++(0,-0.5) -| (cls.north);
 
 %% ROW 5 — Threshold Optimization (val data tunes the decision threshold)
 \node[pbox] (thr) at (0,-7.0)
-  {\textbf{Threshold Optimization}};
+  {\textbf{Threshold Optimization}\\[-1pt]
+   \footnotesize $\hat{\tau}$};
 \draw[arr] (cls.south) -- (thr.north);
 
 %% ROW 6 — Evaluation (test data feeds the final evaluation)
 \node[pbox] (eval) at (0,-8.2)
-  {\textbf{Evaluation}};
+  {\textbf{Evaluation}\\[-1pt]
+   \footnotesize $Y \in \{\mathrm{F2},\,\mathrm{AUROC},\,\mathrm{AUPRC}\}$};
 \draw[arr] (thr.south) -- (eval.north);
 
 %% ============================================================

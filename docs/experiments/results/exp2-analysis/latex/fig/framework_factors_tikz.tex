@@ -50,7 +50,7 @@
 %% ROW 0 — Dataset
 \node[db] (dataset) at (0,0)
   {\textbf{Dataset}\\[-1pt]
-   \footnotesize 87 subjects};
+   \footnotesize $\mathcal{S}$ (87 subj.)};
 
 %% ROW 1 — Subject Partition (parameterised by D)
 %% Narrowed gap to Dataset: 1.5 cm centre-to-centre (was 1.8 cm).
@@ -62,9 +62,9 @@
 %% Subject Partition -> In/Out kept at 1.8 cm so the fork has a clean
 %% vertical midpoint (computed from anchors via calc).
 \node[db, text width=2.4cm] (src) at (-2.5,-3.3)
-  {\textbf{In-Domain}\\[-1pt] \footnotesize 44 subj.};
+  {\textbf{In-Domain}\\[-1pt] \footnotesize $\mathcal{G}_{\mathrm{src}}$ (44 subj.)};
 \node[db, text width=2.4cm] (tgt) at ( 2.5,-3.3)
-  {\textbf{Out-Domain}\\[-1pt] \footnotesize 43 subj.};
+  {\textbf{Out-Domain}\\[-1pt] \footnotesize $\mathcal{G}_{\mathrm{tgt}}$ (43 subj.)};
 
 \coordinate (forkMid) at ($(dsplit.south)!.5!(src.north)$);
 \coordinate (forkC) at (0,0 |- forkMid);
@@ -113,7 +113,8 @@
 %%                           pipeline.py:140-146; train pool only,
 %%                           never applied to val or test.
 \node[pbox] (cls) at (0,-6.3)
-  {\textbf{Classifier Training}\\\textbf{($M$, $R$)}};
+  {\textbf{Classifier Training}\\\textbf{($M$, $R$)}\\[-1pt]
+   \footnotesize $\mathcal{D}_{\mathrm{pool}} \to \tilde{\mathcal{D}} \to f$};
 %% Train arrows: straight vertical (no horizontal jog)
 \draw[arr] (train_s.south) -- (train_s.south |- cls.north);
 \draw[arr] (train_t.south) -- (train_t.south |- cls.north);
@@ -128,12 +129,14 @@
 %% pipeline.py:242-246 uses the original (unrebalanced) y_val labels;
 %% R is applied solely to the training pool above.
 \node[pbox] (thr) at (0,-7.8)
-  {\textbf{Threshold Optimization}\\\textbf{($M$)}};
+  {\textbf{Threshold Optimization}\\\textbf{($M$)}\\[-1pt]
+   \footnotesize $\hat{\tau}$};
 \draw[arr] (cls.south) -- (thr.north);
 
 %% ROW 6 — Evaluation.
 \node[pbox] (eval) at (0,-9.3)
-  {\textbf{Evaluation}\\\textbf{($G$)}};
+  {\textbf{Evaluation}\\\textbf{($G$)}\\[-1pt]
+   \footnotesize $Y_{R,M,D,G}$};
 \draw[arr] (thr.south) -- (eval.north);
 
 %% Val / Test trunks (val -> Threshold, test -> Evaluation; never
