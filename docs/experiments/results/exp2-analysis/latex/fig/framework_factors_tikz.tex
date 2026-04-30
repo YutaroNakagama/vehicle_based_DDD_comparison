@@ -1,184 +1,151 @@
 \documentclass[tikz,border=3mm]{standalone}
 \usepackage[T1]{fontenc}
-\usepackage{helvet}
+\usepackage{helvet}                       % IEEE-recommended Helvetica
 \renewcommand{\familydefault}{\sfdefault}
 \usepackage{amsmath,amssymb}
-\usepackage{xcolor}
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric, positioning, decorations.pathreplacing,
                 arrows.meta, calc}
 
-% Highlight color for the four study-specific factors
-\definecolor{factorfill}{RGB}{255,236,179}   % light amber
-\definecolor{factordraw}{RGB}{191,127,0}     % dark amber
-
 \begin{document}
+%% ==========================================================================
+%% Layout strategy
+%%   * Uniform 1.8 cm row-to-row spacing (centre-to-centre).
+%%   * Fork points (Subject Partition -> In/Out and In/Out -> per-subject
+%%     Train-Val-Test) are placed at the vertical midpoint between the
+%%     parent box south-edge and the child box north-edge.
+%%   * Activity boxes auto-size to their content (no fixed minimum
+%%     width); each rectangle hugs its label.
+%%   * Configurable parameter symbols are written inline inside the
+%%     activity boxes ($D$, $M$, $R$, $G$).  Per-factor level sets are
+%%     deferred to Table~\ref{tab:factorial} / Section IV.
+%%   * Note on rebalancing scope: $R$ is applied to the training pool
+%%     only (apply_oversampling on X_train, y_train); val/test are
+%%     never resampled.
+%% ==========================================================================
 \begin{tikzpicture}[
-  every node/.style={font=\sffamily\large},
+  every node/.style={font=\sffamily\small},
   >=Latex,
+  %% Pipeline node styles
   db/.style={draw, thick, cylinder, cylinder uses custom fill,
-    cylinder body fill=white, shape border rotate=90, aspect=0.08,
-    minimum width=3.4cm, minimum height=1.0cm, align=center,
-    font=\sffamily\large},
+    cylinder body fill=white, shape border rotate=90, aspect=0.10,
+    minimum width=2.6cm, minimum height=0.85cm, align=center,
+    font=\sffamily\small},
   dbsm/.style={draw, semithick, cylinder, cylinder uses custom fill,
-    cylinder body fill=white, shape border rotate=90, aspect=0.08,
-    minimum width=1.7cm, minimum height=0.75cm, text width=1.5cm,
-    align=center, font=\sffamily\large},
-  % Factor box (highlighted)
-  fbox/.style={draw=factordraw, very thick, rounded corners=2pt,
-    text width=9.0cm, minimum width=9.4cm,
-    minimum height=0.9cm, align=center, fill=factorfill,
-    font=\sffamily\large},
-  % Generic processing-step box (de-emphasized)
-  pbox/.style={draw, semithick,
-    text width=9.0cm, minimum width=9.4cm,
-    minimum height=0.7cm, align=center, fill=white,
-    font=\sffamily\large},
+    cylinder body fill=white, shape border rotate=90, aspect=0.10,
+    minimum width=1.3cm, minimum height=0.65cm, text width=1.1cm,
+    align=center, font=\sffamily\footnotesize},
+  pbox/.style={draw, thick,
+    align=center, fill=white,
+    minimum height=1.0cm,
+    inner xsep=8pt, inner ysep=4pt,
+    font=\sffamily\small},
   arr/.style ={-{Latex[length=2mm, width=1.5mm]}, thick},
-  auxarr/.style={-{Latex[length=2mm, width=1.5mm]}, semithick, dashed},
-  annot/.style={font=\sffamily\large},
 ]
 
+%% =========================================================
+%% UPPER HALF — data partitioning
+%% Row centres at y = 0, -1.8, -3.6, -5.4 (uniform 1.8 cm spacing)
+%% =========================================================
 %% ROW 0 — Dataset
 \node[db] (dataset) at (0,0)
-  {\textbf{Dataset}\\[1pt]
-   87 subjects, 5 signals};
+  {\textbf{Dataset}\\[-1pt]
+   \footnotesize 87 subjects};
 
-%% ROW 1 — Domain Split (factor D, highlighted)
-\node[fbox] (dsplit) at (0,-1.6)
-  {\textbf{Domain Split}\quad[\textbf{Factor $D$}]\\[1pt]
-   MMD\,$|$\,DTW\,$|$\,Wasserstein};
+%% ROW 1 — Subject Partition (parameterised by D)
+%% Narrowed gap to Dataset: 1.5 cm centre-to-centre (was 1.8 cm).
+\node[pbox] (dsplit) at (0,-1.5)
+  {\textbf{Subject Partition}\\\textbf{($D$)}};
 \draw[arr] (dataset.south) -- (dsplit.north);
 
-%% ROW 2 — In-Domain / Out-Domain
-\node[db, text width=3.2cm] (src) at (-5.0,-3.4)
-  {\textbf{In-Domain}\\[1pt] 44 subj.};
-\node[db, text width=3.2cm] (tgt) at ( 5.0,-3.4)
-  {\textbf{Out-Domain}\\[1pt] 43 subj.};
+%% ROW 2 — In-Domain / Out-Domain cylinders.
+%% Subject Partition -> In/Out kept at 1.8 cm so the fork has a clean
+%% vertical midpoint (computed from anchors via calc).
+\node[db, text width=2.4cm] (src) at (-2.5,-3.3)
+  {\textbf{In-Domain}\\[-1pt] \footnotesize 44 subj.};
+\node[db, text width=2.4cm] (tgt) at ( 2.5,-3.3)
+  {\textbf{Out-Domain}\\[-1pt] \footnotesize 43 subj.};
 
-\coordinate (forkTop) at (0,-2.45);
-\draw[thick] (dsplit.south) -- (forkTop);
-\draw[thick] (-5.0,-2.45) -- (5.0,-2.45);
-\draw[arr]   (-5.0,-2.45) -- (src.north);
-\draw[arr]   ( 5.0,-2.45) -- (tgt.north);
+\coordinate (forkMid) at ($(dsplit.south)!.5!(src.north)$);
+\coordinate (forkC) at (0,0 |- forkMid);
+\coordinate (forkL) at (-2.5,0 |- forkMid);
+\coordinate (forkR) at ( 2.5,0 |- forkMid);
+\draw[thick] (dsplit.south) -- (forkC);
+\draw[thick] (forkL) -- (forkR);
+\draw[arr] (forkL) -- (src.north);
+\draw[arr] (forkR) -- (tgt.north);
 
-%% ROW 3 — Per-subject temporal split (70/15/15)
-\node[dbsm] (test_s)  at (-7.0,-5.1)
-  {Test\\[-1pt] 15\%};
-\node[dbsm] (val_s)   at (-5.0,-5.1)
-  {Val\\[-1pt] 15\%};
-\node[dbsm] (train_s) at (-3.0,-5.1)
-  {Train\\[-1pt] 70\%};
+%% ROW 3 — Per-subject 70/15/15 split.
+%% Narrowed gap from In/Out: 1.5 cm centre-to-centre (was 1.8 cm).
+%% Fork-line at the calc midpoint between src.south and test_s.north.
+\node[dbsm] (test_s)  at (-3.9,-4.8) {Test};
+\node[dbsm] (val_s)   at (-2.5,-4.8) {Val};
+\node[dbsm] (train_s) at (-1.1,-4.8) {Train};
 
-\coordinate (forkS) at (-5.0,-4.3);
-\draw[semithick] (src.south) -- (forkS);
-\draw[semithick] (-7.0,-4.3) -- (-3.0,-4.3);
-\draw[arr] (-7.0,-4.3) -- (test_s.north);
-\draw[arr] (-5.0,-4.3) -- (val_s.north);
-\draw[arr] (-3.0,-4.3) -- (train_s.north);
+\coordinate (forkS) at ($(src.south)!.5!(test_s.north)$);
+\draw[semithick] (src.south) -- (-2.5,0 |- forkS);
+\draw[semithick] (-3.9,0 |- forkS) -- (-1.1,0 |- forkS);
+\draw[arr] (-3.9,0 |- forkS) -- (test_s.north);
+\draw[arr] (-2.5,0 |- forkS) -- (val_s.north);
+\draw[arr] (-1.1,0 |- forkS) -- (train_s.north);
 
-\node[dbsm] (train_t) at (3.0,-5.1)
-  {Train\\[-1pt] 70\%};
-\node[dbsm] (val_t)   at (5.0,-5.1)
-  {Val\\[-1pt] 15\%};
-\node[dbsm] (test_t)  at (7.0,-5.1)
-  {Test\\[-1pt] 15\%};
+\node[dbsm] (train_t) at (1.1,-4.8) {Train};
+\node[dbsm] (val_t)   at (2.5,-4.8) {Val};
+\node[dbsm] (test_t)  at (3.9,-4.8) {Test};
 
-\coordinate (forkT) at (5.0,-4.3);
-\draw[semithick] (tgt.south) -- (forkT);
-\draw[semithick] (3.0,-4.3) -- (7.0,-4.3);
-\draw[arr] (3.0,-4.3) -- (train_t.north);
-\draw[arr] (5.0,-4.3) -- (val_t.north);
-\draw[arr] (7.0,-4.3) -- (test_t.north);
+\coordinate (forkT) at ($(tgt.south)!.5!(test_t.north)$);
+\draw[semithick] (tgt.south) -- (2.5,0 |- forkT);
+\draw[semithick] (1.1,0 |- forkT) -- (3.9,0 |- forkT);
+\draw[arr] (1.1,0 |- forkT) -- (train_t.north);
+\draw[arr] (2.5,0 |- forkT) -- (val_t.north);
+\draw[arr] (3.9,0 |- forkT) -- (test_t.north);
 
-%% ROW 4 — Training Mode (factor M, highlighted)
-%% Pools the Train splits from in/out groups into the training pool
-\node[fbox] (mode) at (0,-6.7)
-  {\textbf{Training Mode}\quad[\textbf{Factor $M$}]\\[1pt]
-   Cross\,$|$\,Within\,$|$\,Mixed (pools Train splits only)};
+%% =========================================================
+%% LOWER HALF — three ML-pipeline blocks (from framework_general)
+%% Row spacing: 1.5 cm centre-to-centre throughout (T/V/T -> Classifier,
+%% Classifier -> Threshold, Threshold -> Evaluation).
+%% =========================================================
+%% ROW 4 — Classifier Training.
+%% Parameters applied here:
+%%   * M (Training Mode)   — selects which subjects' Train splits form
+%%                           the training pool (pipeline.py / train_stages.py)
+%%   * R (Rebalancing)     — apply_oversampling(X_train, y_train) at
+%%                           pipeline.py:140-146; train pool only,
+%%                           never applied to val or test.
+\node[pbox] (cls) at (0,-6.3)
+  {\textbf{Classifier Training}\\\textbf{($M$, $R$)}};
+%% Train arrows: straight vertical (no horizontal jog)
+\draw[arr] (train_s.south) -- (train_s.south |- cls.north);
+\draw[arr] (train_t.south) -- (train_t.south |- cls.north);
 
-\draw[arr] (train_s.south) -- ++(0,-0.3) -| ([xshift=-1.3cm]mode.north);
-\draw[arr] (train_t.south) -- ++(0,-0.3) -| ([xshift= 1.3cm]mode.north);
+%% ROW 5 — Threshold Optimization.
+%% Parameter applied here:
+%%   * M (Training Mode) — the validation pool is drawn from a
+%%                         M-dependent group: source for source_only,
+%%                         target for target_only/mixed
+%%                         (per train_stages.py:312-323).
+%% R is *not* listed here: optimize_threshold(y_val, proba_val) at
+%% pipeline.py:242-246 uses the original (unrebalanced) y_val labels;
+%% R is applied solely to the training pool above.
+\node[pbox] (thr) at (0,-7.8)
+  {\textbf{Threshold Optimization}\\\textbf{($M$)}};
+\draw[arr] (cls.south) -- (thr.north);
 
-%% ROW 5 — Feature Selection \& Scaling (fit on train pool only,
-%% then applied to val/test as transform)
-\node[pbox] (fs) at (0,-8.1)
-  {\textbf{Feature Selection \& Scaling}\\[1pt]
-   \textit{fit on training pool; transform applied to val/test}};
-\draw[arr] (mode.south) -- (fs.north);
-
-%% ROW 6 — Rebalancing (factor R, highlighted; TRAIN POOL ONLY)
-\node[fbox] (reb) at (0,-9.5)
-  {\textbf{Rebalancing}\quad[\textbf{Factor $R$}]\quad
-   \textit{(training pool only)}\\[1pt]
-   BL\,$|$\,RUS\,$|$\,SMOTE\,$|$\,SW-SMOTE\quad
-   ($r\!\in\!\{0.1,0.5\}$)};
-\draw[arr] (fs.south) -- (reb.north);
-
-%% ROW 7 — RF Training with Optuna HPO (train pool only, 3-fold CV)
-\node[pbox] (cls) at (0,-10.9)
-  {\textbf{RF Training \& Optuna HPO}\\[1pt]
-   \textit{train only; 3-fold CV, F2 objective}};
-\draw[arr] (reb.south) -- (cls.north);
-
-%% ROW 8 — Probability Calibration (train+val; 5-fold CV)
-\node[pbox] (cal) at (0,-12.3)
-  {\textbf{Probability Calibration}\\[1pt]
-   \textit{Platt scaling; refit on train+val, 5-fold CV}};
-\draw[arr] (cls.south) -- (cal.north);
-
-%% ROW 9 — Threshold Optimization (uses val probabilities)
-\node[pbox] (thr) at (0,-13.7)
-  {\textbf{Threshold Optimization}\\[1pt]
-   \textit{F2-optimal threshold on validation}};
-\draw[arr] (cal.south) -- (thr.north);
-
-%% ROW 10 — Test-set evaluation (factor G, highlighted)
-\node[fbox] (eval) at (0,-15.1)
-  {\textbf{Test-Set Evaluation}\quad[\textbf{Factor $G$}]\\[1pt]
-   In-domain\,$|$\,Out-domain};
+%% ROW 6 — Evaluation.
+\node[pbox] (eval) at (0,-9.3)
+  {\textbf{Evaluation}\\\textbf{($G$)}};
 \draw[arr] (thr.south) -- (eval.north);
 
-%% ============================================================
-%% Auxiliary flows  (dashed = transformed inputs only;
-%%                   never enter the Rebalancing or HPO steps).
-%%   - Val: enters Probability Calibration (train+val combined) and
-%%          Threshold Optimization (F2-optimal on val).
-%%   - Test: enters only the Test-Set Evaluation step.
-%%   - Trunk lines routed at x = +/- 5.6 (val) and +/- 7.0 (test) to
-%%     keep ~0.9 cm clearance from the 9.4 cm-wide process boxes.
-%% ============================================================
-\draw[semithick, dashed, rounded corners=3pt]
-  (val_s.south) -- (-5.0,-5.95) -- (-5.6,-5.95) -- (-5.6,-13.7);
-\draw[semithick, dashed, rounded corners=3pt]
-  (val_t.south) -- ( 5.0,-5.95) -- ( 5.6,-5.95) -- ( 5.6,-13.7);
-\draw[auxarr] (-5.6,-12.3) -- (cal.west);
-\draw[auxarr] ( 5.6,-12.3) -- (cal.east);
-\draw[auxarr] (-5.6,-13.7) -- (thr.west);
-\draw[auxarr] ( 5.6,-13.7) -- (thr.east);
-
-%% Test: single straight path to Test-Set Evaluation
-\draw[auxarr, rounded corners=3pt]
-  (test_s.south) -- (-7.0,-5.95) -- (-7.0,-15.1) -- (eval.west);
-\draw[auxarr, rounded corners=3pt]
-  (test_t.south) -- ( 7.0,-5.95) -- ( 7.0,-15.1) -- (eval.east);
-
-%% Legend
-%% Solid arrows: forward pipeline flow (default direction of the
-%% process; the training-pool segment is rebalanced by R, while the
-%% remaining solid arrows cover pre-split data partitioning and the
-%% trained-model path through calibration, threshold tuning, and
-%% evaluation). Dashed arrows: val/test data routes that branch off
-%% the per-subject 70/15/15 split and never enter the rebalancing
-%% step.
-\node[font=\sffamily\normalsize, align=left, anchor=north west]
-  at (-7.6,-16.0)
-  {\begin{tabular}{@{}ll@{}}
-   \tikz[baseline=-0.5ex]{\draw[arr] (0,0) -- (0.6,0);} &
-     solid: pipeline flow (training pool is rebalanced by $R$)\\[1pt]
-   \tikz[baseline=-0.5ex]{\draw[auxarr] (0,0) -- (0.6,0);} &
-     dashed: validation / test data flow (never rebalanced)\\
-   \end{tabular}};
+%% Val / Test trunks (val -> Threshold, test -> Evaluation; never
+%% rebalanced -- their values pass through to the auxiliary endpoints)
+\draw[arr, rounded corners=3pt]
+  (val_s.south) -- (-2.5,-7.8) -- (thr.west);
+\draw[arr, rounded corners=3pt]
+  (val_t.south) -- ( 2.5,-7.8) -- (thr.east);
+\draw[arr, rounded corners=3pt]
+  (test_s.south) -- (-3.9,-9.3) -- (eval.west);
+\draw[arr, rounded corners=3pt]
+  (test_t.south) -- ( 3.9,-9.3) -- (eval.east);
 
 \end{tikzpicture}
 \end{document}

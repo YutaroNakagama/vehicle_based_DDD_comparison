@@ -120,7 +120,7 @@ Fig.~\ref{fig:framework_general} sketches the generic processing pipeline that i
 \begin{figure}[!t]
 \centering
 \resizebox{\columnwidth}{!}{\input{fig/framework_general_tikz}}
-\caption{Generic vehicle-dynamics-based DDD pipeline. Per-subject vehicle signals are segmented into labeled windows, features are extracted, and a chronological train/validation/test split is applied. Solid arrows denote the forward pipeline flow; dashed arrows denote the auxiliary validation flow (used for decision-threshold tuning) and the test flow (reserved for final evaluation). This pipeline is shared, with minor variations, across most prior DDD studies; the four experimental factors specific to this work are introduced in Section~\ref{sec:framework} (Fig.~\ref{fig:framework_factors}).}
+\caption{Generic vehicle-dynamics-based DDD pipeline. Per-subject vehicle signals are segmented into labeled windows, features are extracted, and a chronological train/validation/test split is applied. The training set fits the classifier (which absorbs hyperparameter tuning and probability calibration as standard sub-steps); the validation set tunes the decision threshold; the test set is reserved for the final evaluation. This pipeline is shared, with minor variations, across most prior DDD studies; the four experimental factors specific to this work are introduced in Section~\ref{sec:framework} (Fig.~\ref{fig:framework_factors}).}
 \label{fig:framework_general}
 \end{figure}
 
@@ -181,7 +181,7 @@ Section~\ref{sec:design_overview} provides an overview of the factorial design; 
 
 \subsection{Overview of the Factorial Experiment}\label{sec:design_overview}
 The experiment follows a four-factor full-factorial design.
-Fig.~\ref{fig:framework_factors} extends the generic DDD pipeline of Fig.~\ref{fig:framework_general} by highlighting the four study-specific decision points---$D$, $G$, $M$, and $R$---superimposed on the same processing chain, and operationalizes the formulation of Section~\ref{sec:formulation} as follows.
+Fig.~\ref{fig:framework_factors} shows the dependency chain of the four study-specific factors---$D$, $G$, $M$, and $R$---each acting on the data partition produced by its predecessor; the resulting $(R, M, D, G)$ cell is then evaluated using the generic DDD pipeline of Fig.~\ref{fig:framework_general}. This chain operationalizes the formulation of Section~\ref{sec:formulation} as follows.
 
 Starting from the subject set $\mathcal{S}$ with per-subject datasets $\mathcal{D}_s = \{(\mathbf{x}_w, y_w)\}$ (Section~\ref{sec:ddd_overview}), a \emph{distance metric}~$D$ first computes pairwise inter-subject distances and partitions $\mathcal{S}$ into an in-domain group $\mathcal{G}_{\mathrm{src}}$ (44~subjects) and an out-domain group $\mathcal{G}_{\mathrm{tgt}}$ (43~subjects), instantiating the domain split of Section~\ref{sec:domain_shift}.
 \emph{Domain membership}~$G$ then selects which of these two groups serves as the evaluation target $\mathcal{G}_{\mathrm{eval}}$.
@@ -336,7 +336,7 @@ Because $\dot{\delta} = d\delta/dt$ and $a_y \propto \delta$, four of the five s
 \begin{figure}[!t]
 \centering
 \resizebox{\columnwidth}{!}{\input{fig/framework_factors_tikz}}
-\caption{Factorial experimental framework. The four study-specific factors---distance metric ($D$), domain membership ($G$), training mode ($M$), and rebalancing strategy ($R$)---are highlighted (amber boxes) on the same generic DDD pipeline of Fig.~\ref{fig:framework_general}. Solid arrows denote the forward pipeline flow; the training-pool segment is rebalanced by $R$, while the remaining solid arrows cover pre-split data partitioning and the trained-model path through calibration, threshold tuning, and evaluation. Dashed arrows denote the validation and test data flows, which branch off the per-subject 70/15/15 split and never enter the rebalancing step. Each factorial cell is uniquely determined by a quadruple $(R, M, D, G)$.}
+\caption{Factorial experimental framework. Activity blocks are plain white: the upper half (Subject Partition $\to$ In/Out groups $\to$ per-subject 70/15/15 split) reuses the data-partition stage of the original combined-framework figure; the lower half mirrors the three terminal blocks of Fig.~\ref{fig:framework_general} (Classifier Training $\to$ Threshold Optimization $\to$ Evaluation), absorbing training-pool assembly, feature selection, rebalancing, hyperparameter tuning, and probability calibration into the Classifier Training block. The four study-specific factors are noted inline in the activity they configure: Subject Partition by $D$ (Distance Metric); Classifier Training by $M$ (Training Mode --- selects the subject group whose Train splits form the training pool) and $R$ (Rebalancing --- applied to the training pool only, val/test pass through unchanged); Threshold Optimization by $M$ as well, because the validation pool is drawn from the same $M$-dependent group (source for cross-domain, target for within-domain and mixed); Evaluation by $G$ (Domain Membership). Per-factor level sets are listed in Table~\ref{tab:factorial} (Section~\ref{sec:factor_defs}); every $(D,M,R,G)$ combination defines one factorial cell.}
 \label{fig:framework_factors}
 \end{figure}
 
@@ -741,7 +741,7 @@ The distance metric irrelevance contrasts with the implicit assumption in domain
 \begin{enumerate}
 \item \textbf{Single classifier family.}
 The factorial experiment uses RF~\cite{breiman2001}.
-The Sobol--Hoeffding framework is classifier-agnostic and can be extended to other learners (e.g., LSTM, attention) without methodological modification.
+The Sobol--Hoeffding framework is classifier-agnostic and can be extended to other learners (e.g., LSTM, SVM) without methodological modification.
 
 \item \textbf{Deterministic data split.}
 The train/test partition is deterministic; random seeds vary only model initialisation and resampling.
@@ -769,7 +769,7 @@ The $R \times M$ interaction reverses the optimal strategy across modes ($\rho_{
 SW-SMOTE $r{=}0.1$ with within-domain training ($\omega_M = 1$) achieves the best overall performance (F2 = 0.558, AUROC = 0.903, AUPRC = 0.648).
 Practitioners should prioritize training mode and class rebalancing (Eq.~\ref{eq:priority}); domain configuration requires no optimization.
 
-Future work includes validation with other classifiers (LSTM, attention), on naturalistic driving data (SHRP~2), and incorporation of domain adaptation and few-shot methods as additional factor levels.
+Future work includes validation with other classifiers (LSTM, SVM), on naturalistic driving data (SHRP~2), and incorporation of domain adaptation and few-shot methods as additional factor levels.
 
 \section*{Data and Code Availability}
 The driving simulator dataset is publicly available at Harvard Dataverse (DOI: 10.7910/DVN/HMZ5RG)~\cite{aygun2024}.
