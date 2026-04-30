@@ -122,7 +122,9 @@ def SvmA_eval(
     y_test: pd.Series,
     model_name: str,
     clf,
-    selected_features: list
+    selected_features: list,
+    X_val: pd.DataFrame = None,
+    y_val: pd.Series = None,
 ) -> dict:
     """
     Main evaluation entry point for SVM-ANFIS model.
@@ -177,15 +179,36 @@ def SvmA_eval(
         except AttributeError:
             logging.warning("decision_function also unavailable; using default predict()")
 
-    # --- Optimal threshold via F2-score (emphasize recall for drowsiness) ---
+    # --- Optimal threshold via F1-score on validation set ---
+    # IMPORTANT: tune on validation set to avoid test-set leakage. The legacy
+    # path used (y_test, y_score, beta=2.0) which (a) leaked test labels into
+    # threshold selection and (b) used F2 (recall-weighted), pushing the
+    # optimum toward predict-all-positive on weak classifiers. Using F1 on
+    # validation is the standard for imbalanced binary classification and
+    # matches what prior research (Wang 2022, Arefnezhad 2019) reports.
+    threshold_source = "test"   # for logging only
+    opt_threshold = None
     if y_score is not None:
-        opt_threshold, opt_f2 = find_optimal_threshold(y_test, y_score, beta=2.0)
+        if X_val is not None and y_val is not None and len(y_val) > 0:
+            try:
+                if hasattr(clf, "predict_proba"):
+                    y_val_score = clf.predict_proba(X_val)[:, 1]
+                elif hasattr(clf, "decision_function"):
+                    y_val_score = clf.decision_function(X_val)
+                else:
+                    y_val_score = None
+                if y_val_score is not None and len(np.unique(y_val)) >= 2:
+                    opt_threshold, opt_f1 = find_optimal_threshold(y_val, y_val_score, beta=1.0)
+                    threshold_source = "val"
+            except Exception as e:
+                logging.warning(f"[SvmA] Val-set threshold failed ({e}); falling back to test-set")
+        if opt_threshold is None:
+            opt_threshold, _ = find_optimal_threshold(y_test, y_score, beta=1.0)
         logging.info(
-            f"[SvmA] Optimal threshold: {opt_threshold:.4f} (F2={opt_f2:.4f})"
+            f"[SvmA] Optimal threshold: {opt_threshold:.4f} [source={threshold_source}, beta=1.0]"
         )
         y_pred = (y_score >= opt_threshold).astype(int)
     else:
-        opt_threshold = None
         y_pred = clf.predict(X_test)
 
     accuracy = accuracy_score(y_test, y_pred)
@@ -236,6 +259,8 @@ def SvmA_eval(
         "auc_pr": auc_pr,
         "classification_report": report_dict,
         "custom_threshold": float(opt_threshold) if opt_threshold is not None else None,
+        "threshold_source": threshold_source,  # "val" (no leakage) | "test" (legacy fallback)
+        "threshold_beta": 1.0,                 # F1 — switched from F2 (2026-04-30)
     }
     # Merge positive-class metrics (precision_pos, recall_pos, f1_pos, ...)
     result.update(class_metrics)

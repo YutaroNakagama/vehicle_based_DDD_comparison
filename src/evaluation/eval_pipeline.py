@@ -191,7 +191,11 @@ def eval_pipeline(
             y_val=y_val if 'y_val' in locals() else None,
         )
     elif model == "SvmA":
-        result = SvmA_eval(X_test_prepared, y_test, model_name, clf, features)
+        result = SvmA_eval(
+            X_test_prepared, y_test, model_name, clf, features,
+            X_val=X_val_prepared if 'X_val_prepared' in locals() else None,
+            y_val=y_val if 'y_val' in locals() else None,
+        )
     else:
         result = common_eval(X_test_prepared, y_test, model_name, clf)
 

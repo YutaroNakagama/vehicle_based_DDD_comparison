@@ -18,11 +18,20 @@ def optimize_threshold_f2(
     y_true: np.ndarray,
     y_proba: np.ndarray,
     num_thresholds: int = 1001,
+    beta: float = 1.0,
 ) -> Tuple[float, float]:
-    """Find optimal threshold by maximizing F2 score on validation set.
+    """Find optimal threshold by maximizing F-beta score on validation set.
 
-    F2 score gives more weight to recall than precision, which is appropriate
-    for drowsiness detection where false negatives are more costly.
+    Default ``beta=1.0`` (F1) is used as the canonical choice for imbalanced
+    binary classification. The function name retains the historical
+    ``_f2`` suffix for backward compatibility with import sites; the
+    `beta` argument can be set to 2.0 to recover the legacy F2 behaviour.
+
+    Note: prior to 2026-04-30 this function defaulted to F2 (β=2) and
+    that pushed the optimal threshold toward predict-all-positive on
+    weak classifiers because F2 over-weights recall. F1 is balanced and
+    matches what the prior research papers (Wang 2022, Arefnezhad 2019)
+    report as the primary metric.
 
     Parameters
     ----------
@@ -32,30 +41,32 @@ def optimize_threshold_f2(
         Predicted probabilities for positive class.
     num_thresholds : int, default=1001
         Number of threshold values to test (uniformly spaced in [0, 1]).
+    beta : float, default=1.0
+        F-beta β parameter. 1.0 = F1 (default, balanced).
 
     Returns
     -------
     tuple of (float, float)
         - best_threshold : Optimal threshold value
-        - best_f2 : Corresponding F2 score
+        - best_score : Corresponding F-beta score
     """
     thresholds = np.linspace(0, 1, num_thresholds)
     best_threshold = 0.5
-    best_f2 = -1.0
-    
+    best_score = -1.0
+
     y_true = y_true.astype(int)
-    
+
     for thr in thresholds:
         y_pred = (y_proba >= thr).astype(int)
-        f2 = fbeta_score(y_true, y_pred, beta=2, zero_division=0)
-        
-        if f2 > best_f2:
-            best_f2 = f2
+        score = fbeta_score(y_true, y_pred, beta=beta, zero_division=0)
+
+        if score > best_score:
+            best_score = score
             best_threshold = thr
-    
-    logging.info(f"[THRESHOLD] Optimized F2: threshold={best_threshold:.3f}, F2={best_f2:.4f}")
-    
-    return float(best_threshold), float(best_f2)
+
+    logging.info(f"[THRESHOLD] Optimized F{beta}: threshold={best_threshold:.3f}, score={best_score:.4f}")
+
+    return float(best_threshold), float(best_score)
 
 
 def load_or_optimize_threshold(

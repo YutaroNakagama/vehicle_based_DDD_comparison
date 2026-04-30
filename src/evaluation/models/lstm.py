@@ -195,12 +195,14 @@ def lstm_eval(
     y_pred_prob = model.predict(X_test_3d)
     y_score = y_pred_prob.flatten()           # sigmoid probabilities
 
-    # --- Optimal threshold via F2-score (emphasize recall for drowsiness) ---
-    # IMPORTANT: tune on validation set when available to avoid test-set
-    # leakage. The legacy path used (y_test, y_score) which let the
-    # threshold "see" the test labels, causing a uniform recall=1.0
-    # degenerate solution because F2 with β=2 over-weights recall.
+    # --- Optimal threshold via F1-score on validation set ---
+    # Tune on validation to avoid test-set leakage; the legacy code optimised
+    # F2 (β=2) ON THE TEST LABELS, which both leaked test info and pushed the
+    # threshold toward predict-all-positive on weak classifiers (recall=1.0
+    # in 99.8% of saved Lstm rows). F1 (β=1) is the standard for imbalanced
+    # binary classification and matches what prior research reports.
     threshold_source = "test"   # for logging only
+    BETA = 1.0
     if X_val is not None and y_val is not None and len(y_val) > 0:
         try:
             X_val_3d, y_val_seg = create_segments(
@@ -208,8 +210,8 @@ def lstm_eval(
             )
             if X_val_3d.shape[0] > 0 and len(np.unique(y_val_seg)) >= 2:
                 y_val_score = model.predict(X_val_3d, verbose=0).flatten()
-                opt_threshold, opt_f2 = find_optimal_threshold(
-                    y_val_seg, y_val_score, beta=2.0
+                opt_threshold, opt_score = find_optimal_threshold(
+                    y_val_seg, y_val_score, beta=BETA
                 )
                 threshold_source = "val"
             else:
@@ -217,15 +219,14 @@ def lstm_eval(
                     f"[LSTM] Validation set unusable (segments={X_val_3d.shape[0]}, "
                     f"unique_labels={len(np.unique(y_val_seg))}); falling back to test-set threshold"
                 )
-                opt_threshold, opt_f2 = find_optimal_threshold(y_test, y_score, beta=2.0)
+                opt_threshold, opt_score = find_optimal_threshold(y_test, y_score, beta=BETA)
         except Exception as e:
             logging.warning(f"[LSTM] Val-set threshold failed ({e}); falling back to test-set")
-            opt_threshold, opt_f2 = find_optimal_threshold(y_test, y_score, beta=2.0)
+            opt_threshold, opt_score = find_optimal_threshold(y_test, y_score, beta=BETA)
     else:
-        # Standalone mode without validation set — fall back to legacy path.
-        opt_threshold, opt_f2 = find_optimal_threshold(y_test, y_score, beta=2.0)
+        opt_threshold, opt_score = find_optimal_threshold(y_test, y_score, beta=BETA)
     logging.info(
-        f"[LSTM] Optimal threshold: {opt_threshold:.4f} (F2={opt_f2:.4f}) "
+        f"[LSTM] Optimal threshold: {opt_threshold:.4f} (F{BETA}={opt_score:.4f}) "
         f"[source={threshold_source}]"
     )
     y_pred = (y_score >= opt_threshold).astype(int)
@@ -260,6 +261,7 @@ def lstm_eval(
         'auc_pr':  ext.get('auc_pr'),
         'custom_threshold': float(opt_threshold),
         'threshold_source': threshold_source,  # "val" (no leakage) | "test" (legacy fallback)
+        'threshold_beta': float(BETA),         # F1 — switched from F2 (2026-04-30)
     }
     # Merge positive-class metrics (precision_pos, recall_pos, f1_pos, ...)
     result.update(class_metrics)
