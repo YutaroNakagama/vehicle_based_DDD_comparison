@@ -125,6 +125,9 @@ N_SKIPPED=0
 
 while IFS=' ' read -r MODEL COND DIST DOM RATIO SEED; do
     [[ -z "$MODEL" || "$MODEL" == "#"* ]] && continue
+    # Lstm GPU is currently broken (TF can't initialize CUDA on H100 nodes);
+    # route Lstm via submit_lstm_cpu_hedge.sh (CPU queues, Lc_* prefix) instead.
+    [[ "$MODEL" == "Lstm" ]] && continue
     before_gpu=$GPU_IDX
     before_cpu=$CPU_IDX
     submit_one "$MODEL" "$COND" "$DIST" "$DOM" "$RATIO" "$SEED"
