@@ -54,4 +54,7 @@ Sorted by detection date; details + fix linked in [operations_log.md](operations
 6. CUDA libs — `hpc_sdk/22.2` removed (LD_LIBRARY_PATH manual fix)
 7. PBS_JOBID format breaks save/load path (made purely numeric)
 8. CUDA path differs login vs compute node (use `module load cuda/12.8u1`)
-9. **Lstm eval threshold tuned on test set** (data leakage) — open
+9. Lstm eval threshold tuned on test set (data leakage) — fixed 2026-04-30
+10. **F2-tuned threshold collapses to predict-all-positive** — fixed 2026-04-30
+    by switching all eval-time tuners to F1 on validation; SvmA's
+    matching test-set leak was caught at the same time

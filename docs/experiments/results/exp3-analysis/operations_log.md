@@ -144,36 +144,68 @@ Triggered by user requirement: every exp3 condition should have **mixed-mode** r
   parses the tag from the .pkl filename, and re-runs `evaluate.py` with the
   6-digit jobid so the existing models are not wasted.
 
-### 9. Lstm Eval Threshold Tuned on Test Set (Detected 2026-04-30, Open)
+### 10. F2-Tuned Threshold Produces Degenerate Predictors (Detected 2026-04-30, Fixed 2026-04-30)
+
+- **Symptom:** Even after Issue 9's fix moved Lstm's threshold tuning off
+  the test labels, 100 % of saved Lstm rows and 33 % of SvmW rows kept
+  reporting `recall_pos = 1.0` (predict-all-positive). SvmW's optimised
+  threshold median was 0.046 — far below the 0.1 prior probability of the
+  positive class.
+- **Mechanism:** All eval-time threshold tuners (`lstm_eval`, `SvmA_eval`,
+  `optimize_threshold_f2`) used `find_optimal_threshold(..., beta=2.0)`,
+  i.e. F2. F2 = 5PR/(4P+R) weights recall 4× more than precision; for a
+  classifier with prior ≈ 0.1 the predict-all-positive operating point
+  yields F2 ≈ 5·0.1/(4·0.1+1) ≈ 0.357, which often beats anything a
+  weak model can otherwise reach. So with F2 the optimum collapses to
+  the saturating threshold.
+- **Additional discovery:** SvmA had the same test-set leakage as Lstm —
+  `SvmA_eval` (`src/evaluation/models/SvmA.py:182`) also called
+  `find_optimal_threshold(y_test, y_score, beta=2.0)` directly. SvmW
+  was unaffected for `accuracy` / `precision_pos` (its `common_eval`
+  uses 0.5), but its `_thr` family of fields (Stage 8 threshold tuner)
+  also went through the same F2 path.
+- **Fix (2026-04-30, commit ecc94dd):** Switch all eval-time tuners to
+  F1 (β = 1.0) on the validation set:
+  - `src/evaluation/models/lstm.py`: β=2.0 → β=1.0; uses (X_val, y_val)
+    plumbed in from `eval_pipeline`. Saves `threshold_beta` so future
+    audits can distinguish post-fix rows.
+  - `src/evaluation/models/SvmA.py`: now takes `(X_val, y_val)`; tunes
+    on validation; β=1.0; saves `threshold_beta`.
+  - `src/evaluation/threshold.py:optimize_threshold_f2`: legacy name
+    kept, default `beta` lowered 2.0 → 1.0 (callers can pass an
+    explicit `beta=2.0` to recover the old behaviour).
+  - `src/evaluation/eval_pipeline.py`: passes (X_val_prepared, y_val)
+    into both `lstm_eval` and `SvmA_eval`.
+- **Why F1 over F2 for the journal submission:** the prior-research
+  papers being replicated (Wang 2022, Arefnezhad 2019) report F1 as
+  their primary metric. F1 is the standard for imbalanced binary
+  classification, and unlike F2 it does not collapse the optimum to
+  predict-all-positive on weak classifiers — so it actually exercises
+  the precision/recall trade-off the research is trying to compare.
+- **Re-run required:** every Lstm / SvmA / SvmW eval JSON without
+  `threshold_beta == 1.0` is stale and must be re-evaluated. The new
+  [`scripts/hpc/launchers/eval_retry_all_models.sh`](../../../../scripts/hpc/launchers/eval_retry_all_models.sh)
+  scans for stale rows, joins them against on-disk model artifacts,
+  and submits eval-only PBS jobs (no re-training).
+
+### 9. Lstm Eval Threshold Tuned on Test Set (Detected 2026-04-30, Fixed 2026-04-30)
 
 - **Symptom:** 99.8% of Lstm evaluations report `recall_pos = 1.0` (584 / 585
   files), regardless of condition (baseline / imbalv3 / smote_plain /
   undersample_rus). The model essentially predicts the positive class for every
   segment.
 - **Mechanism:** [`src/evaluation/models/lstm.py:196`](../../../../src/evaluation/models/lstm.py#L196)
-  calls `find_optimal_threshold(y_test, y_score, beta=2.0)` — i.e. the F2
-  threshold is selected on the **test labels themselves** and then applied
-  back to those same test predictions. This is test-set leakage and it
-  artificially favours degenerate "predict all positive" thresholds because
-  F2 emphasises recall (β=2). The cleaner Stage 8 path used by SvmW/SvmA
-  (`load_or_optimize_threshold` on `X_val`/`y_val`) is bypassed for Lstm
-  because Keras models have neither `predict_proba` nor `decision_function`.
-- **Impact:**
-  - Lstm `accuracy` and `f1_pos` numbers in the saved JSONs are biased
-    upward (over-optimistic) compared with SvmW/SvmA which tune on validation.
-  - The "domain-shift" gap (within vs cross) is masked because both sides
-    pick saturating thresholds; the residual difference traces the
-    positive-class prevalence difference between in_domain and out_domain
-    test holdouts (in_domain ≈ 11.1 %, out_domain ≈ 9.7 %), not real
-    cross-domain degradation.
-  - Even with the leakage, no Lstm condition beats predict-all-positive
-    on F2 → the underlying model genuinely fails to discriminate on these
-    features.
-- **Remediation (proposed):** route Lstm through the same validation-set
-  threshold optimisation that SvmW/SvmA use. The minimal change is to
-  expose `(X_val, y_val)` into `lstm_eval` and replace the
-  `find_optimal_threshold(y_test, …)` call with a validation-set version.
-  *Not yet applied — requires re-running every Lstm tag once the fix lands.*
+  called `find_optimal_threshold(y_test, y_score, beta=2.0)` — i.e. the F2
+  threshold was selected on the **test labels themselves** and then applied
+  back to those same test predictions (test-set leakage). The cleaner
+  Stage 8 path used by SvmW (`load_or_optimize_threshold` on
+  `X_val`/`y_val`) was bypassed for Lstm because Keras models have neither
+  `predict_proba` nor `decision_function`.
+- **Fix (2026-04-30, commit 43fda97):** plumb `(X_val, y_val)` into
+  `lstm_eval` and tune the F-beta threshold on validation. The fix added a
+  `threshold_source` field ("val" | "test") to the result dict.
+  *(See Issue 10 for the follow-up F2 → F1 change that was needed before
+  the metrics actually became non-degenerate.)*
 
 ### 8. GPU CUDA Path Visible Only From Login Node (Detected 2026-04-30, Fixed 2026-04-30)
 
