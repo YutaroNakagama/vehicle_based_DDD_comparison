@@ -365,7 +365,7 @@ After Optuna selection, the classification threshold $\tau$ is swept over the se
   (\mathbf{x}_w, y_w) \in \textstyle\bigcup_{s \in \mathcal{G}_{\mathrm{eval}}} \mathcal{D}_s^{\mathrm{val}} \bigr\},\; \tau\Bigr)
 \end{multline}
 where $\hat{p}_w = \Pr(y{=}1 \mid \mathbf{x}_w;\, \hat{\boldsymbol{\theta}})$ is the RF posterior probability.
-The final model is calibrated via Platt scaling~\cite{platt1999} (5-fold) on the combined train + validation data, yielding calibrated probabilities $\hat{p}_w^{\mathrm{cal}}$.
+The final model is calibrated via Platt scaling~\cite{platt1999} using \texttt{CalibratedClassifierCV} with a fresh 5-fold stratified partition (\texttt{random\_state}=42) of the train+validation pool, independent of the 3-fold HPO partition---which uses train only, so the validation split never enters HPO. Within each calibration fold, the base classifier is refit on 4/5 of the combined data and a sigmoid is fit on the held-out 1/5; the final calibrated probability $\hat{p}_w^{\mathrm{cal}}$ is the mean across the five fold-specific calibrators.
 During HPO, Optuna co-explores \texttt{class\_weight} $\in$ \{balanced, balanced\_subsample\} jointly with the seven other hyperparameters in Table~\ref{tab:hpo}, so that the CV objective $\mathrm{F2}_{\mathrm{CV}}(\boldsymbol{\theta};\,\tilde{\mathcal{D}})$ is evaluated under standard imbalance-aware tree construction.
 For the final evaluation, the seven non-\texttt{class\_weight} hyperparameters from $\hat{\boldsymbol{\theta}}$ are retained, but \texttt{class\_weight} is overridden to a fixed $\{0{:}1.0,\;1{:}3.0\}$ across all factorial cells.
 This override deliberately discards the HPO-selected \texttt{class\_weight} so that minority-recall emphasis is uniform across the factorial design, decoupling the class-weight axis from the rebalancing factor $R$ (otherwise an Optuna selection of, e.g., \texttt{balanced} versus \texttt{balanced\_subsample} per factorial cell would itself become a confounding factor).
@@ -767,6 +767,9 @@ Only the top $k = 10$ features from $p = 145$ candidates are used; sensitivity t
 
 \item \textbf{Binary labeling threshold.}
 KSS $\leq 5$ vs.\ KSS $\geq 8$ excludes intermediate drowsiness (KSS 6--7), which may limit applicability to graded drowsiness detection scenarios.
+
+\item \textbf{Calibration--threshold coupling.}
+The validation pool serves both as part of the 5-fold calibration data and as the support for the F2-optimal threshold $\hat{\tau}$, so $\hat{\tau}$ is mildly optimistic on the validation set. Final test metrics are unaffected because the test split is held out from HPO, calibration, and threshold selection.
 \end{enumerate}
 
 %% ====================================================================
