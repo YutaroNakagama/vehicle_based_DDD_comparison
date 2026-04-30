@@ -144,6 +144,37 @@ Triggered by user requirement: every exp3 condition should have **mixed-mode** r
   parses the tag from the .pkl filename, and re-runs `evaluate.py` with the
   6-digit jobid so the existing models are not wasted.
 
+### 9. Lstm Eval Threshold Tuned on Test Set (Detected 2026-04-30, Open)
+
+- **Symptom:** 99.8% of Lstm evaluations report `recall_pos = 1.0` (584 / 585
+  files), regardless of condition (baseline / imbalv3 / smote_plain /
+  undersample_rus). The model essentially predicts the positive class for every
+  segment.
+- **Mechanism:** [`src/evaluation/models/lstm.py:196`](../../../../src/evaluation/models/lstm.py#L196)
+  calls `find_optimal_threshold(y_test, y_score, beta=2.0)` — i.e. the F2
+  threshold is selected on the **test labels themselves** and then applied
+  back to those same test predictions. This is test-set leakage and it
+  artificially favours degenerate "predict all positive" thresholds because
+  F2 emphasises recall (β=2). The cleaner Stage 8 path used by SvmW/SvmA
+  (`load_or_optimize_threshold` on `X_val`/`y_val`) is bypassed for Lstm
+  because Keras models have neither `predict_proba` nor `decision_function`.
+- **Impact:**
+  - Lstm `accuracy` and `f1_pos` numbers in the saved JSONs are biased
+    upward (over-optimistic) compared with SvmW/SvmA which tune on validation.
+  - The "domain-shift" gap (within vs cross) is masked because both sides
+    pick saturating thresholds; the residual difference traces the
+    positive-class prevalence difference between in_domain and out_domain
+    test holdouts (in_domain ≈ 11.1 %, out_domain ≈ 9.7 %), not real
+    cross-domain degradation.
+  - Even with the leakage, no Lstm condition beats predict-all-positive
+    on F2 → the underlying model genuinely fails to discriminate on these
+    features.
+- **Remediation (proposed):** route Lstm through the same validation-set
+  threshold optimisation that SvmW/SvmA use. The minimal change is to
+  expose `(X_val, y_val)` into `lstm_eval` and replace the
+  `find_optimal_threshold(y_test, …)` call with a validation-set version.
+  *Not yet applied — requires re-running every Lstm tag once the fix lands.*
+
 ### 8. GPU CUDA Path Visible Only From Login Node (Detected 2026-04-30, Fixed 2026-04-30)
 
 - **Symptom:** After Issue 6's fix, every Lstm GPU job still failed:

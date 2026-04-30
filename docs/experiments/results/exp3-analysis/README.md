@@ -48,7 +48,10 @@ Sorted by detection date; details + fix linked in [operations_log.md](operations
 2. SMOTE walltime exceeded (walltimes increased)
 3. Eval filename overwrite — `eval_type` suffix added
 4. Old split2 source/target double-training (replaced by `domain_train`)
-5. Lstm cross-eval silent failures (re-submitted)
+5. Lstm cross-eval silent failures (re-submitted; one batch of 3 orphans
+   from 2026-04-07 caught only on 2026-04-30 audit — see
+   `eval_retry_lstm_orphans.sh`)
 6. CUDA libs — `hpc_sdk/22.2` removed (LD_LIBRARY_PATH manual fix)
 7. PBS_JOBID format breaks save/load path (made purely numeric)
 8. CUDA path differs login vs compute node (use `module load cuda/12.8u1`)
+9. **Lstm eval threshold tuned on test set** (data leakage) — open
