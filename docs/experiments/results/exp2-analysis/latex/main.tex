@@ -712,7 +712,7 @@ Prior DDD studies that compare rebalancing methods under a single training mode~
 
 The best within-domain performance (F2\,=\,0.558, AUROC\,=\,0.903) is competitive with recent vehicle-dynamics-based methods.
 Table~\ref{tab:comparison} positions this work relative to prior DDD studies.
-Direct performance comparison is limited because prior studies use different datasets, modalities, and evaluation protocols; the primary contribution here is the factorial decomposition framework, not absolute classification performance.
+Direct performance comparison is limited because prior studies use different datasets, modalities, and---critically---different evaluation protocols (window-level random splits versus per-subject splits); see the dagger and double-dagger footnotes of Table~\ref{tab:comparison}. The primary contribution here is the factorial decomposition framework, not absolute classification performance.
 
 \begin{table*}[!t]
 \caption{Comparison with Prior DDD Studies. ``Factors'' Indicates the Number of Design Factors Systematically Varied; ``Interaction'' Indicates Whether Inter-Factor Interactions Were Quantified.\label{tab:comparison}}
@@ -722,7 +722,7 @@ Direct performance comparison is limited because prior studies use different dat
 \hline
 Study & Year & Classif. & Modal. & Subj. & Fact. & Inter. & F2 & AUROC & AUPRC \\
 \hline
-Arefnezhad et~al.~\cite{arefnezhad2019}   & 2019 & SVM       & Vehicle & 39 & 0            & No               & --- & 0.97  & --- \\
+Arefnezhad et~al.~\cite{arefnezhad2019}   & 2019 & SVM       & Vehicle & 39 & 0            & No               & --- & 0.97$^{\dagger}$ & --- \\
 \hline
 Zhu et~al.~\cite{zhu2025}                  & 2025 & RF        & Vehicle & 25 & 0            & No               & --- & ---   & --- \\
 \hline
@@ -736,9 +736,13 @@ Schwarz et~al.~\cite{schwarz2019}          & 2019 & RF        & Vehicle & 20 & 0
 \hline
 He et~al.~\cite{he2024}                    & 2024 & GARMFCN   & EEG+EOG & 23 & 1 (imbalance)& No               & --- & ---   & --- \\
 \hline
-Kim et~al.~\cite{kim2025}                  & 2025 & PDMix     & EEG     & 27 & 1 (domain)   & No               & --- & 0.738 & --- \\
+Kim et~al.~\cite{kim2025}                  & 2025 & PDMix     & EEG     & 27 & 1 (domain)   & No               & --- & 0.738$^{\ddagger}$ & --- \\
 \hline
 \textbf{Ours}                           & \textbf{2026} & \textbf{RF} & \textbf{Vehicle} & \textbf{87} & \textbf{4} ($R$,$M$,$D$,$G$) & $R{\times}M$ \textbf{Sobol} & \textbf{0.558} & \textbf{0.903} & \textbf{0.648} \\
+\hline
+\multicolumn{10}{|p{0.97\textwidth}|}{\footnotesize $^{\dagger}$\,Evaluation protocol not specified in source; based on the reported sample counts (35{,}079 test samples drawn from 39 drivers' 20\,h of pooled data), the most plausible default is a window-level random split (effectively within-subject), which is not directly comparable to our per-subject 70/15/15 chronological split.} \\
+\hline
+\multicolumn{10}{|p{0.97\textwidth}|}{\footnotesize $^{\ddagger}$\,Cross-subject evaluation (PDMix is a domain-generalization method evaluated on subject-disjoint splits); directly comparable to our cross-domain ($\omega_M{=}0$) results, not the within-domain AUROC = 0.903 reported in the same row.} \\
 \hline
 \end{tabular}
 \end{table*}
