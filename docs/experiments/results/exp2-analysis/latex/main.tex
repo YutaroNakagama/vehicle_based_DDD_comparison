@@ -39,7 +39,7 @@ In vehicle-dynamics-based DDD, however, it remains unclear whether these issues 
 To address this question, we construct a DDD framework using a public 87-driver simulator dataset and conduct a four-factor factorial experiment varying rebalancing strategy ($R$), training mode ($M$), distance metric ($D$), and domain membership ($G$)
 Sobol--Hoeffding variance decomposition shows that training mode and rebalancing account for more than 95\% of systematic variance, with a substantial $R \times M$ interaction that reverses the optimal rebalancing strategy across training modes.
 In contrast, distance metric and domain membership have no measurable effect on performance.
-A subject-wise variant of SMOTE (SW-SMOTE) at ratio $r = 0.1$ with within-domain training maximizes threshold-independent discrimination (AUROC = 0.903, AUPRC = 0.648; within-domain F2 = 0.558).
+A subject-wise application of SMOTE (SW-SMOTE)---an instance of cluster-based SMOTE~\cite{douzas2018} with clusters defined by driver identity, addressing the subject-dependency concerns identified for physiological-signal augmentation~\cite{bota2024}---at ratio $r = 0.1$ with within-domain training maximizes threshold-independent discrimination (AUROC = 0.903, AUPRC = 0.648; within-domain F2 = 0.558).
 These results establish a clear design priority for vehicle-dynamics-based DDD: class rebalancing and training mode selection are the dominant performance levers, whereas domain grouping configuration can be safely omitted from the optimization process.
 \end{abstract}
 
@@ -74,7 +74,7 @@ The main contributions are:
 
 \item Through a four-factor factorial experiment with Sobol--Hoeffding variance decomposition, we quantify the relative importance of these design factors and reveal that training mode and class rebalancing dominate ($> 95$\% of systematic variance), with a substantial $R \times M$ interaction that reverses the optimal strategy across training modes.
 
-\item We propose subject-wise SMOTE (SW-SMOTE), which applies oversampling independently within each driver's data to preserve individual driving patterns, and show through exhaustive factor-combination search that SW-SMOTE with within-domain training maximizes threshold-independent discrimination (AUROC = 0.903, AUPRC = 0.648; within-domain F2 = 0.558).
+\item We empirically position subject-wise SMOTE (SW-SMOTE)---an instance of cluster-based SMOTE~\cite{douzas2018} with clusters defined by driver identity, motivated by the subject-dependency concerns identified for physiological-signal augmentation~\cite{bota2024}---within the four-factor design, and show through exhaustive factor-combination search that SW-SMOTE with within-domain training maximizes threshold-independent discrimination (AUROC = 0.903, AUPRC = 0.648; within-domain F2 = 0.558).
 \end{enumerate}
 
 The remainder of this paper is organized as follows.
@@ -284,7 +284,7 @@ Seven levels are defined:
 \item Baseline (BL): $\tilde{\mathcal{D}} = \mathcal{D}_{\mathrm{pool}}$ (identity; original ratio $\rho$ preserved).
 \item RUS at $r \in \{0.1, 0.5\}$: randomly discard majority-class samples until $\tilde{n}_1 / \tilde{n}_0 = r$.
 \item SMOTE~\cite{chawla2002} at $r \in \{0.1, 0.5\}$: generate synthetic minority-class samples via $k$-NN interpolation on $\mathcal{D}_{\mathrm{pool}}$ until $\tilde{n}_1 / \tilde{n}_0 = r$.
-\item SW-SMOTE at $r \in \{0.1, 0.5\}$: apply SMOTE independently within each subject before pooling:
+\item SW-SMOTE at $r \in \{0.1, 0.5\}$: apply SMOTE independently within each subject before pooling, an instance of cluster-based SMOTE~\cite{douzas2018} with clusters fixed to subject identity:
 \begin{equation}
 \label{eq:swsmote}
 \tilde{\mathcal{D}} = \bigcup_{s \in \mathcal{S}_M} \mathrm{SMOTE}_r(\mathcal{D}_s^{\mathrm{tr}})
