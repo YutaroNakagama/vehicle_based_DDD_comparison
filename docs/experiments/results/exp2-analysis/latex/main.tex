@@ -724,30 +724,37 @@ Table~\ref{tab:comparison} positions this work relative to prior DDD studies.
 Direct performance comparison is limited because prior studies use different datasets, modalities, and evaluation protocols; the primary contribution here is the factorial decomposition framework, not absolute classification performance.
 
 \begin{table*}[!t]
-\caption{Comparison with Prior DDD Studies. ``Factors'' Indicates the Number of Design Factors Systematically Varied; ``Interaction'' Indicates Whether Inter-Factor Interactions Were Quantified.\label{tab:comparison}}
+\caption{Comparison with Prior DDD Studies. ``Factors'' Indicates the Number of Design Factors Systematically Varied; ``Interaction'' Indicates Whether Inter-Factor Interactions Were Quantified. Most prior studies report Accuracy and/or F1 instead of F2/AUROC/AUPRC; the ``Other reported'' column lists the headline metric(s) actually given in the source paper. NR = not reported.\label{tab:comparison}}
 \centering
-\footnotesize
-\begin{tabular}{|l|c|l|l|c|c|c|c|c|c|}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{|l|c|l|l|c|c|c|c|c|c|p{2.6cm}|}
 \hline
-Study & Year & Classif. & Modal. & Subj. & Fact. & Inter. & F2 & AUROC & AUPRC \\
+Study & Year & Classif. & Modal. & Subj. & Fact. & Inter. & F2 & AUROC & AUPRC & Other reported \\
 \hline
-Arefnezhad et~al.~\cite{arefnezhad2019}   & 2019 & SVM       & Vehicle & 39 & 0            & No               & --- & 0.97  & --- \\
+Arefnezhad et~al.~\cite{arefnezhad2019}   & 2019 & SVM       & Vehicle & 39 & 0            & No               & NR & 0.97$^{\dagger}$ & NR & {\scriptsize Acc=98.1\%} \\
 \hline
-Zhu et~al.~\cite{zhu2025}                  & 2025 & RF        & Vehicle & 25 & 0            & No               & --- & ---   & --- \\
+Zhu et~al.~\cite{zhu2025}                  & 2025 & RF        & Vehicle & 25 & 0            & No               & NR & NR & NR & {\scriptsize Acc/P/R = 93.7/93.7/93.9\%} \\
 \hline
-Baccour et~al.~\cite{baccour2022}          & 2022 & SVM       & Vehicle & 70 & 0            & No               & --- & ---   & --- \\
+Baccour et~al.~\cite{baccour2022}          & 2022 & SVM       & Vehicle & 70 & 0            & No               & NR & NR & NR & {\scriptsize Bal.\,Acc=87.1\%} \\
 \hline
-Sun et~al.~\cite{sun2021}                  & 2021 & Fisher    & Vehicle & 35 & 0            & No               & --- & ---   & --- \\
+Sun et~al.~\cite{sun2021}                  & 2021 & Fisher    & Vehicle & 35 & 0            & No               & NR & NR & NR & {\scriptsize Acc=85.3\%, F1=79.6\%} \\
 \hline
-Yadawadkar et~al.~\cite{yadawadkar2018}   & 2018 & NB        & Vehicle & ---& 1 (imbalance)& No               & --- & ---   & --- \\
+Yadawadkar et~al.~\cite{yadawadkar2018}   & 2018 & NB        & Vehicle & ---& 1 (imbalance)& No               & NR & NR & NR & {\scriptsize F1=94\% (NB+SMOTE)} \\
 \hline
-Schwarz et~al.~\cite{schwarz2019}          & 2019 & RF        & Vehicle & 20 & 0            & No               & --- & ---   & --- \\
+Schwarz et~al.~\cite{schwarz2019}          & 2019 & RF        & Vehicle & 20 & 0            & No               & NR & NR & NR & {\scriptsize 5-fold Acc=0.94--0.95} \\
 \hline
-He et~al.~\cite{he2024}                    & 2024 & GARMFCN   & EEG+EOG & 23 & 1 (imbalance)& No               & --- & ---   & --- \\
+He et~al.~\cite{he2024}                    & 2024 & GARMFCN   & EEG+EOG & 23 & 1 (imbalance)& No               & NR & 0.87--0.96$^{\S}$ & NR & {\scriptsize Acc=84.7\%, w-F1=0.85} \\
 \hline
-Kim et~al.~\cite{kim2025}                  & 2025 & PDMix     & EEG     & 27 & 1 (domain)   & No               & --- & 0.738 & --- \\
+Kim et~al.~\cite{kim2025}                  & 2025 & PDMix     & EEG     & 27 & 1 (domain)   & No               & NR & 0.738$^{\ddagger}$ & NR & {\scriptsize F1=70.3\%} \\
 \hline
-\textbf{Ours}                           & \textbf{2026} & \textbf{RF} & \textbf{Vehicle} & \textbf{87} & \textbf{4} ($R$,$M$,$D$,$G$) & $R{\times}M$ \textbf{Sobol} & \textbf{0.558} & \textbf{0.903} & \textbf{0.648} \\
+\textbf{Ours}                           & \textbf{2026} & \textbf{RF} & \textbf{Vehicle} & \textbf{87} & \textbf{4} ($R$,$M$,$D$,$G$) & $R{\times}M$ \textbf{Sobol} & \textbf{0.558} & \textbf{0.903} & \textbf{0.648} & --- \\
+\hline
+\multicolumn{11}{|p{0.97\textwidth}|}{\footnotesize $^{\dagger}$\,Evaluation protocol not specified in source; based on the reported sample counts (35{,}079 test samples drawn from 39 drivers' 20\,h of pooled data), the most plausible default is a window-level random split (effectively within-subject), which is not directly comparable to our per-subject 70/15/15 chronological split.} \\
+\hline
+\multicolumn{11}{|p{0.97\textwidth}|}{\footnotesize $^{\ddagger}$\,Cross-subject evaluation (PDMix is a domain-generalization method evaluated on subject-disjoint splits); directly comparable to our cross-domain ($\omega_M{=}0$) results, not the within-domain AUROC = 0.903 reported in the same row.} \\
+\hline
+\multicolumn{11}{|p{0.97\textwidth}|}{\footnotesize $^{\S}$\,Per-class one-vs-rest AUC for a 3-class (awake/tired/drowsy) classifier on EEG+EOG; not directly comparable to our binary AUROC. The reported per-class values are 0.87 (awake), 0.88 (tired), 0.96 (drowsy).} \\
 \hline
 \end{tabular}
 \end{table*}
