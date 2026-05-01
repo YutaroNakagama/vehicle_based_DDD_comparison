@@ -213,10 +213,11 @@ def plot_bump_chart(df: pd.DataFrame):
         ncol=1,
         frameon=True, fancybox=False,
         edgecolor="black", framealpha=1.0,
-        fontsize=8,
-        handlelength=2.0,
-        handletextpad=0.4,
-        borderpad=0.4,
+        fontsize=6,
+        handlelength=1.4,
+        handletextpad=0.3,
+        borderpad=0.3,
+        labelspacing=0.2,
     )
     fig.tight_layout()
 
