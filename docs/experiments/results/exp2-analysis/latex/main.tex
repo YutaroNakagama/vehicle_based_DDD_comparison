@@ -228,7 +228,7 @@ To define the binary domain partition $(\mathcal{G}_{\mathrm{in}}, \mathcal{G}_{
 where $\phi$ is the feature map induced by a Gaussian kernel.
 
 \textbf{Dynamic Time Warping (DTW)}~\cite{berndt1994} aligns two univariate time series and finds the warping path that minimizes cumulative Euclidean distance.
-Each subject's multivariate window sequence is first reduced to a scalar series $\bar{x}_t^{(i)} = \frac{1}{p}\sum_{d=1}^{p} x_{t,d}^{(i)}$ (mean across all $z$-scored features at each time step), and DTW is computed as:
+Each subject's multivariate window sequence is first reduced to a scalar series $\bar{x}_t^{(i)} = \frac{1}{q}\sum_{d=1}^{q} x_{t,d}^{(i)}$ (mean across all $q = 145$ $z$-scored features at each time step), and DTW is computed as:
 \begin{equation}
 \label{eq:dtw}
 \mathrm{DTW}(s_i, s_j) = \sqrt{\min_{\pi \in \mathcal{P}} \sum_{(a,b) \in \pi} \bigl(\bar{x}_a^{(i)} - \bar{x}_b^{(j)}\bigr)^2}
@@ -358,15 +358,15 @@ Its hyperparameter vector $\boldsymbol{\theta}$ is tuned independently per facto
   \mathrm{F2}_{\mathrm{CV}}(\boldsymbol{\theta};\, \tilde{\mathcal{D}})
 \end{equation}
 where $\Theta$ is the search space defined in Table~\ref{tab:hpo}.
-After Optuna selection, the classification threshold $\tau$ is swept over the set of unique predicted probabilities derived from the precision--recall curve on the validation set, retaining the value that maximizes F2:
+After Optuna selection and Platt-scaling calibration (described below), the classification threshold $\tau$ is swept over the set of unique calibrated posterior probabilities derived from the precision--recall curve on the validation set, retaining the value that maximizes F2:
 \begin{multline}
 \label{eq:threshold}
 \hat{\tau} = \arg\max_{\tau \in [0,1]}\;
-  \mathrm{F2}\!\Bigl(\bigl\{ (\hat{p}_w,\, y_w) :\\
+  \mathrm{F2}\!\Bigl(\bigl\{ (\hat{p}_w^{\mathrm{cal}},\, y_w) :\\
   (\mathbf{x}_w, y_w) \in \textstyle\bigcup_{s \in \mathcal{G}_{\mathrm{eval}}} \mathcal{D}_s^{\mathrm{val}} \bigr\},\; \tau\Bigr)
 \end{multline}
-where $\hat{p}_w = \Pr(y{=}1 \mid \mathbf{x}_w;\, \hat{\boldsymbol{\theta}})$ is the RF posterior probability.
-The final model is calibrated via Platt scaling~\cite{platt1999} using \texttt{CalibratedClassifierCV} with a fresh 5-fold stratified partition (\texttt{random\_state}=42) of the train+validation pool, independent of the 3-fold HPO partition---which uses train only, so the validation split never enters HPO. Within each calibration fold, the base classifier is refit on 4/5 of the combined data and a sigmoid is fit on the held-out 1/5; the final calibrated probability $\hat{p}_w^{\mathrm{cal}}$ is the mean across the five fold-specific calibrators.
+where $\hat{p}_w^{\mathrm{cal}}$ is the calibrated posterior probability (Platt scaling, described below).
+Calibration precedes threshold optimization: the base RF is calibrated via Platt scaling~\cite{platt1999} using \texttt{CalibratedClassifierCV} with a fresh 5-fold stratified partition (\texttt{random\_state}=42) of the train+validation pool, independent of the 3-fold HPO partition---which uses train only, so the validation split never enters HPO. Within each calibration fold, the base classifier is refit on 4/5 of the combined data and a sigmoid is fit on the held-out 1/5; the final calibrated probability $\hat{p}_w^{\mathrm{cal}}$ is the mean across the five fold-specific calibrators.
 During HPO, Optuna co-explores \texttt{class\_weight} $\in$ \{balanced, balanced\_subsample\} jointly with the seven other hyperparameters in Table~\ref{tab:hpo}, so that the CV objective $\mathrm{F2}_{\mathrm{CV}}(\boldsymbol{\theta};\,\tilde{\mathcal{D}})$ is evaluated under standard imbalance-aware tree construction.
 For the final evaluation, the seven non-\texttt{class\_weight} hyperparameters from $\hat{\boldsymbol{\theta}}$ are retained, but \texttt{class\_weight} is overridden to a fixed $\{0{:}1.0,\;1{:}3.0\}$ across all factorial cells.
 This override deliberately discards the HPO-selected \texttt{class\_weight} so that minority-recall emphasis is uniform across the factorial design, decoupling the class-weight axis from the rebalancing factor $R$ (otherwise an Optuna selection of, e.g., \texttt{balanced} versus \texttt{balanced\_subsample} per factorial cell would itself become a confounding factor).
@@ -417,10 +417,10 @@ A trained RF with $\leq 1{,}500$ trees and $k = 10$ input features produces a pr
 \subsubsection{Evaluation Metrics}\label{sec:metrics}
 The observation $Y_{R,M,D,G}$ in Eq.~\eqref{eq:observation} is computed with three complementary metrics chosen to capture different aspects of imbalanced classification:
 
-\textbf{F2-score} is the threshold-dependent, recall-weighted harmonic mean of precision ($P$) and recall ($R$):
+\textbf{F2-score} is the threshold-dependent, recall-weighted harmonic mean of precision ($P$) and recall ($\mathrm{Rec}$):
 \begin{equation}
 \label{eq:f2}
-\mathrm{F2} = \frac{5\,P\,R}{4\,P + R}
+\mathrm{F2} = \frac{5\,P\,\mathrm{Rec}}{4\,P + \mathrm{Rec}}
 \end{equation}
 The $\beta = 2$ weighting penalizes missed drowsy episodes more heavily than false alarms, reflecting the safety-critical nature of DDD.
 F2 is used as the primary optimization target in Eqs.~\eqref{eq:hpo} and~\eqref{eq:threshold}.
@@ -449,7 +449,7 @@ The total variance admits a unique orthogonal decomposition:
 V(Y) = \sum_{i=1}^{k} V_i + \sum_{i<j} V_{ij} + \cdots + V_{1,2,\ldots,k}
 \end{equation}
 where $V_i = \mathrm{Var}_{X_i}\bigl[\mathbb{E}_{X_{\sim i}}(Y \mid X_i)\bigr]$ is the variance of the conditional expectation over factor~$i$ alone, and $V_{ij}$ captures the joint effect of $(X_i, X_j)$ not explained by their individual contributions.
-The first-order Sobol index normalises each contribution:
+The first-order Sobol index normalizes each contribution:
 \begin{equation}
 \label{eq:sobol_first}
 S_i = \frac{V_i}{V(Y)}
