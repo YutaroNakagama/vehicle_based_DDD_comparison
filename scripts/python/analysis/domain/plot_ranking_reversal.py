@@ -163,7 +163,7 @@ def compute_spearman(rank_df: pd.DataFrame):
 # ── plotting ───────────────────────────────────────────────────────────
 def plot_bump_chart(df: pd.DataFrame):
     # Column-width figure (3.5 in) — displayed at \columnwidth, no scaling
-    fig, axes = plt.subplots(3, 1, figsize=(_TIV_COLUMN_WIDTH, 5.0))
+    fig, axes = plt.subplots(3, 1, figsize=(_TIV_COLUMN_WIDTH, 5.0), sharey=True)
 
     for ax_idx, (ax, (metric, metric_label)) in enumerate(
         zip(axes, METRICS.items())
@@ -184,6 +184,7 @@ def plot_bump_chart(df: pd.DataFrame):
                 linewidth=1.5, alpha=0.85,
             )
 
+        ax.set_ylim(-0.02, 1.02)
         ax.set_xticks(x_positions)
         # Only show x-tick labels on the bottom subplot
         if ax_idx == len(METRICS) - 1:
