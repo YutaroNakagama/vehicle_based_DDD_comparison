@@ -181,7 +181,7 @@ Section~\ref{sec:design_overview} provides an overview of the factorial design; 
 
 \subsection{Overview of the Factorial Experiment}\label{sec:design_overview}
 The experiment follows a four-factor full-factorial design.
-Fig.~\ref{fig:framework_factors} shows the dependency chain $D \to G \to M \to R$ of the four study-specific factors, where each factor acts on the data partition constructed by its predecessors; the resulting $(R, M, D, G)$ cell is then evaluated using the generic DDD pipeline of Fig.~\ref{fig:framework_general}. This chain operationalizes the formulation of Section~\ref{sec:formulation} as follows.
+Fig.~\ref{fig:framework_factors} shows the dependency chain $D \to G \to M \to R$ of the four study-specific factors, where each factor acts on the data partition constructed by its predecessors; the resulting $(D, G, M, R)$ cell is then evaluated using the generic DDD pipeline of Fig.~\ref{fig:framework_general}. This chain operationalizes the formulation of Section~\ref{sec:formulation} as follows.
 
 Starting from the subject set $\mathcal{S}$ with per-subject datasets $\mathcal{D}_s = \{(\mathbf{x}_w, y_w)\}$ (Section~\ref{sec:ddd_overview}), a \emph{distance metric}~$D$ first computes pairwise inter-subject distances and partitions $\mathcal{S}$ into an in-domain group $\mathcal{G}_{\mathrm{in}}$ (44~subjects, most typical) and an out-domain group $\mathcal{G}_{\mathrm{out}}$ (43~subjects, most dissimilar).
 \emph{Domain membership}~$G$ then selects which of these two groups serves as the evaluation target $\mathcal{G}_{\mathrm{eval}}$.
@@ -191,11 +191,11 @@ After feature extraction and selection ($p = 90 \to k = 10$ Arefnezhad descripto
 The classifier $f\colon \mathbb{R}^p \to \{0,1\}$ (Section~\ref{sec:ddd_overview}) is trained on $\tilde{\mathcal{D}}$, calibrated, and evaluated on $\mathcal{D}_{\mathrm{test}} = \bigcup_{s \in \mathcal{G}_{\mathrm{eval}}} \mathcal{D}_s^{\mathrm{te}}$.
 
 The four factors thus form a dependency chain $D \to G \to M \to R$, where each downstream factor operates on the data subset constructed by its predecessors.
-Each factorial cell is uniquely determined by a quadruple $(R, M, D, G)$; Section~\ref{sec:factor_defs} defines the levels of each factor (summarized in Table~\ref{tab:factorial}) and the total number of observations.
+Each factorial cell is uniquely determined by a quadruple $(D, G, M, R)$; Section~\ref{sec:factor_defs} defines the levels of each factor (summarized in Table~\ref{tab:factorial}) and the total number of observations.
 
 \subsection{Factor Definitions}\label{sec:factor_defs}
 Table~\ref{tab:factorial} summarizes the four factors and their levels.
-The $7 \times 3 \times 3 \times 2 = 126$ factor combinations are each evaluated over 12 fixed random seeds, yielding $N = 1{,}512$ total observations.
+The $3 \times 2 \times 3 \times 7 = 126$ factor combinations are each evaluated over 12 fixed random seeds, yielding $N = 1{,}512$ total observations.
 The following subsubsections define each factor in detail.
 
 \begin{table}[!t]
@@ -206,13 +206,13 @@ The following subsubsections define each factor in detail.
 \hline
 Factor & Sym. & Lvl. & Values \\
 \hline
-Rebalancing & $R$ & 7 & BL, RUS/SMOTE/SW-SMOTE $r\!\in\!\{0.1,0.5\}$ \\
-\hline
-Training mode & $M$ & 3 & Cross, Within, Mixed \\
-\hline
 Distance & $D$ & 3 & MMD, DTW, Wasserstein \\
 \hline
 Membership & $G$ & 2 & In-domain, Out-domain \\
+\hline
+Training mode & $M$ & 3 & Cross, Within, Mixed \\
+\hline
+Rebalancing & $R$ & 7 & BL, RUS/SMOTE/SW-SMOTE $r\!\in\!\{0.1,0.5\}$ \\
 \hline
 \end{tabular}
 \end{table}
@@ -336,7 +336,7 @@ Because $\dot{\delta} = d\delta/dt$ and $a_y \propto \delta$, four of the five s
 \begin{figure}[!t]
 \centering
 \resizebox{\columnwidth}{!}{\input{fig/framework_factors_tikz}}
-\caption{Factorial experimental framework. Activity blocks are plain white: the upper half (Subject Partition $\to$ In/Out groups $\to$ per-subject 70/15/15 split) reuses the data-partition stage of the original combined-framework figure; the lower half mirrors the three terminal blocks of Fig.~\ref{fig:framework_general} (Classifier Training $\to$ Threshold Optimization $\to$ Evaluation), absorbing training-pool assembly, feature selection, rebalancing, hyperparameter tuning, and probability calibration into the Classifier Training block. Following the dependency chain $D \to G \to M \to R$, each factor is annotated inline at the activity it configures: Subject Partition by $D$ (Distance Metric); Evaluation by $G$ (Domain Membership); Classifier Training by $M$ (Training Mode --- selects the subject group whose Train splits form the training pool) and $R$ (Rebalancing --- applied to the training pool only, val/test pass through unchanged); Threshold Optimization by $M$ as well, because the calibrated model---and hence its predicted probabilities---varies with the $M$-dependent training pool $\mathcal{S}_M$ (Eq.~\eqref{eq:train_pool}). Per-factor level sets are listed in Table~\ref{tab:factorial} (Section~\ref{sec:factor_defs}); every $(R, M, D, G)$ combination defines one factorial cell.}
+\caption{Factorial experimental framework. Activity blocks are plain white: the upper half (Subject Partition $\to$ In/Out groups $\to$ per-subject 70/15/15 split) reuses the data-partition stage of the original combined-framework figure; the lower half mirrors the three terminal blocks of Fig.~\ref{fig:framework_general} (Classifier Training $\to$ Threshold Optimization $\to$ Evaluation), absorbing training-pool assembly, feature selection, rebalancing, hyperparameter tuning, and probability calibration into the Classifier Training block. Following the dependency chain $D \to G \to M \to R$, each factor is annotated inline at the activity it configures: Subject Partition by $D$ (Distance Metric); Evaluation by $G$ (Domain Membership); Classifier Training by $M$ (Training Mode --- selects the subject group whose Train splits form the training pool) and $R$ (Rebalancing --- applied to the training pool only, val/test pass through unchanged); Threshold Optimization by $M$ as well, because the calibrated model---and hence its predicted probabilities---varies with the $M$-dependent training pool $\mathcal{S}_M$ (Eq.~\eqref{eq:train_pool}). Per-factor level sets are listed in Table~\ref{tab:factorial} (Section~\ref{sec:factor_defs}); every $(D, G, M, R)$ combination defines one factorial cell.}
 \label{fig:framework_factors}
 \end{figure}
 
@@ -373,7 +373,7 @@ This override deliberately discards the HPO-selected \texttt{class\_weight} so t
 Each observation in the factorial experiment is therefore:
 \begin{align}
 \label{eq:observation}
-Y_{R,M,D,G} &= \mathrm{Metric}\!\bigl(\bigl\{ (\hat{y}_w,\, y_w) : (\mathbf{x}_w, y_w) \in \mathcal{D}_{\mathrm{test}} \bigr\}\bigr), \nonumber\\
+Y_{D,G,M,R} &= \mathrm{Metric}\!\bigl(\bigl\{ (\hat{y}_w,\, y_w) : (\mathbf{x}_w, y_w) \in \mathcal{D}_{\mathrm{test}} \bigr\}\bigr), \nonumber\\
 \hat{y}_w &= \mathbb{1}\!\left[\hat{p}_w^{\mathrm{cal}} \geq \hat{\tau}\right]
 \end{align}
 where $\mathcal{D}_{\mathrm{test}} = \bigcup_{s \in \mathcal{G}_{\mathrm{eval}}} \mathcal{D}_s^{\mathrm{te}}$ and $\mathrm{Metric} \in \{\mathrm{F2}, \mathrm{AUROC}, \mathrm{AUPRC}\}$.
@@ -415,7 +415,7 @@ Individual HPC jobs required 4 CPU cores, 8--10~GB RAM, and 6--8 hours wall time
 A trained RF with $\leq 1{,}500$ trees and $k = 10$ input features produces a prediction in $< 1$~ms on a single CPU core, well within the 3-second window update interval.
 
 \subsubsection{Evaluation Metrics}\label{sec:metrics}
-The observation $Y_{R,M,D,G}$ in Eq.~\eqref{eq:observation} is computed with three complementary metrics chosen to capture different aspects of imbalanced classification:
+The observation $Y_{D,G,M,R}$ in Eq.~\eqref{eq:observation} is computed with three complementary metrics chosen to capture different aspects of imbalanced classification:
 
 \textbf{F2-score} is the threshold-dependent, recall-weighted harmonic mean of precision ($P$) and recall ($\mathrm{Rec}$):
 \begin{equation}
@@ -442,7 +442,7 @@ Each resulting line represents one fixed condition (averaged over 12 seeds), pro
 
 \subsubsection{Variance-Based Sensitivity Analysis (Sobol Indices)}
 To quantify the relative importance of each factor and their interactions, we adopt the Sobol--Hoeffding functional ANOVA decomposition~\cite{sobol1993,saltelli2008}.
-Let the response surface $Y = g(X_1, \ldots, X_k)$ map factor configurations to performance, where $Y \equiv Y_{R,M,D,G}$ (Eq.~\eqref{eq:observation}) and $X_i \in \{R, M, D, G\}$.
+Let the response surface $Y = g(X_1, \ldots, X_k)$ map factor configurations to performance, where $Y \equiv Y_{D,G,M,R}$ (Eq.~\eqref{eq:observation}) and $X_i \in \{D, G, M, R\}$.
 The total variance admits a unique orthogonal decomposition:
 \begin{equation}
 \label{eq:sobol_decomp}
@@ -656,7 +656,7 @@ The mechanistic origin is a mode-dependent performance bottleneck.
 The mode-dependent rebalancing gain, averaged over $D$ and $G$, is:
 \begin{equation}
 \label{eq:rebalancing_gain}
-\Delta Y_R^{(M)} = \mathbb{E}_{D,G}\!\left[Y_{R,M,D,G} - Y_{\mathrm{BL},M,D,G}\right]
+\Delta Y_R^{(M)} = \mathbb{E}_{D,G}\!\left[Y_{D,G,M,R} - Y_{D,G,M,\mathrm{BL}}\right]
 \end{equation}
 For the best strategy (SW-SMOTE $r{=}0.1$), the empirical values are:
 \begin{equation}
