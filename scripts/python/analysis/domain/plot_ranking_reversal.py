@@ -163,7 +163,7 @@ def compute_spearman(rank_df: pd.DataFrame):
 # ── plotting ───────────────────────────────────────────────────────────
 def plot_bump_chart(df: pd.DataFrame):
     # Column-width figure (3.5 in) — displayed at \columnwidth, no scaling
-    fig, axes = plt.subplots(3, 1, figsize=(_TIV_COLUMN_WIDTH, 5.6))
+    fig, axes = plt.subplots(3, 1, figsize=(_TIV_COLUMN_WIDTH, 5.0))
 
     for ax_idx, (ax, (metric, metric_label)) in enumerate(
         zip(axes, METRICS.items())
@@ -205,17 +205,19 @@ def plot_bump_chart(df: pd.DataFrame):
         )
         for cond in CONDITIONS_7
     ]
-    fig.tight_layout(rect=(0, 0.10, 1, 1))
-    fig.legend(
+    # Cross-domain values are near zero → ample space in upper-left of top panel
+    axes[0].legend(
         handles=legend_handles,
-        loc="lower center",
-        bbox_to_anchor=(0.5, 0.0),
-        ncol=4,
-        frameon=False,
-        handlelength=2.4,
-        columnspacing=1.0,
-        handletextpad=0.5,
+        loc="upper left",
+        ncol=1,
+        frameon=True, fancybox=False,
+        edgecolor="black", framealpha=1.0,
+        fontsize=8,
+        handlelength=2.0,
+        handletextpad=0.4,
+        borderpad=0.4,
     )
+    fig.tight_layout()
 
     out_path = OUT_DIR / "fig_ranking_reversal.pdf"
     fig.savefig(out_path, format="pdf", bbox_inches="tight", facecolor="white")
