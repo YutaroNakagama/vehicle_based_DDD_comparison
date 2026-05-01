@@ -86,7 +86,7 @@ plt.rcParams.update({
     "axes.labelsize": 9,
     "xtick.labelsize": 9,
     "ytick.labelsize": 9,
-    "legend.fontsize": 7,
+    "legend.fontsize": 8,
     "figure.dpi": 150,
     "savefig.dpi": 300,
     "axes.grid": False,
