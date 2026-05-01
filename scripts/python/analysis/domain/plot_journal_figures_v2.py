@@ -739,14 +739,13 @@ def plot_convergence(df: pd.DataFrame):
                     linewidth=1.0, alpha=0.6)
 
         ax.set_ylabel("$\\sigma_{\\mathrm{rank}}$" + f" ({mlabel})")
-        ax.set_ylim(-0.02, 1.2)
+        ax.set_ylim(-0.02, 1.0)
         ax.set_xticks(ks)
         # Only show x-tick labels on bottom subplot
         if ax_idx == len(PRIMARY_METRICS) - 1:
             ax.set_xlabel("Number of seeds ($k$)")
         else:
             ax.set_xticklabels([])
-        ax.set_ylim(-0.005, 0.22)
 
     summary_handles = [
         Line2D([0], [0], color=mean_color, linestyle="-", marker="o",
