@@ -120,7 +120,7 @@ Fig.~\ref{fig:framework_general} sketches the generic processing pipeline that i
 \begin{figure}[!t]
 \centering
 \resizebox{0.82\columnwidth}{!}{\input{fig/framework_general_tikz}}
-\caption{Generic vehicle-dynamics-based DDD pipeline. Per-subject vehicle signals are segmented into labeled windows, features are extracted, and a chronological train/validation/test split is applied. The training set fits the classifier (which absorbs hyperparameter tuning and probability calibration as standard sub-steps); the validation set tunes the decision threshold; the test set is reserved for the final evaluation. This pipeline is shared, with minor variations, across most prior DDD studies; the four experimental factors specific to this work are introduced in Section~\ref{sec:framework} (Fig.~\ref{fig:framework_factors}).}
+\caption{Generic vehicle-dynamics-based DDD pipeline. Per-subject vehicle signals are segmented into labeled windows, features are extracted, and a chronological train/validation/test split is applied. The training set fits the classifier (which absorbs hyperparameter tuning and probability calibration as standard sub-steps); the validation set tunes the decision threshold; the test set is reserved for the final evaluation. This pipeline is shared, with minor variations, across most prior DDD studies.}
 \label{fig:framework_general}
 \end{figure}
 
@@ -199,7 +199,7 @@ The $3 \times 2 \times 3 \times 7 = 126$ factor combinations are each evaluated 
 The following subsubsections define each factor in detail.
 
 \begin{table}[!t]
-\caption{Factorial Experiment Design\label{tab:factorial}}
+\caption{Four-Factor Full-Factorial Experimental Design ($3{\times}2{\times}3{\times}7 = 126$ cells; 12 fixed seeds; $N = 1{,}512$ total observations). Sym.: factor symbol; Lvl.: number of levels.\label{tab:factorial}}
 \centering
 \footnotesize
 \begin{tabular}{|l|c|c|p{2.9cm}|}
@@ -271,7 +271,7 @@ where $|\mathcal{G}_{\mathrm{in}}| = 44$ and $|\mathcal{G}_{\mathrm{out}}| = 43$
 \mathcal{D}_{\mathrm{pool}} = \bigcup_{s \,\in\, \mathcal{S}_M} \mathcal{D}_s^{\mathrm{tr}}, \quad
 \mathcal{S}_M =
 \begin{cases}
-\mathcal{S} \setminus \mathcal{G}_{\mathrm{eval}} & M = \mathrm{Cross} \quad \text{(opposite group)} \\
+\mathcal{S} \setminus \mathcal{G}_{\mathrm{eval}} & M = \mathrm{Cross} \\
 \mathcal{G}_{\mathrm{eval}}                       & M = \mathrm{Within} \\
 \mathcal{S}                                       & M = \mathrm{Mixed}
 \end{cases}
@@ -302,7 +302,7 @@ The publicly available driving dataset of Aygun et~al.~\cite{aygun2024} is used,
 Five raw signals are extracted (Table~\ref{tab:signals}).
 
 \begin{table}[!t]
-\caption{Vehicle Dynamics Signals\label{tab:signals}}
+\caption{Five Vehicle-Dynamics Signals Used as Classifier Inputs (sampled at $f_s = 60$~Hz)\label{tab:signals}}
 \centering
 \begin{tabular}{|c|l|c|}
 \hline
@@ -513,7 +513,7 @@ SMOTE (sky blue, dotted, diamond),
 SW-SMOTE (purple, dash-dot, triangle);
 ratio variants share the same line style within each family.
 The bold black line (plus marker) shows the OFAT grand mean; the grey band indicates $\pm 1$~SD.
-Left two columns show dominant factors with large spread; right two columns show flat trajectories confirming negligible effects. The mode-based encoding in the $R$, $D$, $G$ columns is chosen specifically to make the dominant $R \times M$ interaction visible (Cross-domain lines stay flat near chance, Within/Mixed lines fan out under SMOTE-family rebalancing); a rebalancing-family encoding is used instead in the $M$ column because mode is the X-axis there.}
+Left two columns ($R$, $M$) show dominant factors with large spread; right two columns ($D$, $G$) show flat trajectories confirming negligible effects.}
 \label{fig:ofat_combined}
 \end{figure*}
 
@@ -588,7 +588,7 @@ SW-SMOTE $r\!=\!0.5$  & 0.042 & 0.468 & 0.402 & 0.862 & 0.852 & 0.386 & 0.387 \\
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{fig/fig_ranking_reversal}
-\caption{Mode-dependent strategy performance across training modes. Line styles encode rebalancing families: solid = Baseline (grey), dashed = RUS (orange/vermilion for $r$=0.1/0.5), dash-dotted = SMOTE (light blue/blue for $r$=0.1/0.5), dotted = SW-SMOTE (pink/purple for $r$=0.1/0.5). Markers further distinguish strategies: square, up/down triangle, diamond, circle, plus, and cross. In Cross-domain, all strategies perform poorly; in Within/Mixed, SMOTE-based strategies sharply improve while RUS variants remain low---illustrating the $R \times M$ interaction.}
+\caption{$R \times M$ interaction: rebalancing strategy performance conditioned on training mode. Line styles encode rebalancing families: solid = Baseline (grey), dashed = RUS (orange/vermilion for $r$=0.1/0.5), dash-dotted = SMOTE (light blue/blue for $r$=0.1/0.5), dotted = SW-SMOTE (pink/purple for $r$=0.1/0.5); markers further distinguish ratio variants. In Cross-domain, all strategies collapse to near chance; in Within/Mixed, SMOTE-based strategies improve sharply while RUS variants remain low, confirming a strong ranking reversal across modes.}
 \label{fig:ranking_reversal}
 \end{figure}
 
@@ -718,7 +718,7 @@ Table~\ref{tab:comparison} positions this work relative to prior DDD studies.
 Direct performance comparison is limited because prior studies use different datasets, modalities, and evaluation protocols; the primary contribution here is the factorial decomposition framework, not absolute classification performance.
 
 \begin{table*}[!t]
-\caption{Comparison with Prior DDD Studies. ``Factors'' Indicates the Number of Design Factors Systematically Varied; ``Interaction'' Indicates Whether Inter-Factor Interactions Were Quantified. Most prior studies report Accuracy and/or F1 instead of F2/AUROC/AUPRC; the ``Other reported'' column lists the headline metric(s) actually given in the source paper. NR = not reported.\label{tab:comparison}}
+\caption{Comparison with Prior DDD Studies. ``Factors'': number of design factors systematically varied; ``Interaction'': whether inter-factor interactions were quantified. Most prior studies report accuracy and/or F1 instead of F2/AUROC/AUPRC; the ``Other reported'' column lists the headline metric(s) given in the source. NR = not reported.\label{tab:comparison}}
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3pt}
