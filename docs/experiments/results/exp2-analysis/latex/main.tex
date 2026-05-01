@@ -119,7 +119,7 @@ Fig.~\ref{fig:framework_general} sketches the generic processing pipeline that i
 
 \begin{figure}[!t]
 \centering
-\resizebox{\columnwidth}{!}{\input{fig/framework_general_tikz}}
+\resizebox{0.82\columnwidth}{!}{\input{fig/framework_general_tikz}}
 \caption{Generic vehicle-dynamics-based DDD pipeline. Per-subject vehicle signals are segmented into labeled windows, features are extracted, and a chronological train/validation/test split is applied. The training set fits the classifier (which absorbs hyperparameter tuning and probability calibration as standard sub-steps); the validation set tunes the decision threshold; the test set is reserved for the final evaluation. This pipeline is shared, with minor variations, across most prior DDD studies; the four experimental factors specific to this work are introduced in Section~\ref{sec:framework} (Fig.~\ref{fig:framework_factors}).}
 \label{fig:framework_general}
 \end{figure}
@@ -140,7 +140,7 @@ Each subject's dataset is split chronologically into three disjoint portions:
 \mathcal{D}_s = \mathcal{D}_s^{\mathrm{tr}} \,\dot{\cup}\, \mathcal{D}_s^{\mathrm{val}} \,\dot{\cup}\, \mathcal{D}_s^{\mathrm{te}}
 \end{equation}
 with a 70/15/15 ratio, preserving temporal order to prevent data leakage from future windows.
-The \emph{training set} $\mathcal{D}_s^{\mathrm{tr}}$ is used to fit the classifier, the \emph{validation set} $\mathcal{D}_s^{\mathrm{val}}$ for hyperparameter selection and threshold tuning, and the \emph{test set} $\mathcal{D}_s^{\mathrm{te}}$ for final performance evaluation.
+The \emph{training set} $\mathcal{D}_s^{\mathrm{tr}}$ is used to fit the classifier (with hyperparameter selection performed via cross-validation within $\mathcal{D}_s^{\mathrm{tr}}$), the \emph{validation set} $\mathcal{D}_s^{\mathrm{val}}$ for threshold tuning, and the \emph{test set} $\mathcal{D}_s^{\mathrm{te}}$ for final performance evaluation.
 
 % Notation verified: f: R^p -> {0,1}, D_pool = \bigcup D_s^{tr}
 %   — classifier mapping notation standard in He \& Garcia (2009)
@@ -331,14 +331,7 @@ Lane offset evolves as:
 \label{eq:lane_offset}
 \ddot{e}_{\text{lane}}(t) = a_y(t) - a_{y,\text{road}}(t)
 \end{equation}
-Because $\dot{\delta} = d\delta/dt$ and $a_y \propto \delta$, four of the five signals ($\delta$, $\dot{\delta}$, $a_y$, $e_{\text{lane}}$) are deterministically coupled through a single degree of freedom $\delta(t)$, with only $a_x$ dynamically independent (Fig.~\ref{fig:veh_dyn_mod}).
-
-\begin{figure}[!t]
-\centering
-\resizebox{0.85\columnwidth}{!}{\input{fig/veh_dyn_mod_tikz}}
-\caption{Kinematic bicycle model coupling structure of the five vehicle-dynamics signals listed in Table~\ref{tab:signals}. Four of the five signals ($\delta$, $\dot{\delta}$, $a_y$, $e_{\text{lane}}$) are tied to the steering input $\delta(t)$ through Eqs.~\eqref{eq:bicycle}--\eqref{eq:lane_offset}; only longitudinal acceleration $a_x$ is dynamically independent. Yaw angle $\theta$ and yaw rate $\dot{\theta}$ are shown for context but are not directly observed in this dataset.}
-\label{fig:veh_dyn_mod}
-\end{figure}
+Because $\dot{\delta} = d\delta/dt$ and $a_y \propto \delta$, four of the five signals ($\delta$, $\dot{\delta}$, $a_y$, $e_{\text{lane}}$) are deterministically coupled through a single degree of freedom $\delta(t)$, with only $a_x$ dynamically independent.
 
 \begin{figure}[!t]
 \centering
@@ -353,7 +346,7 @@ Each window is labeled using the Karolinska Sleepiness Scale (KSS)~\cite{akerste
 
 For each window, the 18 statistical and spectral descriptors of Arefnezhad et~al.~\cite{arefnezhad2019} are extracted from each of the five vehicle signals ($\delta$, $\dot{\delta}$, $a_y$, $a_x$, $e_{\text{lane}}$), yielding $p = 90$ candidate features for the classifier.
 Each signal's raw waveform and its FFT power spectrum in the $[0.5, 30]$~Hz band produce 18 descriptors: Range, StdDev, Energy, Zero-Crossing Rate, Quartiles (Q25, Median, Q75), Skewness, Kurtosis, Katz Fractal Dimension, Shannon Entropy, Frequency Variance, Spectral Entropy, Spectral Flux, Frequency Center of Gravity, Dominant Frequency, Average PSD, and Sample Entropy.
-The processed-data CSV additionally contains $5 \times 3 = 15$ smoothed-trend / standard-deviation / prediction-error descriptors and $5 \times 8 = 40$ GHM multiwavelet packet decomposition energies (3-level decomposition, 8 sub-bands per signal); these 55 additional features are not loaded by the RF classifier but are used downstream for the inter-subject distance computation that defines factor $D$ (Section~\ref{sec:grouping}), giving the distance space its $90 + 15 + 40 = 145$ dimensions.
+The processed-data CSV additionally contains $5 \times 3 = 15$ smoothed-trend / standard-deviation / prediction-error descriptors and $5 \times 8 = 40$ Geronimo--Hardin--Massopust (GHM) multiwavelet packet decomposition energies (3-level decomposition, 8 sub-bands per signal); these 55 additional features are not loaded by the RF classifier but are used downstream for the inter-subject distance computation that defines factor $D$ (Section~\ref{sec:grouping}), giving the distance space its $90 + 15 + 40 = 145$ dimensions.
 To reduce dimensionality and mitigate overfitting, the 90 classifier-candidate features are ranked by random forest feature importance~\cite{breiman2001} (200 trees, balanced class weights) and the top $k = 10$ are retained for each training configuration, balancing discriminative power against overfitting given the per-cell sample sizes.
 
 \subsubsection{Classifier and Hyperparameter Optimization}
