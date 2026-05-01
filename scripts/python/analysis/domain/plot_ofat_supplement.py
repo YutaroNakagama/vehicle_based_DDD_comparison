@@ -235,7 +235,10 @@ def plot_ofat_combined(df: pd.DataFrame):
     for col_idx, target_factor in enumerate(FACTOR_ORDER):
         levels, label_map, display_name = FACTORS[target_factor]
 
-        if target_factor != "mode":
+        # R column (X-axis = rebalancing): encode lines by Mode to expose R×M interaction.
+        # All other columns: encode lines by Rebalancing family for consistency,
+        # so the reader can directly compare the same strategy across M, D, G panels.
+        if target_factor == "condition":
             color_factor = "mode"
             color_map, style_map = MODE_COLORS, MODE_LINESTYLES
         else:
@@ -279,8 +282,8 @@ def plot_ofat_combined(df: pd.DataFrame):
                     framealpha=1.0, fancybox=False,
                     edgecolor="black", facecolor="white",
                 )
-                if target_factor != "mode":
-                    # Mode legend for R, D, G columns
+                if target_factor == "condition":
+                    # R column: encode by Mode
                     handles = [
                         Line2D([0], [0], color=MODE_COLORS[m],
                                linestyle=ls, marker=mk,
@@ -290,7 +293,7 @@ def plot_ofat_combined(df: pd.DataFrame):
                     ]
                     ax.legend(handles=handles, **_leg_kw)
                 else:
-                    # Family legend for M column (one entry per family)
+                    # M, D, G columns: encode by Rebalancing family
                     _family_repr = {
                         "BL":       ("baseline",     "-",  "o"),
                         "RUS":      ("rus_r01",      "--", "s"),

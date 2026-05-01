@@ -502,18 +502,14 @@ Membership ($G$): the mean is near-flat, and individual lines diverge in both di
 \includegraphics[width=\textwidth]{fig/fig_ofat_combined}
 \caption{OFAT spaghetti plots for all four experimental factors (columns: $R$, $M$, $D$, $G$) and three metrics (rows: F2-score, AUROC, AUPRC).
 Each thin line represents one fixed combination of the other three factors averaged over 12 seeds.
-\textbf{Columns $R$, $D$, $G$} encode lines by \emph{mode}:
-Cross (vermilion, solid line, circle marker),
-Within (sky blue, dashed line, square marker),
-Mixed (reddish purple, dotted line, triangle marker).
-\textbf{Column $M$} encodes lines by \emph{rebalancing family}:
+\textbf{Column $R$} encodes lines by \emph{mode} (Cross/Within/Mixed) to expose the $R \times M$ interaction; all other columns encode lines by \emph{rebalancing family}:
 BL (grey, solid, circle),
 RUS (orange, dashed, square),
 SMOTE (sky blue, dotted, diamond),
-SW-SMOTE (purple, dash-dot, triangle);
-ratio variants share the same line style within each family.
+SW-SMOTE (purple, dash-dotted, triangle);
+ratio variants share colour tone within each family.
 The bold black line (plus marker) shows the OFAT grand mean; the grey band indicates $\pm 1$~SD.
-Left two columns ($R$, $M$) show dominant factors with large spread; right two columns ($D$, $G$) show flat trajectories confirming negligible effects.}
+Left two columns ($R$, $M$) show dominant factors with large spread; right two columns ($D$, $G$) show near-flat trajectories confirming negligible main effects.}
 \label{fig:ofat_combined}
 \end{figure*}
 
