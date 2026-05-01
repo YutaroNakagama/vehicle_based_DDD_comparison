@@ -41,10 +41,10 @@
 \draw[arr] (dataset.south) -- (dsplit.north);
 
 %% ROW 2 — In-Domain / Out-Domain cylinders
-\node[db, text width=3.0cm] (src) at (-2.5,-2.5)
-  {\textbf{In-Domain}~(44 subj.)};
-\node[db, text width=3.0cm] (tgt) at ( 2.5,-2.5)
-  {\textbf{Out-Domain}~(43 subj.)};
+\node[db, text width=3.2cm] (src) at (-2.5,-2.5)
+  {\textbf{In-Domain} $\mathcal{G}_{\mathrm{in}}$\\(44 subj., typical)};
+\node[db, text width=3.2cm] (tgt) at ( 2.5,-2.5)
+  {\textbf{Out-Domain} $\mathcal{G}_{\mathrm{out}}$\\(43 subj., dissimilar)};
 
 \coordinate (forkMid) at ($(dsplit.south)!.3!(src.north)$);
 \coordinate (forkC) at (0,0 |- forkMid);
