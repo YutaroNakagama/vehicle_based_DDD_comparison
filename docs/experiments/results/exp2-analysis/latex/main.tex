@@ -181,7 +181,7 @@ Section~\ref{sec:design_overview} provides an overview of the factorial design; 
 
 \subsection{Overview of the Factorial Experiment}\label{sec:design_overview}
 The experiment follows a four-factor full-factorial design.
-Fig.~\ref{fig:framework_factors} shows the dependency chain of the four study-specific factors---$D$, $G$, $M$, and $R$---each acting on the data partition produced by its predecessor; the resulting $(R, M, D, G)$ cell is then evaluated using the generic DDD pipeline of Fig.~\ref{fig:framework_general}. This chain operationalizes the formulation of Section~\ref{sec:formulation} as follows.
+Fig.~\ref{fig:framework_factors} shows the dependency chain $D \to G \to M \to R$ of the four study-specific factors ($R$, $M$, $D$, $G$), where each factor acts on the data partition constructed by its predecessors; the resulting $(R, M, D, G)$ cell is then evaluated using the generic DDD pipeline of Fig.~\ref{fig:framework_general}. This chain operationalizes the formulation of Section~\ref{sec:formulation} as follows.
 
 Starting from the subject set $\mathcal{S}$ with per-subject datasets $\mathcal{D}_s = \{(\mathbf{x}_w, y_w)\}$ (Section~\ref{sec:ddd_overview}), a \emph{distance metric}~$D$ first computes pairwise inter-subject distances and partitions $\mathcal{S}$ into an in-domain group $\mathcal{G}_{\mathrm{in}}$ (44~subjects, most typical) and an out-domain group $\mathcal{G}_{\mathrm{out}}$ (43~subjects, most dissimilar).
 \emph{Domain membership}~$G$ then selects which of these two groups serves as the evaluation target $\mathcal{G}_{\mathrm{eval}}$.
