@@ -183,7 +183,7 @@ Section~\ref{sec:design_overview} provides an overview of the factorial design; 
 The experiment follows a four-factor full-factorial design.
 Fig.~\ref{fig:framework_factors} shows the dependency chain of the four study-specific factors---$D$, $G$, $M$, and $R$---each acting on the data partition produced by its predecessor; the resulting $(R, M, D, G)$ cell is then evaluated using the generic DDD pipeline of Fig.~\ref{fig:framework_general}. This chain operationalizes the formulation of Section~\ref{sec:formulation} as follows.
 
-Starting from the subject set $\mathcal{S}$ with per-subject datasets $\mathcal{D}_s = \{(\mathbf{x}_w, y_w)\}$ (Section~\ref{sec:ddd_overview}), a \emph{distance metric}~$D$ first computes pairwise inter-subject distances and partitions $\mathcal{S}$ into an in-domain group $\mathcal{G}_{\mathrm{src}}$ (44~subjects) and an out-domain group $\mathcal{G}_{\mathrm{tgt}}$ (43~subjects), instantiating the domain split of Section~\ref{sec:domain_shift}.
+Starting from the subject set $\mathcal{S}$ with per-subject datasets $\mathcal{D}_s = \{(\mathbf{x}_w, y_w)\}$ (Section~\ref{sec:ddd_overview}), a \emph{distance metric}~$D$ first computes pairwise inter-subject distances and partitions $\mathcal{S}$ into an in-domain group $\mathcal{G}_{\mathrm{in}}$ (44~subjects, most typical) and an out-domain group $\mathcal{G}_{\mathrm{out}}$ (43~subjects, most dissimilar).
 \emph{Domain membership}~$G$ then selects which of these two groups serves as the evaluation target $\mathcal{G}_{\mathrm{eval}}$.
 Each subject's data is split chronologically into $(\mathcal{D}_s^{\mathrm{tr}}, \mathcal{D}_s^{\mathrm{val}}, \mathcal{D}_s^{\mathrm{te}})$ per Eq.~\eqref{eq:split} (70/15/15 ratio).
 \emph{Training mode}~$M$ assembles the pooled training set $\mathcal{D}_{\mathrm{pool}} = \bigcup_{s \in \mathcal{S}_M} \mathcal{D}_s^{\mathrm{tr}}$ from a subset $\mathcal{S}_M \subseteq \mathcal{S}$ determined by the partition.
@@ -218,7 +218,7 @@ Membership & $G$ & 2 & In-domain, Out-domain \\
 \end{table}
 
 \subsubsection{Distance Metric ($D$) and Domain Grouping}\label{sec:grouping}
-To instantiate the source/target partition $(\mathcal{G}_{\mathrm{src}}, \mathcal{G}_{\mathrm{tgt}})$ defined in Section~\ref{sec:formulation}, pairwise distances $d(s_i, s_j)$ between all 87 subjects are computed from the per-subject window sets $\mathcal{D}_{s_i}$ and $\mathcal{D}_{s_j}$ using three metrics:
+To define the binary domain partition $(\mathcal{G}_{\mathrm{in}}, \mathcal{G}_{\mathrm{out}})$ on which factors $G$ and $M$ operate, pairwise distances $d(s_i, s_j)$ between all 87 subjects are computed from the per-subject window sets $\mathcal{D}_{s_i}$ and $\mathcal{D}_{s_j}$ using three metrics:
 
 \textbf{Maximum Mean Discrepancy (MMD)}~\cite{gretton2012} measures distributional difference in a reproducing kernel Hilbert space~$\mathcal{H}$:
 \begin{equation}
@@ -248,9 +248,9 @@ For each metric, a $K$-nearest-neighbor (KNN) score ($K = 5$) is computed per su
 \label{eq:knn_score}
 \mathrm{KNN}_K(s) = \frac{1}{K} \sum_{j \in \mathcal{N}_K(s)} d(s, s_j)
 \end{equation}
-Subjects are split at the median of $\mathrm{KNN}_K$ into \textbf{in-domain} (44 subjects, lowest scores, most typical) and \textbf{out-domain} (43 subjects, highest scores, most dissimilar), forming the concrete $\mathcal{G}_{\mathrm{src}}$ and $\mathcal{G}_{\mathrm{tgt}}$ used in the factorial design.
+Subjects are split at the median of $\mathrm{KNN}_K$ into \textbf{in-domain} (44 subjects, lowest scores, most typical) and \textbf{out-domain} (43 subjects, highest scores, most dissimilar), forming two groups $\mathcal{G}_{\mathrm{in}}$ (in-domain, 44~subjects) and $\mathcal{G}_{\mathrm{out}}$ (out-domain, 43~subjects); their roles as evaluation target or training source are determined subsequently by $G$ and $M$ (Eqs.~\eqref{eq:eval_group}--\eqref{eq:train_pool}).
 
-\textbf{Distance metric} $D \in \{\mathrm{MMD}, \mathrm{DTW}, W_1\}$ determines the pairwise subject distances and the binary domain partition $(\mathcal{G}_{\mathrm{src}}, \mathcal{G}_{\mathrm{tgt}})$ via Eqs.~\eqref{eq:mmd}--\eqref{eq:knn_score}.
+\textbf{Distance metric} $D \in \{\mathrm{MMD}, \mathrm{DTW}, W_1\}$ determines the pairwise subject distances and the binary typicality-based partition $(\mathcal{G}_{\mathrm{in}}, \mathcal{G}_{\mathrm{out}})$ via Eqs.~\eqref{eq:mmd}--\eqref{eq:knn_score}.
 
 \subsubsection{Domain Membership ($G$)}
 \textbf{Domain membership} $G \in \{\mathrm{in}, \mathrm{out}\}$ selects the evaluation-target group:
@@ -258,8 +258,8 @@ Subjects are split at the median of $\mathrm{KNN}_K$ into \textbf{in-domain} (44
 \label{eq:eval_group}
 \mathcal{G}_{\mathrm{eval}} =
 \begin{cases}
-\mathcal{G}_{\mathrm{src}} & \text{if } G = \mathrm{in}\;\text{(44 subjects)} \\
-\mathcal{G}_{\mathrm{tgt}} & \text{if } G = \mathrm{out}\;\text{(43 subjects)}
+\mathcal{G}_{\mathrm{in}} & \text{if } G = \mathrm{in}\;\text{(44 subjects)} \\
+\mathcal{G}_{\mathrm{out}} & \text{if } G = \mathrm{out}\;\text{(43 subjects)}
 \end{cases}
 \end{equation}
 
@@ -336,7 +336,7 @@ Because $\dot{\delta} = d\delta/dt$ and $a_y \propto \delta$, four of the five s
 \begin{figure}[!t]
 \centering
 \resizebox{\columnwidth}{!}{\input{fig/framework_factors_tikz}}
-\caption{Factorial experimental framework. Activity blocks are plain white: the upper half (Subject Partition $\to$ In/Out groups $\to$ per-subject 70/15/15 split) reuses the data-partition stage of the original combined-framework figure; the lower half mirrors the three terminal blocks of Fig.~\ref{fig:framework_general} (Classifier Training $\to$ Threshold Optimization $\to$ Evaluation), absorbing training-pool assembly, feature selection, rebalancing, hyperparameter tuning, and probability calibration into the Classifier Training block. Following the dependency chain $D \to G \to M \to R$, each factor is annotated inline at the activity it configures: Subject Partition by $D$ (Distance Metric); Evaluation by $G$ (Domain Membership); Classifier Training by $M$ (Training Mode --- selects the subject group whose Train splits form the training pool) and $R$ (Rebalancing --- applied to the training pool only, val/test pass through unchanged); Threshold Optimization by $M$ as well, because the validation pool is drawn from the same $M$-dependent group (source for cross-domain, target for within-domain and mixed). Per-factor level sets are listed in Table~\ref{tab:factorial} (Section~\ref{sec:factor_defs}); every $(R, M, D, G)$ combination defines one factorial cell.}
+\caption{Factorial experimental framework. Activity blocks are plain white: the upper half (Subject Partition $\to$ In/Out groups $\to$ per-subject 70/15/15 split) reuses the data-partition stage of the original combined-framework figure; the lower half mirrors the three terminal blocks of Fig.~\ref{fig:framework_general} (Classifier Training $\to$ Threshold Optimization $\to$ Evaluation), absorbing training-pool assembly, feature selection, rebalancing, hyperparameter tuning, and probability calibration into the Classifier Training block. Following the dependency chain $D \to G \to M \to R$, each factor is annotated inline at the activity it configures: Subject Partition by $D$ (Distance Metric); Evaluation by $G$ (Domain Membership); Classifier Training by $M$ (Training Mode --- selects the subject group whose Train splits form the training pool) and $R$ (Rebalancing --- applied to the training pool only, val/test pass through unchanged); Threshold Optimization by $M$ as well, because the calibrated model---and hence its predicted probabilities---varies with the $M$-dependent training pool $\mathcal{S}_M$ (Eq.~\eqref{eq:train_pool}). Per-factor level sets are listed in Table~\ref{tab:factorial} (Section~\ref{sec:factor_defs}); every $(R, M, D, G)$ combination defines one factorial cell.}
 \label{fig:framework_factors}
 \end{figure}
 
@@ -778,7 +778,7 @@ Only the top $k = 10$ features from $p = 90$ Arefnezhad-style candidates are use
 KSS $\leq 5$ vs.\ KSS $\geq 8$ excludes intermediate drowsiness (KSS 6--7), which may limit applicability to graded drowsiness detection scenarios.
 
 \item \textbf{Calibration--threshold coupling.}
-The validation pool serves both as part of the 5-fold calibration data and as the support for the F2-optimal threshold $\hat{\tau}$, so $\hat{\tau}$ is mildly optimistic on the validation set. Final test metrics are unaffected because the test split is held out from HPO, calibration, and threshold selection.
+When $M \in \{\mathrm{Within}, \mathrm{Mixed}\}$, the calibration pool $\mathcal{S}_M$ includes $\mathcal{G}_{\mathrm{eval}}$, so $\mathcal{G}_{\mathrm{eval}}$'s validation windows serve both as part of the 5-fold calibration data and as the support for the F2-optimal threshold $\hat{\tau}$; $\hat{\tau}$ is therefore mildly optimistic on the validation set for these two modes. When $M = \mathrm{Cross}$, calibration and threshold-optimization pools are drawn from disjoint subject sets, so no coupling arises. Final test metrics are unaffected in all modes because the test split is held out from HPO, calibration, and threshold selection.
 \end{enumerate}
 
 %% ====================================================================
