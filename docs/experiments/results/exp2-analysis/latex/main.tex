@@ -294,6 +294,7 @@ so that synthetic samples preserve individual driving patterns rather than inter
 \end{itemize}
 
 The classifier $f$ is trained on $\tilde{\mathcal{D}}$ and evaluated on $\mathcal{D}_{\mathrm{test}} = \bigcup_{s \in \mathcal{G}_{\mathrm{eval}}} \mathcal{D}_s^{\mathrm{te}}$.
+The validation and test sets are kept in their original class distribution throughout; applying any resampling operator to evaluation data would misrepresent the deployment-time imbalance ratio and yield optimistic estimates of recall-oriented metrics~\cite{he2009,chawla2002}.
 
 \subsection{Common Experimental Settings}\label{sec:common_settings}
 
