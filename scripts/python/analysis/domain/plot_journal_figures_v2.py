@@ -746,7 +746,7 @@ def plot_convergence(df: pd.DataFrame):
             ax.set_xlabel("Number of seeds ($k$)")
         else:
             ax.set_xticklabels([])
-        ax.set_ylim(bottom=-0.02)
+        ax.set_ylim(-0.005, 0.22)
 
     summary_handles = [
         Line2D([0], [0], color=mean_color, linestyle="-", marker="o",
@@ -764,8 +764,9 @@ def plot_convergence(df: pd.DataFrame):
                label=COND_LABELS[cond])
         for cond in CONDITIONS_7
     ]
-    # Legend inside bottom panel (lower right — lines converge to 0 there)
-    axes[-1].legend(
+    # Legend inside top panel (upper right — k=1 has high σ but lines spread out
+    # only in later panels; top panel has most vertical space above the curves)
+    axes[0].legend(
         handles=summary_handles + cond_handles,
         loc="upper right",
         ncol=1,
