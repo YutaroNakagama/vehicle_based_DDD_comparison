@@ -10,6 +10,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.lines import Line2D
 from scipy import stats
 
 # ── paths ──────────────────────────────────────────────────────────────
@@ -162,7 +163,7 @@ def compute_spearman(rank_df: pd.DataFrame):
 # ── plotting ───────────────────────────────────────────────────────────
 def plot_bump_chart(df: pd.DataFrame):
     # Column-width figure (3.5 in) — displayed at \columnwidth, no scaling
-    fig, axes = plt.subplots(3, 1, figsize=(_TIV_COLUMN_WIDTH, 5.0))
+    fig, axes = plt.subplots(3, 1, figsize=(_TIV_COLUMN_WIDTH, 5.6))
 
     for ax_idx, (ax, (metric, metric_label)) in enumerate(
         zip(axes, METRICS.items())
@@ -192,7 +193,29 @@ def plot_bump_chart(df: pd.DataFrame):
         ax.tick_params(axis="x", length=0)  # categorical axis
         ax.set_ylabel(metric_label)
 
-    plt.tight_layout()
+    legend_handles = [
+        Line2D(
+            [0], [0],
+            color=COND_COLORS[cond],
+            marker=COND_MARKERS[cond],
+            linestyle=COND_LINESTYLES[cond],
+            linewidth=1.5,
+            markersize=5,
+            label=LABELS[cond],
+        )
+        for cond in CONDITIONS_7
+    ]
+    fig.tight_layout(rect=(0, 0.10, 1, 1))
+    fig.legend(
+        handles=legend_handles,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.0),
+        ncol=4,
+        frameon=False,
+        handlelength=2.4,
+        columnspacing=1.0,
+        handletextpad=0.5,
+    )
 
     out_path = OUT_DIR / "fig_ranking_reversal.pdf"
     fig.savefig(out_path, format="pdf", bbox_inches="tight", facecolor="white")

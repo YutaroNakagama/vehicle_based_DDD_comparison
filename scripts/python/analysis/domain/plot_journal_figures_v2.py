@@ -32,6 +32,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import matplotlib.ticker as mticker
+from matplotlib.lines import Line2D
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -676,7 +677,7 @@ def plot_convergence(df: pd.DataFrame):
     rng = np.random.RandomState(42)
 
     # Column-width figure (3.5 in) — displayed at \columnwidth, no scaling
-    fig, axes = plt.subplots(3, 1, figsize=(_TIV_COLUMN_WIDTH, 4.8))
+    fig, axes = plt.subplots(3, 1, figsize=(_TIV_COLUMN_WIDTH, 5.6))
 
     # CVD-safe colours consistent with other figures
     mean_color = "#2c3e50"    # dark slate (mean σ)
@@ -727,7 +728,34 @@ def plot_convergence(df: pd.DataFrame):
             ax.set_xticklabels([])
         ax.set_ylim(bottom=-0.02)
 
-    fig.tight_layout()
+    summary_handles = [
+        Line2D([0], [0], color=mean_color, linestyle="-", marker="o",
+               linewidth=2.5, markersize=6, label=r"Mean $\sigma_{\mathrm{rank}}$"),
+        Line2D([0], [0], color=max_color, linestyle="--", marker="s",
+               linewidth=1.2, markersize=5, alpha=0.8,
+               label=r"Max $\sigma_{\mathrm{rank}}$"),
+    ]
+    cond_handles = [
+        Line2D([0], [0],
+               color=COND_COLORS[cond],
+               linestyle=_cond_ls[cond],
+               marker=_cond_markers[cond],
+               linewidth=1.0, markersize=4, alpha=0.8,
+               label=COND_LABELS[cond])
+        for cond in CONDITIONS_7
+    ]
+    fig.tight_layout(rect=(0, 0.13, 1, 1))
+    fig.legend(
+        handles=summary_handles + cond_handles,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.0),
+        ncol=3,
+        frameon=False,
+        handlelength=2.4,
+        columnspacing=1.0,
+        handletextpad=0.5,
+    )
+
     _save(fig, "fig8_seed_convergence.svg")
 
 
