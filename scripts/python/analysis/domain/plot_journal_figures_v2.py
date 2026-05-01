@@ -696,7 +696,7 @@ def plot_convergence(df: pd.DataFrame):
     rng = np.random.RandomState(42)
 
     # Column-width figure (3.5 in) — displayed at \columnwidth, no scaling
-    fig, axes = plt.subplots(3, 1, figsize=(_TIV_COLUMN_WIDTH, 5.6))
+    fig, axes = plt.subplots(3, 1, figsize=(_TIV_COLUMN_WIDTH, 5.6), sharey=True)
 
     # CVD-safe colours consistent with other figures
     mean_color = "#2c3e50"    # dark slate (mean σ)
@@ -739,6 +739,7 @@ def plot_convergence(df: pd.DataFrame):
                     linewidth=1.0, alpha=0.6)
 
         ax.set_ylabel("$\\sigma_{\\mathrm{rank}}$" + f" ({mlabel})")
+        ax.set_ylim(-0.02, 1.2)
         ax.set_xticks(ks)
         # Only show x-tick labels on bottom subplot
         if ax_idx == len(PRIMARY_METRICS) - 1:
@@ -763,17 +764,20 @@ def plot_convergence(df: pd.DataFrame):
                label=COND_LABELS[cond])
         for cond in CONDITIONS_7
     ]
-    fig.tight_layout(rect=(0, 0.13, 1, 1))
-    fig.legend(
+    # Legend inside bottom panel (lower right — lines converge to 0 there)
+    axes[-1].legend(
         handles=summary_handles + cond_handles,
-        loc="lower center",
-        bbox_to_anchor=(0.5, 0.0),
-        ncol=3,
-        frameon=False,
-        handlelength=2.4,
-        columnspacing=1.0,
-        handletextpad=0.5,
+        loc="upper right",
+        ncol=1,
+        frameon=True, fancybox=False,
+        edgecolor="black", framealpha=1.0,
+        fontsize=7,
+        handlelength=1.6,
+        handletextpad=0.3,
+        borderpad=0.3,
+        labelspacing=0.25,
     )
+    fig.tight_layout()
 
     _save(fig, "fig8_seed_convergence.svg")
 
