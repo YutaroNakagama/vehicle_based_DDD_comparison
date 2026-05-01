@@ -87,9 +87,25 @@ fi
 # across every CPU queue we can reach. TINY accepts ≤30min walltime which
 # matches the eval profile, so it's a great fit and usually under-used.
 CPU_QUEUES=("SINGLE" "SMALL" "LONG" "LARGE" "DEF" "VM-CPU" "VM-LM" "LONG-L" "TINY" "XLARGE" "X2LARGE")
+
+# Build a set of full job names already present in the queue (any non-C state)
+# so we never resubmit the same Re_* tag twice when this script is invoked
+# repeatedly by auto_resubmit_lstm_eval_retry.sh. qstat -u truncates the Name
+# column, so we must use `qstat -f` for full names. Parallelise to keep the
+# probe fast even with thousands of jobs in queue.
+ACTIVE_NAMES_FILE=$(mktemp)
+trap "rm -f $ACTIVE_NAMES_FILE" EXIT
+qstat -u "$USER" 2>/dev/null | awk 'NR>5 && $10 != "C" {print $1}' \
+    | sed 's/\..*//' \
+    | xargs -r -n1 -P 16 -I{} bash -c 'qstat -f {} 2>/dev/null | awk -F" = " "/Job_Name/{print \$2; exit}"' \
+    > "$ACTIVE_NAMES_FILE" 2>/dev/null
+N_ACTIVE=$(wc -l < "$ACTIVE_NAMES_FILE")
+echo "[INFO] Active job names indexed: $N_ACTIVE (skipping resubmits with these names)"
+
 IDX=0
 N_SUB=0
 N_ERR=0
+N_SKIP=0
 while IFS=$'\t' read -r MODEL TAG JID KIND; do
     [[ -z "$MODEL" ]] && continue
 
@@ -106,6 +122,13 @@ while IFS=$'\t' read -r MODEL TAG JID KIND; do
     SHORT_TAG=$(echo "$TAG" | tr -dc '[:alnum:]' | tail -c 10)
     JOBNAME="Re_${MODEL:0:2}${KIND:0:1}_${JID}_${SHORT_TAG}"
 
+    # Skip if a job with this name is already queued/running (prevents
+    # duplicates when auto-resubmit invokes this script repeatedly).
+    if grep -qxF "$JOBNAME" "$ACTIVE_NAMES_FILE"; then
+        ((N_SKIP++))
+        continue
+    fi
+
     OUT=$(qsub -N "$JOBNAME" \
         -l select=1:ncpus=2:mem=4gb -l walltime=00:30:00 -q "$QUEUE" \
         -v PROJECT=$PROJECT_ROOT,MODEL=$MODEL,TAG=$TAG,KIND=$KIND,JID=$JID,TGT=$TGT \
@@ -121,4 +144,4 @@ while IFS=$'\t' read -r MODEL TAG JID KIND; do
 done < /tmp/eval_retry_all_targets.txt
 
 echo ""
-echo "[DONE] Submitted=$N_SUB  Errored=$N_ERR  Total=$N"
+echo "[DONE] Submitted=$N_SUB  Skipped(in-queue)=$N_SKIP  Errored=$N_ERR  Total=$N"
