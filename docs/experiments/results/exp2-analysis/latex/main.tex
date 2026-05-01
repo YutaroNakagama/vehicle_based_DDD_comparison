@@ -36,7 +36,7 @@ Daisuke~Ishii,~\IEEEmembership{Member,~IEEE,} and~Kazuki~Yoshizoe
 \begin{abstract}
 Vehicle-dynamics-based drowsy driving detection (DDD) is a non-intrusive and practical approach to driver monitoring, but its performance may be degraded by two issues: class imbalance, because drowsy samples are rare, and domain shift, because driving behavior varies across drivers.
 In vehicle-dynamics-based DDD, however, it remains unclear whether these issues materially affect detection performance and which countermeasures are effective.
-To address this question, we construct a DDD framework using a public 87-driver simulator dataset and conduct a four-factor factorial experiment varying rebalancing strategy ($R$), training mode ($M$), distance metric ($D$), and domain membership ($G$).
+To address this question, we construct a DDD framework using a public 87-driver simulator dataset and conduct a four-factor factorial experiment varying distance metric ($D$), domain membership ($G$), training mode ($M$), and rebalancing strategy ($R$).
 Sobol--Hoeffding variance decomposition shows that training mode and rebalancing account for more than 95\% of systematic variance, with a substantial $R \times M$ interaction that reverses the optimal rebalancing strategy across training modes.
 In contrast, distance metric and domain membership have no measurable effect on performance.
 A subject-wise application of SMOTE (SW-SMOTE) at ratio $r = 0.1$ with within-domain training maximizes threshold-independent discrimination (AUROC = 0.903, AUPRC = 0.648; within-domain F2 = 0.558).
@@ -60,13 +60,13 @@ Although class imbalance handling~\cite{chawla2002,he2009} and domain adaptation
 In particular, it is not known whether these issues materially degrade performance in this modality, whether they warrant dedicated countermeasures, and how they interact when both are present.
 To this end, we pose the following research questions:
 \begin{description}
-\item[\textbf{RQ1.}] To what extent do class imbalance and domain shift each affect vehicle-dynamics-based DDD performance, as quantified through the four design factors ($R$, $M$, $D$, $G$)?
+\item[\textbf{RQ1.}] To what extent do class imbalance and domain shift each affect vehicle-dynamics-based DDD performance, as quantified through the four design factors ($D$, $G$, $M$, $R$)?
 \item[\textbf{RQ2.}] Do the contributing factors interact, and if so, what is the optimal factor combination?
 \end{description}
 
 This paper addresses these research questions by constructing a DDD framework using a public open dataset and conducting a \textbf{four-factor factorial experiment} to quantify the effects of class imbalance handling and domain configuration on detection performance.
-The four factors---rebalancing strategy ($R$), training mode ($M$), distance metric ($D$), and domain membership ($G$)---are systematically varied across 1,512 random forest runs, and Sobol--Hoeffding variance decomposition is applied to identify which factors significantly affect performance and which combinations are practically effective.
-Of these, rebalancing strategy ($R$) addresses class imbalance, while training mode ($M$), distance metric ($D$), and domain membership ($G$) address domain configuration.
+The four factors---distance metric ($D$), domain membership ($G$), training mode ($M$), and rebalancing strategy ($R$)---are systematically varied across 1,512 random forest runs, and Sobol--Hoeffding variance decomposition is applied to identify which factors significantly affect performance and which combinations are practically effective.
+Of these, distance metric ($D$), domain membership ($G$), and training mode ($M$) address domain configuration, while rebalancing strategy ($R$) addresses class imbalance.
 The main contributions are:
 
 \begin{enumerate}
@@ -181,7 +181,7 @@ Section~\ref{sec:design_overview} provides an overview of the factorial design; 
 
 \subsection{Overview of the Factorial Experiment}\label{sec:design_overview}
 The experiment follows a four-factor full-factorial design.
-Fig.~\ref{fig:framework_factors} shows the dependency chain $D \to G \to M \to R$ of the four study-specific factors ($R$, $M$, $D$, $G$), where each factor acts on the data partition constructed by its predecessors; the resulting $(R, M, D, G)$ cell is then evaluated using the generic DDD pipeline of Fig.~\ref{fig:framework_general}. This chain operationalizes the formulation of Section~\ref{sec:formulation} as follows.
+Fig.~\ref{fig:framework_factors} shows the dependency chain $D \to G \to M \to R$ of the four study-specific factors, where each factor acts on the data partition constructed by its predecessors; the resulting $(R, M, D, G)$ cell is then evaluated using the generic DDD pipeline of Fig.~\ref{fig:framework_general}. This chain operationalizes the formulation of Section~\ref{sec:formulation} as follows.
 
 Starting from the subject set $\mathcal{S}$ with per-subject datasets $\mathcal{D}_s = \{(\mathbf{x}_w, y_w)\}$ (Section~\ref{sec:ddd_overview}), a \emph{distance metric}~$D$ first computes pairwise inter-subject distances and partitions $\mathcal{S}$ into an in-domain group $\mathcal{G}_{\mathrm{in}}$ (44~subjects, most typical) and an out-domain group $\mathcal{G}_{\mathrm{out}}$ (43~subjects, most dissimilar).
 \emph{Domain membership}~$G$ then selects which of these two groups serves as the evaluation target $\mathcal{G}_{\mathrm{eval}}$.
