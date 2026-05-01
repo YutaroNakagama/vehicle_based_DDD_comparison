@@ -244,13 +244,13 @@ def plot_effect_hierarchy(df: pd.DataFrame):
         for j, (sv, s1v) in enumerate(zip(st_vals, s1_vals)):
             if sv > 0.05:
                 ax.text(x[j] + offset, sv + max(yerr_hi[j], 0) + 0.01,
-                        f".{int(round(sv*100)):02d}",
-                        ha="center", va="bottom", fontsize=7,
+                        f"{sv:.2f}",
+                        ha="center", va="bottom", fontsize=8,
                         fontweight="bold")
             elif sv > 0.005:
                 ax.text(x[j] + offset, sv + max(yerr_hi[j], 0) + 0.01,
-                        f".{int(round(sv*1000)):03d}",
-                        ha="center", va="bottom", fontsize=6)
+                        f"{sv:.3f}",
+                        ha="center", va="bottom", fontsize=8)
 
     ax.set_xticks(x)
     ax.set_xticklabels([factor_display[f] for f in factor_order])
