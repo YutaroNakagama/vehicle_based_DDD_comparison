@@ -585,7 +585,7 @@ SW-SMOTE $r\!=\!0.5$  & 0.042 & 0.468 & 0.402 & 0.862 & 0.852 & 0.386 & 0.387 \\
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{fig/fig_ranking_reversal}
-\caption{$R \times M$ interaction: rebalancing strategy performance conditioned on training mode. Line styles encode rebalancing families: solid = Baseline (grey), dashed = RUS (orange/vermilion for $r$=0.1/0.5), dash-dotted = SMOTE (light blue/blue for $r$=0.1/0.5), dotted = SW-SMOTE (pink/purple for $r$=0.1/0.5); markers further distinguish ratio variants. In Cross-domain, all strategies collapse to near chance; in Within/Mixed, SMOTE-based strategies improve sharply while RUS variants remain low, confirming a strong ranking reversal across modes.}
+\caption{$R \times M$ interaction: rebalancing strategy performance conditioned on training mode (rows: F2-score, AUROC, AUPRC; columns: training modes; lines: rebalancing strategies, see legend). In Cross-domain, all strategies collapse to near chance; in Within/Mixed, SMOTE-based strategies improve sharply while RUS variants remain low, confirming a strong ranking reversal across modes.}
 \label{fig:ranking_reversal}
 \end{figure}
 
@@ -597,15 +597,7 @@ Ranking stability ($\sigma_{\text{rank}}$) decreases monotonically with the numb
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{fig/fig8_seed_convergence}
-\caption{Ranking stability ($\sigma_{\text{rank}}$) as a function of seed subset size $k$.
-Thick solid line with circles: mean $\sigma_{\text{rank}}$ across all seven strategies;
-dashed line with squares and shaded band: maximum $\sigma_{\text{rank}}$.
-Thin lines show per-strategy convergence (line style encodes family):
-solid with square = Baseline;
-dashed with up/down triangles = RUS $r$=0.1/0.5;
-dash-dotted with diamond/circle = SMOTE $r$=0.1/0.5;
-dotted with plus/cross = SW-SMOTE $r$=0.1/0.5.
-Monotonic convergence confirms that $n = 12$ seeds is sufficient.}
+\caption{Ranking stability ($\sigma_{\text{rank}}$) as a function of seed subset size $k$ (rows: F2-score, AUROC, AUPRC). Thick line: mean $\sigma_{\text{rank}}$ across the seven strategies; dashed line with shaded band: maximum $\sigma_{\text{rank}}$. Thin lines show per-strategy convergence (see legend). Monotonic convergence confirms that $n = 12$ seeds is sufficient.}
 \label{fig:seed_convergence}
 \end{figure}
 
