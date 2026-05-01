@@ -247,6 +247,16 @@ def eval_pipeline(
                     "specificity_thr": spec_thr,
                 })
                 logging.info(f"[EVAL] Applied threshold={thr:.3f} on TEST")
+                # Ensure threshold_beta/source are recorded for models that do not
+                # set them in their own eval function (e.g. SvmW via common_eval).
+                # setdefault preserves values already written by SvmA_eval/lstm_eval.
+                _val_avail = (
+                    'X_val_prepared' in locals()
+                    and X_val_prepared is not None  # type: ignore[name-defined]
+                    and len(X_val_prepared) > 0     # type: ignore[name-defined]
+                )
+                result.setdefault("threshold_beta", 1.0)
+                result.setdefault("threshold_source", "val" if _val_avail else "test")
     except Exception as e:
         logging.warning(f"[EVAL] Threshold logic failed: {e}")
 
