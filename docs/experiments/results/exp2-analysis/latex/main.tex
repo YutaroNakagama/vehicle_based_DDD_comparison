@@ -145,7 +145,7 @@ The \emph{training set} $\mathcal{D}_s^{\mathrm{tr}}$ is used to fit the classif
 % Notation: f: R^p -> [0,1] (scoring/probabilistic function; binary prediction via threshold tau-hat)
 %   — S_M (not S') used here to match Eq.(train_pool); forward-referenced for clarity
 %   — "held-out" preferred over "unseen": Within-mode subjects are not unseen, only their test windows are withheld
-The DDD task is to learn a scoring function $f\colon \mathbb{R}^p \to [0,1]$ that generalizes to held-out test windows, trained on pooled data $\mathcal{D}_{\mathrm{pool}} = \bigcup_{s \in \mathcal{S}_M} \mathcal{D}_s^{\mathrm{tr}}$, where $\mathcal{S}_M \subseteq \mathcal{S}$ is the training subject set determined by mode $M$ (Eq.~\eqref{eq:train_pool}); the binary prediction is obtained by thresholding: $\hat{y}_w = \mathbf{1}[f(\mathbf{x}_w) \geq \hat{\tau}]$, where $\hat{\tau}$ is the F2-optimal operating point (Section~\ref{sec:classifier}).
+The DDD task is to learn a scoring function $f\colon \mathbb{R}^p \to [0,1]$ that generalizes to held-out test windows, trained on pooled data $\mathcal{D}_{\mathrm{pool}} = \bigcup_{s \in \mathcal{S}_M} \mathcal{D}_s^{\mathrm{tr}}$, where $\mathcal{S}_M \subseteq \mathcal{S}$ is the training subject set determined by mode $M$ (Eq.~\eqref{eq:train_pool}); the binary prediction is obtained by thresholding: $\hat{y}_w = \mathbf{1}[\hat{p}_w^{\mathrm{cal}} \geq \hat{\tau}]$, where $\hat{p}_w^{\mathrm{cal}}$ is the calibrated posterior probability and $\hat{\tau}$ is the F2-optimal operating point (Section~\ref{sec:classifier}).
 The specific dataset, signal set, and preprocessing parameters are detailed in Section~\ref{sec:common_settings}.
 
 \subsection{Class Imbalance}\label{sec:class_imbalance}
@@ -258,10 +258,11 @@ Subjects are split at the median of $\mathrm{KNN}_K$ into \textbf{in-domain} (44
 \label{eq:eval_group}
 \mathcal{G}_{\mathrm{eval}} =
 \begin{cases}
-\mathcal{G}_{\mathrm{in}} & \text{if } G = \mathrm{in}\;\text{(44 subjects)} \\
-\mathcal{G}_{\mathrm{out}} & \text{if } G = \mathrm{out}\;\text{(43 subjects)}
+\mathcal{G}_{\mathrm{in}}  & \text{if } G = \mathrm{in} \\
+\mathcal{G}_{\mathrm{out}} & \text{if } G = \mathrm{out}
 \end{cases}
 \end{equation}
+where $|\mathcal{G}_{\mathrm{in}}| = 44$ and $|\mathcal{G}_{\mathrm{out}}| = 43$ partition $\mathcal{S}$ ($|\mathcal{S}| = 87$; $\mathcal{G}_{\mathrm{in}} \cap \mathcal{G}_{\mathrm{out}} = \emptyset$, $\mathcal{G}_{\mathrm{in}} \cup \mathcal{G}_{\mathrm{out}} = \mathcal{S}$).
 
 \subsubsection{Training Mode ($M$)}
 \textbf{Training mode} $M \in \{\mathrm{Cross}, \mathrm{Within}, \mathrm{Mixed}\}$ assembles the training pool from subjects determined by $\mathcal{G}_{\mathrm{eval}}$:
@@ -270,9 +271,9 @@ Subjects are split at the median of $\mathrm{KNN}_K$ into \textbf{in-domain} (44
 \mathcal{D}_{\mathrm{pool}} = \bigcup_{s \,\in\, \mathcal{S}_M} \mathcal{D}_s^{\mathrm{tr}}, \quad
 \mathcal{S}_M =
 \begin{cases}
-\mathcal{S} \setminus \mathcal{G}_{\mathrm{eval}} & M = \mathrm{Cross} \\
-\mathcal{G}_{\mathrm{eval}} & M = \mathrm{Within} \\
-\mathcal{S} & M = \mathrm{Mixed}
+\mathcal{S} \setminus \mathcal{G}_{\mathrm{eval}} & M = \mathrm{Cross} \quad \text{(opposite group)} \\
+\mathcal{G}_{\mathrm{eval}}                       & M = \mathrm{Within} \\
+\mathcal{S}                                       & M = \mathrm{Mixed}
 \end{cases}
 \end{equation}
 Cross-domain trains exclusively on the opposite group, within-domain on the evaluation group itself, and mixed on all 87 subjects.
@@ -349,7 +350,7 @@ Each signal's raw waveform and its FFT power spectrum in the $[0.5, 30]$~Hz band
 The processed-data CSV additionally contains $5 \times 3 = 15$ smoothed-trend / standard-deviation / prediction-error descriptors and $5 \times 8 = 40$ Geronimo--Hardin--Massopust (GHM) multiwavelet packet decomposition energies (3-level decomposition, 8 sub-bands per signal); these 55 additional features are not loaded by the RF classifier but are used downstream for the inter-subject distance computation that defines factor $D$ (Section~\ref{sec:grouping}), giving the distance space its $90 + 15 + 40 = 145$ dimensions.
 To reduce dimensionality and mitigate overfitting, the 90 classifier-candidate features are ranked by random forest feature importance~\cite{breiman2001} (200 trees, balanced class weights) and the top $k = 10$ are retained for each training configuration, balancing discriminative power against overfitting given the per-cell sample sizes.
 
-\subsubsection{Classifier and Hyperparameter Optimization}
+\subsubsection{Classifier and Hyperparameter Optimization}\label{sec:classifier}
 The scoring function $f\colon \mathbb{R}^p \to [0,1]$ introduced in Section~\ref{sec:formulation} is instantiated as a random forest (RF)~\cite{breiman2001} and trained on the rebalanced pool $\tilde{\mathcal{D}}$ defined above.
 Its hyperparameter vector $\boldsymbol{\theta}$ is tuned independently per factorial cell via Optuna~\cite{akiba2019} with 100 Tree-structured Parzen Estimator (TPE) trials and 3-fold stratified cross-validation:
 \begin{equation}
