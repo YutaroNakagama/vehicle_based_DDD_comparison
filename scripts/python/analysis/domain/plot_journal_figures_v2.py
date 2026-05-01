@@ -240,17 +240,18 @@ def plot_effect_hierarchy(df: pd.DataFrame):
                     yerr=[yerr_lo, yerr_hi],
                     fmt="none", ecolor="black", elinewidth=0.8, capsize=2)
 
-        # Annotate ST value above each bar
+        # Annotate ST value above each bar (rotated to avoid overlap)
         for j, (sv, s1v) in enumerate(zip(st_vals, s1_vals)):
             if sv > 0.05:
                 ax.text(x[j] + offset, sv + max(yerr_hi[j], 0) + 0.01,
                         f"{sv:.2f}",
                         ha="center", va="bottom", fontsize=8,
-                        fontweight="bold")
+                        fontweight="bold", rotation=90)
             elif sv > 0.005:
                 ax.text(x[j] + offset, sv + max(yerr_hi[j], 0) + 0.01,
                         f"{sv:.3f}",
-                        ha="center", va="bottom", fontsize=8)
+                        ha="center", va="bottom", fontsize=8,
+                        rotation=90)
 
     ax.set_xticks(x)
     ax.set_xticklabels([factor_display[f] for f in factor_order])
@@ -287,7 +288,7 @@ def plot_effect_hierarchy(df: pd.DataFrame):
                   edgecolor="black", linewidth=0.5,
                   hatch=hatches_inter[mlabel],
                   label=f"{short_labels[mlabel]} ($S_{{Ti}}{{-}}S_i$)"))
-    ax.set_ylim(0, 0.80)
+    ax.set_ylim(0, 0.95)
     ax.legend(handles=legend_elements,
               loc="upper right",
               ncol=1, frameon=True, fancybox=False,
