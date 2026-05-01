@@ -83,10 +83,11 @@ if $DRY_RUN; then
     exit 0
 fi
 
-# Eval-only is light (~5-15min CPU, <4GB resident). Distribute round-robin
-# across every CPU queue we can reach. TINY accepts ≤30min walltime which
-# matches the eval profile, so it's a great fit and usually under-used.
-CPU_QUEUES=("SINGLE" "SMALL" "LONG" "LARGE" "DEF" "VM-CPU" "VM-LM" "LONG-L" "TINY" "XLARGE" "X2LARGE")
+# SvmW/SvmA eval-only is light (~5-15min). Lstm eval involves model loading
+# and knn inference which can exceed 30min, so use 2h walltime and exclude TINY
+# (TINY has a hard 30min cap).
+CPU_QUEUES=("SINGLE" "SMALL" "LONG" "LARGE" "DEF" "VM-CPU" "VM-LM" "LONG-L" "XLARGE" "X2LARGE")
+CPU_QUEUES_LSTM=("SINGLE" "SMALL" "LONG" "LARGE" "DEF" "VM-CPU" "VM-LM" "LONG-L" "XLARGE" "X2LARGE")
 
 # Build a set of full job names already present in the queue (any non-C state)
 # so we never resubmit the same Re_* tag twice when this script is invoked
@@ -117,7 +118,13 @@ while IFS=$'\t' read -r MODEL TAG JID KIND; do
     fi
     TGT="results/analysis/exp2_domain_shift/distance/rankings/split2/knn/${DIST}_${DOM}.txt"
 
-    QUEUE="${CPU_QUEUES[$((IDX % ${#CPU_QUEUES[@]}))]}"
+    if [[ "$MODEL" == "Lstm" ]]; then
+        QUEUE="${CPU_QUEUES_LSTM[$((IDX % ${#CPU_QUEUES_LSTM[@]}))]}"
+        WALLTIME="02:00:00"
+    else
+        QUEUE="${CPU_QUEUES[$((IDX % ${#CPU_QUEUES[@]}))]}"
+        WALLTIME="00:30:00"
+    fi
     ((IDX++))
     SHORT_TAG=$(echo "$TAG" | tr -dc '[:alnum:]' | tail -c 10)
     JOBNAME="Re_${MODEL:0:2}${KIND:0:1}_${JID}_${SHORT_TAG}"
@@ -130,7 +137,7 @@ while IFS=$'\t' read -r MODEL TAG JID KIND; do
     fi
 
     OUT=$(qsub -N "$JOBNAME" \
-        -l select=1:ncpus=2:mem=4gb -l walltime=00:30:00 -q "$QUEUE" \
+        -l select=1:ncpus=2:mem=4gb -l walltime=$WALLTIME -q "$QUEUE" \
         -v PROJECT=$PROJECT_ROOT,MODEL=$MODEL,TAG=$TAG,KIND=$KIND,JID=$JID,TGT=$TGT \
         scripts/hpc/jobs/train/pbs_lstm_eval_retry.sh 2>&1)
     if [[ $? -eq 0 ]]; then
