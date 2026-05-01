@@ -1,5 +1,5 @@
 #!/bin/bash
-# Auto-resubmit Lstm eval-only retry as CPU slots free up.
+# Auto-resubmit eval-retry (SvmW / SvmA / Lstm) until all models are fixed.
 set -uo pipefail
 
 PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
@@ -13,27 +13,26 @@ pass=0
 while true; do
     pass=$((pass + 1))
     active=$(qstat -u s2240011 2>/dev/null | awk 'NR>5 && $10 != "C"' | wc -l)
-    # Count Lstm tags that still need retry (i.e., model exists but has no JSON
-    # newer than today's lstm_eval fix)
+    # Count JSONs across all three models that still lack threshold_beta=1.0
     remaining=$(python3 - <<'PY'
-import os, glob, re
-# A tag needs retry if its eval JSON's threshold_source != "val" (or missing)
-import json
+import os, glob, json
 n_need = 0
-for f in glob.glob('results/outputs/evaluation/Lstm/**/eval_results_Lstm_domain_train_*.json', recursive=True):
-    if '_invalidated' in f: continue
-    try:
-        with open(f) as fh: d = json.load(fh)
-    except Exception: continue
-    if d.get('threshold_source') != 'val':
-        n_need += 1
+for model in ('SvmW', 'SvmA', 'Lstm'):
+    pattern = f'results/outputs/evaluation/{model}/**/eval_results_{model}_domain_train_*.json'
+    for f in glob.glob(pattern, recursive=True):
+        if '_invalidated' in f: continue
+        try:
+            with open(f) as fh: d = json.load(fh)
+        except Exception: continue
+        if d.get('threshold_beta') != 1.0:
+            n_need += 1
 print(n_need)
 PY
 )
     echo "============================================================"
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Pass $pass | active=$active | retry_needed=$remaining"
     if [[ "$remaining" -eq 0 ]]; then
-        echo "[INFO] No Lstm eval-retry work remaining — exiting."
+        echo "[INFO] All models (SvmW/SvmA/Lstm) eval-retry complete — exiting."
         break
     fi
     bash "$SUBMITTER" 2>&1 | tail -3
