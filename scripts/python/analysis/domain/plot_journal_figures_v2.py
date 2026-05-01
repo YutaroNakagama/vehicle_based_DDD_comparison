@@ -290,7 +290,7 @@ def plot_effect_hierarchy(df: pd.DataFrame):
     ax.set_ylim(0, 0.80)
     ax.legend(handles=legend_elements,
               loc="upper right",
-              ncol=3, frameon=True, fancybox=False,
+              ncol=1, frameon=True, fancybox=False,
               edgecolor="black", framealpha=1.0, fontsize=8,
               handlelength=1.4, columnspacing=0.6, handletextpad=0.4)
     fig.tight_layout()
