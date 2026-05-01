@@ -112,7 +112,7 @@ plt.rcParams.update({
     "axes.labelsize": 9,
     "xtick.labelsize": 9,
     "ytick.labelsize": 9,
-    "legend.fontsize": 7,
+    "legend.fontsize": 8,
     "figure.dpi": 150,
     "savefig.dpi": 300,
     "axes.grid": False,
@@ -271,8 +271,8 @@ def plot_effect_hierarchy(df: pd.DataFrame):
                   edgecolor="black", linewidth=0.5,
                   hatch=hatches_inter[mlabel],
                   label=f"{mlabel} — inter. ($S_{{Ti}}$$-$$S_i$)"))
-    ax.legend(handles=legend_elements, loc="upper right", framealpha=0.9,
-              fontsize=6, ncol=1)
+    ax.legend(handles=legend_elements, loc="upper right", framealpha=1.0,
+              edgecolor="black", fancybox=False, fontsize=8, ncol=1)
     ax.set_ylim(0, 0.80)
 
     fig.tight_layout()
