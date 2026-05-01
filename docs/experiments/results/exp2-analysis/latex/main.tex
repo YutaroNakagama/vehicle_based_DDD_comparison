@@ -142,10 +142,10 @@ Each subject's dataset is split chronologically into three disjoint portions:
 with a 70/15/15 ratio, preserving temporal order to prevent data leakage from future windows.
 The \emph{training set} $\mathcal{D}_s^{\mathrm{tr}}$ is used to fit the classifier (with hyperparameter selection performed via cross-validation within $\mathcal{D}_s^{\mathrm{tr}}$), the \emph{validation set} $\mathcal{D}_s^{\mathrm{val}}$ for threshold tuning, and the \emph{test set} $\mathcal{D}_s^{\mathrm{te}}$ for final performance evaluation.
 
-% Notation verified: f: R^p -> {0,1}, D_pool = \bigcup D_s^{tr}
-%   — classifier mapping notation standard in He \& Garcia (2009)
-%   — pooled training set with subset S' \subseteq S deferred to Sec.4 (Eq. train_pool)
-The DDD task is to learn a classifier $f\colon \mathbb{R}^p \to \{0, 1\}$ from pooled training data $\mathcal{D}_{\mathrm{pool}} = \bigcup_{s \in \mathcal{S}'} \mathcal{D}_s^{\mathrm{tr}}$ (where $\mathcal{S}' \subseteq \mathcal{S}$ depends on the training mode) that generalizes to unseen test windows.
+% Notation: f: R^p -> [0,1] (scoring/probabilistic function; binary prediction via threshold tau-hat)
+%   — S_M (not S') used here to match Eq.(train_pool); forward-referenced for clarity
+%   — "held-out" preferred over "unseen": Within-mode subjects are not unseen, only their test windows are withheld
+The DDD task is to learn a scoring function $f\colon \mathbb{R}^p \to [0,1]$ that generalizes to held-out test windows, trained on pooled data $\mathcal{D}_{\mathrm{pool}} = \bigcup_{s \in \mathcal{S}_M} \mathcal{D}_s^{\mathrm{tr}}$, where $\mathcal{S}_M \subseteq \mathcal{S}$ is the training subject set determined by mode $M$ (Eq.~\eqref{eq:train_pool}); the binary prediction is obtained by thresholding: $\hat{y}_w = \mathbf{1}[f(\mathbf{x}_w) \geq \hat{\tau}]$, where $\hat{\tau}$ is the F2-optimal operating point (Section~\ref{sec:classifier}).
 The specific dataset, signal set, and preprocessing parameters are detailed in Section~\ref{sec:common_settings}.
 
 \subsection{Class Imbalance}\label{sec:class_imbalance}
