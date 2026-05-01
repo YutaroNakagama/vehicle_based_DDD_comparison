@@ -187,7 +187,7 @@ def plot_effect_hierarchy(df: pd.DataFrame):
 
     si = pd.read_csv(csv_path)
 
-    fig, ax = plt.subplots(figsize=(_TIV_COLUMN_WIDTH, 3.3))
+    fig, ax = plt.subplots(figsize=(_TIV_COLUMN_WIDTH, 2.8))
 
     # Factor display labels — order matches paper narrative
     factor_display = {
@@ -271,7 +271,7 @@ def plot_effect_hierarchy(df: pd.DataFrame):
                   edgecolor="black", linewidth=0.5,
                   hatch=hatches_inter[mlabel],
                   label=f"{mlabel} — inter. ($S_{{Ti}}$$-$$S_i$)"))
-    # Legend — placed below axes; 2 rows × 3 cols, short labels
+    # Legend — inside plot at upper right (D and G bars are near zero there)
     from matplotlib.patches import Patch
     legend_elements = []
     short_labels = {"F2-score": "F2", "AUROC": "AUROC", "AUPRC": "AUPRC"}
@@ -288,12 +288,12 @@ def plot_effect_hierarchy(df: pd.DataFrame):
                   hatch=hatches_inter[mlabel],
                   label=f"{short_labels[mlabel]} ($S_{{Ti}}{{-}}S_i$)"))
     ax.set_ylim(0, 0.80)
-    fig.tight_layout(rect=(0, 0.16, 1, 1))
-    fig.legend(handles=legend_elements,
-               loc="lower center", bbox_to_anchor=(0.5, 0.0),
-               ncol=3, frameon=True, fancybox=False,
-               edgecolor="black", framealpha=1.0, fontsize=8,
-               handlelength=1.6, columnspacing=0.8, handletextpad=0.4)
+    ax.legend(handles=legend_elements,
+              loc="upper right",
+              ncol=3, frameon=True, fancybox=False,
+              edgecolor="black", framealpha=1.0, fontsize=8,
+              handlelength=1.4, columnspacing=0.6, handletextpad=0.4)
+    fig.tight_layout()
     _save(fig, "fig2_effect_hierarchy.svg")
 
 
