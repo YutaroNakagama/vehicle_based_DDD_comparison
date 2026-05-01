@@ -168,7 +168,7 @@ Each subject~$s$ induces a marginal feature distribution $P_s(\mathbf{x})$.
 Inter-driver variability means that $P_{s_i}(\mathbf{x}) \neq P_{s_j}(\mathbf{x})$ in general; following the transfer-learning taxonomy of Pan and Yang~\cite{pan2010}, this constitutes covariate shift when the labeling mechanism $P(y \mid \mathbf{x})$ is approximately shared across subjects.
 When subjects are partitioned into a source group $\mathcal{G}_{\mathrm{src}}$ and a target group $\mathcal{G}_{\mathrm{tgt}}$ with $\mathcal{G}_{\mathrm{src}} \cap \mathcal{G}_{\mathrm{tgt}} = \emptyset$, a classifier trained on $\bigcup_{s \in \mathcal{G}_{\mathrm{src}}} \mathcal{D}_s$ may degrade on $\bigcup_{s \in \mathcal{G}_{\mathrm{tgt}}} \mathcal{D}_s$ because the pooled training distribution differs from the target distribution.
 
-These two issues are treated here not as fixed nuisances but as explicit design factors whose practical importance is quantified through the factorial experiment in Section~\ref{sec:framework}.
+Both class imbalance (Section~\ref{sec:class_imbalance}) and domain shift (Section~\ref{sec:domain_shift}) are treated here not as fixed nuisances but as explicit design factors whose practical importance is quantified through the factorial experiment in Section~\ref{sec:framework}.
 
 %% ====================================================================
 \section{Experimental Framework}
