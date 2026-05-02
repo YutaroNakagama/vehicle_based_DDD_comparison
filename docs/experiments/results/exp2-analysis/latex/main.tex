@@ -145,7 +145,7 @@ The \emph{training set} $\mathcal{D}_s^{\mathrm{tr}}$ is used to fit the classif
 % Notation: f: R^p -> [0,1] (scoring/probabilistic function; binary prediction via threshold tau-hat)
 %   — S_M (not S') used here to match Eq.(train_pool); forward-referenced for clarity
 %   — "held-out" preferred over "unseen": Within-mode subjects are not unseen, only their test windows are withheld
-The DDD task is to learn a scoring function $f\colon \mathbb{R}^p \to [0,1]$ that generalizes to held-out test windows, trained on pooled data $\mathcal{D}_{\mathrm{pool}} = \bigcup_{s \in \mathcal{S}_M} \mathcal{D}_s^{\mathrm{tr}}$, where $\mathcal{S}_M \subseteq \mathcal{S}$ is the training subject set determined by mode $M$ (Eq.~\eqref{eq:train_pool}); the binary prediction is obtained by thresholding: $\hat{y}_w = \mathbf{1}[\hat{p}_w^{\mathrm{cal}} \geq \hat{\tau}]$, where $\hat{p}_w^{\mathrm{cal}}$ is the calibrated posterior probability and $\hat{\tau}$ is the F2-optimal operating point (Section~\ref{sec:classifier}).
+The DDD task is to learn a scoring function $f\colon \mathbb{R}^p \to [0,1]$ that generalizes to held-out test windows, trained on pooled data $\mathcal{D}_{\mathrm{pool}} = \bigcup_{s \in \mathcal{S}_M} \mathcal{D}_s^{\mathrm{tr}}$, where $\mathcal{S}_M \subseteq \mathcal{S}$ is the training subject set determined by mode $M$ (Eq.~\eqref{eq:train_pool}); the binary prediction is obtained by thresholding: $\hat{y}_w = \mathbb{1}[\hat{p}_w^{\mathrm{cal}} \geq \hat{\tau}]$, where $\hat{p}_w^{\mathrm{cal}}$ is the calibrated posterior probability and $\hat{\tau}$ is the F2-optimal operating point (Section~\ref{sec:classifier}).
 The specific dataset, signal set, and preprocessing parameters are detailed in Section~\ref{sec:common_settings}.
 
 \subsection{Class Imbalance}\label{sec:class_imbalance}
@@ -206,7 +206,7 @@ The following subsubsections define each factor in detail.
 \hline
 Factor & Sym. & Lvl. & Values \\
 \hline
-Distance & $D$ & 3 & MMD, DTW, Wasserstein \\
+Distance & $D$ & 3 & MMD, DTW, Wasserstein-1 ($W_1$) \\
 \hline
 Membership & $G$ & 2 & In-domain, Out-domain \\
 \hline
@@ -223,12 +223,12 @@ To define the binary domain partition $(\mathcal{G}_{\mathrm{in}}, \mathcal{G}_{
 \textbf{Maximum Mean Discrepancy (MMD)}~\cite{gretton2012} measures distributional difference in a reproducing kernel Hilbert space~$\mathcal{H}$:
 \begin{equation}
 \label{eq:mmd}
-\mathrm{MMD}^2(s_i, s_j) = \left\| \frac{1}{n_{s_i}} \sum_{w \in s_i} \phi(\mathbf{x}_w) - \frac{1}{n_{s_j}} \sum_{w \in s_j} \phi(\mathbf{x}_w) \right\|_{\mathcal{H}}^2
+\mathrm{MMD}^2(s_i, s_j) = \left\| \frac{1}{n_{s_i}} \sum_{(\mathbf{x}_w,\,y_w) \in \mathcal{D}_{s_i}} \!\!\phi(\mathbf{x}_w) - \frac{1}{n_{s_j}} \sum_{(\mathbf{x}_w,\,y_w) \in \mathcal{D}_{s_j}} \!\!\phi(\mathbf{x}_w) \right\|_{\mathcal{H}}^2
 \end{equation}
 where $\phi$ is the feature map induced by a Gaussian kernel.
 
 \textbf{Dynamic Time Warping (DTW)}~\cite{berndt1994} aligns two univariate time series and finds the warping path that minimizes cumulative Euclidean distance.
-Each subject's multivariate window sequence is first reduced to a scalar series $\bar{x}_t^{(i)} = \frac{1}{q}\sum_{d=1}^{q} x_{t,d}^{(i)}$ (mean across all $q = 145$ $z$-scored features at each time step), and DTW is computed as:
+Each subject's multivariate window sequence (indexed $t = 1, \ldots, n_{s_i}$ over $\mathcal{D}_{s_i}$) is first reduced to a scalar series $\bar{x}_t^{(i)} = \frac{1}{q}\sum_{d=1}^{q} x_{t,d}^{(i)}$ (mean across all $q = 145$ $z$-scored features at each time step), and DTW is computed as:
 \begin{equation}
 \label{eq:dtw}
 \mathrm{DTW}(s_i, s_j) = \sqrt{\min_{\pi \in \mathcal{P}} \sum_{(a,b) \in \pi} \bigl(\bar{x}_a^{(i)} - \bar{x}_b^{(j)}\bigr)^2}
@@ -327,7 +327,7 @@ Under the kinematic bicycle model~\cite{rajamani2012}, lateral acceleration foll
 \label{eq:bicycle}
 a_y = \frac{v^2}{L}\,\delta
 \end{equation}
-where $v$ is vehicle speed and $L$ is the wheelbase.
+where $v$ is vehicle speed, $L$ is the wheelbase, and the small-angle approximation $\tan\delta \approx \delta$ is applied ($|\delta| \ll 1$).
 Lane offset evolves as:
 \begin{equation}
 \label{eq:lane_offset}
@@ -444,7 +444,7 @@ Each resulting line represents one fixed condition (averaged over 12 seeds), pro
 
 \subsubsection{Variance-Based Sensitivity Analysis (Sobol Indices)}
 To quantify the relative importance of each factor and their interactions, we adopt the Sobol--Hoeffding functional ANOVA decomposition~\cite{sobol1993,saltelli2008}.
-Let the response surface $Y = g(X_1, \ldots, X_k)$ map factor configurations to performance, where $Y \equiv Y_{D,G,M,R}$ (Eq.~\eqref{eq:observation}) and $X_i \in \{D, G, M, R\}$.
+Let the response surface $Y = g(X_1, \ldots, X_k)$ map factor configurations to performance, where $Y \equiv Y_{D,G,M,R}$ (Eq.~\eqref{eq:observation}), $k = 4$, and $(X_1, X_2, X_3, X_4) = (D, G, M, R)$.
 The total variance admits a unique orthogonal decomposition:
 \begin{equation}
 \label{eq:sobol_decomp}
@@ -477,7 +477,7 @@ Seed convergence is assessed by $\sigma_{\text{rank}}$, the standard deviation o
 \textbf{Per-feature inter-subject identifiability.}
 For each of the 145 features in the distance-computation pool of Section~\ref{sec:preprocessing} (90 statistical and spectral descriptors + 15 smooth/std/pred-error + 40 wavelet packet sub-bands), we report a per-feature one-way intraclass correlation,
 $\mathrm{ICC}_j = \hat{\sigma}^2_{\mathrm{subject},j} / (\hat{\sigma}^2_{\mathrm{subject},j} + \hat{\sigma}^2_{\mathrm{window} \mid \mathrm{subject},j})$,
-where $\hat{\sigma}^2_{\mathrm{subject},j}$ is estimated as the variance across the 87 subject-means of feature~$j$ and $\hat{\sigma}^2_{\mathrm{window} \mid \mathrm{subject},j}$ as the average within-subject variance of the same feature, following the ICC(1,1) moment estimator of Shrout and Fleiss~\cite{shrout1979}.
+where $\hat{\sigma}^2_{\mathrm{subject},j}$ is estimated as the variance across the 87 subject-means of feature~$j$ and $\hat{\sigma}^2_{\mathrm{window} \mid \mathrm{subject},j}$ as the average within-subject variance of the same feature (population variance-component form of ICC(1,1); equivalent to the Shrout--Fleiss mean-square estimator~\cite{shrout1979} in the large-$k$ limit).
 The reported overall value $\mathrm{ICC} = (1/p)\sum_j \mathrm{ICC}_j$ summarizes how distinguishable subjects are in the feature space used for inter-subject distance computation; this quantity is referenced once in Section~\ref{sec:rq2}.
 
 %% ====================================================================
@@ -536,7 +536,7 @@ Defining the systematic (non-residual) variance fraction, where $S_{\varepsilon}
 \end{equation}
 where $S_M{=}0.3675$, $S_R{=}0.2425$, $S_{R{\times}M}{=}0.2124$, and $S_{\varepsilon}{=}0.1567$.
 Analogous ratios are 95.8\% (AUROC) and 96.1\% (AUPRC), confirming that $M$, $R$, and their interaction account for $> 95$\% of systematic variance across all three metrics.
-The interaction concentration ratio $C_{R \times M}^{(i)} = S_{R \times M} / (S_{Ti} - S_i) = 87$--$96$\% indicates that the $R \times M$ pair absorbs nearly all interaction variance.
+The interaction concentration ratio $C_{R \times M}^{(i)} = S_{R \times M} / (S_{Ti} - S_i)$ for $i \in \{M, R\}$ ranges from 87\% to 96\%, indicating that the $R \times M$ pair absorbs nearly all interaction variance involving either dominant factor.
 
 \begin{figure}[!t]
 \centering
