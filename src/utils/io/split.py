@@ -514,38 +514,59 @@ def time_stratified_three_way_split(
 
     i_min = max(min_chunk, i0 - w)
     i_max = min(i0 + w, n - 2*min_chunk)
-    best = (1e9, i0, j0)  # (loss, i, j)
 
     # weights: emphasize ratio matching but also keep sizes near nominal
     w_ratio = 2.0
     w_size  = 1.0
 
-    for i in range(i_min, i_max + 1):
-        j_min = max(i + min_chunk, j0 - w)
-        j_max = min(j0 + w, n - min_chunk)
-        for j in range(j_min, j_max + 1):
-            n1 = i
-            n2 = j - i
-            n3 = n - j
+    # Vectorized search over (i, j) — replaces a Python double loop that
+    # runs ~(2w)^2 iterations (≈ billions for n>500K like raw Lstm input).
+    # Strategy: keep the outer Python loop on i, vectorize the inner j loop.
+    # Memory per iter is O(J) (~MB) instead of O(I*J) (~GB) so this scales.
+    j0_min = max(min_chunk, j0 - w)
+    j0_max = min(j0 + w, n - min_chunk)
 
-            # segment pos counts
-            p1 = cum_pos[i-1] if i > 0 else 0
-            p2 = cum_pos[j-1] - cum_pos[i-1]
-            p3 = cum_pos[n-1] - cum_pos[j-1]
+    if i_max < i_min or j0_max < j0_min:
+        i_star, j_star = i0, j0
+    else:
+        j_arr = np.arange(j0_min, j0_max + 1)
+        cum_n = cum_pos[n - 1]
+        # Precompute terms that depend only on j
+        n3_j = n - j_arr
+        p_at_j = cum_pos[j_arr - 1]
+        size_j = np.abs(n3_j / n - test_ratio)
+
+        best_loss = np.inf
+        i_star, j_star = i0, j0
+        for i in range(i_min, i_max + 1):
+            j_lo = i + min_chunk
+            if j_lo > j0_max:
+                continue
+            mask = j_arr >= j_lo
+            j_sub = j_arr[mask]
+            p_j_sub = p_at_j[mask]
+            n3_sub = n3_j[mask]
+            size_j_sub = size_j[mask]
+
+            n1 = i
+            n2 = j_sub - i
+            n3 = n3_sub
+            p1 = cum_pos[i - 1] if i > 0 else 0
+            p2 = p_j_sub - p1
+            p3 = cum_n - p_j_sub
 
             r1 = p1 / max(1, n1)
-            r2 = p2 / max(1, n2)
-            r3 = p3 / max(1, n3)
+            r2 = p2 / np.maximum(1, n2)
+            r3 = p3 / np.maximum(1, n3)
 
-            # ratio loss + size loss (L1)
-            loss_ratio = abs(r1 - r_target) + abs(r2 - r_target) + abs(r3 - r_target)
-            loss_size  = abs(n1/n - train_ratio) + abs(n2/n - val_ratio) + abs(n3/n - test_ratio)
-            loss = w_ratio * loss_ratio + w_size * loss_size
+            loss_ratio = np.abs(r1 - r_target) + np.abs(r2 - r_target) + np.abs(r3 - r_target)
+            loss_size  = abs(n1 / n - train_ratio) + np.abs(n2 / n - val_ratio) + size_j_sub
+            loss_arr = w_ratio * loss_ratio + w_size * loss_size
 
-            if loss < best[0]:
-                best = (loss, i, j)
-
-    _, i_star, j_star = best
+            k = int(np.argmin(loss_arr))
+            if loss_arr[k] < best_loss:
+                best_loss = float(loss_arr[k])
+                i_star, j_star = i, int(j_sub[k])
 
     # 5) If still far from tolerance, we accept the best (cannot do better without resampling)
     # Caller can check/ log actual deviations if desired.
