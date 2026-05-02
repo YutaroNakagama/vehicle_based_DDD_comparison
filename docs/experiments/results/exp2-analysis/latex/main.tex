@@ -145,7 +145,7 @@ The \emph{training set} $\mathcal{D}_s^{\mathrm{tr}}$ is used to fit the classif
 % Notation: f: R^p -> [0,1] (scoring/probabilistic function; binary prediction via threshold tau-hat)
 %   — S_M (not S') used here to match Eq.(train_pool); forward-referenced for clarity
 %   — "held-out" preferred over "unseen": Within-mode subjects are not unseen, only their test windows are withheld
-The DDD task is to learn a scoring function $f\colon \mathbb{R}^p \to [0,1]$ that generalizes to held-out test windows, trained on pooled data $\mathcal{D}_{\mathrm{pool}} = \bigcup_{s \in \mathcal{S}_M} \mathcal{D}_s^{\mathrm{tr}}$, where $\mathcal{S}_M \subseteq \mathcal{S}$ is the training subject set determined by mode $M$ (Eq.~\eqref{eq:train_pool}); the binary prediction is obtained by thresholding: $\hat{y}_w = \mathbb{1}[\hat{p}_w^{\mathrm{cal}} \geq \hat{\tau}]$, where $\hat{p}_w^{\mathrm{cal}}$ is the calibrated posterior probability and $\hat{\tau}$ is the F2-optimal operating point (Section~\ref{sec:classifier}).
+The DDD task is to learn a scoring function $f\colon \mathbb{R}^k \to [0,1]$ (with $k$ the input dimensionality after feature selection; Section~\ref{sec:preprocessing}) that generalizes to held-out test windows, trained on pooled data $\mathcal{D}_{\mathrm{pool}} = \bigcup_{s \in \mathcal{S}_M} \mathcal{D}_s^{\mathrm{tr}}$, where $\mathcal{S}_M \subseteq \mathcal{S}$ is the training subject set determined by mode $M$ (Eq.~\eqref{eq:train_pool}); the binary prediction is obtained by thresholding: $\hat{y}_w = \mathbb{1}[\hat{p}_w^{\mathrm{cal}} \geq \hat{\tau}]$, where $\hat{p}_w^{\mathrm{cal}}$ is the calibrated posterior probability and $\hat{\tau}$ is the F2-optimal operating point (Section~\ref{sec:classifier}).
 The specific dataset, signal set, and preprocessing parameters are detailed in Section~\ref{sec:common_settings}.
 
 \subsection{Class Imbalance}\label{sec:class_imbalance}
@@ -188,7 +188,7 @@ Starting from the subject set $\mathcal{S}$ with per-subject datasets $\mathcal{
 Each subject's data is split chronologically into $(\mathcal{D}_s^{\mathrm{tr}}, \mathcal{D}_s^{\mathrm{val}}, \mathcal{D}_s^{\mathrm{te}})$ per Eq.~\eqref{eq:split} (70/15/15 ratio).
 \emph{Training mode}~$M$ assembles the pooled training set $\mathcal{D}_{\mathrm{pool}} = \bigcup_{s \in \mathcal{S}_M} \mathcal{D}_s^{\mathrm{tr}}$ from the subject set $\mathcal{S}_M$ defined jointly by $G$ and $M$ (Eq.~\eqref{eq:train_pool}).
 After feature extraction and selection (from $p = 90$ to $k = 10$ statistical and spectral descriptors per Section~\ref{sec:preprocessing}), \emph{rebalancing strategy}~$R$ applies the operator of Section~\ref{sec:class_imbalance} to produce $\tilde{\mathcal{D}}$ with adjusted class ratio approaching the target~$r$.
-The scoring function $f\colon \mathbb{R}^p \to [0,1]$ (Section~\ref{sec:ddd_overview}) is trained on $\tilde{\mathcal{D}}$, calibrated, and evaluated on $\mathcal{D}_{\mathrm{test}} = \bigcup_{s \in \mathcal{G}_{\mathrm{eval}}} \mathcal{D}_s^{\mathrm{te}}$.
+The scoring function $f\colon \mathbb{R}^k \to [0,1]$ (Section~\ref{sec:ddd_overview}) is trained on $\tilde{\mathcal{D}}$, calibrated, and evaluated on $\mathcal{D}_{\mathrm{test}} = \bigcup_{s \in \mathcal{G}_{\mathrm{eval}}} \mathcal{D}_s^{\mathrm{te}}$.
 
 The four factors thus form a dependency chain $D \to G \to M \to R$, where each downstream factor operates on the data subset constructed by its predecessors.
 Each factorial cell is uniquely determined by a quadruple $(D, G, M, R)$; Section~\ref{sec:factor_defs} defines the levels of each factor (summarized in Table~\ref{tab:factorial}) and the total number of observations.
@@ -227,7 +227,7 @@ To define the binary domain partition $(\mathcal{G}_{\mathrm{in}}, \mathcal{G}_{
 \end{equation}
 where $\phi$ is the feature map induced by a Gaussian kernel.
 
-\textbf{Dynamic Time Warping (DTW)}~\cite{berndt1994} aligns two univariate time series and finds the warping path that minimizes cumulative Euclidean distance.
+\textbf{Dynamic Time Warping (DTW)}~\cite{berndt1994} aligns two univariate time series and finds the warping path that minimizes the root sum-of-squared distances along the optimal alignment.
 Each subject's multivariate window sequence (indexed $t = 1, \ldots, n_{s_i}$ over $\mathcal{D}_{s_i}$) is first reduced to a scalar series $\bar{x}_t^{(i)} = \frac{1}{q}\sum_{d=1}^{q} x_{t,d}^{(i)}$ (mean across all $q = 145$ $z$-scored features at each time step), and DTW is computed as:
 \begin{equation}
 \label{eq:dtw}
@@ -352,7 +352,7 @@ The processed-data CSV additionally contains $5 \times 3 = 15$ smoothed-trend / 
 To reduce dimensionality and mitigate overfitting, the 90 classifier-candidate features are ranked by random forest feature importance~\cite{breiman2001} (200 trees, balanced class weights) and the top $k = 10$ are retained for each training configuration, balancing discriminative power against overfitting given the per-cell sample sizes.
 
 \subsubsection{Classifier and Hyperparameter Optimization}\label{sec:classifier}
-The scoring function $f\colon \mathbb{R}^p \to [0,1]$ introduced in Section~\ref{sec:formulation} is instantiated as a random forest (RF)~\cite{breiman2001} and trained on the rebalanced pool $\tilde{\mathcal{D}}$ defined above.
+The scoring function $f\colon \mathbb{R}^k \to [0,1]$ ($k = 10$ retained features; Section~\ref{sec:preprocessing}) introduced in Section~\ref{sec:formulation} is instantiated as a random forest (RF)~\cite{breiman2001} and trained on the rebalanced pool $\tilde{\mathcal{D}}$ defined above.
 Its hyperparameter vector $\boldsymbol{\theta}$ is tuned independently per factorial cell via Optuna~\cite{akiba2019} with 100 Tree-structured Parzen Estimator (TPE) trials and 3-fold stratified cross-validation:
 \begin{equation}
 \label{eq:hpo}
@@ -478,7 +478,7 @@ Seed convergence is assessed by $\sigma_{\text{rank}}$, the standard deviation o
 For each of the 145 features in the distance-computation pool of Section~\ref{sec:preprocessing} (90 statistical and spectral descriptors + 15 smooth/std/pred-error + 40 wavelet packet sub-bands), we report a per-feature one-way intraclass correlation,
 $\mathrm{ICC}_j = \hat{\sigma}^2_{\mathrm{subject},j} / (\hat{\sigma}^2_{\mathrm{subject},j} + \hat{\sigma}^2_{\mathrm{window} \mid \mathrm{subject},j})$,
 where $\hat{\sigma}^2_{\mathrm{subject},j}$ is estimated as the variance across the 87 subject-means of feature~$j$ and $\hat{\sigma}^2_{\mathrm{window} \mid \mathrm{subject},j}$ as the average within-subject variance of the same feature (population variance-component form of ICC(1,1); equivalent to the Shrout--Fleiss mean-square estimator~\cite{shrout1979} in the large-$k$ limit).
-The reported overall value $\mathrm{ICC} = (1/p)\sum_j \mathrm{ICC}_j$ summarizes how distinguishable subjects are in the feature space used for inter-subject distance computation; this quantity is referenced once in Section~\ref{sec:rq2}.
+The reported overall value $\mathrm{ICC} = \frac{1}{145}\sum_{j=1}^{145} \mathrm{ICC}_j$ summarizes how distinguishable subjects are in the feature space used for inter-subject distance computation; this quantity is referenced once in Section~\ref{sec:rq2}.
 
 %% ====================================================================
 \section{Experimental Results}
