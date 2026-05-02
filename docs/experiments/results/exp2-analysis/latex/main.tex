@@ -444,11 +444,11 @@ Each resulting line represents one fixed condition (averaged over 12 seeds), pro
 
 \subsubsection{Variance-Based Sensitivity Analysis (Sobol Indices)}
 To quantify the relative importance of each factor and their interactions, we adopt the Sobol--Hoeffding functional ANOVA decomposition~\cite{sobol1993,saltelli2008}.
-Let the response surface $Y = g(X_1, \ldots, X_k)$ map factor configurations to performance, where $Y \equiv Y_{D,G,M,R}$ (Eq.~\eqref{eq:observation}), $k = 4$, and $(X_1, X_2, X_3, X_4) = (D, G, M, R)$.
+Let the response surface $Y = g(X_1, \ldots, X_m)$ map factor configurations to performance, where $Y \equiv Y_{D,G,M,R}$ (Eq.~\eqref{eq:observation}), $m = 4$, and $(X_1, X_2, X_3, X_4) = (D, G, M, R)$.
 The total variance admits a unique orthogonal decomposition:
 \begin{equation}
 \label{eq:sobol_decomp}
-V(Y) = \sum_{i=1}^{k} V_i + \sum_{i<j} V_{ij} + \cdots + V_{1,2,\ldots,k}
+V(Y) = \sum_{i=1}^{m} V_i + \sum_{i<j} V_{ij} + \cdots + V_{1,2,\ldots,m}
 \end{equation}
 where $V_i = \mathrm{Var}_{X_i}\bigl[\mathbb{E}_{X_{\sim i}}(Y \mid X_i)\bigr]$ is the variance of the conditional expectation over factor~$i$ alone, and $V_{ij}$ captures the joint effect of $(X_i, X_j)$ not explained by their individual contributions.
 The first-order Sobol index normalizes each contribution:
