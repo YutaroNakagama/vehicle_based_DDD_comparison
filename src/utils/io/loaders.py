@@ -411,6 +411,24 @@ def load_model_and_scaler(model_name: str, mode: str, tag: str, fold: int, jobid
     pure_jobid = re.sub(r"\[\d+\]$", "", jobid)
     model_dir = os.path.join("models", model_name, pure_jobid)
 
+    # --- Resolve manual_YYYYMMDD_HHMMSS jobids to the numeric HHMMSS directory ---
+    # savers.py parses the suffix string (which ends with _manual_YYYYMMDD_HHMMSS[fold])
+    # via r"(\d{5,})\[fold\]" and uses only the numeric HHMMSS portion as the directory.
+    # The manual_YYYYMMDD_HHMMSS directory exists but contains only Optuna study files.
+    # Model PKL/scaler/feature files are always saved under the numeric HHMMSS subdirectory.
+    # → Unconditionally prefer the numeric directory for any manual_ jobid.
+    if re.match(r"manual_", pure_jobid):
+        all_nums = re.findall(r"\d{5,}", pure_jobid)
+        for candidate in reversed(all_nums):  # HHMMSS is last → try it first
+            candidate_dir = os.path.join("models", model_name, candidate)
+            if os.path.exists(candidate_dir):
+                logging.info(
+                    f"[EVAL] Resolved manual jobid '{pure_jobid}' → numeric directory '{candidate}'"
+                )
+                pure_jobid = candidate
+                model_dir = candidate_dir
+                break
+
     # Fallback: use latest_job.txt if no explicit jobid folder exists
     if not os.path.exists(model_dir):
         latest_marker = os.path.join("models", model_name, LATEST_JOB_FILENAME)
