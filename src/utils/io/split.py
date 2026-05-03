@@ -26,13 +26,20 @@ _MODEL_FEATURE_RANGES = {
 }
 
 
-def _resolve_feature_columns(df: pd.DataFrame, include_subject_id: bool = False) -> list:
+def _resolve_feature_columns(
+    df: pd.DataFrame,
+    include_subject_id: bool = False,
+    model_name: str = None,
+) -> list:
     """Resolve feature columns from *df* using model-aware range detection.
 
-    Tries each known (start_col, end_col) pair from ``_MODEL_FEATURE_RANGES``.
-    If a matching pair is found in *df*.columns, returns the slice.
-    Otherwise falls back to an exclude-list approach (excludes Timestamp,
-    KSS labels, etc.).
+    When *model_name* is provided and found in ``_MODEL_FEATURE_RANGES``, the
+    corresponding (start_col, end_col) range is used directly — avoiding the
+    ambiguity that arises when one model's start column is a prefix of another
+    model's range (e.g. SvmA and RF both start at ``Steering_Range``).
+
+    Falls back to iterating all entries in insertion order, then to an
+    exclude-list approach when no range matches.
 
     Parameters
     ----------
@@ -40,12 +47,35 @@ def _resolve_feature_columns(df: pd.DataFrame, include_subject_id: bool = False)
         DataFrame whose columns should be inspected.
     include_subject_id : bool
         If True, append ``"subject_id"`` when present.
+    model_name : str, optional
+        Model identifier used to look up the exact feature range.  When
+        supplied and the key exists in ``_MODEL_FEATURE_RANGES``, the range is
+        applied directly (no iteration).
 
     Returns
     -------
     list[str]
         Ordered list of feature column names.
     """
+    # Direct lookup when model_name is known — avoids first-match ambiguity
+    if model_name is not None:
+        lookup_key = model_name if model_name in _MODEL_FEATURE_RANGES else None
+        # BalancedRF and similar tree ensembles share the RF feature set
+        if lookup_key is None and model_name not in ("Lstm", "SvmA", "SvmW"):
+            lookup_key = "RF"
+        if lookup_key is not None:
+            start_col, end_col = _MODEL_FEATURE_RANGES[lookup_key]
+            if start_col in df.columns and end_col in df.columns:
+                cols = df.loc[:, start_col:end_col].columns.tolist()
+                if include_subject_id and "subject_id" in df.columns:
+                    cols.append("subject_id")
+                logging.debug(
+                    "[_resolve_feature_columns] model=%s → %d cols (%s .. %s)",
+                    model_name, len(cols), start_col, end_col,
+                )
+                return cols
+
+    # Heuristic fallback: iterate all known ranges in insertion order
     for _model, (start_col, end_col) in _MODEL_FEATURE_RANGES.items():
         if start_col in df.columns and end_col in df.columns:
             cols = df.loc[:, start_col:end_col].columns.tolist()

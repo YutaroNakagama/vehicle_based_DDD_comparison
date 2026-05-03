@@ -31,7 +31,7 @@ def _prepare_df_with_label_and_features(df: pd.DataFrame, model_name: str = None
         d = df[df["event_label"].isin([0, 1])].copy()
         d["label"] = d["event_label"].astype(int)
         logging.info("[LABEL] Using event-based labels (0=baseline, 1=task)")
-        features = _resolve_feature_columns(d, include_subject_id=True)
+        features = _resolve_feature_columns(d, include_subject_id=True, model_name=model_name)
         return d, features
 
     from src.config import KSS_BIN_LABELS, KSS_LABEL_MAP
@@ -45,8 +45,8 @@ def _prepare_df_with_label_and_features(df: pd.DataFrame, model_name: str = None
         logging.info("[KSS] Using SvmA-specific KSS mapping (1-6=Alert, 8-9=Drowsy)")
     d = df[df["KSS_Theta_Alpha_Beta"].isin(kss_bins)].copy()
     d["label"] = d["KSS_Theta_Alpha_Beta"].replace(kss_map).astype(int)
-    # Model-aware feature detection (supports SvmW/SvmA/Lstm/common column layouts)
-    features = _resolve_feature_columns(d, include_subject_id=True)
+    # Pass model_name so _resolve_feature_columns uses the exact range without ambiguity
+    features = _resolve_feature_columns(d, include_subject_id=True, model_name=model_name)
     return d, features
 
 def log_split_ratios(y_tr: pd.Series, y_va: pd.Series, y_te: pd.Series, tag: str = "") -> None:
