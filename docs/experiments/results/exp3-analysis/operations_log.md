@@ -227,6 +227,35 @@ Triggered by user requirement: every exp3 condition should have **mixed-mode** r
   `tf.config.list_physical_devices('GPU')` returns the H100 device and
   `tf.constant([1,2]) * tf.constant([3,4])` runs on GPU.
 
+### 11. Old split2 Lstm Feature-Mismatch Batch (Detected 2026-05-xx, Fixed 2026-05-xx)
+
+- **Symptom:** 119 Lstm jobs submitted in Feb 2026 (PBS IDs `14851xxx`–`14871xxx`,
+  split2 mode: `source_only`/`target_only`) had training outputs but no evaluation
+  JSON files. Of these, 102 showed `Traceback (most recent call last)` in their logs,
+  9 were killed by walltime, and 8 exited silently.
+- **Root cause (traceback jobs):** The StandardScaler was fitted on a feature set
+  with fewer columns (7–9 features) during training, but the evaluation pipeline
+  passed `X` with 10 features at inference time. Error:
+  `X has 10 features, but StandardScaler is expecting 7/8/9 features`.
+  This is a scaler-training-code mismatch introduced by the old split2 version —
+  full retraining is required (eval-only retry cannot fix it).
+- **Impact:** 119 jobs produce no usable results. The scaler artifacts in those
+  training dirs are misaligned with the current codebase.
+- **Fix:**
+  - All 119 training output directories moved from `results/outputs/training/Lstm/<jid>`
+    to `results/outputs/training/Lstm/_invalidated_old_code/<jid>` (training-side
+    invalidation; eval-side invalidated dirs already follow this convention for other models).
+  - Of the 119 jobs: 40 already had replacement eval results produced by later reruns
+    (no resubmission needed); 79 had no replacement.
+  - The 79 no-replacement conditions (all `source_only`/`target_only` ×
+    `baseline`/`smote_plain`/`smote(imbalv3)` × `mmd`/`dtw`/`wasserstein` ×
+    `in_domain`/`out_domain` × seeds 42, 123) were resubmitted via
+    [`scripts/hpc/launchers/rerun_lstm_split2_missing.sh`](../../../../scripts/hpc/launchers/rerun_lstm_split2_missing.sh).
+  - After deduplication the TSV contains **67 unique conditions**
+    ([`scripts/hpc/logs/train/task_files/lstm_split2_missing_resub.tsv`](../../../../scripts/hpc/logs/train/task_files/lstm_split2_missing_resub.tsv));
+    the remaining 12 already had valid eval results.
+  - PBS IDs for the resubmission batch start at **43738** (GPU-1/1A/S queues, walltime=8h).
+
 ---
 
 ## Mixed-Domain 15-seed Operational Status (as of 2026-04-30)

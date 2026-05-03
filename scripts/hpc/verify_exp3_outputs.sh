@@ -15,7 +15,14 @@ for MODEL in Lstm SvmA SvmW; do
   # all model dirs (unique, exclude latest and spcc duplicates)
   for jid in $(ls "$model_dir" 2>/dev/null | grep -v spcc | grep -v latest | sort -n); do
     # ensure training output exists (considered completed)
+    # SvmW quarantine dirs hold bad-run training outputs outside the normal path;
+    # if the jid lives there it was already excluded from analysis, skip silently.
     if [ ! -d "$train_dir/$jid" ]; then
+      if [ "$MODEL" = "SvmW" ]; then
+        for qdir in "$BASE/results/outputs"/SvmW_quarantine_*; do
+          [ -d "$qdir/$jid" ] || [ -d "$qdir/_invalidated_old_duplicates/$jid" ] && continue 2
+        done
+      fi
       continue
     fi
     logf="$LOGDIR/${jid}.spcc-adm1.OU"
@@ -36,16 +43,18 @@ for MODEL in Lstm SvmA SvmW; do
     fi
     # scaler
     if find "$mdir" -type f -iname "scaler*.pkl" | grep -q .; then has_scaler=1; fi
-    # eval
-    if [ -d "$eval_dir/$jid" ]; then has_eval=1; fi
+    # eval — handle both plain dirs and array-suffix dirs (e.g. 14846997[1])
+    if find "$eval_dir" -maxdepth 1 -type d \( -name "$jid" -o -name "${jid}\[*" \) 2>/dev/null | grep -q .; then has_eval=1; fi
     # logs check
     if [ -f "$logf" ]; then
       if grep -q "Traceback (most recent call last)" "$logf" 2>/dev/null; then trace=1; fi
       if grep -q "job killed: walltime" "$logf" 2>/dev/null; then wt=1; fi
       if grep -q "Evaluation failed" "$logf" 2>/dev/null; then eval_fail=1; fi
-      if grep -qi "Model object is None\|skipping save" "$logf" 2>/dev/null; then saveerr=1; fi
+      # "skipping save" fires on fold-level saves (false positive); only flag canonical model None
+      if grep -q "Model object is None" "$logf" 2>/dev/null; then saveerr=1; fi
     else
-      echo "$jid MISSING_LOG" >> "$OUT"
+      # Only flag as MISSING_LOG for standard 7+-digit PBS job IDs (not manual_* or legacy IDs)
+      [[ "$jid" =~ ^[0-9]{7,}$ ]] && echo "$jid MISSING_LOG" >> "$OUT"
       continue
     fi
 
