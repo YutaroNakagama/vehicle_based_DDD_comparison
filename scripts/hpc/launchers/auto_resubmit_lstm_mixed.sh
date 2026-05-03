@@ -13,16 +13,12 @@ pass=0
 while true; do
     pass=$((pass + 1))
     active=$(qstat -u s2240011 2>/dev/null | awk 'NR>5 && $10 != "C"' | wc -l)
-    remaining=$(bash "$SUBMITTER" --dry-run 2>/dev/null | grep -c "^\[DRY\]")
 
     echo "============================================================"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Pass $pass | active=$active | lstm_mixed_remaining=$remaining"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Pass $pass | active=$active"
 
-    if [[ "$remaining" -eq 0 ]]; then
-        echo "[INFO] No Lstm-mixed work remaining — exiting."
-        break
-    fi
-    bash "$SUBMITTER" 2>&1 | tail -3
+    n_sub=$(bash "$SUBMITTER" 2>&1 | tee /dev/stderr | grep -c "^\[SUB\]" || true)
+    echo "[INFO] Submitted $n_sub new Lstm-mixed jobs this pass."
 
     if [[ "$pass" -ge "$MAX_PASSES" ]]; then break; fi
     sleep "$INTERVAL_SEC"

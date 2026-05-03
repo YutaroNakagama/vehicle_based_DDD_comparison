@@ -30,10 +30,7 @@ CPU_IDX=0
 
 # ---- Build active-queue name set for dedup ----
 echo "[INFO] Fetching current queue names for dedup..."
-ACTIVE_NAMES=$(qstat -u s2240011 2>/dev/null | awk 'NR>5 && $10 != "C" {print $1}' | \
-    while read jid; do
-        qstat -f "$jid" 2>/dev/null | awk '/Job_Name/ {print $3}'
-    done | sort -u)
+ACTIVE_NAMES=$(qstat -u s2240011 2>/dev/null | awk 'NR>5 && $10 != "C" {print $4}' | sort -u)
 ACTIVE_COUNT=$(echo "$ACTIVE_NAMES" | grep -c . || true)
 echo "[INFO] Active job names loaded: $ACTIVE_COUNT"
 
