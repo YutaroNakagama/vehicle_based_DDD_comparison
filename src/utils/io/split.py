@@ -286,6 +286,7 @@ def data_split_by_subject(
     test_subjects: list = None,
     kss_bin_labels=None,
     kss_label_map=None,
+    model_name: str = None,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
     """
     Split the dataset by subject IDs into train, validation, and test sets.
@@ -350,7 +351,9 @@ def data_split_by_subject(
         logging.info(f"Filtered data from {df.shape[0]} to {df_filtered.shape[0]} rows based on KSS labels.")
 
     # Step 2: Define feature columns (model-aware)
-    feature_columns = _resolve_feature_columns(df_filtered, include_subject_id=True)
+    feature_columns = _resolve_feature_columns(
+        df_filtered, include_subject_id=True, model_name=model_name
+    )
 
     # Step 3: Create datasets based on subject lists
     X_train = df_filtered[df_filtered["subject_id"].isin(train_subjects)][feature_columns].dropna()
@@ -388,6 +391,7 @@ def data_time_split_by_subject(
     test_ratio=0.2,
     kss_bin_labels=None,
     kss_label_map=None,
+    model_name: str = None,
 ):
     """
     Split data by subject while preserving temporal order within each subject.
@@ -442,7 +446,9 @@ def data_time_split_by_subject(
         raise ValueError("No label column found (event_label, KSS_Theta_Alpha_Beta, or KSS)")
 
     # 2. Column define (model-aware: auto-detects feature range)
-    feature_columns = _resolve_feature_columns(df, include_subject_id=(subject_col in df.columns))
+    feature_columns = _resolve_feature_columns(
+        df, include_subject_id=(subject_col in df.columns), model_name=model_name
+    )
 
     dfs_train, dfs_val, dfs_test = [], [], []
 

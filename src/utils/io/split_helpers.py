@@ -169,6 +169,7 @@ def split_data(
             X_train, X_val, X_test, y_train, y_val, y_test = data_time_split_by_subject(
                 data, subject_col="subject_id", time_col="Timestamp",
                 kss_bin_labels=kss_bins_ts, kss_label_map=kss_map_ts,
+                model_name=model_name,
             )
         # --- Fallback if any split collapses to a single class ---
         def _has_both(y: pd.Series) -> bool:
@@ -207,7 +208,8 @@ def split_data(
                 single_df, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, random_state=seed
             )
             X_general_tr, _, _, y_general_tr, _, _ = data_split_by_subject(
-                data, train_subjects, seed, val_subjects=[], test_subjects=[]
+                data, train_subjects, seed, val_subjects=[], test_subjects=[],
+                model_name=model_name,
             )
             X_train = pd.concat([X_general_tr, X_single_tr], ignore_index=True)
             y_train = pd.concat([y_general_tr, y_single_tr], ignore_index=True)
@@ -216,7 +218,8 @@ def split_data(
         else:
             val_subjects, test_subjects = train_test_split(target_subjects, test_size=0.5, random_state=seed)
             X_train, X_val, X_test, y_train, y_val, y_test = data_split_by_subject(
-                data, train_subjects, seed, val_subjects=val_subjects, test_subjects=test_subjects
+                data, train_subjects, seed, val_subjects=val_subjects, test_subjects=test_subjects,
+                model_name=model_name,
             )
         return X_train, X_val, X_test, y_train, y_val, y_test
 
