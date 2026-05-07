@@ -218,9 +218,9 @@ def plot_effect_hierarchy(df: pd.DataFrame):
         inter_vals = [st - s1 for st, s1 in zip(st_vals, s1_vals)]
         st_lo = [mdata.loc[f, "ST_lo"] for f in factor_order]
         st_hi = [mdata.loc[f, "ST_hi"] for f in factor_order]
-        # Error bars on ST
-        yerr_lo = [st - lo for st, lo in zip(st_vals, st_lo)]
-        yerr_hi = [hi - st for st, hi in zip(st_vals, st_hi)]
+        # Error bars on ST (clip to 0 to handle bootstrap CI inversions)
+        yerr_lo = [max(0.0, st - lo) for st, lo in zip(st_vals, st_lo)]
+        yerr_hi = [max(0.0, hi - st) for st, hi in zip(st_vals, st_hi)]
 
         # Bottom bar: S1 (main effect)
         bars_s1 = ax.bar(x + offset, s1_vals, width,
