@@ -10,9 +10,9 @@
 \usepackage{xcolor}
 \usepackage{standalone}
 \usepackage{tikz}
-\usetikzlibrary{shapes.geometric, positioning, decorations.pathreplacing,
-                arrows.meta, calc}
-% Highlight colors for the four study-specific factors (used by fig/framework_factors_tikz)
+\usetikzlibrary{shapes.geometric, shapes.misc, positioning,
+                decorations.pathreplacing, arrows.meta, calc}
+% Colors retained for potential use in other figures
 \definecolor{factorfill}{RGB}{255,236,179}   % light amber
 \definecolor{factordraw}{RGB}{191,127,0}     % dark amber
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
@@ -39,7 +39,7 @@ In vehicle-dynamics-based DDD, however, it remains unclear whether these issues 
 To address this question, we construct a DDD framework using a public 87-driver simulator dataset and conduct a four-factor factorial experiment varying distance metric ($D$), domain membership ($G$), training mode ($M$), and rebalancing strategy ($R$).
 Sobol--Hoeffding variance decomposition shows that training mode and rebalancing account for more than 95\% of systematic variance, with a substantial $R \times M$ interaction that reverses the optimal rebalancing strategy across training modes.
 In contrast, distance metric and domain membership have no measurable effect on performance.
-A subject-wise application of SMOTE (SW-SMOTE) at ratio $r = 0.1$ with within-domain training maximizes threshold-independent discrimination (AUROC = 0.903, AUPRC = 0.648).
+A subject-wise application of SMOTE (SW-SMOTE) at ratio $r = 0.1$ with within-domain training maximizes threshold-independent discrimination (AUROC = 0.890, AUPRC = 0.617).
 These results establish a clear design priority for vehicle-dynamics-based DDD: class rebalancing and training mode selection are the dominant performance levers, whereas domain grouping configuration can be safely omitted from the optimization process.
 \end{abstract}
 
@@ -79,7 +79,7 @@ The main contributions are:
 
 \item Addressing RQ1, through a four-factor factorial experiment with Sobol--Hoeffding variance decomposition, we quantify the relative importance of these design factors and reveal that training mode and class rebalancing dominate ($> 95$\% of systematic variance), with a substantial $R \times M$ interaction that reverses the optimal strategy across training modes.
 
-\item Addressing RQ2, we position subject-wise SMOTE (SW-SMOTE)---an instance of cluster-based SMOTE~\cite{douzas2018} with clusters defined by driver identity, motivated by the subject-dependency concerns identified for physiological-signal augmentation~\cite{bota2024}---within the four-factor design and identify, through exhaustive factor-combination search, SW-SMOTE with within-domain training as the optimal combination, maximizing threshold-independent discrimination (AUROC = 0.903, AUPRC = 0.648).
+\item Addressing RQ2, we position subject-wise SMOTE (SW-SMOTE)---an instance of cluster-based SMOTE~\cite{douzas2018} with clusters defined by driver identity, motivated by the subject-dependency concerns identified for physiological-signal augmentation~\cite{bota2024}---within the four-factor design and identify, through exhaustive factor-combination search, SW-SMOTE with within-domain training as the optimal combination, maximizing threshold-independent discrimination (AUROC = 0.890, AUPRC = 0.617).
 \end{enumerate}
 
 % outline.md: no corresponding item (paper organization)
@@ -120,13 +120,19 @@ These studies recognize cross-subject variability, but systematic comparison of 
 
 \subsection{DDD Framework Overview}\label{sec:ddd_overview}
 Vehicle-dynamics-based DDD monitors vehicle signals---such as steering angle, lateral acceleration, and lane position---to infer the driver's alertness level without requiring on-body sensors.
-Fig.~\ref{fig:framework_general} sketches the generic processing pipeline that is shared, with minor variations, across most prior vehicle-dynamics-based DDD studies: per-subject signal segmentation and labeling, feature extraction, chronological train/validation/test split, classifier training, probability calibration, threshold optimization, and held-out test-set evaluation.
+Fig.~\ref{fig:framework_ddd_flow} illustrates the generic DDD processing pipeline shared, with minor variations, across most prior vehicle-dynamics-based DDD studies.
+Vehicle signals from each subject~$s$ are segmented into overlapping sliding windows and labeled, yielding per-subject datasets $\mathcal{D}_s$.
+The datasets are then split chronologically and pooled across subjects into three sets---training pool~$\mathcal{D}_{\mathrm{pool}}$, validation pool~$\mathcal{D}_{\mathrm{val}}$, and test pool~$\mathcal{D}_{\mathrm{test}}$---which feed classifier training, threshold optimization, and final evaluation, respectively.
 
 \begin{figure}[!t]
 \centering
-\resizebox{0.82\columnwidth}{!}{\input{fig/framework_general_tikz}}
-\caption{Generic vehicle-dynamics-based DDD pipeline. Per-subject vehicle signals are segmented into labeled windows, features are extracted, and a chronological train/validation/test split is applied. The training set fits the classifier (which absorbs hyperparameter tuning and probability calibration as standard sub-steps); the validation set tunes the decision threshold; the test set is reserved for the final evaluation. This pipeline is shared, with minor variations, across most prior DDD studies.}
-\label{fig:framework_general}
+\resizebox{\columnwidth}{!}{\input{fig/framework_ddd_flow_tikz}}
+\caption{Generic vehicle-dynamics-based DDD pipeline.
+Vehicle signals from subject $s \in \mathcal{S}$ are segmented into overlapping sliding windows $w_1, w_2, \ldots$;
+per-window feature vectors $\mathbf{x}_w \in \mathbb{R}^p$ and binary drowsiness labels $y_w \in \{0,1\}$ are extracted, forming per-subject dataset $\mathcal{D}_s$.
+A chronological per-subject split pools windows across subjects into training pool~$\mathcal{D}_{\mathrm{pool}}$, validation pool~$\mathcal{D}_{\mathrm{val}}$, and test pool~$\mathcal{D}_{\mathrm{test}}$.
+The training pool fits the classifier $f\colon\mathbb{R}^p\to[0,1]$; the validation pool tunes the decision threshold~$\hat{\tau}$; the test pool is reserved for final evaluation.}
+\label{fig:framework_ddd_flow}
 \end{figure}
 
 % Notation verified: \mathcal{S}, \mathcal{D}_s, \mathbf{x}_w, y_w \in {0,1}
@@ -203,7 +209,7 @@ Section~\ref{sec:design_overview} provides an overview of the factorial design; 
 
 \subsection{Overview of the Factorial Experiment}\label{sec:design_overview}
 The experiment follows a four-factor full-factorial design.
-Fig.~\ref{fig:framework_factors} shows the dependency chain $D \to G \to M \to R$ of the four study-specific factors---distance metric ($D$), domain membership ($G$), training mode ($M$), and rebalancing strategy ($R$)---where each factor acts on the data partition constructed by its predecessors; the resulting $(D, G, M, R)$ cell is then evaluated using the generic DDD pipeline of Fig.~\ref{fig:framework_general}. This chain operationalizes the formulation of Section~\ref{sec:formulation} as follows.
+Fig.~\ref{fig:framework_partition} illustrates the subject partitioning step performed by $D$, and Fig.~\ref{fig:framework_routing} shows how $G$ and $M$ jointly determine the training, validation, and test sets for the dependency chain $D \to G \to M \to R$ of the four study-specific factors---distance metric ($D$), domain membership ($G$), training mode ($M$), and rebalancing strategy ($R$)---where each factor acts on the data partition constructed by its predecessors; the resulting $(D, G, M, R)$ cell is then evaluated using the generic DDD pipeline of Fig.~\ref{fig:framework_ddd_flow}. This chain operationalizes the formulation of Section~\ref{sec:formulation} as follows.
 
 Starting from the subject set $\mathcal{S}$ with per-subject datasets $\mathcal{D}_s = \{(\mathbf{x}_w, y_w)\}$ (Section~\ref{sec:ddd_overview}), a \emph{distance metric}~$D$ first computes pairwise inter-subject distances and partitions $\mathcal{S}$ into an in-domain group $\mathcal{G}_{\mathrm{in}}$ (44~subjects, most typical) and an out-domain group $\mathcal{G}_{\mathrm{out}}$ (43~subjects, most dissimilar).
 \emph{Domain membership}~$G$ then selects which of these two groups serves as the evaluation target $\mathcal{G}_{\mathrm{eval}}$.
@@ -212,7 +218,7 @@ Each subject's data is split chronologically into $(\mathcal{D}_s^{\mathrm{tr}},
 After feature extraction and selection (from $p = 145$ to $k = 10$ features per Section~\ref{sec:preprocessing}), \emph{rebalancing strategy}~$R$ applies the operator of Section~\ref{sec:class_imbalance} to produce $\tilde{\mathcal{D}}$ with adjusted class ratio approaching the target~$r$.
 The scoring function $f\colon \mathbb{R}^k \to [0,1]$ (Section~\ref{sec:ddd_overview}) is trained on $\tilde{\mathcal{D}}$, calibrated, and evaluated on $\mathcal{D}_{\mathrm{test}} = \bigcup_{s \in \mathcal{G}_{\mathrm{eval}}} \mathcal{D}_s^{\mathrm{te}}$.
 
-The downstream pipeline blocks in Fig.~\ref{fig:framework_factors} are annotated with the factors that parameterize them: classifier training depends on $(G, M, R)$ through the composition of $\tilde{\mathcal{D}}$, threshold optimization depends on $(G, M)$ through the validation pool, and evaluation depends only on $G$ through $\mathcal{G}_{\mathrm{eval}}$.
+As shown in Fig.~\ref{fig:framework_routing}, classifier training depends on $(G, M, R)$ through the composition of $\tilde{\mathcal{D}}$, threshold optimization depends on $(G, M)$ through the validation pool, and evaluation depends only on $G$ through $\mathcal{G}_{\mathrm{eval}}$.
 Each factorial cell is uniquely determined by a quadruple $(D, G, M, R)$; Section~\ref{sec:factor_defs} defines the levels of each factor (summarized in Table~\ref{tab:factorial}) and the total number of observations.
 
 \subsection{Factor Definitions}\label{sec:factor_defs}
@@ -299,6 +305,12 @@ where $|\mathcal{G}_{\mathrm{in}}| = 44$ and $|\mathcal{G}_{\mathrm{out}}| = 43$
 \end{cases}
 \end{equation}
 Cross-domain trains exclusively on the opposite group, within-domain on the evaluation group itself, and mixed on all 87 subjects.
+The \emph{subject overlap ratio}
+\begin{equation}
+\label{eq:overlap}
+\omega_{\mathrm{tr}} = \frac{|\mathcal{S}_{\mathrm{tr}} \cap \mathcal{G}_{\mathrm{eval}}|}{|\mathcal{G}_{\mathrm{eval}}|}
+\end{equation}
+quantifies subject leakage between training and evaluation: $\omega_{\mathrm{tr}} = 0$ for $M = \mathrm{Cross}$, and $\omega_{\mathrm{tr}} = 1$ for $M \in \{\mathrm{Within}, \mathrm{Mixed}\}$.
 
 \subsubsection{Rebalancing Strategy ($R$)}
 \textbf{Rebalancing strategy} $R$ applies a rebalancing operator $\mathcal{R}$ to the training pool, yielding $\tilde{\mathcal{D}} = \mathcal{R}(\mathcal{D}_{\mathrm{pool}})$ with adjusted class ratio $\tilde{n}_1/\tilde{n}_0$.
@@ -359,9 +371,16 @@ Because $\dot{\delta} = d\delta/dt$ and $a_y \propto \delta$, four of the five s
 
 \begin{figure}[!t]
 \centering
-\resizebox{\columnwidth}{!}{\input{fig/framework_factors_tikz}}
-\caption{Four-factor factorial framework: how the study factors $(D, G, M, R)$ parameterize the generic DDD pipeline of Fig.~\ref{fig:framework_general}. The upper half partitions the dataset $\mathcal{S}$ (87 subjects) into $\mathcal{G}_{\mathrm{in}}$ (44) and $\mathcal{G}_{\mathrm{out}}$ (43) via factor $D$, then chronologically splits each subject's data 70/15/15 into Train/Val/Test; the lower half mirrors the three terminal blocks of Fig.~\ref{fig:framework_general}, absorbing training-pool assembly, feature selection, rebalancing, hyperparameter tuning, and probability calibration into the Classifier Training block. Following the dependency chain $D \to G \to M \to R$, each activity block is annotated with the factors that configure it: Subject Partition by $D$; Classifier Training by $(G, M, R)$ (training pool by $G, M$ per Eq.~\eqref{eq:train_pool}, rebalancing by $R$ applied to the training pool only); Threshold Optimization by $(G, M)$ ($G$ provides the validation set $\bigcup_{s\in\mathcal{G}_{\mathrm{eval}}}\mathcal{D}_s^{\mathrm{val}}$, $M$ determines the calibrated model); Evaluation by $G$ (which selects the test set from $\mathcal{G}_{\mathrm{eval}}$). Both Train cylinders are drawn as inputs to Classifier Training to depict the Mixed mode; Within and Cross modes use only one side as specified by Eq.~\eqref{eq:train_pool}. Levels are listed in Table~\ref{tab:factorial}.}
-\label{fig:framework_factors}
+\resizebox{\columnwidth}{!}{\input{fig/framework_partition_tikz}}
+\caption{Subject partitioning by factor $D$: the dataset $\mathcal{S}$ (87 subjects) is split by the median KNN score under distance metric $D$ into $\mathcal{G}_{\mathrm{in}}$ (44 subjects, most typical) and $\mathcal{G}_{\mathrm{out}}$ (43 subjects, most dissimilar); each subject's data is then chronologically partitioned into Train, Val, and Test at a 70/15/15 ratio.}
+\label{fig:framework_partition}
+\end{figure}
+
+\begin{figure}[!t]
+\centering
+\resizebox{\columnwidth}{!}{\input{fig/framework_routing_tikz}}
+\caption{Training and evaluation set assembly determined by factors $G$ and $M$ (ISO~5807 flowchart). $G \in \{\mathrm{in}, \mathrm{out}\}$ selects the evaluation-target group $g^{\star}$ and its complement $\bar{g}^{\star} = \{\mathrm{in},\mathrm{out}\}\setminus\{g^{\star}\}$; $\mathcal{D}^{\mathrm{tr}}_{g}$, $\mathcal{D}^{\mathrm{val}}_{g}$, $\mathcal{D}^{\mathrm{te}}_{g}$ denote the Train/Val/Test partitions of group $g$. Factor $M$ then determines the composition of the training pool: Within uses the target group's train split; Cross uses the complement group's train and val splits, with test from the target group; Mixed uses the union of both groups' train splits with val and test from the target group (Eq.~\eqref{eq:train_pool}).}
+\label{fig:framework_routing}
 \end{figure}
 
 \subsubsection{Data Preprocessing}\label{sec:preprocessing}
@@ -577,31 +596,34 @@ Table~\ref{tab:permode} and Fig.~\ref{fig:ranking_reversal} characterize its str
 Within-domain and Mixed are statistically equivalent in the pooled comparison ($|\delta_{\mathrm{F2}}| = 0.04$, $|\delta_{\mathrm{AUROC}}| = 0.05$, $|\delta_{\mathrm{AUPRC}}| = 0.03$), while Cross-domain collapses to near-chance levels ($|\delta| > 0.83$ vs.\ Within for F2; $|\delta| > 0.94$ for AUROC and AUPRC).
 The best strategy also reverses across modes: RUS $r{=}0.1$ ranks first in Cross-domain, whereas SW-SMOTE $r{=}0.1$ ranks first in Within and Mixed (Fig.~\ref{fig:ranking_reversal}).
 The Spearman rank correlation of strategy rankings between Cross and Within modes ranges from $\rho_{\text{cross,within}} = -0.74$ to $-0.89$ across metrics, confirming systematic reversal.
-SW-SMOTE $r{=}0.1$ with within-domain training achieves the highest threshold-independent performance (AUROC = 0.903, AUPRC = 0.648; within-domain F2 = 0.558); Mixed-mode SW-SMOTE $r{=}0.1$ attains a slightly higher F2 (0.587) at a more recall-heavy operating point but a lower AUROC (0.879).
+SW-SMOTE $r{=}0.1$ with within-domain training achieves the highest performance across all three threshold-free and threshold-dependent metrics simultaneously (F2 = 0.559, AUROC = 0.890, AUPRC = 0.617); Mixed-mode SW-SMOTE $r{=}0.1$ attains comparable but uniformly lower values (F2 = 0.546, AUROC = 0.854, AUPRC = 0.570).
 
 \begin{table*}[!t]
 \caption{Mean Performance by Rebalancing Strategy, Disaggregated by Training Mode. Cross-domain results (all $\text{F2} < 0.17$) are shown for completeness; the $R \times M$ interaction analysis focuses on Within and Mixed modes where strategy differentiation is meaningful.\label{tab:permode}}
 \centering
+% Auto-generated by compute_paper_table_may2026.py (n=72 per cell, mean over D, G, seed)
 \begin{tabular}{|l|c|cc|cc|cc|}
 \hline
  & & \multicolumn{2}{c|}{F2-score} & \multicolumn{2}{c|}{AUROC} & \multicolumn{2}{c|}{AUPRC} \\
 Strategy & F2 (Cross) & Within & Mixed & Within & Mixed & Within & Mixed \\
 \hline
-Baseline              & 0.160 & 0.215 & 0.268 & 0.633 & 0.737 & 0.116 & 0.241 \\
+Baseline               & $0.160$ & $0.236$ & $0.273$ & $0.684$ & $0.801$ & $0.199$ & $0.474$ \\
 \hline
-RUS $r\!=\!0.1$       & 0.165 & 0.178 & 0.208 & 0.625 & 0.632 & 0.122 & 0.147 \\
+RUS $r\!=\!0.1$        & $0.179$ & $0.204$ & $0.273$ & $0.631$ & $0.788$ & $0.116$ & $0.432$ \\
 \hline
-RUS $r\!=\!0.5$       & 0.156 & 0.159 & 0.170 & 0.603 & 0.568 & 0.097 & 0.068 \\
+RUS $r\!=\!0.5$        & $0.159$ & $0.191$ & $0.188$ & $0.599$ & $0.627$ & $0.097$ & $0.133$ \\
 \hline
-SMOTE $r\!=\!0.1$     & 0.138 & 0.448 & 0.452 & 0.898 & 0.875 & 0.600 & 0.573 \\
+SMOTE $r\!=\!0.1$      & $0.132$ & $0.418$ & $0.412$ & $0.875$ & $0.865$ & $0.497$ & $0.508$ \\
 \hline
-SMOTE $r\!=\!0.5$     & 0.114 & 0.499 & 0.514 & 0.882 & 0.865 & 0.562 & 0.570 \\
+SMOTE $r\!=\!0.5$      & $0.124$ & $0.389$ & $0.380$ & $0.820$ & $0.790$ & $0.373$ & $0.363$ \\
 \hline
-SW-SMOTE $r\!=\!0.1$  & 0.101 & $0.558$ & $\mathbf{0.587}$ & $\mathbf{0.903}$ & $0.879$ & $\mathbf{0.648}$ & $0.646$ \\
+SW-SMOTE $r\!=\!0.1$   & $0.103$ & $\mathbf{0.559}$ & $\mathbf{0.546}$ & $\mathbf{0.890}$ & $0.854$ & $\mathbf{0.617}$ & $\mathbf{0.570}$ \\
 \hline
-SW-SMOTE $r\!=\!0.5$  & 0.042 & 0.468 & 0.402 & 0.862 & 0.852 & 0.386 & 0.387 \\
+SW-SMOTE $r\!=\!0.5$   & $0.030$ & $0.450$ & $0.350$ & $0.877$ & $\mathbf{0.866}$ & $0.461$ & $0.453$ \\
 \hline
 \end{tabular}
+\vspace{2pt}
+\raggedright\footnotesize{$^{\dag}$Cross-domain AUROC and AUPRC are near-chance ($|\delta| > 0.94$ vs.\ Within; $\omega_{\mathrm{tr}} = 0$, Eq.~\eqref{eq:overlap}) and are omitted; the F2\,(Cross) column is retained for completeness only.}
 \end{table*}
 
 \begin{figure}[!t]
@@ -630,34 +652,14 @@ Ranking stability ($\sigma_{\text{rank}}$) decreases monotonically with the numb
 \subsection{Answer to RQ1: Relative Contribution of Each Factor}\label{sec:rq1}
 The Sobol decomposition reveals a concentrated variance structure: $M$, $R$, and $R \times M$ jointly explain $> 95$\% of systematic variance (Eq.~\eqref{eq:systematic}), while $D$ and $G$ together contribute $< 5$\%.
 
-To understand why training mode dominates, define the \emph{subject overlap ratio} between the training pool $\mathcal{S}_{\mathrm{tr}}$ (Eq.~\eqref{eq:train_pool}) and the evaluation group $\mathcal{G}_{\mathrm{eval}}$ (Eq.~\eqref{eq:eval_group}):
-\begin{equation}
-\label{eq:overlap}
-\omega_{\mathrm{tr}} = \frac{|\mathcal{S}_{\mathrm{tr}} \cap \mathcal{G}_{\mathrm{eval}}|}{|\mathcal{G}_{\mathrm{eval}}|}
-\end{equation}
+To understand why training mode dominates, recall the subject overlap ratio $\omega_{\mathrm{tr}}$ (Eq.~\eqref{eq:overlap}).
 By construction, $\omega_{\mathrm{tr}} = 0$ for $M = \mathrm{Cross}$ (training excludes evaluation subjects), while $\omega_{\mathrm{tr}} = 1$ for $M \in \{\mathrm{Within}, \mathrm{Mixed}\}$ (evaluation subjects are included).
 This binary switch between $\omega = 0$ and $\omega = 1$ determines whether target-subject patterns are available during training, which in turn governs the performance bottleneck and the effectiveness of rebalancing (Section~\ref{sec:rq2}).
 
 In contrast, distance metric and domain membership are negligible ($S_{TD} < 0.015$, $S_{TG} \leq 0.031$; $BF_{01} = 71$--$767$).
-Three fundamentally different metrics---MMD (distributional), DTW (temporal), and Wasserstein (geometric)---produce equivalent downstream performance despite generating different subject rankings (Table~\ref{tab:spearman}; DTW vs.\ MMD: $\rho = 0.12$, $p = 0.29$).
+Three fundamentally different metrics---MMD (distributional), DTW (temporal), and Wasserstein (geometric)---produce equivalent downstream performance despite generating different subject rankings (pairwise Spearman $\rho$: 0.12--0.76; DTW vs.\ MMD: $\rho = 0.12$, $p = 0.29$; up to 39.1\% of subjects switch domain partition).
 
-\begin{table}[!t]
-\caption{Pairwise Rank Correlation and Domain Partition Overlap Between Distance Metrics. Jaccard index is computed on the 44-subject in-domain group; the switcher count is the number of subjects reassigned between in- and out-domain.\label{tab:spearman}}
-\centering
-\begin{tabular}{|l|c|c|c|}
-\hline
-Pair & Spearman $\rho$ & Jaccard & Switchers \\
-\hline
-MMD vs.\ $W_1$  & 0.757 & 0.544 & 26 (29.9\%) \\
-\hline
-MMD vs.\ DTW    & 0.116 (n.s.) & 0.443 & 34 (39.1\%) \\
-\hline
-$W_1$ vs.\ DTW  & 0.444 & 0.725 & 14 (16.1\%) \\
-\hline
-\end{tabular}
-\end{table}
-
-This metric invariance stems from three factors: the bicycle model (Eqs.~\eqref{eq:bicycle}--\eqref{eq:lane_offset}) compresses the effective dimensionality of the unified 145-dimensional feature space (Section~\ref{sec:preprocessing}) to $p_{\mathrm{eff}} = 49$ (95\% PCA variance, with the first principal component alone explaining 20.4\%), low per-feature inter-subject identifiability (mean $\mathrm{ICC} = 0.111$ across the same 145 features; see Section~\ref{sec:analysis_methods}) makes partition relabelling inconsequential despite up to 39\% of subjects switching domain (Table~\ref{tab:spearman}), and the dominant rebalancing factor absorbs residual grouping differences ($S_{TR}/S_{TD} = 26$--$31\times$; $BF_{01} > 70$).
+This metric invariance stems from three factors: the bicycle model (Eqs.~\eqref{eq:bicycle}--\eqref{eq:lane_offset}) compresses the effective dimensionality of the unified 145-dimensional feature space (Section~\ref{sec:preprocessing}) to $p_{\mathrm{eff}} = 49$ (95\% PCA variance, with the first principal component alone explaining 20.4\%), low per-feature inter-subject identifiability (mean $\mathrm{ICC} = 0.111$ across the same 145 features; see Section~\ref{sec:analysis_methods}) makes partition relabelling inconsequential despite up to 39.1\% of subjects switching domain (34 of 87 subjects), and the dominant rebalancing factor absorbs residual grouping differences ($S_{TR}/S_{TD} = 26$--$31\times$; $BF_{01} > 70$).
 
 \subsection{Answer to RQ2: Interaction and Optimal Factor Combination}\label{sec:rq2}
 The $R \times M$ interaction ($S_{R \times M} = 0.212$ for F2, concentrated at 87--96\% of each dominant factor's interaction variance) confirms that the contributing factors do not act independently.
@@ -675,16 +677,16 @@ For the best strategy (SW-SMOTE $r{=}0.1$), the empirical values are:
 \label{eq:bottleneck}
 \Delta Y_{\text{SW-SM.}}^{(M)} =
 \begin{cases}
-+0.343\;(+159\%) & M = \mathrm{Within}\;(\omega = 1) \\
-+0.319\;(+119\%) & M = \mathrm{Mixed}\;\;(\omega = 1) \\
--0.059\;(-37\%)   & M = \mathrm{Cross}\;\;\;(\omega = 0)
++0.323\;(+137\%) & M = \mathrm{Within}\;(\omega = 1) \\
++0.273\;(+100\%) & M = \mathrm{Mixed}\;\;(\omega = 1) \\
+-0.057\;(-36\%)   & M = \mathrm{Cross}\;\;\;(\omega = 0)
 \end{cases}
 \end{equation}
 When $\omega_{\mathrm{tr}} = 1$, the performance bottleneck is class imbalance ($\rho \ll 1$), and oversampling is effective.
 When $\omega_{\mathrm{tr}} = 0$, the bottleneck shifts to distributional mismatch ($P_{\mathrm{pool}}(\mathbf{x}) \neq P_{\mathrm{test}}(\mathbf{x})$), and all strategies collapse to near-chance levels (F2 $= 0.04$--$0.17$).
 This sign reversal of $\Delta Y_R^{(M)}$ (Eq.~\eqref{eq:bottleneck}) is the mechanistic origin of the $R \times M$ interaction.
 The $G \times M$ interaction is negligible ($S_{G \times M} = 0.006$--$0.009$), an order of magnitude below $S_{R \times M}$.
-The optimal factor combination is therefore SW-SMOTE $r{=}0.1$ with $\omega_{\mathrm{tr}} = 1$; within-domain training maximizes threshold-independent discrimination (AUROC = 0.903, AUPRC = 0.648; within-domain F2 = 0.558), while Mixed mode trades 0.024 AUROC for a higher recall-leaning F2 (0.587).
+The optimal factor combination is therefore SW-SMOTE $r{=}0.1$ with $\omega_{\mathrm{tr}} = 1$; within-domain training maximizes all three metrics simultaneously (F2 = 0.559, AUROC = 0.890, AUPRC = 0.617), while Mixed mode yields uniformly lower values (F2 = 0.546, AUROC = 0.854, AUPRC = 0.570).
 
 \subsection{Practical Implications}
 The Sobol total-order indices establish a strict factor priority ordering for practitioners deploying vehicle-dynamics-based DDD systems:
@@ -708,7 +710,7 @@ R^{*}(\omega_{\mathrm{tr}})\!=\!
 \text{any (none helps)} & \!\omega_{\mathrm{tr}}{=}0
 \end{cases}
 \end{equation}
-where $\Delta Y = +159\%$ (F2) for $\omega_{\mathrm{tr}} = 1$ and $\Delta Y \leq 0$ for $\omega_{\mathrm{tr}} = 0$.
+where $\Delta Y = +137\%$ (F2) for $\omega_{\mathrm{tr}} = 1$ and $\Delta Y \leq 0$ for $\omega_{\mathrm{tr}} = 0$.
 
 \item \textbf{Distance metric and domain membership (negligible):} Use any convenient metric for domain grouping.
 The choice has no measurable impact on classification performance ($BF_{01} > 70$).
@@ -724,7 +726,7 @@ Our finding that class imbalance handling is the dominant design factor aligns w
 However, our study is the first to demonstrate this in the DDD context and to reveal the interaction with training mode that causes mode-dependent strategy ranking change.
 Prior DDD studies that compare rebalancing methods under a single training mode~\cite{he2024,yadawadkar2018} risk selecting a suboptimal strategy for deployment.
 
-The best within-domain performance (F2\,=\,0.558, AUROC\,=\,0.903) is competitive with recent vehicle-dynamics-based methods.
+The best within-domain performance (F2\,=\,0.559, AUROC\,=\,0.890) is competitive with recent vehicle-dynamics-based methods.
 Table~\ref{tab:comparison} positions this work relative to prior DDD studies.
 Direct performance comparison is limited because prior studies use different datasets, modalities, and evaluation protocols; the primary contribution here is the factorial decomposition framework, not absolute classification performance.
 
@@ -753,11 +755,11 @@ He et~al.~\cite{he2024}                    & 2024 & GARMFCN   & EEG+EOG & 23 & 1
 \hline
 Kim et~al.~\cite{kim2025}                  & 2025 & PDMix     & EEG     & 27 & 1 (domain)   & No               & NR & 0.738$^{\ddagger}$ & NR & {\scriptsize F1=70.3\%} \\
 \hline
-\textbf{Ours}                           & \textbf{2026} & \textbf{RF} & \textbf{Vehicle} & \textbf{87} & \textbf{4} ($R$,$M$,$D$,$G$) & $R{\times}M$ \textbf{Sobol} & \textbf{0.558} & \textbf{0.903} & \textbf{0.648} & --- \\
+\textbf{Ours}                           & \textbf{2026} & \textbf{RF} & \textbf{Vehicle} & \textbf{87} & \textbf{4} ($R$,$M$,$D$,$G$) & $R{\times}M$ \textbf{Sobol} & \textbf{0.559} & \textbf{0.890} & \textbf{0.617} & --- \\
 \hline
 \multicolumn{11}{|p{0.97\textwidth}|}{\footnotesize $^{\dagger}$\,Evaluation protocol not specified in source; based on the reported sample counts (35{,}079 test samples drawn from 39 drivers' 20\,h of pooled data), the most plausible default is a window-level random split (effectively within-subject), which is not directly comparable to our per-subject 70/15/15 chronological split.} \\
 \hline
-\multicolumn{11}{|p{0.97\textwidth}|}{\footnotesize $^{\ddagger}$\,Cross-subject evaluation (PDMix is a domain-generalization method evaluated on subject-disjoint splits); directly comparable to our cross-domain ($\omega_{\mathrm{tr}}{=}0$) results, not the within-domain AUROC = 0.903 reported in the same row.} \\
+\multicolumn{11}{|p{0.97\textwidth}|}{\footnotesize $^{\ddagger}$\,Cross-subject evaluation (PDMix is a domain-generalization method evaluated on subject-disjoint splits); directly comparable to our cross-domain ($\omega_{\mathrm{tr}}{=}0$) results, not the within-domain AUROC = 0.890 reported in the same row.} \\
 \hline
 \multicolumn{11}{|p{0.97\textwidth}|}{\footnotesize $^{\S}$\,Per-class one-vs-rest AUC for a 3-class (awake/tired/drowsy) classifier on EEG+EOG; not directly comparable to our binary AUROC. The reported per-class values are 0.87 (awake), 0.88 (tired), 0.96 (drowsy).} \\
 \hline
@@ -799,7 +801,7 @@ When $M \in \{\mathrm{Within}, \mathrm{Mixed}\}$, the calibration pool $\mathcal
 This study quantifies the relative importance of four design factors in vehicle-dynamics-based DDD through a factorial experiment with Sobol--Hoeffding variance decomposition over 1,512 evaluated random forest models from 87 drivers.
 Training mode ($S_{TM} = 0.48$--$0.66$) and rebalancing ($S_{TR} = 0.39$--$0.46$), including their interaction ($S_{R \times M} = 0.21$), account for $> 95$\% of systematic variance, whereas distance metric ($S_{TD} < 0.015$; $BF_{01} = 71$--$767$) and domain membership ($S_{TG} \leq 0.031$) are negligible.
 The $R \times M$ interaction reverses the optimal strategy across modes ($\rho_{\text{cross,within}} = -0.74$ to $-0.89$): when evaluation subjects overlap with training data ($\omega_{\mathrm{tr}} = 1$), class imbalance is the bottleneck and oversampling is effective; when they do not ($\omega_{\mathrm{tr}} = 0$), distributional mismatch dominates and no tested rebalancing strategy helps.
-SW-SMOTE $r{=}0.1$ with within-domain training ($\omega_{\mathrm{tr}} = 1$) achieves the highest threshold-independent performance (AUROC = 0.903, AUPRC = 0.648; within-domain F2 = 0.558).
+SW-SMOTE $r{=}0.1$ with within-domain training ($\omega_{\mathrm{tr}} = 1$) achieves the highest threshold-independent performance (AUROC = 0.890, AUPRC = 0.617; within-domain F2 = 0.559).
 Practitioners should prioritize training mode and class rebalancing (Eq.~\eqref{eq:priority}); domain configuration requires no optimization.
 
 Future work includes validation with other classifiers (LSTM, SVM), on naturalistic driving data (SHRP~2), and incorporation of domain adaptation and few-shot methods as additional factor levels.
