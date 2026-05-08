@@ -545,11 +545,11 @@ The Sobol--Hoeffding decomposition (Fig.~\ref{fig:effect_hierarchy}) quantifies 
 The permutation test confirms a significant global rebalancing effect for all three metrics ($p < 0.001$).
 
 \emph{Mode} contributes the largest main effect ($S_M = 0.35$--$0.58$), followed by \emph{Rebalancing} ($S_R = 0.13$--$0.17$).
-Both factors participate in a substantial $R \times M$ interaction (20.4\% of F2-score variance, 13.0\% of AUROC variance).
+Both factors participate in a substantial $R \times M$ interaction (pure 2-way Sobol index $S_{R,M} = 0.11$--$0.19$ across the three metrics).
 The total-order indices show that Mode accounts for $S_{TM} = 0.50$--$0.71$ and Rebalancing for $S_{TR} = 0.27$--$0.37$ of total variance.
 
-In contrast, \emph{Distance} ($S_{TD} < 0.023$) and \emph{Membership} ($S_{TG} \leq 0.038$) are negligible even when interactions are included.
-Residual variance (seed-to-seed variation), denoted $S_{\varepsilon}$, accounts for 13.1\%--34.9\% of total variance.
+In contrast, \emph{Distance} ($S_{TD} < 0.024$) and \emph{Membership} ($S_{TG} \leq 0.038$) are negligible even when interactions are included.
+Residual variance (seed-to-seed variation), denoted $S_{\varepsilon}$, accounts for 13.2\%--35.0\% of total variance.
 
 The systematic (non-residual) variance fraction is:
 \begin{equation}
@@ -560,7 +560,7 @@ The systematic (non-residual) variance fraction is:
 \end{equation}
 where $S_M{=}0.3744$, $S_R{=}0.1672$, $S_{R{\times}M}{=}0.1863$ (pure 2-way Sobol index $S_{R,M}$), and $S_{\varepsilon}{=}0.2496$.
 Analogous ratios are 95.8\% (AUROC) and 93.0\% (AUPRC), confirming that $M$, $R$, and their interaction account for $\geq 93$\% of systematic variance across all three metrics.
-The interaction concentration ratio $C_{R \times M}^{(i)} = S_{R \times M} / (S_{Ti} - S_i)$ for $i \in \{M, R\}$ ranges from 74\% to 92\%, indicating that the $R \times M$ pair absorbs the majority of interaction variance involving either dominant factor.
+The interaction concentration ratio $C_{R \times M}^{(i)} = S_{R \times M} / (S_{Ti} - S_i)$ for $i \in \{M, R\}$ ranges from 73\% to 92\%, indicating that the $R \times M$ pair absorbs the majority of interaction variance involving either dominant factor.
 
 \begin{figure}[!t]
 \centering
@@ -582,7 +582,7 @@ The Spearman rank correlation of strategy rankings between Cross and Within mode
 SW-SMOTE $r{=}0.1$ with within-domain training achieves the highest performance across all three threshold-free and threshold-dependent metrics simultaneously (F2 = 0.559, AUROC = 0.890, AUPRC = 0.617); Mixed-mode SW-SMOTE $r{=}0.1$ attains comparable but uniformly lower values (F2 = 0.546, AUROC = 0.854, AUPRC = 0.570).
 
 \begin{table*}[!t]
-\caption{Mean Performance by Rebalancing Strategy, Disaggregated by Training Mode. Cross-domain results (all $\text{F2} < 0.17$) are shown for completeness; the $R \times M$ interaction analysis focuses on Within and Mixed modes where strategy differentiation is meaningful.\label{tab:permode}}
+\caption{Mean Performance by Rebalancing Strategy, Disaggregated by Training Mode. Cross-domain results (all $\text{F2} < 0.18$) are shown for completeness; the $R \times M$ interaction analysis focuses on Within and Mixed modes where strategy differentiation is meaningful.\label{tab:permode}}
 \centering
 \begin{tabular}{|l|c|cc|cc|cc|}
 \hline
@@ -781,7 +781,7 @@ When $M \in \{\mathrm{Within}, \mathrm{Mixed}\}$, the calibration pool $\mathcal
 \section{Conclusion}
 \label{sec:conclusion}
 This study quantifies the relative importance of four design factors in vehicle-dynamics-based DDD through a factorial experiment with Sobol--Hoeffding variance decomposition over 1,512 evaluated random forest models from 87 subjects.
-Training mode ($S_{TM} = 0.50$--$0.71$) and rebalancing ($S_{TR} = 0.27$--$0.37$), including their interaction ($S_{R \times M} = 0.11$--$0.19$), account for $\geq 93$\% of systematic variance, whereas distance metric ($S_{TD} < 0.023$; $BF_{01} = 71$--$767$) and domain membership ($S_{TG} \leq 0.038$) are negligible.
+Training mode ($S_{TM} = 0.50$--$0.71$) and rebalancing ($S_{TR} = 0.27$--$0.37$), including their interaction ($S_{R \times M} = 0.11$--$0.19$), account for $\geq 93$\% of systematic variance, whereas distance metric ($S_{TD} < 0.024$; $BF_{01} = 71$--$767$) and domain membership ($S_{TG} \leq 0.038$) are negligible.
 The $R \times M$ interaction reverses the optimal strategy across modes ($\rho_{\text{cross,within}} = -0.25$ to $-0.79$): when evaluation subjects overlap with training data ($\omega_{\mathrm{tr}} = 1$), class imbalance is the bottleneck and oversampling is effective; when they do not ($\omega_{\mathrm{tr}} = 0$), distributional mismatch dominates and no tested rebalancing strategy helps.
 SW-SMOTE $r{=}0.1$ with within-domain training ($\omega_{\mathrm{tr}} = 1$) achieves the highest threshold-independent performance (AUROC = 0.890, AUPRC = 0.617; within-domain F2 = 0.559).
 Practitioners should prioritize training mode and class rebalancing (Eq.~\eqref{eq:priority}); domain configuration requires no optimization.
