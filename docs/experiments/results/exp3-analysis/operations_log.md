@@ -345,6 +345,14 @@ Triggered by user requirement: every exp3 condition should have **mixed-mode** r
   Verified 2026-05-09 by submitting test jobs with `ncpus=1`, `2`, `4` to
   `MS_Compass`: all three landed as `NumCPUs=8 NumTasks=8 CPUs/Task=1`
   according to `scontrol show job`.
+- **Scope (clarified 2026-05-10):** Only the `select=…:ncpus=…:mem=…`
+  clause is dropped. Other `-l` resources are translated correctly:
+  - `-l walltime=HH:MM:SS` → `sbatch -t MIN` (verified: `walltime=48:00:00`
+    → `TimeLimit=2-00:00:00` on Sa_iv/sm jobs submitted 2026-05-09 19:18+)
+  - `-q QUEUE` → `sbatch -p QUEUE` (works as expected)
+  - `-N NAME`, `-v VAR=…`, `-j oe` (combine err+out), `-o`, `-e` all work
+  So Issue #13's `walltime=48:00:00` fix is effective — only the per-node
+  CPU/mem allocation cannot be controlled via this wrapper.
 - **Implication:**
   - Editing `ncpus=` in any qsub-based submitter has zero effect — do not try
     again as a throughput optimisation.

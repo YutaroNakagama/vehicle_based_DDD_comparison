@@ -73,4 +73,6 @@ Sorted by detection date; details + fix linked in [operations_log.md](operations
     lands as `NumCPUs=8 NumTasks=8` regardless of `ncpus=`. Documented
     2026-05-09; do not attempt `ncpus` reduction as a throughput hack.
     Real slot reduction needs an sbatch refactor — deferred until exp3
-    finishes.
+    finishes. **Scope note (2026-05-10):** only `select=…` is dropped;
+    `-l walltime=…`, `-q`, `-N`, `-v`, `-j oe`, `-o`, `-e` translate
+    correctly, so Issue #13's `walltime=48:00:00` fix is fully effective.
