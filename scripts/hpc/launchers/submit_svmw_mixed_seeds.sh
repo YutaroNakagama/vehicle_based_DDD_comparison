@@ -51,10 +51,9 @@ short_cond() {
     esac
 }
 
-# Build the dedup set of already-queued names
+# Build the dedup set of already-queued names (col 4 = Job_Name in qstat -u output)
 echo "[INFO] Building dedup set from current queue..."
-ACTIVE_NAMES=$(qstat -u s2240011 2>/dev/null | awk 'NR>5 && $10 != "C" {print $1}' | \
-    while read jid; do qstat -f "$jid" 2>/dev/null | awk '/Job_Name/ {print $3}'; done | sort -u)
+ACTIVE_NAMES=$(qstat -u s2240011 2>/dev/null | awk 'NR>5 && $10 != "C" {print $4}' | sort -u)
 
 in_queue() { echo "$ACTIVE_NAMES" | grep -qx "$1"; }
 

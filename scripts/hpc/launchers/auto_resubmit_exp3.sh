@@ -20,10 +20,10 @@ ONCE=false
 [[ "${1:-}" == "--once" ]] && ONCE=true
 
 INTERVAL_SEC=900     # 15 min between passes
-# Threshold raised to 200 so the loop keeps trying — per-queue limits, not the
-# overall queue depth, are the actual bottleneck. The submitter dedups against
+# Threshold raised to 2000 — with MS_*/MatStudio queues now in use the
+# overall queue depth can be very large; the submitter dedups against
 # already-queued jobs, so re-runs are cheap when no slots free up.
-THRESHOLD=200
+THRESHOLD=2000
 MAX_PASSES=200
 
 pass=0

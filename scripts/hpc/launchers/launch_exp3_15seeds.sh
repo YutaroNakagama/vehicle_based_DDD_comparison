@@ -51,7 +51,7 @@ DOMAINS=("out_domain" "in_domain")
 MODELS=("SvmA" "Lstm")
 
 # Queue limits (KAGAYAKI per-user limits)
-MAX_TOTAL_JOBS=165  # leave margin for race between two daemons
+MAX_TOTAL_JOBS=220  # leave margin for race between two daemons
 POLL_INTERVAL=120  # seconds between queue checks when waiting for slots
 MAX_PER_BATCH=40   # max jobs to submit in one batch before re-checking queue
 
@@ -110,7 +110,7 @@ is_completed() {
 # ============================================================
 # Per-queue limits (KAGAYAKI)
 declare -A QUEUE_LIMITS=(
-    [SINGLE]=40 [LONG]=15 [DEFAULT]=40 [SMALL]=30
+    [SINGLE]=40 [LONG]=15 [DEF]=40 [SMALL]=30
     [GPU-1]=40 [GPU-1A]=40 [GPU-S]=40 [GPU-L]=40 [GPU-LA]=40
 )
 
@@ -182,7 +182,7 @@ pick_queue() {
 }
 
 get_queue_cpu() {
-    pick_queue "SINGLE" "LONG" "DEFAULT" "SMALL"
+    pick_queue "SINGLE" "LONG" "DEF" "SMALL"
 }
 
 get_queue_gpu() {
