@@ -256,6 +256,83 @@ Triggered by user requirement: every exp3 condition should have **mixed-mode** r
     the remaining 12 already had valid eval results.
   - PBS IDs for the resubmission batch start at **43738** (GPU-1/1A/S queues, walltime=8h).
 
+### 12. Lstm GPU Mixed Silent Failure — XLA libdevice Missing (Detected 2026-05-08, Fixed 2026-05-08)
+
+- **Symptom:** Lstm `*_mx_*` GPU jobs reported `sacct=COMPLETED` and the wrapper
+  printed `[DONE] ... (exit code: 0)`, but **no `.keras` model file** was saved
+  under `results/outputs/training/Lstm/<jid>/...` and **no eval JSON** was
+  produced. Audit on 2026-05-08 found 0/75 model directories saved among
+  sacct-COMPLETED Lstm mixed jobs, and only 23 valid eval JSONs existed (all
+  from 2026-05-02–05-03 prior to the cluster module realignment).
+- **Detection:** Sample stderr `Ls_ba_di_mx_s0.e50496` lines 281–283:
+  ```
+  libdevice is required by this HLO module but was not found at ./libdevice.10.bc
+  INTERNAL: Generating device code failed.
+  JIT compilation failed. [Op:Sign]
+  [TRAIN] Exception during training
+  [SAVE] Model object is None — skipping save
+  ```
+  Of 294 sampled `Ls_*_mx` `.e` logs: 51 libdevice / 24 model_none / 219 older
+  module-related issues.
+- **Root cause:** TF 2.19 XLA JIT compilation of certain ops (e.g. `Sign` used
+  in Lstm metrics) requires `libdevice.10.bc` to be discoverable. Neither
+  `module load cuda/12.8u1` nor the `LD_LIBRARY_PATH` fallback added in
+  Issue #6 sets `XLA_FLAGS=--xla_gpu_cuda_data_dir=...`, so XLA looked at
+  the CWD (`./libdevice.10.bc`) and failed. `train.py` caught the exception
+  internally, set `model=None`, and the wrapper saw `EXIT_CODE=0`.
+- **Fix (2026-05-08):**
+  - Added an `XLA_FLAGS` export with three-tier fallback (CUDA_HOME →
+    `/app/CUDA/12.8u1` → `/app/kagayaki/CUDA/12.8u1`) to both
+    [`pbs_prior_research_split2_gpu.sh`](../../../../scripts/hpc/jobs/train/pbs_prior_research_split2_gpu.sh)
+    and [`pbs_prior_research_unified_gpu.sh`](../../../../scripts/hpc/jobs/train/pbs_prior_research_unified_gpu.sh).
+    Each wrapper now echoes `[CUDA] XLA_FLAGS=...` for log verification.
+  - Added a post-train guard in `pbs_prior_research_split2_gpu.sh`: when
+    `MODEL=Lstm` and no `*.keras` is found under the expected output dir,
+    promote `EXIT_CODE` to `1` so silent JIT failures cannot masquerade as
+    success again.
+- **Resubmission (2026-05-08):** All 78 PENDING `Ls_*_mx` jobs (submitted with
+  the unpatched wrapper) were `scancel`'d; `submit_lstm_mixed_seeds.sh` then
+  refilled the GPU QOS cap with the patched wrapper. The
+  `auto_resubmit_lstm_mixed.sh` daemon (15-min loop) takes over from there.
+- **Verification:** New jobs' `.o` log must contain `[CUDA] XLA_FLAGS=` and
+  must produce `models/Lstm/<jid>/<jid>[1]/*.keras` (the actual save dir, not
+  `results/outputs/training/...` — see follow-up below).
+- **Follow-up (2026-05-09):** Test job 58694 confirmed the `XLA_FLAGS` fix
+  works (11 `.keras` files saved under `models/Lstm/58694/58694[1]/`), but the
+  guard's `MODEL_DIR` was initially set to `results/outputs/training/...` —
+  the wrong path. Train results are saved there but `.keras` files live under
+  `models/${MODEL}/${PBS_JOBID}/${PBS_JOBID}[1]/`. Corrected to the latter in
+  both GPU wrappers (the same guard block was also added to
+  `pbs_prior_research_unified_gpu.sh` for symmetry). The 77 `Ls_*_mx` PENDING
+  jobs that had the bad guard pinned (submitted 2026-05-08 21:26–22:36) were
+  `scancel`'d to avoid spurious EXIT_CODE=1 → eval-skip → re-train loops, then
+  `auto_resubmit_lstm_mixed.sh` refilled the queue with the corrected wrapper.
+
+### 13. SvmA Mixed SMOTE TIMEOUT Loop on 24h Queues (Detected 2026-05-09, Fixed 2026-05-09)
+
+- **Symptom:** 33 `Sa_(iv|sm)_*_mx_*` jobs hit `TIMEOUT` on 24h-cap queues
+  (DEF / SINGLE / SMALL / VM-LM / LARGE / X2LARGE / XLARGE / VM-CPU / SEMINAR)
+  in 24h. The `auto_resubmit_svma_mixed.sh` daemon resubmitted them, but the
+  round-robin in `submit_svma_mixed_seeds.sh` again routed them to 24h queues,
+  guaranteeing a second TIMEOUT.
+- **Root cause:** `submit_svma_mixed_seeds.sh` used a single
+  `CPU_QUEUES=("SINGLE" "SMALL" "LONG" "LONG-L" "LARGE" "DEF" "XLARGE" "X2LARGE" "VM-CPU" "VM-LM")`
+  pool and a hard-coded `walltime=24:00:00` for every condition. SMOTE-family
+  conditions (subjectwise SMOTE / SMOTE-plain) average **20.7h mean / 21.2h
+  median / 23.9h max** — they routinely exceed 24h.
+- **Fix (2026-05-09):**
+  - Added a separate `LONG_QUEUES=("LONG" "LONG-L" "MS_Castep" "MS_Compass"
+    "MS_Dftbplus" "MS_Dmol3" "MS_Forcite" "MatStudio")` pool — all of these
+    allow ≥48h walltime.
+  - In `submit_one()`, when `COND ∈ {smote, smote_plain}` route to
+    `LONG_QUEUES` and bump `walltime` to `48:00:00`. Other conditions
+    (`baseline`, `undersample`) remain on `CPU_QUEUES` with 24h walltime.
+- **Resubmission (2026-05-09):** All 372 SMOTE-family `Sa_*_mx` PENDING jobs
+  on 24h-cap queues were `scancel`'d; `auto_resubmit_svma_mixed.sh` was
+  restarted and immediately refilled them on `LONG_QUEUES` with 48h walltime.
+  142 SMOTE jobs that were already RUNNING on 24h queues were left in place;
+  if they TIMEOUT, the daemon re-routes them on the next pass.
+
 ---
 
 ## Mixed-Domain 15-seed Operational Status (as of 2026-04-30)

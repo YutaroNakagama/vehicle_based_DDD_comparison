@@ -58,3 +58,13 @@ Sorted by detection date; details + fix linked in [operations_log.md](operations
 10. **F2-tuned threshold collapses to predict-all-positive** — fixed 2026-04-30
     by switching all eval-time tuners to F1 on validation; SvmA's
     matching test-set leak was caught at the same time
+11. Old split2 Lstm scaler feature-mismatch — 119 jobs invalidated, 67 retrained
+12. **Lstm GPU mixed silent failure** — `XLA_FLAGS=--xla_gpu_cuda_data_dir=...`
+    missing → `libdevice.10.bc` not found → JIT fails → train.py exits 0 with
+    no model saved. Fixed 2026-05-08; both GPU wrappers now export `XLA_FLAGS`
+    + split2 wrapper checks for `*.keras` post-train.
+13. **SvmA mixed SMOTE TIMEOUT loop** — `submit_svma_mixed_seeds.sh` round-
+    robined SMOTE conditions onto 24h-cap queues, but they average ~21h
+    runtime so 33 jobs hit TIMEOUT and the daemon kept re-routing them to the
+    same short queues. Fixed 2026-05-09: SMOTE/SMOTE-plain now pin to
+    `LONG/LONG-L/MS_*/MatStudio` with 48h walltime.
