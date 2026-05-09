@@ -333,6 +333,31 @@ Triggered by user requirement: every exp3 condition should have **mixed-mode** r
   142 SMOTE jobs that were already RUNNING on 24h queues were left in place;
   if they TIMEOUT, the daemon re-routes them on the next pass.
 
+### 14. qsub Wrapper Silently Ignores `select=…:ncpus=N` (Documented 2026-05-09)
+
+- **Symptom (would-be):** Lowering `ncpus=8 → ncpus=4` in any submit_*.sh
+  appears to make no difference to slot density on shared 256-core
+  MS_*/MatStudio nodes — every job still occupies 8 cores.
+- **Root cause:** `/usr/bin/qsub` on HAKUSAN is a Perl wrapper that translates
+  PBS-style options to Slurm. It **drops the entire `-l select=…` clause**
+  and always submits with the partition default
+  (`--ntasks=8 --mem-per-cpu=6000M` ⇒ `NumCPUs=8 NumTasks=8`).
+  Verified 2026-05-09 by submitting test jobs with `ncpus=1`, `2`, `4` to
+  `MS_Compass`: all three landed as `NumCPUs=8 NumTasks=8 CPUs/Task=1`
+  according to `scontrol show job`.
+- **Implication:**
+  - Editing `ncpus=` in any qsub-based submitter has zero effect — do not try
+    again as a throughput optimisation.
+  - Real per-job slot reduction requires migrating the submitter to direct
+    `sbatch` with `--ntasks=1 --cpus-per-task=N --mem=…` and rewriting the
+    `#PBS -j oe / -o / -e` directives in the wrapper to `#SBATCH` equivalents.
+    `sbatch` does honour the request (verified: `--ntasks=1
+    --cpus-per-task=4 --mem=8G` → `NumCPUs=4 NumTasks=1`).
+- **Decision (2026-05-09):** Defer the sbatch refactor until exp3 finishes —
+  it would touch every wrapper (`pbs_prior_research_*.sh`) and submitter, and
+  risk disrupting ~5300 in-flight jobs. Current bottleneck (SvmA mixed SMOTE
+  filling MS_*/MatStudio) is best handled by waiting; ETA remains ~3-5 days.
+
 ---
 
 ## Mixed-Domain 15-seed Operational Status (as of 2026-04-30)

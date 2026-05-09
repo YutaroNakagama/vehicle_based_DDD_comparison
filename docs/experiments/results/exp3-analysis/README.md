@@ -68,3 +68,9 @@ Sorted by detection date; details + fix linked in [operations_log.md](operations
     runtime so 33 jobs hit TIMEOUT and the daemon kept re-routing them to the
     same short queues. Fixed 2026-05-09: SMOTE/SMOTE-plain now pin to
     `LONG/LONG-L/MS_*/MatStudio` with 48h walltime.
+14. **qsub wrapper ignores `select=…:ncpus=N`** — HAKUSAN `/usr/bin/qsub` is
+    a Perl PBS→Slurm shim that drops the entire `select=…` clause; every job
+    lands as `NumCPUs=8 NumTasks=8` regardless of `ncpus=`. Documented
+    2026-05-09; do not attempt `ncpus` reduction as a throughput hack.
+    Real slot reduction needs an sbatch refactor — deferred until exp3
+    finishes.
