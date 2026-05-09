@@ -17,6 +17,12 @@ DRY_RUN=false
 
 CPU_QUEUES=("SINGLE" "SMALL" "LONG" "LONG-L" "LARGE" "DEF" "XLARGE" "X2LARGE" "VM-CPU" "VM-LM")
 CPU_IDX=0
+# Long-walltime pool for SMOTE conditions (24h+ runtime).  All entries below
+# allow >=48h walltime: LONG/LONG-L are dedicated long queues; MS_*/MatStudio
+# share the lcpcc-002/005/047 nodes (256 cores each) and have no per-job
+# walltime cap as observed during exp3.
+LONG_QUEUES=("LONG" "LONG-L" "MS_Castep" "MS_Compass" "MS_Dftbplus" "MS_Dmol3" "MS_Forcite" "MatStudio")
+LONG_IDX=0
 
 ALL_SEEDS=(0 1 3 7 13 42 99 123 256 512 777 999 1234 1337 2024)
 DISTANCES=(mmd dtw wasserstein)
@@ -36,8 +42,7 @@ short_cond() {
 }
 
 echo "[INFO] Building dedup set from current queue..."
-ACTIVE_NAMES=$(qstat -u s2240011 2>/dev/null | awk 'NR>5 && $10 != "C" {print $1}' | \
-    while read jid; do qstat -f "$jid" 2>/dev/null | awk '/Job_Name/ {print $3}'; done | sort -u)
+ACTIVE_NAMES=$(qstat -u s2240011 2>/dev/null | awk 'NR>5 && $10 != "C" {print $4}' | sort -u)
 in_queue() { echo "$ACTIVE_NAMES" | grep -qx "$1"; }
 
 existing_completed() {
@@ -64,10 +69,24 @@ submit_one() {
     if existing_completed "$TAG"; then return 1; fi
     if in_queue "$JOB_NAME"; then return 1; fi
 
-    local QUEUE="${CPU_QUEUES[$((CPU_IDX % ${#CPU_QUEUES[@]}))]}"
-    ((CPU_IDX++))
+    # SMOTE-family conditions average 20.7h (mean) / 23.9h (max) and routinely
+    # TIMEOUT on 24h-capped queues (DEF/SINGLE/SMALL etc.).  Pin them to queues
+    # that allow >=48h walltime, and bump walltime accordingly.
+    local QUEUE WALLTIME
+    case "$COND" in
+        smote|smote_plain)
+            QUEUE="${LONG_QUEUES[$((LONG_IDX % ${#LONG_QUEUES[@]}))]}"
+            ((LONG_IDX++))
+            WALLTIME="48:00:00"
+            ;;
+        *)
+            QUEUE="${CPU_QUEUES[$((CPU_IDX % ${#CPU_QUEUES[@]}))]}"
+            ((CPU_IDX++))
+            WALLTIME="24:00:00"
+            ;;
+    esac
 
-    local CMD="qsub -N $JOB_NAME -l select=1:ncpus=8:mem=32gb -l walltime=24:00:00 -q $QUEUE"
+    local CMD="qsub -N $JOB_NAME -l select=1:ncpus=8:mem=32gb -l walltime=$WALLTIME -q $QUEUE"
     CMD="$CMD -v MODEL=SvmA,CONDITION=$COND,MODE=mixed,DISTANCE=$DIST,DOMAIN=$DOM"
     CMD="$CMD,RATIO=${RATIO:-0.5},SEED=$SEED,RANKING=knn,RUN_EVAL=true"
     CMD="$CMD $JOB_SCRIPT"
