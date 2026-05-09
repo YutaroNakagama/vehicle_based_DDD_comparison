@@ -15,13 +15,17 @@ cd "$PROJECT_ROOT"
 DRY_RUN=false
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
 
-CPU_QUEUES=("SINGLE" "SMALL" "LONG" "LONG-L" "LARGE" "DEF" "XLARGE" "X2LARGE" "VM-CPU" "VM-LM")
+# CPU_QUEUES: short-walltime (24h) pool for baseline/undersample.  Includes
+# TINY (separate QOS, max_run=5) and MS_Amorphous (separate QOS, unlimited)
+# which share the same backing 256-core MS_* node pool but provide extra
+# scheduler lanes when other queues fill up.
+CPU_QUEUES=("SINGLE" "SMALL" "LONG" "LONG-L" "LARGE" "DEF" "XLARGE" "X2LARGE" "VM-CPU" "VM-LM" "TINY" "MS_Amorphous")
 CPU_IDX=0
 # Long-walltime pool for SMOTE conditions (24h+ runtime).  All entries below
 # allow >=48h walltime: LONG/LONG-L are dedicated long queues; MS_*/MatStudio
 # share the lcpcc-002/005/047 nodes (256 cores each) and have no per-job
 # walltime cap as observed during exp3.
-LONG_QUEUES=("LONG" "LONG-L" "MS_Castep" "MS_Compass" "MS_Dftbplus" "MS_Dmol3" "MS_Forcite" "MatStudio")
+LONG_QUEUES=("LONG" "LONG-L" "MS_Castep" "MS_Compass" "MS_Dftbplus" "MS_Dmol3" "MS_Forcite" "MatStudio" "MS_Amorphous" "TINY")
 LONG_IDX=0
 
 ALL_SEEDS=(0 1 3 7 13 42 99 123 256 512 777 999 1234 1337 2024)
