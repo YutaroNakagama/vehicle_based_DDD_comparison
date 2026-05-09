@@ -17,13 +17,21 @@ set -uo pipefail
 
 PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
 JOB_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/train/pbs_prior_research_unified.sh"
-MISSING_LIST="/tmp/exp3_all_missing.txt"
+# Prefer the Lstm-only refreshed list when present; fall back to legacy.
+if [[ -s "/tmp/exp3_lstm_dt_missing.txt" ]]; then
+    MISSING_LIST="/tmp/exp3_lstm_dt_missing.txt"
+else
+    MISSING_LIST="/tmp/exp3_all_missing.txt"
+fi
 cd "$PROJECT_ROOT"
 
 DRY_RUN=false
 [[ "${1:-}" == "--dry-run" ]] && { DRY_RUN=true; LIMIT="${2:-30}"; } || LIMIT="${1:-30}"
 
-CPU_QUEUES=("SINGLE" "SMALL" "LONG" "LONG-L" "LARGE" "DEF" "XLARGE" "X2LARGE" "VM-CPU" "VM-LM")
+# Unlimited MS_*/MatStudio queues first (no per-QOS cap; SvmA daemon already
+# saturates SINGLE/SMALL/LONG/etc.). Capped pools come after as fallback.
+CPU_QUEUES=("MS_Castep" "MS_Compass" "MS_Dftbplus" "MS_Dmol3" "MS_Forcite" "MatStudio" \
+            "LONG-L" "LONG" "VM-LM" "DEF" "SINGLE" "SMALL" "LARGE" "XLARGE" "X2LARGE" "VM-CPU")
 CPU_IDX=0
 
 short_dist() { case "$1" in dtw) echo d;; mmd) echo m;; wasserstein) echo w;; esac; }

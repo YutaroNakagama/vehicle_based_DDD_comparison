@@ -19,15 +19,20 @@ cd "$PROJECT_ROOT"
 DRY_RUN=false
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
 
-CPU_QUEUES=("SINGLE" "SMALL" "LONG" "LONG-L" "LARGE" "DEF" "XLARGE" "X2LARGE" "VM-CPU" "VM-LM")
+# Unlimited MS_*/MatStudio queues first (no per-QOS cap; SvmA daemon already
+# saturates SINGLE/SMALL/LONG/etc.). Capped pools come after as fallback.
+CPU_QUEUES=("MS_Castep" "MS_Compass" "MS_Dftbplus" "MS_Dmol3" "MS_Forcite" "MatStudio" \
+            "LONG-L" "LONG" "VM-LM" "DEF" "SINGLE" "SMALL" "LARGE" "XLARGE" "X2LARGE" "VM-CPU")
 CPU_IDX=0
 
 ALL_SEEDS=(0 1 3 7 13 42 99 123 256 512 777 999 1234 1337 2024)
 DISTANCES=(mmd dtw wasserstein)
 DOMAINS=(in_domain out_domain)
+# CPU is competitive with GPU for baseline/undersample (~24min vs ~25min on GPU)
+# but ~15-30x slower for SMOTE/SMOTE_plain (6-12h CPU vs 25min GPU). Keep SMOTE
+# variants on GPU via submit_lstm_mixed_seeds.sh; only baseline + undersample CPU.
 declare -a COND_VARIANTS=(
-    "baseline:" "smote:0.1" "smote:0.5" "smote_plain:0.1" "smote_plain:0.5"
-    "undersample:0.1" "undersample:0.5"
+    "baseline:" "undersample:0.1" "undersample:0.5"
 )
 
 short_dist() { case "$1" in dtw) echo d;; mmd) echo m;; wasserstein) echo w;; esac; }

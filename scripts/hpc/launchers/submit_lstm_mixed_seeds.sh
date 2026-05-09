@@ -21,9 +21,10 @@ GPU_IDX=0
 ALL_SEEDS=(0 1 3 7 13 42 99 123 256 512 777 999 1234 1337 2024)
 DISTANCES=(mmd dtw wasserstein)
 DOMAINS=(in_domain out_domain)
+# Mixed-mode SMOTE/SMOTE_plain are pinned to GPU (CPU runtime ~6-12h vs ~25min on GPU).
+# Baseline + undersample are routed via submit_lstm_mixed_cpu.sh (Lm_*).
 declare -a COND_VARIANTS=(
-    "baseline:" "smote:0.1" "smote:0.5" "smote_plain:0.1" "smote_plain:0.5"
-    "undersample:0.1" "undersample:0.5"
+    "smote:0.1" "smote:0.5" "smote_plain:0.1" "smote_plain:0.5"
 )
 
 short_dist() { case "$1" in dtw) echo d;; mmd) echo m;; wasserstein) echo w;; esac; }
