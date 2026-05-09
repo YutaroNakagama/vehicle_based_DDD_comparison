@@ -77,6 +77,20 @@ export TF_CPP_MIN_LOG_LEVEL=1
 # TF_FORCE_GPU_ALLOW_GROWTH is a fallback for configure_gpu()
 export TF_FORCE_GPU_ALLOW_GROWTH=true
 
+# Issue #12 (2026-05-08): XLA JIT requires libdevice.10.bc under <CUDA>/nvvm/.
+if [[ -z "${XLA_FLAGS:-}" ]]; then
+    if [[ -n "${CUDA_HOME:-}" && -f "${CUDA_HOME}/nvvm/libdevice/libdevice.10.bc" ]]; then
+        export XLA_FLAGS="--xla_gpu_cuda_data_dir=${CUDA_HOME}"
+    elif [[ -f "/app/CUDA/12.8u1/nvvm/libdevice/libdevice.10.bc" ]]; then
+        export XLA_FLAGS="--xla_gpu_cuda_data_dir=/app/CUDA/12.8u1"
+    elif [[ -f "/app/kagayaki/CUDA/12.8u1/nvvm/libdevice/libdevice.10.bc" ]]; then
+        export XLA_FLAGS="--xla_gpu_cuda_data_dir=/app/kagayaki/CUDA/12.8u1"
+    else
+        echo "[WARNING] libdevice.10.bc not located; XLA JIT may fail"
+    fi
+fi
+echo "[CUDA] XLA_FLAGS=${XLA_FLAGS:-<unset>}"
+
 # Parameters
 MODEL="${MODEL:-Lstm}"
 CONDITION="${CONDITION:-baseline}"
@@ -199,6 +213,17 @@ echo ""
 eval $CMD
 
 EXIT_CODE=$?
+
+# Issue #12 follow-up: train.py swallows XLA/JIT exceptions and exits 0 even
+# when model=None. Detect "no .keras saved" and surface as a hard failure so
+# the auto-resubmit daemon doesn't believe the job succeeded.
+MODEL_DIR="models/${MODEL}/${PBS_JOBID}/${PBS_JOBID}[1]"
+if [[ "$EXIT_CODE" -eq 0 && "$MODEL" == "Lstm" ]]; then
+    if ! ls "${MODEL_DIR}"/*.keras >/dev/null 2>&1; then
+        echo "[ERROR] No .keras model saved under ${MODEL_DIR} — promoting to exit 1 (likely XLA/libdevice failure)"
+        EXIT_CODE=1
+    fi
+fi
 
 # Run evaluations if requested and training succeeded
 if [[ "$RUN_EVAL" == "true" && $EXIT_CODE -eq 0 ]]; then
