@@ -496,9 +496,14 @@ def collect_pooled_data(
 
     df = pd.DataFrame(records)
     if not df.empty:
-        # Keep latest job per (model, condition, seed)
+        # Keep latest job per (model, condition, ratio, seed).
+        # NB: `ratio` MUST be in the dedup key — for conditions with multiple
+        # target ratios (e.g. undersample_rus 0.1 / 0.5), omitting it caused
+        # one ratio to silently drop, leaving the 4th-row Pooled bars empty
+        # (e.g. SvmA/undersample_rus r=0.5 had 0 pooled rows in the plot
+        # despite 15 valid eval JSONs on disk).
         df = df.sort_values("job_id").drop_duplicates(
-            subset=["model", "condition", "seed"], keep="last"
+            subset=["model", "condition", "ratio", "seed"], keep="last"
         )
         logger.info(
             f"Collected {len(df)} pooled records: "
