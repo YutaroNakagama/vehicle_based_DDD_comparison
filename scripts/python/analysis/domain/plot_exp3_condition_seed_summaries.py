@@ -98,8 +98,11 @@ def main() -> int:
     parser.add_argument("--condition", default=None,
                         choices=[c["condition"] for c in COND_SPECS],
                         help="Filter to a single condition")
-    parser.add_argument("--min-seeds", type=int, default=2,
-                        help="Skip cells whose seed count is below this (default 2)")
+    parser.add_argument("--min-seeds", type=int, default=12,
+                        help="Skip cells whose seed count is below this (default 12)")
+    parser.add_argument("--strict-subcell", action="store_true", default=True,
+                        help="Require min-seeds in EVERY (distance, level, mode) sub-cell, "
+                             "not just overall (default: on)")
     args = parser.parse_args()
 
     models = [args.model] if args.model else PRIOR_MODELS
@@ -143,8 +146,25 @@ def main() -> int:
                     continue
                 n_seeds = df_r["seed"].nunique()
                 if n_seeds < args.min_seeds:
-                    skipped.append((model, cond, ratio, f"only {n_seeds} seed(s)"))
+                    skipped.append((model, cond, ratio, f"only {n_seeds} seed(s) overall"))
                     continue
+
+                # Strict: each (distance, level, mode) sub-cell must also
+                # have >= min-seeds, otherwise the mean/std for that bar
+                # would be drawn from < min-seeds runs and the "summary"
+                # is not really comparable across cells.
+                if args.strict_subcell:
+                    sub_counts = (
+                        df_r.groupby(["distance", "level", "mode"])["seed"]
+                            .nunique()
+                    )
+                    if sub_counts.empty or sub_counts.min() < args.min_seeds:
+                        worst = int(sub_counts.min()) if not sub_counts.empty else 0
+                        skipped.append(
+                            (model, cond, ratio,
+                             f"sub-cell minimum {worst} seed(s) < {args.min_seeds}")
+                        )
+                        continue
 
                 # Pooled subset for this (model, cond[, ratio])
                 df_pooled = pd.DataFrame()
