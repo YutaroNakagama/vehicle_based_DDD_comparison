@@ -68,7 +68,7 @@ submit_one() {
     # raises imblearn ValueError("specified ratio required to remove
     # samples ..."), which train.py swallows -> exit 0 with no model saved.
     # Permanent silent failure regardless of resubmission count.
-    if [[ "$RATIO" == "0.1" && ("$COND" == "smote_plain" || "$COND" == "undersample") ]]; then
+    if [[ "$RATIO" == "0.1" && ("$COND" == "smote_plain" || "$COND" == "undersample_rus") ]]; then
         return 1
     fi
 
