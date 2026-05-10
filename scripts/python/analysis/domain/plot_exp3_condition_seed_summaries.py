@@ -144,27 +144,41 @@ def main() -> int:
                 if df_r.empty:
                     skipped.append((model, cond, ratio, "no rows"))
                     continue
-                n_seeds = df_r["seed"].nunique()
-                if n_seeds < args.min_seeds:
-                    skipped.append((model, cond, ratio, f"only {n_seeds} seed(s) overall"))
-                    continue
 
-                # Strict: each (distance, level, mode) sub-cell must also
-                # have >= min-seeds, otherwise the mean/std for that bar
-                # would be drawn from < min-seeds runs and the "summary"
-                # is not really comparable across cells.
+                # Drop any mode whose (distance, level) sub-cells are not
+                # all >= min-seeds. This lets us still render a summary
+                # when one mode (typically 'mixed') is incomplete while the
+                # other modes (source_only / target_only) are fully done.
                 if args.strict_subcell:
-                    sub_counts = (
-                        df_r.groupby(["distance", "level", "mode"])["seed"]
+                    mode_counts = (
+                        df_r.groupby(["mode", "distance", "level"])["seed"]
                             .nunique()
+                            .groupby(level="mode").min()
                     )
-                    if sub_counts.empty or sub_counts.min() < args.min_seeds:
-                        worst = int(sub_counts.min()) if not sub_counts.empty else 0
+                    full_modes = mode_counts[mode_counts >= args.min_seeds].index.tolist()
+                    incomplete = mode_counts[mode_counts < args.min_seeds]
+                    if not full_modes:
+                        worst = ", ".join(f"{m}={int(c)}" for m, c in mode_counts.items())
                         skipped.append(
                             (model, cond, ratio,
-                             f"sub-cell minimum {worst} seed(s) < {args.min_seeds}")
+                             f"no mode reaches {args.min_seeds} seeds in every sub-cell ({worst})")
                         )
                         continue
+                    if len(incomplete) > 0:
+                        dropped = ", ".join(f"{m}={int(c)}" for m, c in incomplete.items())
+                        logger.info(
+                            f"  [partial] {model}/{cond} ratio={ratio or 'N/A'}: "
+                            f"dropping incomplete mode(s) [{dropped}]; "
+                            f"keeping {full_modes}"
+                        )
+                        df_r = df_r[df_r["mode"].isin(full_modes)]
+                else:
+                    n_seeds_chk = df_r["seed"].nunique()
+                    if n_seeds_chk < args.min_seeds:
+                        skipped.append((model, cond, ratio, f"only {n_seeds_chk} seed(s) overall"))
+                        continue
+
+                n_seeds = df_r["seed"].nunique()
 
                 # Pooled subset for this (model, cond[, ratio])
                 df_pooled = pd.DataFrame()
