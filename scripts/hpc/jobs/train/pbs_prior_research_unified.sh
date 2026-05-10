@@ -192,6 +192,19 @@ eval $CMD
 
 EXIT_CODE=$?
 
+# Issue #15 follow-up: train.py wraps train_model() in try/except and exits 0
+# even when an exception leaves model=None (e.g. imblearn ValueError when the
+# requested target_ratio < natural minority rate, XLA/JIT failures, etc).
+# Verify a model artifact was actually written; if not, promote to exit 1 so
+# the auto-resubmit daemon doesn't believe the job succeeded.
+MODEL_DIR="models/${MODEL}/${PBS_JOBID}/${PBS_JOBID}[1]"
+if [[ "$EXIT_CODE" -eq 0 ]]; then
+    if ! ls "${MODEL_DIR}"/*.keras "${MODEL_DIR}"/*.pkl >/dev/null 2>&1; then
+        echo "[ERROR] No model artifact (*.keras / *.pkl) saved under ${MODEL_DIR} — promoting to exit 1 (silent failure: see [SAVE] Model object is None or [TRAIN] Exception during training in stderr)"
+        EXIT_CODE=1
+    fi
+fi
+
 # Run evaluations if requested and training succeeded
 if [[ "$RUN_EVAL" == "true" && $EXIT_CODE -eq 0 ]]; then
     echo ""

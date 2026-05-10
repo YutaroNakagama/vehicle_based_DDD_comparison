@@ -56,6 +56,18 @@ existing_completed() {
 submit_one() {
     local COND="$1" RATIO="$2" DIST="$3" DOM="$4" SEED="$5"
 
+    # Issue #15 (2026-05-10): Lstm event-based labels yield natural minority
+    # rate ~27%, so target_ratio=0.1 ("make minority 10% of total") requires
+    # imblearn to *remove* samples from the minority class, which raises
+    # ValueError("specified ratio required to remove samples ...") for both
+    # SMOTE-plain and undersample_rus. The exception is swallowed by
+    # train.py and the job exits 0 with no model saved — a permanent silent
+    # failure regardless of how many times we resubmit. Skip these combos
+    # entirely; they are reported as N/A in the results table.
+    if [[ "$RATIO" == "0.1" && ("$COND" == "smote_plain" || "$COND" == "undersample") ]]; then
+        return 1
+    fi
+
     local DL=$(short_dist "$DIST"); local DM=$(short_dom "$DOM"); local CS=$(short_cond "$COND")
     local RTAG=""
     [[ -n "$RATIO" ]] && RTAG="_r${RATIO}"

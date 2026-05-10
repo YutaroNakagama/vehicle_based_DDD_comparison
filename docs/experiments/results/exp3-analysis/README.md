@@ -76,3 +76,15 @@ Sorted by detection date; details + fix linked in [operations_log.md](operations
     finishes. **Scope note (2026-05-10):** only `select=…` is dropped;
     `-l walltime=…`, `-q`, `-N`, `-v`, `-j oe`, `-o`, `-e` translate
     correctly, so Issue #13's `walltime=48:00:00` fix is fully effective.
+15. **Lstm + ratio=0.1 silent failure (imblearn)** — Lstm event-based
+    labels have natural minority ≈27%, so `target_ratio=0.1` with
+    `smote_plain` or `undersample_rus` raises imblearn ValueError ("ratio
+    required to remove samples"). `train.py`'s broad `except Exception`
+    swallows it → exit 0 with no model saved → daemon thinks success.
+    Detected 2026-05-10 (55 confirmed silent failures + 1788 PEND doomed
+    jobs in queue). Fixed by (a) skip rule in 3 Lstm submitters, (b)
+    generic post-train `*.keras / *.pkl` artifact check in both CPU PBS
+    wrappers (mirrors the GPU-side Issue #12 check), (c) `scancel` of the
+    1788 doomed PEND. 4 cells (Lstm × {smote_plain, undersample} ×
+    r=0.1 × {dt, mx}) reported as **N/A** (data-distribution infeasible).
+

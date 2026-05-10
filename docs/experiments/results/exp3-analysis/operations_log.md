@@ -366,6 +366,76 @@ Triggered by user requirement: every exp3 condition should have **mixed-mode** r
   risk disrupting ~5300 in-flight jobs. Current bottleneck (SvmA mixed SMOTE
   filling MS_*/MatStudio) is best handled by waiting; ETA remains ~3-5 days.
 
+### 15. Lstm + target_ratio=0.1 Permanent Silent Failure via imblearn (Detected 2026-05-10, Fixed 2026-05-10)
+
+- **Symptom:** During the 5/10 morning audit, 138 jobs showed
+  `sacct=COMPLETED` (exit 0) but had no `eval_results_*.json` written. After
+  excluding 21 false positives (`Lc_ba_*_r1.0_*` — ratio is in the job name
+  but not in the eval-file tag for `baseline`) and 62 pre-Issue-#12 Lstm GPU
+  XLA failures, 55 true silent failures clustered tightly:
+  - Lstm `undersample` r=0.1 dt: 24
+  - Lstm `smote_plain` r=0.1 dt: 16
+  - Lstm `undersample` r=0.1 mx: 15
+- **Root cause:** Lstm uses event-based labels (0=baseline / 1=task) which
+  yield a natural minority rate of ≈27% on this dataset. `target_ratio=0.1`
+  asks imblearn to make the minority class **10% of the total** — i.e. to
+  *remove* samples from the already-large minority. Both
+  `imblearn.over_sampling.SMOTE` and `imblearn.under_sampling.RandomUnderSampler`
+  raise:
+  ```
+  ValueError: The specified ratio required to remove samples from the
+  minority class while trying to generate new samples. Please increase the
+  ratio.
+  ```
+  `model_pipeline.train()` wraps `train_model()` in a broad
+  `try / except Exception as e: log + persist current checkpoint`, so the
+  exception is logged but the function continues to the `finally` block,
+  saves an empty checkpoint, and returns normally → exit code 0.
+  `savers.py` does emit `[SAVE] Model object is None — skipping save`, but
+  this only goes to stderr; sacct sees a clean exit and the auto-resubmit
+  daemon believes the job succeeded.
+  - SvmA / SvmW are **not** affected: they use window-based labels with a
+    much lower natural minority rate, so r=0.1 is a normal upsample.
+  - `smote` (`subjectwise` variant, condition tag `iv`) is also unaffected
+    for Lstm because subjectwise sampling operates per-subject before the
+    aggregate ratio test.
+- **Fix (2026-05-10):**
+  1. **Submitter skip rule** — added an early-return guard in
+     `submit_lstm_cpu_hedge.sh`, `submit_lstm_mixed_cpu.sh`, and
+     `submit_lstm_mixed_seeds.sh`:
+     ```bash
+     if [[ "$RATIO" == "0.1" && \
+           ("$COND" == "smote_plain" || "$COND" == "undersample") ]]; then
+         return 1
+     fi
+     ```
+     so daemons no longer queue these doomed combos. Reported as **N/A**
+     (data-distribution-bound infeasible) in the results table.
+  2. **Wrapper fail-fast** — added a generic post-train artifact check to
+     `pbs_prior_research_unified.sh` and `pbs_prior_research_split2.sh`
+     (the GPU split2 wrapper already had a `*.keras`-only version from
+     Issue #12). After `eval $CMD; EXIT_CODE=$?`, if exit was 0 but no
+     `*.keras` / `*.pkl` exists under `models/${MODEL}/${PBS_JOBID}/${PBS_JOBID}[1]`,
+     promote `EXIT_CODE=1`. This catches every silent failure mode
+     (imblearn ratio, XLA libdevice, OOM swallowed by `except Exception`,
+     etc.) — sacct now reports `FAILED` and the daemon's
+     `existing_completed()` correctly returns false.
+  3. **Cleanup of in-flight doomed PEND** — built a cancel list from the
+     live queue with
+     `awk '$2 ~ /^L[csm]_(sm|un)_[dmw][io]_(dt|mx)_r0\.1_s/'`,
+     produced 1788 job IDs, and `xargs -n 200 scancel`'d them.
+     Queue depth dropped from 9586 → 7798 (−18.7%), freeing scheduling
+     slots for the still-feasible work.
+- **Coverage impact:** The 4 affected (model, mode, condition, ratio) cells
+  go from "trying to fill 60 each (= 4×60 = 240 cells)" to "0 by design".
+  Updated denominator for ETA: from 3780 to **3540 reachable** tags. Current
+  artifact count 2374 → completion **67.1%** of reachable.
+- **Long-term:** The bare-`except Exception` in `model_pipeline.train()`
+  should be replaced with a more specific catch (or be re-raised after
+  logging) so future silent failures are loud at sacct level. Deferred to
+  post-exp3 cleanup; the wrapper-side check above is a sufficient guard for
+  now.
+
 ---
 
 ## Mixed-Domain 15-seed Operational Status (as of 2026-04-30)

@@ -63,6 +63,15 @@ gpu_name_for_tag() {
 submit_one() {
     local COND="$1" DIST="$2" DOM="$3" RATIO="$4" SEED="$5"
 
+    # Issue #15 (2026-05-10): Lstm event-based labels yield natural minority
+    # rate ~27%, so target_ratio=0.1 with smote_plain or undersample_rus
+    # raises imblearn ValueError("specified ratio required to remove
+    # samples ..."), which train.py swallows -> exit 0 with no model saved.
+    # Permanent silent failure regardless of resubmission count.
+    if [[ "$RATIO" == "0.1" && ("$COND" == "smote_plain" || "$COND" == "undersample") ]]; then
+        return 1
+    fi
+
     local DL=$(short_dist "$DIST"); local DM=$(short_dom "$DOM"); local CS=$(short_cond "$COND")
     local COND_VAL=$(cond_env "$COND")
     local CPU_NAME="Lc_${CS}_${DL}${DM}_dt_r${RATIO}_s${SEED}"      # CPU hedge name

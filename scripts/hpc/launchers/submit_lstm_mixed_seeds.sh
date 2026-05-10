@@ -48,6 +48,14 @@ existing_completed() {
 submit_one() {
     local COND="$1" RATIO="$2" DIST="$3" DOM="$4" SEED="$5"
 
+    # Issue #15 (2026-05-10): Lstm event-based labels yield natural minority
+    # rate ~27%, so target_ratio=0.1 with smote_plain or undersample_rus
+    # raises imblearn ValueError, swallowed by train.py -> exit 0 with no
+    # model saved. Permanent silent failure; skip these combos entirely.
+    if [[ "$RATIO" == "0.1" && ("$COND" == "smote_plain" || "$COND" == "undersample") ]]; then
+        return 1
+    fi
+
     local DL=$(short_dist "$DIST"); local DM=$(short_dom "$DOM"); local CS=$(short_cond "$COND")
     local RTAG=""
     [[ -n "$RATIO" ]] && RTAG="_r${RATIO}"
