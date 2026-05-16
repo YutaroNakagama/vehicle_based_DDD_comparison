@@ -10,7 +10,9 @@ Subset: SW-SMOTE + domain_train only.
 
 Per job: 1 training + 2 evaluations (within + cross).
 
-Parallelism: SvmW x 2, SvmA x 1, Lstm x 1 (queues separated per model).
+Parallelism (current): see PARALLELISM dict — separate per-model worker pools
+run concurrently. Worker totals were tuned to saturate the i9-12900HK CPU
+(see docs/experiments/results/exp3-analysis/README.md "Local PC Execution").
 Skips jobs whose within-domain eval JSON already exists.
 """
 from __future__ import annotations
@@ -46,7 +48,18 @@ DOMAINS = ["in_domain", "out_domain"]
 RATIOS = [0.3, 0.5]
 SEEDS = [42, 123, 2025]
 
-PARALLELISM = {"SvmW": 4, "SvmA": 6, "Lstm": 3}
+PARALLELISM = {"SvmW": 6, "SvmA": 8, "Lstm": 4}
+# Allow per-model worker counts to be overridden via env vars
+# (e.g. LOCAL_PARALLEL_SVMW=2 LOCAL_PARALLEL_SVMA=2 LOCAL_PARALLEL_LSTM=0).
+# Useful for launching an *auxiliary* launcher in parallel with a primary one
+# (use --reverse on the aux to minimise tag collisions).
+for _m in list(PARALLELISM.keys()):
+    _env_key = f"LOCAL_PARALLEL_{_m.upper()}"
+    if _env_key in os.environ:
+        try:
+            PARALLELISM[_m] = int(os.environ[_env_key])
+        except ValueError:
+            logging.warning("Ignoring non-int %s=%r", _env_key, os.environ[_env_key])
 
 
 @dataclass
@@ -106,18 +119,23 @@ def run_one(job: Job) -> int:
     env["PYTHONPATH"] = str(REPO)
     env["PBS_JOBID"] = jobid
     env["TF_CPP_MIN_LOG_LEVEL"] = "2"
-    env["OMP_NUM_THREADS"] = "1"
-    env["MKL_NUM_THREADS"] = "1"
-    env["OPENBLAS_NUM_THREADS"] = "1"
     # GPU only for Lstm
     if job.model != "Lstm":
         env["CUDA_VISIBLE_DEVICES"] = ""
+        env["OMP_NUM_THREADS"] = "1"
+        env["MKL_NUM_THREADS"] = "1"
+        env["OPENBLAS_NUM_THREADS"] = "1"
     else:
         env.pop("CUDA_VISIBLE_DEVICES", None)
-        # TF 2.13 on Windows is CPU-only. Limit threads so concurrent
-        # Lstm workers don't oversubscribe cores.
-        env.setdefault("TF_NUM_INTRAOP_THREADS", "1")
-        env.setdefault("TF_NUM_INTEROP_THREADS", "1")
+        # Lstm runs on CPU (TF 2.13 Windows). Allow some BLAS parallelism.
+        env["OMP_NUM_THREADS"] = "2"
+        env["MKL_NUM_THREADS"] = "2"
+        env["OPENBLAS_NUM_THREADS"] = "2"
+        # TF 2.13 on Windows is CPU-only. Allow each Lstm worker to use
+        # multiple intra-op threads; total CPU demand is bounded by the
+        # OS scheduler when other workers are busy.
+        env.setdefault("TF_NUM_INTRAOP_THREADS", "3")
+        env.setdefault("TF_NUM_INTEROP_THREADS", "2")
     # SvmW Optuna trials (default 100). Keep default if env not set explicitly.
     env.setdefault("N_TRIALS_OVERRIDE", os.environ.get("N_TRIALS_OVERRIDE", "100"))
 
@@ -201,12 +219,20 @@ def main():
     ap.add_argument("--models", nargs="+", default=MODELS, choices=MODELS)
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--limit", type=int, default=None, help="Run at most N jobs (for testing).")
+    ap.add_argument("--reverse", action="store_true",
+                    help="Process pending jobs in reverse order. Use this on an "
+                         "auxiliary launcher started while a primary launcher is "
+                         "still running to minimise tag collisions.")
     args = ap.parse_args()
 
     all_jobs = [j for j in build_jobs() if j.model in args.models]
     pending = [j for j in all_jobs if not j.already_done()]
+    if args.reverse:
+        pending.reverse()
     done = len(all_jobs) - len(pending)
-    logging.info("Total=%d  Done=%d  Pending=%d", len(all_jobs), done, len(pending))
+    logging.info("Total=%d  Done=%d  Pending=%d  Reverse=%s  Parallelism=%s",
+                 len(all_jobs), done, len(pending), args.reverse,
+                 {m: PARALLELISM.get(m, 1) for m in args.models})
 
     if args.limit:
         pending = pending[: args.limit]
