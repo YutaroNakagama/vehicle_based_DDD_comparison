@@ -92,18 +92,53 @@ After each batch check, the following confirms healthy completion:
    train loop completes. Verify the final `.keras` / `.pkl` under
    `models/<model>/<run_id>/<run_id>[1]/` instead.
 
-## Progress snapshot (2026-05-16 16:08, +3 h 07 m)
+## Progress snapshot (2026-05-16 16:35, +3 h 35 m)
 
 | Metric | Value |
 |---|---|
-| Overall | **32 / 108 (29.6 %)** |
-| Lstm done | 24 (incl. 8 pre-restart) |
-| SvmW done | 8 (incl. 3 pre-restart) |
-| SvmA done | 0 (still in PSO; first DONE expected ~+4 h) |
+| Overall | **34 / 108 (31.5 %)** |
+| Lstm done | 25 (incl. 8 pre-restart) — 11 more before Lstm pool drains |
+| SvmW done | 9 (incl. 3 pre-restart) |
+| SvmA done | 0 (still in PSO; first DONE expected ~ +5–7 h from launch) |
 | Failures | 0 |
-| Within JSONs | 32 (matches DONE count) |
-| Cross JSONs | 32 (matches DONE count) |
+| All-DONE rc | `rc1=0 rc2=0` for every entry |
+| Within JSONs | 34 (matches DONE count) |
+| Cross JSONs | 34 (matches DONE count) |
+| Active python procs | 19 (1 launcher + 18 workers) |
 | CPU | ~100 % sustained |
+
+ETA (refined): all 108 jobs complete around **翌 02:00–04:00** (≈ 12–14 h
+remaining), gated by SvmA's PSO tail. The Lstm pool is expected to drain
+around **18:00–18:30**; when that happens the **aux launcher** (see below)
+auto-starts and adds 4 more CPU workers for the remaining SvmW + SvmA work.
+
+## Optimisation status
+
+CPU is the binding constraint: all 6 P-cores (12 logical) + 8 E-cores are
+pinned at ~100 % by the 18-worker pool. Further raw parallelism would
+oversubscribe and slow the per-job completions, so the only loss-free
+speed-up available is **filling the slots Lstm vacates after it finishes
+its 36 jobs**. That is implemented as an *auxiliary launcher* scheduled by
+a PowerShell `BackgroundJob` (5-min poll). When the Lstm within-JSON count
+reaches 36, the watcher spawns:
+
+```powershell
+$env:LOCAL_PARALLEL_LSTM = "0"
+$env:LOCAL_PARALLEL_SVMW = "2"
+$env:LOCAL_PARALLEL_SVMA = "2"
+python scripts/python/train/local_exp3_launcher.py --reverse --models SvmW SvmA
+```
+
+with logs at `logs/exp3_local/aux_watcher.log` and
+`logs/exp3_local/aux_launcher.{log,err.log}`. The `--reverse` flag (added in
+commit `5532d8d`) makes the auxiliary process the pending list from the
+opposite end, so two launchers can co-run without tag collisions until they
+meet in the middle. Expected speed-up: ETA shortens by ~2–3 hours.
+
+The launcher itself supports per-model parallelism overrides via
+`LOCAL_PARALLEL_{SVMW,SVMA,LSTM}` env vars — no code edits required to
+reshape the pool. The primary launcher's PARALLELISM dict is the default
+when those env vars are unset.
 
 ## Relationship to HPC runs
 
