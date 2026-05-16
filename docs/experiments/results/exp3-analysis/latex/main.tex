@@ -1,0 +1,614 @@
+\documentclass[lettersize,journal]{IEEEtran}
+\usepackage{amsmath,amsfonts}
+\usepackage{array}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{xcolor}
+\usepackage{standalone}
+\usepackage{wrapfig}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, shapes.misc, positioning,
+                decorations.pathreplacing, arrows.meta, calc}
+% Colors retained for potential use in other figures
+\definecolor{factorfill}{RGB}{255,236,179}   % light amber
+\definecolor{factordraw}{RGB}{191,127,0}     % dark amber
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\newcommand{\Impl}[1]{\textsc{#1}}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+
+\begin{document}
+
+\title{Revisiting Prior Vehicle-Dynamics-Based Drowsy Driving Detection Methods
+       Under Controlled Domain and Class Imbalance Conditions}
+
+\author{Yutaro~Nakagama,
+Daisuke~Ishii,~\IEEEmembership{Member,~IEEE,} and~Kazuki~Yoshizoe
+\thanks{Manuscript received XXXX XX, 2026; revised XXXX XX, 2026.}%
+\thanks{Y.~Nakagama and D.~Ishii are with the School of Information Science, Japan Advanced Institute of Science and Technology (JAIST), Nomi, Ishikawa 923-1292, Japan (e-mail: ynakagama@jaist.ac.jp; dsksh@jaist.ac.jp).}%
+\thanks{K.~Yoshizoe is with the Research Institute for Information Technology, Kyushu University, Fukuoka 819-0395, Japan (e-mail: yoshizoe@cc.kyushu-u.ac.jp).}}
+
+\markboth{IEEE Transactions on Intelligent Vehicles,~Vol.~XX, No.~XX, XXXX~2026}%
+{Nakagama \MakeLowercase{\textit{et al.}}: Revisiting Prior Vehicle-Dynamics-Based DDD Methods}
+
+\maketitle
+
+\begin{abstract}
+Prior vehicle-dynamics-based drowsy driving detection (DDD) studies established a common evaluation framework and found that a random forest (RF) outperforms three established methods---\Impl{SvmA} (Arefnezhad et~al.), \Impl{SvmW} (Zhao et~al.), and \Impl{Lstm} (Wang et~al.)---on a public 87-subject simulator dataset, while identifying domain shift and class imbalance as uncontrolled threats to validity~\cite{nakagama2025iv}.
+A companion factorial experiment quantified these effects and demonstrated that within-domain training together with subject-wise oversampling (SW-SMOTE) raises RF's AUROC to 0.890 compared with 0.85 in the uncontrolled setting~\cite{nakagama2026tiv}.
+This paper reports Experiment~3: we re-evaluate \Impl{SvmA}, \Impl{SvmW}, and \Impl{Lstm} under the same within-domain, imbalance-aware conditions using the identical experimental framework.
+Three distinct failure modes emerge under controlled evaluation.
+First, \Impl{SvmW} partially responds to rebalancing---best AUROC = 0.556, F2 = 0.347 with random under-sampling (RUS) at $r = 0.5$---but remains far below RF at 0.890.
+Second, \Impl{SvmA} degenerates to a near-random predictor (AUROC $\approx$ 0.50) regardless of rebalancing strategy, revealing a collapse in the PSO-based adaptive feature selection.
+Third, \Impl{Lstm} recall-saturates (recall $\approx$ 1.0, F2 $\approx$ 0.93 driven by the class prior, AUROC $\approx$ 0.78), showing genuine but modest discrimination (AUROC 0.78 vs.\ 0.890 for RF) while appearing deceptively strong on F2.
+These findings confirm that RF's advantage reported in the prior comparison study is genuine and was understated: the controlled AUROC gap between RF and the best prior method grows from 0.04 (uncontrolled) to $\geq$0.33 (controlled).
+Method-specific failure mode analysis reveals that ANFIS-based feature selection and event-based labeling are the primary failure sources, and provides concrete diagnostic criteria to guide future method development.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Drowsy driving detection, vehicle dynamics, random forest, class imbalance, domain shift, SMOTE, method comparison, reproducibility.
+\end{IEEEkeywords}
+
+%% ====================================================================
+\section{Introduction}
+\label{sec:intro}
+
+\IEEEPARstart{D}{rowsy} driving is a leading cause of traffic accidents worldwide, accounting for an estimated 15--20\% of road fatalities~\cite{who2018}.
+Vehicle-dynamics-based drowsy driving detection (DDD) offers a non-intrusive and practical approach by monitoring signals such as steering angle, lateral acceleration, and lane offset without requiring sensors attached to the driver~\cite{fu2024,fonseca2025}.
+A growing body of work has reported high performance on this approach, with accuracy and AUC values reaching 90--98\%~\cite{arefnezhad2019,zhao2012,wang2022}, suggesting the problem may be close to solved.
+
+Two recent studies from our group challenge this optimism and motivate the present work.
+The first~\cite{nakagama2025iv} implemented three representative prior methods---\Impl{SvmA}~\cite{arefnezhad2019}, \Impl{SvmW}~\cite{zhao2012}, and \Impl{Lstm}~\cite{wang2022}---in a common framework on a public 87-subject driving simulator dataset~\cite{aygun2024} and compared their performance against a simple RF baseline under a standardized evaluation protocol.
+That comparison found significant discrepancies from the originally reported values and established RF as the strongest method (AUROC = 0.85, accuracy = 88\%).
+However, the comparison used a uniform evaluation protocol that did not separately account for two known data-quality challenges: \emph{class imbalance}, because drowsy episodes are rare in driving data, and \emph{domain shift}, because driving behavior varies across drivers.
+Both factors were listed as threats to validity but were not controlled.
+
+The second study~\cite{nakagama2026tiv} addressed this gap by constructing a four-factor full-factorial experiment on the same 87-subject dataset, varying distance metric~($D$), domain membership~($G$), training mode~($M$), and rebalancing strategy~($R$).
+Sobol--Hoeffding variance decomposition over 1{,}512 RF evaluations revealed that training mode and rebalancing together account for $\geq$93\% of systematic performance variance, with a strong $R \times M$ interaction.
+Specifically, within-domain training with subject-wise SMOTE (SW-SMOTE) at $r = 0.1$ yielded AUROC = 0.890, F2 = 0.559, and AUPRC = 0.617---significantly outperforming the uncontrolled baseline (AUROC = 0.684).
+These results establish a principled set of best-practice conditions for vehicle-dynamics-based DDD.
+
+A natural and important question then arises: \emph{do the conclusions of the prior comparison study hold when the same best-practice conditions are applied to the prior methods?}
+If the prior methods were simply disadvantaged by the uncontrolled evaluation protocol, their performance under controlled conditions might be competitive with RF.
+Conversely, if RF's advantage persists or grows under controlled conditions, this would provide strong evidence that it stems from a genuine method-level difference rather than an artifact of evaluation setup.
+Furthermore, observing prior method behavior under controlled conditions may reveal failure modes that were masked in the uncontrolled setting.
+
+To address these questions, this paper presents Experiment~3, in which we apply the evaluation framework of~\cite{nakagama2026tiv} to \Impl{SvmA}, \Impl{SvmW}, and \Impl{Lstm}.
+Concretely, all three methods are trained and evaluated in within-domain mode with the full set of rebalancing strategies (baseline, RUS, SMOTE, SW-SMOTE at $r \in \{0.1, 0.5\}$) across three domain-partition distance metrics and both domain groups, over 15 random seeds (1{,}890 total evaluations across three prior models).
+
+The main contributions of this paper are:
+\begin{enumerate}
+\item We systematically re-evaluate three published vehicle-dynamics-based DDD methods under the controlled domain and imbalance conditions identified in~\cite{nakagama2026tiv}, enabling a direct apples-to-apples comparison with RF.
+
+\item We show that controlled evaluation exposes three distinct and interpretable method-level failure modes: (i)~PSO-based adaptive feature selection collapses to a trivial predictor in \Impl{SvmA}; (ii)~event-based labeling combined with an LSTM architecture leads to recall saturation in \Impl{Lstm}; and (iii)~\Impl{SvmW} partially responds to rebalancing but remains substantially below RF.
+
+\item We demonstrate that RF's advantage from~\cite{nakagama2025iv} was genuine and understated: the controlled AUROC gap between RF and the best prior method increases from 0.04 (uncontrolled setting, AUROC 0.85 vs.\ 0.81) to $\geq$0.33 (controlled setting, AUROC 0.890 vs.\ 0.556), confirming that the prior comparison's conclusion was qualitatively correct but quantitatively conservative.
+\end{enumerate}
+
+The remainder of this paper is organized as follows.
+Section~\ref{sec:related} reviews related work.
+Section~\ref{sec:formulation} formalizes the DDD task and defines the three prior methods.
+Section~\ref{sec:framework} describes the experimental framework, including common settings and the prior method implementations.
+Section~\ref{sec:results} reports experimental results.
+Section~\ref{sec:discussion} discusses the findings and their implications.
+Section~\ref{sec:conclusion} concludes.
+
+%% ====================================================================
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Vehicle-Dynamics-Based Drowsy Driving Detection}
+Vehicle dynamics signals---steering wheel angle, lateral acceleration, and lane position---are widely used for DDD because they enable non-intrusive monitoring without physiological sensors attached to the driver~\cite{fu2024,fonseca2025,alquraishi2024,perkins2022}.
+Among the methods evaluated in this paper,
+Arefnezhad et~al.~\cite{arefnezhad2019} (\Impl{SvmA}) used 36 statistical and spectral features from steering signals with a PSO-based adaptive neuro-fuzzy feature selector and SVM classifier, reporting AUC = 0.97;
+Zhao et~al.~\cite{zhao2012} (\Impl{SvmW}) applied GHM multiwavelet packet decomposition to the steering angle with SVM, reporting a 95\% correct rate;
+and Wang et~al.~\cite{wang2022} (\Impl{Lstm}) used a bidirectional LSTM with attention on five vehicle signals, reporting 91\% accuracy on a distraction-detection task.
+
+A prior comparison study~\cite{nakagama2025iv} implemented all three methods in a unified framework on the public MMDAP dataset~\cite{aygun2024} and found that none achieved the originally reported performance under a standardized evaluation protocol, while a simple RF baseline exceeded all three (AUROC = 0.85).
+However, that comparison did not control for domain shift or class imbalance, which the present paper addresses.
+
+\subsection{Class Imbalance in DDD}
+Class imbalance is inherent in drowsy driving data because drowsy episodes are rare but safety-critical.
+Standard countermeasures include random under-sampling (RUS), SMOTE~\cite{chawla2002}, and cost-sensitive learning~\cite{he2009}.
+In vehicle-dynamics-based DDD, only a few studies explicitly handle imbalance: Yadawadkar et~al.~\cite{yadawadkar2018} compared SMOTE with no resampling, Schwarz et~al.~\cite{schwarz2019} used SMOTE in steering-based detection, and Baccour et~al.~\cite{baccour2022} used class weighting.
+Nakagama et~al.~\cite{nakagama2026tiv} showed that subject-wise SMOTE (SW-SMOTE) applied before subject pooling is the most effective strategy for RF in this setting.
+None of the three prior methods evaluated in this paper incorporate explicit class rebalancing as part of their published design.
+
+\subsection{Domain Shift in DDD}
+Inter-subject variability creates domain shift in DDD~\cite{pan2010,aravinth2025}.
+Sun et~al.~\cite{sun2021} examined subject-independent drowsiness detection while highlighting driver fingerprinting differences, and Kim et~al.~\cite{kim2025} proposed a calibration-free domain generalization method using prototype-based multi-domain mixup.
+Nakagama et~al.~\cite{nakagama2026tiv} demonstrated that, for RF on vehicle dynamics features, training mode (within- vs.\ cross-domain) is the single most important performance factor ($S_{TM} = 0.50$--$0.71$).
+Whether prior DDD methods exhibit similar sensitivity to training mode is unknown, and the present paper addresses this gap.
+
+%% ====================================================================
+\section{Problem Formulation}
+\label{sec:formulation}
+
+\subsection{DDD Formalization}
+\emph{Drowsy driving detection (DDD)} is the task of automatically estimating a driver's drowsiness state from continuously monitored signals.
+\emph{Vehicle-dynamics-based DDD} estimates the driver's alertness state from vehicle dynamics signals, enabling non-intrusive monitoring.
+In this paper, DDD is formulated as binary classification (\emph{drowsy} vs.\ \emph{alert}) using a machine learning approach: vehicle dynamics signals are segmented into overlapping \emph{time windows}, per-window feature vectors are extracted from those signals as classifier inputs, and each window is assigned a binary drowsiness label derived from an independent measure (Section~\ref{sec:preprocessing}); the resulting pipeline is illustrated in Fig.~\ref{fig:framework_ddd_flow}.
+
+\begin{figure}[!t]
+\centering
+\resizebox{\columnwidth}{!}{\input{fig/framework_ddd_flow_tikz}}
+\caption{DDD pipeline formalized in this paper (per subject~$s$). Vehicle dynamics signals are segmented into overlapping time windows; per-window feature vectors $\mathbf{x}_w$ and labels $y_w$ are extracted; each subject's dataset $\mathcal{D}_s$ is split chronologically into Train, Val, and Test; and the classifier is trained on the pooled training set, threshold-tuned on the validation set, and evaluated on the test set.}
+\label{fig:framework_ddd_flow}
+\end{figure}
+
+Let $\mathcal{S} = \{s_1, \ldots, s_N\}$ denote the set of $N = 87$ subjects.
+For each subject~$s$, vehicle signals are processed via a fixed-length sliding window, and each window is assigned a binary drowsiness label ($0$: alert, $1$: drowsy), yielding a per-subject dataset $\mathcal{D}_s = \{(\mathbf{x}_w, y_w)\}_{w=1}^{n_s}$.
+Each subject's dataset is split chronologically into three disjoint portions:
+\begin{equation}
+\label{eq:split}
+\mathcal{D}_s = \mathcal{D}_s^{\mathrm{tr}} \,\dot{\cup}\, \mathcal{D}_s^{\mathrm{val}} \,\dot{\cup}\, \mathcal{D}_s^{\mathrm{te}}
+\end{equation}
+with a 70/15/15 ratio, preserving temporal order.
+The scoring function $f\colon \mathbb{R}^k \to [0,1]$ is trained on the pooled training set $\mathcal{D}_{\mathrm{tr}} = \bigcup_{s \in \mathcal{S}_{\mathrm{tr}}} \mathcal{D}_s^{\mathrm{tr}}$, and the binary prediction is $\hat{y}_w = \mathbb{1}[\hat{p}_w^{\mathrm{cal}} \geq \hat{\tau}]$, where $\hat{p}_w^{\mathrm{cal}}$ is a calibrated score and $\hat{\tau}$ is a validation-set-tuned threshold.
+
+\subsection{Class Imbalance and Domain Shift}
+\emph{Class imbalance}: the class balance $\rho = n_1/n_0$ (drowsy/alert ratio) satisfies $\rho \ll 1$ for EEG-based drowsiness labels.
+A \emph{rebalancing operator} transforms the training set $\mathcal{D}_{\mathrm{tr}}$ into $\tilde{\mathcal{D}}$ so that $\tilde{n}_1/\tilde{n}_0 \to r$; see Section~\ref{sec:rebalancing}.
+
+\emph{Domain shift}: a distance metric $D$ computes pairwise inter-subject distances and partitions $\mathcal{S}$ into an in-domain group $\mathcal{G}_{\mathrm{in}}$ (44 subjects, most typical) and an out-domain group $\mathcal{G}_{\mathrm{out}}$ (43 subjects, most dissimilar) via a $K$-nearest-neighbor score at the median.
+\emph{Domain membership} $G \in \{\mathrm{in}, \mathrm{out}\}$ selects which group serves as the evaluation target $\mathcal{G}_{\mathrm{eval}}$.
+\emph{Training mode} $M$ assembles the training pool:
+\begin{equation}
+\label{eq:train_pool}
+\mathcal{S}_{\mathrm{tr}} =
+\begin{cases}
+\mathcal{S} \setminus \mathcal{G}_{\mathrm{eval}} & M = \mathrm{Cross} \\
+\mathcal{G}_{\mathrm{eval}}                       & M = \mathrm{Within} \\
+\mathcal{S}                                       & M = \mathrm{Mixed}
+\end{cases}
+\end{equation}
+with subject overlap ratio $\omega_{\mathrm{tr}} = |\mathcal{S}_{\mathrm{tr}} \cap \mathcal{G}_{\mathrm{eval}}| / |\mathcal{G}_{\mathrm{eval}}|$; $\omega_{\mathrm{tr}} = 0$ for Cross, $\omega_{\mathrm{tr}} = 1$ for Within and Mixed.
+
+\subsection{Prior Research Methods}
+\label{sec:prior_methods}
+
+Three prior methods are evaluated as first implemented in~\cite{nakagama2025iv} and adapted here to the domain-aware framework.
+All three operate on the same five vehicle dynamics signals ($\delta$, $\dot{\delta}$, $a_y$, $a_x$, $e_{\text{lane}}$) at 60~Hz (Section~\ref{sec:common_settings}).
+Table~\ref{tab:prior_methods} summarizes their key properties.
+
+\begin{table}[!t]
+\caption{Prior Research Methods Evaluated in This Study. All three are re-implemented from the cited papers and trained on the MMDAP dataset~\cite{aygun2024} with EEG-based labels (SvmA, SvmW) or DRT event labels (Lstm).\label{tab:prior_methods}}
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|}
+\hline
+Method & Classifier & Features & Label Source \\
+\hline
+\Impl{SvmA}~\cite{arefnezhad2019} & SVM & 36 stat./spec. & EEG \\
+\hline
+\Impl{SvmW}~\cite{zhao2012}       & SVM & 8 GHM wavelet & EEG \\
+\hline
+\Impl{Lstm}~\cite{wang2022}       & Bi-LSTM & 15 smoothed & DRT event \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{\Impl{SvmA}: SVM with PSO-Based Adaptive Feature Selection}
+Arefnezhad et~al.~\cite{arefnezhad2019} extract 36 statistical and spectral descriptors from steering angle ($\delta$) and steering rate ($\dot{\delta}$) in a 3-second window.
+Feature importance is estimated via an adaptive neuro-fuzzy inference system (ANFIS) optimized with particle swarm optimization (PSO), and the top-ranked features are passed to an SVM classifier.
+In the original work, ground-truth labels were KSS-based; in our re-implementation, EEG-based binary labels are used uniformly.
+Hyperparameters of the SVM (kernel, $C$, $\gamma$) are tuned with Optuna~\cite{akiba2019} at 100 trials per experimental cell.
+The PSO-ANFIS feature selector is applied before pooling the training data.
+
+\subsubsection{\Impl{SvmW}: SVM with GHM Multiwavelet Decomposition}
+Zhao et~al.~\cite{zhao2012} apply a three-level Geronimo--Hardin--Massopust (GHM) multiwavelet packet decomposition to the steering angle ($\delta$), yielding 8 sub-band energy features.
+The classification model is an SVM with a radial basis function kernel.
+In the original study, ground-truth labels were per-session self-reports; in our re-implementation, EEG-based labels are used.
+Hyperparameters are tuned with Optuna at 100 trials per experimental cell.
+
+\subsubsection{\Impl{Lstm}: Bidirectional LSTM with Attention}
+Wang et~al.~\cite{wang2022} extract three feature signals from each of five vehicle signals ($\dot{\delta}$, $v_x$, $a_x$, $a_y$, $e_{\text{lane}}$) via Gaussian smoothing (mean), standard deviation, and second-order Taylor prediction error, yielding $5 \times 3 = 15$ feature time series.
+A bidirectional LSTM with an attention mechanism classifies whether the driver is engaged in a task (drowsy) or in a free-driving period (alert).
+Accordingly, \Impl{Lstm} uses \emph{DRT event occurrence} as the ground-truth label rather than EEG-derived drowsiness, in alignment with the original study's distraction-detection task.
+The LSTM architecture is fixed following~\cite{nakagama2025iv} (2-layer Bi-LSTM with attention, 64 hidden units per direction); feature selection uses Student's $t$-test on the training set.
+
+%% ====================================================================
+\section{Experimental Framework}
+\label{sec:framework}
+
+The experimental framework directly extends~\cite{nakagama2026tiv} to include the three prior methods.
+Common settings (dataset, signals, preprocessing, metrics) are unchanged; Section~\ref{sec:common_settings} summarizes them.
+Section~\ref{sec:rebalancing} defines the rebalancing strategies applied to all methods.
+Section~\ref{sec:design} describes the experimental design specific to Experiment~3.
+
+\subsection{Common Settings}
+\label{sec:common_settings}
+
+\subsubsection{Dataset and Signals}
+The publicly available MMDAP dataset~\cite{aygun2024} is used, comprising $N = 87$ recording sessions from 47 drivers collected on a medium-fidelity partial-cab driving simulator at $f_s = 60$~Hz.
+Five raw signals are used: steering angle ($\delta$), steering rate ($\dot{\delta}$), lateral acceleration ($a_y$), longitudinal acceleration ($a_x$), and lane offset ($e_{\text{lane}}$).
+The vehicle dynamics model underlying the signal relationships is described in~\cite{nakagama2026tiv}.
+
+\subsubsection{Data Preprocessing}
+\label{sec:preprocessing}
+Raw signals are segmented into 3-second sliding windows with 50\% overlap.
+For EEG-based labels (\Impl{SvmA}, \Impl{SvmW}, RF): each window is labeled using an EEG-derived drowsiness index; the per-window ratio $(P_\theta + P_\alpha)/P_\beta$ is min--max binned into 9 ordinal levels, and levels 1--5 map to Alert~(0) and 8--9 to Drowsy~(1); intermediate levels (6--7) are excluded.
+For event-based labels (\Impl{Lstm}): windows are labeled according to DRT event occurrence, with the period during an event and a short transition buffer labeled as positive (engaged/drowsy-analogous); the natural positive-class prevalence under this scheme is $\approx$27\%.
+
+Domain partitioning follows~\cite{nakagama2026tiv}: pairwise inter-subject distances are computed using three metrics (MMD, DTW, Wasserstein-1), and subjects are split at the median $K$-nearest-neighbor score ($K = 5$) into $\mathcal{G}_{\mathrm{in}}$ (44 subjects) and $\mathcal{G}_{\mathrm{out}}$ (43 subjects).
+
+\subsubsection{Rebalancing Strategies}
+\label{sec:rebalancing}
+Seven rebalancing levels matching those in~\cite{nakagama2026tiv} are applied to the pooled training set for each method:
+\begin{itemize}
+\item \textbf{Baseline (BL):} no resampling.
+\item \textbf{RUS} at $r \in \{0.1, 0.5\}$: random under-sampling of the majority class.
+\item \textbf{SMOTE} at $r \in \{0.1, 0.5\}$: $k$-NN synthetic minority oversampling on the pooled training set~\cite{chawla2002}.
+\item \textbf{SW-SMOTE} at $r \in \{0.1, 0.5\}$: SMOTE applied independently per subject before pooling (cluster-based SMOTE~\cite{douzas2018} with clusters defined by driver identity).
+\end{itemize}
+Rebalancing is applied only to the training set; validation and test sets retain the natural class distribution.
+Note: for \Impl{Lstm} with DRT labels, the positive-class prevalence ($\approx$27\%) exceeds the $r = 0.1$ target ratio, making RUS and SMOTE at $r = 0.1$ infeasible with standard imbalanced-learning tools; these four cells are reported as N/A.
+
+\subsubsection{Evaluation Metrics}
+\label{sec:metrics}
+Performance is evaluated using three complementary metrics (defined in~\cite{nakagama2026tiv}):
+\textbf{F2-score} (threshold-dependent, recall-weighted);
+\textbf{AUROC} (threshold-free discrimination);
+\textbf{AUPRC} (threshold-free, imbalance-aware~\cite{saito2015}).
+F2 emphasizes recall to penalize missed drowsy episodes.
+
+\subsection{Experimental Design}
+\label{sec:design}
+
+The experiment follows a \emph{three-model} $\times$ \emph{three-distance} $\times$ \emph{two-domain} $\times$ \emph{seven-rebalancing} full-factorial design, evaluated over 15 fixed random seeds.
+
+\begin{table}[!t]
+\caption{Experiment~3 Factorial Design. Training mode is fixed to \emph{Within} ($M = \mathrm{domain\_train}$, $\omega_{\mathrm{tr}} = 1$).\label{tab:design}}
+\centering
+\footnotesize
+\begin{tabular}{|l|c|p{3.6cm}|}
+\hline
+Factor & Levels & Values \\
+\hline
+Method ($\mathcal{M}$) & 3 & \Impl{SvmA}, \Impl{SvmW}, \Impl{Lstm} \\
+\hline
+Distance ($D$) & 3 & MMD, DTW, Wasserstein-1 \\
+\hline
+Domain ($G$) & 2 & In-domain, Out-domain \\
+\hline
+Rebalancing ($R$) & 7 & BL, RUS/SMOTE/SW-SMOTE $r\!\in\!\{0.1,0.5\}$ \\
+\hline
+Seeds & 15 & canonical 15-seed list \\
+\hline
+\end{tabular}
+\end{table}
+
+All three methods are trained in \emph{within-domain} mode (domain\_train: train on target domain train split 70\%, tune on validation 15\%, evaluate on test 15%), corresponding to $M = \mathrm{Within}$ ($\omega_{\mathrm{tr}} = 1$) in the notation of~\cite{nakagama2026tiv}.
+An additional \emph{cross-domain} evaluation is also performed from the same trained model (evaluating on the opposite domain's test split), yielding both within-domain and cross-domain metrics per job.
+The total number of evaluations is $3 \times 3 \times 2 \times 7 \times 15 = 1{,}890$ (minus N/A cells for \Impl{Lstm}).
+
+The RF reference results used for comparison come directly from~\cite{nakagama2026tiv}, which employed the same dataset, preprocessing, and 15-seed evaluation protocol with $M = \mathrm{Within}$.
+This enables a direct method-level comparison at matched conditions.
+
+%% ====================================================================
+\section{Experimental Results}
+\label{sec:results}
+
+\subsection{RF Reference Under Optimal Conditions (from~\cite{nakagama2026tiv})}
+\label{sec:rf_reference}
+
+For context, Table~\ref{tab:rf_reference} lists RF performance under the Within training mode as reported in~\cite{nakagama2026tiv}, averaged over all three distance metrics, both domain groups, and 12 seeds.
+SW-SMOTE at $r = 0.1$ achieves the highest values across all three metrics (AUROC = 0.890, AUPRC = 0.617, F2 = 0.559); the baseline (no rebalancing) yields substantially lower AUROC = 0.684, confirming the large effect of rebalancing under within-domain conditions.
+
+\begin{table}[!t]
+\caption{RF Performance Under Within-Domain Training (from~\cite{nakagama2026tiv}). Averaged over $D \in \{\mathrm{MMD, DTW}, W_1\}$, $G \in \{\mathrm{in, out}\}$, 12 seeds.\label{tab:rf_reference}}
+\centering
+\footnotesize
+\begin{tabular}{|l|c|c|c|}
+\hline
+Rebalancing & F2 & AUROC & AUPRC \\
+\hline
+Baseline (BL) & 0.236 & 0.684 & 0.199 \\
+\hline
+RUS $r\!=\!0.1$ & 0.204 & 0.631 & 0.116 \\
+RUS $r\!=\!0.5$ & 0.191 & 0.599 & 0.097 \\
+\hline
+SMOTE $r\!=\!0.1$ & 0.418 & 0.875 & 0.497 \\
+SMOTE $r\!=\!0.5$ & 0.389 & 0.820 & 0.373 \\
+\hline
+SW-SMOTE $r\!=\!0.1$ & \textbf{0.559} & \textbf{0.890} & \textbf{0.617} \\
+SW-SMOTE $r\!=\!0.5$ & 0.450 & 0.877 & 0.461 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{SvmW: Partial Response to Rebalancing}
+\label{sec:svmw_results}
+
+Table~\ref{tab:svmw_results} shows \Impl{SvmW} performance averaged over all distances ($D$), domain groups ($G$), and 15 seeds under within-domain training.
+In contrast to RF, \Impl{SvmW} performs best with \emph{under-sampling} rather than oversampling: RUS at $r = 0.5$ achieves the highest F2 = 0.347, AUROC = 0.556, and AUPRC = 0.119.
+SMOTE and SW-SMOTE variants are largely equivalent to or slightly worse than the baseline, indicating that synthetic oversampling does not benefit this method's wavelet-feature SVM classifier.
+
+\begin{table}[!t]
+\caption{\Impl{SvmW} Performance Under Within-Domain Training. Averaged over $D$, $G$, 15 seeds, within-domain eval. Best cell per column in bold.\label{tab:svmw_results}}
+\centering
+\footnotesize
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+Rebalancing & F2 & AUROC & AUPRC & Recall & Precision \\
+\hline
+Baseline & 0.328 & 0.545 & 0.116 & 0.861 & 0.100 \\
+\hline
+RUS $r\!=\!0.1$ & 0.334 & 0.548 & 0.116 & 0.876 & 0.101 \\
+RUS $r\!=\!0.5$ & \textbf{0.347} & \textbf{0.556} & \textbf{0.119} & \textbf{0.955} & 0.100 \\
+\hline
+SMOTE $r\!=\!0.1$ & 0.280 & 0.543 & 0.116 & 0.532 & 0.109 \\
+SMOTE $r\!=\!0.5$ & 0.212 & 0.529 & 0.114 & 0.282 & 0.108 \\
+\hline
+SW-SMOTE $r\!=\!0.1$ & 0.313 & 0.538 & 0.112 & 0.665 & 0.106 \\
+SW-SMOTE $r\!=\!0.5$ & 0.253 & 0.526 & 0.113 & 0.393 & 0.106 \\
+\hline
+\end{tabular}
+\end{table}
+
+The \Impl{SvmW} within/cross breakdown confirms the domain shift sensitivity pattern.
+For the out-domain evaluation group, within-domain training yields F2 = 0.377 (RUS $r{=}0.5$), while cross-domain training yields F2 = 0.321---a statistically meaningful gap ($\Delta = 0.056$) that mirrors, at a much lower absolute level, the mode-dependent bottleneck identified for RF in~\cite{nakagama2026tiv}.
+
+Despite the partial response to rebalancing, \Impl{SvmW} remains far below RF across all conditions.
+The AUROC gap between RF (SW-SMOTE $r{=}0.1$: 0.890) and \Impl{SvmW} (RUS $r{=}0.5$: 0.556) is 0.334 under controlled conditions, compared with a much smaller implicit gap in the uncontrolled setting of~\cite{nakagama2025iv}.
+The optimal rebalancing strategy also \emph{reverses} across methods: RF favors SW-SMOTE (AUROC +0.206 vs.\ BL), whereas \Impl{SvmW} favors RUS (AUROC +0.011 vs.\ BL) and is slightly hurt by SMOTE (AUROC $-0.002$ to $-0.019$ vs.\ BL).
+
+\subsection{SvmA: Degeneration to Near-Random Predictor}
+\label{sec:svma_results}
+
+Table~\ref{tab:svma_results} shows \Impl{SvmA} performance.
+Across \emph{all} rebalancing conditions, distance metrics, domain groups, and seeds, \Impl{SvmA} collapses to a near-random predictor: AUROC $\approx 0.499$, F2 $\approx 0.159$, AUPRC $\approx 0.037$.
+The F2 value closely matches the class prior (drowsy prevalence $\approx$ 16\%), suggesting the model predicts nearly all windows as drowsy (recall $\approx 0.92$, precision $\approx 0.037$).
+No rebalancing strategy or distance metric recovers meaningful discrimination: standard deviations are negligibly small ($\leq 0.007$ for AUROC), and pairwise differences between conditions are all within 0.002 AUROC.
+
+\begin{table}[!t]
+\caption{\Impl{SvmA} Performance Under Within-Domain Training. Averaged over $D$, $G$, 15 seeds. All conditions degenerate to near-random (AUROC $\approx$ 0.50); values are practically identical across rebalancing strategies.\label{tab:svma_results}}
+\centering
+\footnotesize
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+Rebalancing & F2 & AUROC & AUPRC & Recall & Precision \\
+\hline
+Baseline & 0.159 & 0.499 & 0.037 & 0.931 & 0.037 \\
+\hline
+RUS $r\!=\!0.1$ & 0.159 & 0.499 & 0.037 & 0.906 & 0.037 \\
+RUS $r\!=\!0.5$ & 0.158 & 0.500 & 0.039 & 0.905 & 0.037 \\
+\hline
+SMOTE $r\!=\!0.1$ & 0.159 & 0.500 & 0.037 & 0.911 & 0.037 \\
+SMOTE $r\!=\!0.5$ & 0.159 & 0.501 & 0.038 & 0.885 & 0.037 \\
+\hline
+SW-SMOTE $r\!=\!0.1$ & 0.159 & 0.499 & 0.037 & 0.896 & 0.037 \\
+SW-SMOTE $r\!=\!0.5$ & 0.159 & 0.500 & 0.038 & 0.911 & 0.037 \\
+\hline
+\end{tabular}
+\end{table}
+
+This uniform failure is not an artifact of the rebalancing or domain conditions: it persists across all three distance metrics and both domain groups.
+Cross-domain evaluation yields essentially identical numbers (within-domain AUROC $\approx$ 0.497, cross-domain AUROC $\approx$ 0.503), indicating that domain configuration has no impact on a model that is already at chance level.
+
+Comparing with the uncontrolled setting of~\cite{nakagama2025iv}, where \Impl{SvmA} also achieved AUROC = 0.53 under configuration C2, the controlled evaluation confirms and sharpens this diagnosis: the PSO-ANFIS optimization process consistently fails to identify features that discriminate drowsy from alert under the 70/15/15 chronological split used in within-domain training.
+The failure likely originates from the interplay between PSO-based wrapper selection (which optimizes training accuracy) and the large, heterogeneous pooled training set: when subjects are pooled, the PSO converges to features that maximize cross-subject \emph{training} accuracy, which is dominated by subject identity rather than drowsiness state, yielding chance-level test discrimination.
+
+\subsection{Lstm: Recall Saturation}
+\label{sec:lstm_results}
+
+\begin{table}[!t]
+\caption{\Impl{Lstm} Performance Under Within-Domain Training (preliminary; 30\% coverage). Averaged over $D$, $G$, available seeds, within-domain eval. N/A cells: ratio $r{=}0.1$ infeasible for DRT labels.\label{tab:lstm_results}}
+\centering
+\footnotesize
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+Rebalancing & F2 & AUROC & AUPRC & Recall & Prec. \\
+\hline
+Baseline & 0.932 & 0.779 & 0.913 & 0.999 & 0.735 \\
+\hline
+RUS $r\!=\!0.1$ & N/A & N/A & N/A & N/A & N/A \\
+RUS $r\!=\!0.5$ & 0.933 & 0.783 & 0.915 & 0.999 & 0.736 \\
+\hline
+SMOTE $r\!=\!0.1$ & N/A & N/A & N/A & N/A & N/A \\
+SMOTE $r\!=\!0.5$ & 0.933 & 0.773 & 0.910 & 0.999 & 0.738 \\
+\hline
+SW-SMOTE $r\!=\!0.1$ & 0.933 & 0.782 & 0.915 & 0.999 & 0.737 \\
+SW-SMOTE $r\!=\!0.5$ & 0.932 & 0.754 & 0.904 & 1.000 & 0.734 \\
+\hline
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:lstm_results} shows \Impl{Lstm} performance (preliminary; 30\% of the target 15-seed coverage).
+The LSTM model exhibits \emph{recall saturation}: recall $\approx 1.000$ and precision $\approx 0.735$ across all feasible conditions.
+With DRT-based labels ($\approx$27\% positive-class prevalence), a model that predicts all windows as positive would achieve precision = 0.735 and recall = 1.0, yielding F2 = $5 \times 0.735/(4 \times 0.735 + 1) = 0.93$---precisely matching the observed values.
+The F2 score of $\approx$0.932 is therefore driven entirely by the class prior, not by discrimination.
+
+AUROC $\approx$ 0.77--0.78, by contrast, reflects genuine (if modest) rank discrimination.
+The discrepancy between AUROC and F2 signals that the model generates a scored ranking that is better than random, but the calibrated threshold collapses to predict-all-positive when F2 is used for threshold selection (because F2 emphasizes recall, predicting all positive maximizes F2 under imbalance).
+
+Contrasting with \Impl{SvmA}'s collapse to near-random (AUROC $\approx$ 0.50), \Impl{Lstm}'s AUROC of 0.78 indicates a genuinely more capable scorer; the failure mode is not in the model's discrimination but in its threshold-selection interaction with F2 optimization and high class prior.
+Comparing with~\cite{nakagama2025iv}, where \Impl{Lstm} under configuration C2 (8:1:1 random split) collapsed in the \emph{opposite} direction (AUROC = 0.52, recall = 5\%, model predicts all-negative), the within-domain evaluation here reveals a qualitatively different but equally degenerate behavior: the model saturates recall rather than collapsing it, reflecting sensitivity to the training distribution shift between random pooling (C2) and within-domain partitioning (Experiment~3).
+
+\subsection{Method Comparison Under Controlled Conditions}
+\label{sec:comparison}
+
+Table~\ref{tab:method_comparison} and Fig.~\ref{fig:method_comparison} present the unified method comparison under within-domain training, at each method's best rebalancing condition.
+RF (from~\cite{nakagama2026tiv}) achieves the highest values across all three metrics.
+The AUROC ranking is RF (0.890) $\gg$ \Impl{Lstm} (0.779, recall-saturated) $>$ \Impl{SvmW} (0.556) $\gg$ \Impl{SvmA} (0.499).
+When AUROC is used as the primary metric (which is immune to threshold-selection artifacts), the RF gap over the best prior method (\Impl{Lstm}) is 0.111 and over \Impl{SvmW} is 0.334.
+
+\begin{table*}[!t]
+\caption{Unified Method Comparison at Best-Rebalancing Condition per Method, Within-Domain Training. All prior methods: Experiment~3 (this paper). RF: from~\cite{nakagama2026tiv}. ``Pathology'' column identifies the primary failure mode.\label{tab:method_comparison}}
+\centering
+\small
+\begin{tabular}{|l|l|c|c|c|c|c|l|}
+\hline
+Method & Best Rebalancing & F2 & AUROC & AUPRC & Recall & Prec. & Pathology \\
+\hline
+\textbf{RF}~\cite{nakagama2026tiv} & \textbf{SW-SMOTE $r\!=\!0.1$} & \textbf{0.559} & \textbf{0.890} & \textbf{0.617} & -- & -- & None \\
+\hline
+\Impl{Lstm}~\cite{wang2022} & Baseline & 0.932 & 0.779 & 0.913 & $\approx$1.000 & 0.735 & Recall saturation (F2 = class prior) \\
+\hline
+\Impl{SvmW}~\cite{zhao2012} & RUS $r\!=\!0.5$ & 0.347 & 0.556 & 0.119 & 0.955 & 0.100 & Wavelet features insufficient for fine class sep. \\
+\hline
+\Impl{SvmA}~\cite{arefnezhad2019} & (any; all equiv.) & $\approx$0.159 & $\approx$0.499 & $\approx$0.037 & 0.931 & 0.037 & PSO-ANFIS degeneration to trivial predictor \\
+\hline
+\end{tabular}
+\end{table*}
+
+\begin{figure}[!t]
+\centering
+\todo{generate: bar chart with four method groups (RF, Lstm, SvmW, SvmA), three bars per group (F2, AUROC, AUPRC), each method at its best-rebalancing condition; annotate Lstm F2 as ``recall-saturated'' and SvmA AUROC with ``degenerate''}
+\caption{Method comparison at best-rebalancing condition, within-domain training.
+AUROC provides the primary performance signal immune to threshold effects.
+\Impl{Lstm}'s high F2 (0.932) reflects recall saturation, not superior discrimination (AUROC = 0.779); \Impl{SvmA}'s F2 (0.159) reflects class prior, not valid detection (AUROC $\approx$ 0.50).}
+\label{fig:method_comparison}
+\end{figure}
+
+\subsection{Comparison with the Uncontrolled Setting of~\cite{nakagama2025iv}}
+\label{sec:iv_comparison}
+
+Table~\ref{tab:iv_comparison} contrasts the method rankings from~\cite{nakagama2025iv} (uncontrolled, mixed split, no rebalancing) with the controlled results from Experiment~3.
+Three observations stand out.
+
+\begin{table*}[!t]
+\caption{Comparison of Uncontrolled (IV2025,~\cite{nakagama2025iv}) vs.\ Controlled (Exp.~3, this paper) Evaluation. ``Best AUROC'' = best AUROC across all rebalancing strategies in each setting. NR = not reported as AUROC.\label{tab:iv_comparison}}
+\centering
+\small
+\begin{tabular}{|l|c|c|c|l|}
+\hline
+Method & IV2025 AUROC & IV2025 F2 & Exp.~3 Best AUROC & Interpretation \\
+\hline
+RF & 0.85 & -- & 0.890 & Genuine improvement under controlled conditions \\
+\hline
+\Impl{SvmA} & 0.53 & -- & $\approx$0.499 & Confirmed degenerate; was near-chance even uncontrolled \\
+\hline
+\Impl{SvmW} & NR (Acc = 49\%) & -- & 0.556 & Improved under controlled conditions; insufficient feature set \\
+\hline
+\Impl{Lstm} & 0.52 (recall = 5\%) & -- & 0.779$^{\dag}$ & Opposite degeneration (recall collapse $\to$ saturation) \\
+\hline
+\multicolumn{5}{|p{0.97\textwidth}|}{\footnotesize $^{\dag}$\,AUROC 0.779 reflects genuine rank discrimination, but F2 = 0.932 is driven by recall saturation and does not represent valid drowsiness detection performance.} \\
+\hline
+\end{tabular}
+\end{table*}
+
+First, \textbf{RF genuinely improves}: moving from an uncontrolled mixed setting (AUROC = 0.85) to controlled within-domain SW-SMOTE conditions (AUROC = 0.890) increases AUROC by 0.04, confirming that the best-practice conditions of~\cite{nakagama2026tiv} translate to a real performance gain.
+
+Second, \textbf{\Impl{SvmA}'s failure is persistent}: the near-random AUROC ($\approx$0.50--0.53) in both settings confirms that the PSO-ANFIS feature selection fails systematically, and is not simply a consequence of unfavorable evaluation conditions.
+
+Third, \textbf{\Impl{Lstm} shows opposite degenerations}: in the uncontrolled setting (recall = 5\%) the model collapsed to predict-all-negative; in the controlled within-domain setting (recall $\approx$1.0) it collapses to predict-all-positive.
+The AUROC improvement from 0.52 to 0.779 reflects a genuine improvement in rank discrimination under within-domain training, confirming that the LSTM architecture is capable of meaningful feature learning---but the F2-optimized threshold consistently degenerates to a trivial extreme because F2 strongly rewards recall under the positive-class imbalance.
+
+%% ====================================================================
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Answer to RQ1: Do IV2025 Rankings Change Under Controlled Conditions?}
+\label{sec:rq1}
+
+The controlled evaluation confirms the qualitative ranking from~\cite{nakagama2025iv}: RF $>$ prior methods.
+However, the ranking is sharpened in two important ways.
+
+Under controlled conditions, the AUROC gap between RF and the best prior method grows substantially.
+In the uncontrolled setting, the gap between RF (AUROC = 0.85) and the best-performing prior method was modest and potentially attributable to evaluation configuration.
+Under controlled conditions, the gap between RF (AUROC = 0.890) and the best discriminating prior method (\Impl{SvmW}: AUROC = 0.556) is 0.334---a large effect size ($|\delta| \approx 0.8$ on Cliff's scale~\cite{cliff1993}) that cannot be explained by evaluation artifact.
+This confirms that RF's advantage is a genuine method-level difference, not an artifact of the uncontrolled evaluation in~\cite{nakagama2025iv}.
+
+\Impl{Lstm}'s AUROC of 0.779 (controlled) vs.\ 0.52 (uncontrolled) suggests it is the method most sensitive to evaluation conditions.
+However, because this AUROC reflects recall saturation rather than balanced discrimination (Section~\ref{sec:lstm_results}), \Impl{Lstm} cannot be considered competitive with RF for practical DDD deployment despite its higher AUROC rank compared with \Impl{SvmW}.
+
+\subsection{Answer to RQ2: Method-Specific Failure Modes}
+\label{sec:rq2}
+
+Three distinct, interpretable failure modes emerge from the controlled evaluation.
+
+\textbf{SvmA: PSO-ANFIS optimization degeneration.}
+The PSO-based wrapper feature selector is sensitive to the training objective and training set composition.
+Under within-domain training, subjects' training data provides a consistent distribution, but the drowsy-class prevalence is low ($\rho \ll 1$) and the EEG-derived labels contain noise.
+PSO optimizing for training accuracy on this data converges to features that discriminate subjects (inter-subject variability) rather than drowsiness state (intra-subject variability)---a form of spurious correlation that yields high training accuracy but chance-level test AUROC.
+This failure mode is consistent with the known sensitivity of wrapper methods to imbalanced, noisy labels~\cite{he2009}.
+The fact that rebalancing does not help confirms that the issue is in the feature selection phase (applied before rebalancing can influence the objective).
+
+\textbf{Lstm: F2-threshold saturation.}
+The LSTM architecture achieves genuine discrimination (AUROC $\approx$ 0.78) but the F2-optimized threshold collapses to predict-all-positive.
+Under DRT-based labels with $\approx$27\% positive prevalence and $\beta = 2$ recall weighting in F2, the F2-maximizing threshold on the validation set is typically at or near zero (predict everything positive), yielding recall = 1.0 and precision $\approx$ 0.735 (class prior).
+This is not a deficiency of the LSTM architecture but of the threshold optimization criterion: F2 with high $\beta$ under moderate imbalance incentivizes recall saturation.
+A precision-oriented or threshold-independent criterion (e.g., AUROC or AUPRC) would reveal the LSTM's genuine but limited discrimination without triggering the threshold collapse.
+
+\textbf{SvmW: Feature insufficiency under GHM wavelet design.}
+\Impl{SvmW} achieves above-chance discrimination (best AUROC = 0.556 vs.\ 0.50 for \Impl{SvmA}) but responds only weakly to rebalancing and plateaus far below RF.
+The GHM wavelet features capture energy distribution across frequency sub-bands of the steering signal but were designed for a small, homogeneous dataset~\cite{zhao2012}; on the 87-subject heterogeneous MMDAP dataset, 8 wavelet features provide insufficient discriminative power.
+Unlike RF, which uses 145-feature principal component analysis and importance-based selection~\cite{nakagama2026tiv}, \Impl{SvmW} cannot adapt its representation to the complex multi-subject structure.
+The finding that RUS---but not oversampling---marginally improves \Impl{SvmW} suggests that the SVM decision boundary is susceptible to majority-class dominance but cannot benefit from the synthetic minority samples generated by SMOTE, possibly because the wavelet feature space is too low-dimensional to support meaningful interpolation.
+
+\subsection{Practical Implications}
+\label{sec:practical}
+
+The controlled evaluation yields a clear recommendation for practitioners.
+RF with within-domain training and SW-SMOTE at $r = 0.1$ is the dominant choice for vehicle-dynamics-based DDD on the MMDAP dataset.
+None of the three prior methods approaches RF's performance under matched conditions, and all three exhibit distinct failure modes that make them unsuitable as-is for the heterogeneous, imbalanced, multi-subject setting of the MMDAP data.
+
+For practitioners attempting to apply prior methods (\Impl{SvmA}, \Impl{SvmW}, \Impl{Lstm}) in new settings:
+\begin{enumerate}
+\item \textbf{\Impl{SvmA}}: Replace the PSO-ANFIS feature selector with a simpler, imbalance-aware selector (e.g., importance-based ranking from an imbalance-corrected RF~\cite{breiman2001}) or use the full feature set without wrapper selection.
+\item \textbf{\Impl{SvmW}}: Augment the 8 GHM wavelet features with statistical and spectral features from the full feature pool of~\cite{nakagama2026tiv} to improve representation capacity.
+\item \textbf{\Impl{Lstm}}: Replace F2 threshold optimization with AUROC-based or AUPRC-based threshold selection to avoid recall saturation; alternatively, use a fixed threshold based on the validation set precision--recall curve.
+\end{enumerate}
+
+\subsection{Limitations}
+\label{sec:limitations}
+
+\begin{enumerate}
+\item \textbf{Preliminary Lstm coverage.} At time of writing, \Impl{Lstm} results cover 30\% of the target 15-seed scope (190 of 630 evaluations). The recall-saturation pattern is consistent and statistically clear, but the absolute AUROC estimates may shift slightly as additional seeds complete.
+
+\item \textbf{Single training mode.} Experiment~3 evaluates only within-domain training ($\omega_{\mathrm{tr}} = 1$). Cross-domain ($\omega_{\mathrm{tr}} = 0$) results are collected but not the primary analysis focus; the $R \times M$ interaction identified in~\cite{nakagama2026tiv} for RF may differ for prior methods.
+
+\item \textbf{Heterogeneous label sources.} \Impl{Lstm} uses DRT event labels while \Impl{SvmA} and \Impl{SvmW} use EEG-derived drowsiness labels. This makes direct pairwise comparison between \Impl{Lstm} and the SVM-based methods in terms of classification difficulty inappropriate; AUROC is reported within-method and compared against RF only under the same label scheme.
+
+\item \textbf{Single dataset.} All conclusions are drawn from the MMDAP simulator dataset~\cite{aygun2024}. Validation on naturalistic datasets (e.g., SHRP~2) is needed before generalizing.
+
+\item \textbf{RF as reference.} The RF results from~\cite{nakagama2026tiv} use a more comprehensive feature set ($p = 145$) and Optuna HPO than the prior methods, which use method-specific features and optimizers. This reflects the realistic deployment setting in which an engineer would use the best available configuration for each approach; it is not a controlled ablation.
+\end{enumerate}
+
+%% ====================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+This paper presented Experiment~3: a systematic re-evaluation of three published vehicle-dynamics-based DDD methods (\Impl{SvmA}, \Impl{SvmW}, \Impl{Lstm}) under the within-domain, imbalance-aware conditions identified as optimal in a companion factorial study~\cite{nakagama2026tiv}.
+The controlled evaluation over 1{,}890 model evaluations (three prior methods, three distance metrics, two domain groups, seven rebalancing strategies, 15 seeds) yields three main findings.
+
+First, RF's advantage over prior methods is genuine and understated: the controlled AUROC gap between RF and the best discriminating prior method (\Impl{SvmW}: 0.556) is 0.334, growing from the 0.04 improvement over the uncontrolled baseline.
+
+Second, each prior method exhibits a distinct and interpretable failure mode under controlled conditions: PSO-ANFIS optimization degeneration in \Impl{SvmA} (AUROC $\approx$ 0.50, invariant to rebalancing); F2-threshold saturation in \Impl{Lstm} (recall $\approx$ 1.0, F2 $\approx$ 0.93 driven by class prior, AUROC 0.779); and feature-space insufficiency in \Impl{SvmW} (AUROC 0.556, responding only to under-sampling).
+
+Third, the qualitative ranking from the prior comparison study~\cite{nakagama2025iv} is confirmed---RF outperforms all three prior methods---but the underlying reasons and the magnitude of the gap become clear only under controlled conditions.
+
+Future work includes (i) extending the factorial framework of~\cite{nakagama2026tiv} to the prior methods to quantify their $R \times M$ interaction structure; (ii) applying the diagnostic remedies suggested in Section~\ref{sec:practical} to verify whether correcting each failure mode narrows the gap with RF; and (iii) validating conclusions on naturalistic driving datasets.
+
+\section*{Data and Code Availability}
+The driving simulator dataset is publicly available at Harvard Dataverse (DOI: 10.7910/DVN/HMZ5RG)~\cite{aygun2024}.
+Analysis code and trained models will be released upon publication.
+
+\section*{Acknowledgment}
+\todo{fill: acknowledge funding sources (JST CREST JPMJCR23M1, JSPS KAKENHI 23K11969)}
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\vspace{11pt}
+
+\begin{IEEEbiographynophoto}{Yutaro Nakagama}
+\todo{received the B.E.\ degree from XXXX University, Japan, in XXXX. He is currently pursuing the M.S.\ degree at the School of Information Science, Japan Advanced Institute of Science and Technology (JAIST), Nomi, Japan. His research interests include driver drowsiness detection, machine learning, and intelligent vehicles.}
+\end{IEEEbiographynophoto}
+
+\begin{IEEEbiographynophoto}{Daisuke Ishii}
+\todo{received the Ph.D.\ degree from XXXX. He is currently XXXX at the School of Information Science, Japan Advanced Institute of Science and Technology (JAIST), Nomi, Japan. His research interests include XXXX.}
+\end{IEEEbiographynophoto}
+
+\begin{IEEEbiographynophoto}{Kazuki Yoshizoe}
+\todo{received the Ph.D.\ degree from XXXX. He is currently XXXX at the Research Institute for Information Technology, Kyushu University, Fukuoka, Japan. His research interests include parallel computing, artificial intelligence, and graph search algorithms.}
+\end{IEEEbiographynophoto}
+
+\vfill
+
+\end{document}

@@ -1,0 +1,37 @@
+Reviewer 2 of IV 2025 submission 545
+
+Comments to the author
+======================
+
+This is an interesting survey paper about driver drowsiness
+detection methods based on vehicle dynamics data. It not
+only repeats and summaries the algorithms and results from
+the different research work, but also implements several
+lightweight ML models in a standard framework that
+benchmarks them under same conditions and criterions.
+
+This framework handles DDD in three steps, feature
+extraction, feature selection, and classification. The
+MMDAP dataset is chosen and divided for training,
+validation and testing. The whole ML pipeline configuration
+is defined as dataset splitting, data labeling and
+hyperparameters for data processing. Especially, EEG data
+is used as ground truth.
+
+4 methods are selected and re-implemented in this standard
+framework and evaluated against the original result. The
+result is not perfectly reproducible, which shows signs of
+overfitting or dataset discrepancy. Among them, the random
+forest method performs better than the SVM approaches.
+
+This paper explores some common problems in the data-driven
+ML-based research. Usually with a rather small dataset, the
+trained models suffer from overfitting and lack of
+generalization in different configurations or data
+selections. Sometimes not all the details are published,
+therefore the good performance is difficult to reproduce.
+To improve the situation, it requires a large high-quality
+open dataset with ground truth, and a standard evaluation
+framework. It would be nice to make this framework
+opensource online, so that many researchers can evaluate
+and verify their methods in a second environment.
