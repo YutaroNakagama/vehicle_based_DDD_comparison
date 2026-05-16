@@ -92,35 +92,53 @@ After each batch check, the following confirms healthy completion:
    train loop completes. Verify the final `.keras` / `.pkl` under
    `models/<model>/<run_id>/<run_id>[1]/` instead.
 
-## Progress snapshot (2026-05-16 16:35, +3 h 35 m)
+## Progress snapshot (2026-05-16 18:55, +5 h 55 m)
 
 | Metric | Value |
 |---|---|
-| Overall | **34 / 108 (31.5 %)** |
-| Lstm done | 25 (incl. 8 pre-restart) — 11 more before Lstm pool drains |
-| SvmW done | 9 (incl. 3 pre-restart) |
-| SvmA done | 0 (still in PSO; first DONE expected ~ +5–7 h from launch) |
+| Overall | **52 / 108 (48.1 %)** |
+| Lstm done | **36 / 36 ✅ complete** |
+| SvmW done | 16 / 36 (44 %) |
+| SvmA done | 0 / 36 (PSO+SMOTE first-batch tail still in flight) |
 | Failures | 0 |
 | All-DONE rc | `rc1=0 rc2=0` for every entry |
-| Within JSONs | 34 (matches DONE count) |
-| Cross JSONs | 34 (matches DONE count) |
-| Active python procs | 19 (1 launcher + 18 workers) |
-| CPU | ~100 % sustained |
+| Within JSONs | 52 (matches DONE count) |
+| Cross JSONs | 52 (matches DONE count) |
+| Active python procs | 20 (1 primary + 1 aux launcher + 18 workers) |
+| CPU | ~97 % sustained |
+| Memory | 18 GB free / 64 GB |
+| **Aux launcher** | **PID 14412, auto-started 18:21:49 by watcher Job 3 ✅** |
 
-ETA (refined): all 108 jobs complete around **翌 02:00–04:00** (≈ 12–14 h
-remaining), gated by SvmA's PSO tail. The Lstm pool is expected to drain
-around **18:00–18:30**; when that happens the **aux launcher** (see below)
-auto-starts and adds 4 more CPU workers for the remaining SvmW + SvmA work.
+### ETA (refined 2026-05-16 18:55)
+
+| Model | Remaining | Workers | Per-job | Subtotal |
+|---|---|---|---|---|
+| SvmW | 20 | 8 (primary 6 + aux 2) | 1.7–3.1 h | 6–8 h → finish ≈ 02:00–04:00 next day |
+| SvmA | 36 | 10 (primary 8 + aux 2) | 6–15 h (PSO+SMOTE) | 12–22 h → finish **≈ 14:00–22:00 next day** |
+
+**Total ETA: 2026-05-17 14:00–22:00.** This is slower than the previous
+estimate because SvmW per-job time settled at 1.7–3.1 h (vs the initial
+1.5 h projection) and SvmA still has not produced a first DONE by which
+to calibrate the PSO+SMOTE tail.
+
+### Per-job time observations (from launcher log)
+
+| Model | Distance | Domain | Range observed |
+|---|---|---|---|
+| Lstm | mmd / wasserstein / dtw | both | 2 075 – 3 168 s (35–53 min) |
+| SvmW | mmd | in / out | 7 885 – 11 281 s (132–188 min) |
+| SvmW | wasserstein | in / out | 6 079 – 11 097 s (101–185 min) |
+| SvmA | — | — | none completed yet (>5 h per job, first DONE pending) |
 
 ## Optimisation status
 
 CPU is the binding constraint: all 6 P-cores (12 logical) + 8 E-cores are
-pinned at ~100 % by the 18-worker pool. Further raw parallelism would
-oversubscribe and slow the per-job completions, so the only loss-free
-speed-up available is **filling the slots Lstm vacates after it finishes
-its 36 jobs**. That is implemented as an *auxiliary launcher* scheduled by
-a PowerShell `BackgroundJob` (5-min poll). When the Lstm within-JSON count
-reaches 36, the watcher spawns:
+pinned at ~97 % by the 18-worker pool. Further raw parallelism would
+oversubscribe and slow the per-job completions. The only loss-free
+speed-up — filling the slots Lstm vacates after it finishes its 36 jobs —
+is already applied via the **auxiliary launcher** that auto-spawned at
+18:21:49 (PID 14412). The watcher PowerShell `BackgroundJob` (5-min poll)
+detected the Lstm-36/36 milestone, then ran:
 
 ```powershell
 $env:LOCAL_PARALLEL_LSTM = "0"
@@ -132,13 +150,28 @@ python scripts/python/train/local_exp3_launcher.py --reverse --models SvmW SvmA
 with logs at `logs/exp3_local/aux_watcher.log` and
 `logs/exp3_local/aux_launcher.{log,err.log}`. The `--reverse` flag (added in
 commit `5532d8d`) makes the auxiliary process the pending list from the
-opposite end, so two launchers can co-run without tag collisions until they
-meet in the middle. Expected speed-up: ETA shortens by ~2–3 hours.
+opposite end, so the two launchers can co-run without tag collisions until
+they meet in the middle. Net effect: **+4 workers (2 SvmW + 2 SvmA)**
+without disturbing the in-flight 14 primary workers.
 
 The launcher itself supports per-model parallelism overrides via
 `LOCAL_PARALLEL_{SVMW,SVMA,LSTM}` env vars — no code edits required to
 reshape the pool. The primary launcher's PARALLELISM dict is the default
 when those env vars are unset.
+
+### Why no further parallelism is loss-free
+
+| Option | Effect |
+|---|---|
+| Add more workers beyond 18 | CPU already 97 % saturated → context-switch overhead degrades per-job time, net throughput drops. Rejected. |
+| Reduce SvmW Optuna trials 100 → 50 | Halves SvmW time, but breaks comparability with HPC results. Rejected (see [optimization_methods.md](optimization_methods.md) 2026-04-30 decision). |
+| Skip SvmA SMOTE / change PSO | Same comparability concern. Rejected. |
+| Use RTX 3060 GPU for Lstm | TF 2.13 cp311 is CPU-only build; DirectML wheel is not available for Python 3.11. Already moot since Lstm is complete. |
+| Increase BLAS threads per worker | CPU already saturated → oversubscription. No gain. |
+| Re-balance aux launcher (e.g. SvmW=3 SvmA=2) | CPU saturated → no measurable gain. Skip. |
+
+The aux launcher is the only meaningful headroom that existed, and it is
+now active.
 
 ## Relationship to HPC runs
 
