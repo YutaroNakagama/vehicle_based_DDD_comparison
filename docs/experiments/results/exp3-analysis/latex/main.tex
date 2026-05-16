@@ -360,29 +360,29 @@ The optimal rebalancing strategy also \emph{reverses} across methods: RF favors 
 \subsection{SvmA: Degeneration to Near-Random Predictor}
 \label{sec:svma_results}
 
-Table~\ref{tab:svma_results} shows \Impl{SvmA} performance.
-Across \emph{all} rebalancing conditions, distance metrics, domain groups, and seeds, \Impl{SvmA} collapses to a near-random predictor: AUROC $\approx 0.499$, F2 $\approx 0.159$, AUPRC $\approx 0.037$.
-The F2 value closely matches the class prior (drowsy prevalence $\approx$ 16\%), suggesting the model predicts nearly all windows as drowsy (recall $\approx 0.92$, precision $\approx 0.037$).
+Table~\ref{tab:svma_results} shows \Impl{SvmA} performance (AUROC and AUPRC; threshold-independent metrics only).
+Across \emph{all} rebalancing conditions, distance metrics, domain groups, and seeds, \Impl{SvmA} collapses to a near-random predictor: AUROC $\approx 0.499$, AUPRC $\approx 0.037$.
+The AUPRC of $\approx$0.037 coincides with the EEG-label drowsy-class prevalence, indicating the model provides no lift over a random positive-class prediction.
 No rebalancing strategy or distance metric recovers meaningful discrimination: standard deviations are negligibly small ($\leq 0.007$ for AUROC), and pairwise differences between conditions are all within 0.002 AUROC.
 
 \begin{table}[!t]
-\caption{\Impl{SvmA} Performance Under Within-Domain Training. Averaged over $D$, $G$, 15 seeds. All conditions degenerate to near-random (AUROC $\approx$ 0.50); values are practically identical across rebalancing strategies.\label{tab:svma_results}}
+\caption{\Impl{SvmA} AUROC and AUPRC Under Within-Domain Training. Averaged over $D$, $G$, 15 seeds, within-domain eval. Source: aggregated HPC results in repository ($N{=}180$ per condition). Threshold-dependent metrics (recall, F2) are omitted; only AUROC and AUPRC, which are threshold-independent, are reported.\label{tab:svma_results}}
 \centering
 \footnotesize
-\begin{tabular}{|l|c|c|c|c|c|}
+\begin{tabular}{|l|c|c|c|}
 \hline
-Rebalancing & F2 & AUROC & AUPRC & Recall & Precision \\
+Rebalancing & $N$ & AUROC & AUPRC \\
 \hline
-Baseline & 0.159 & 0.499 & 0.037 & 0.931 & 0.037 \\
+Baseline & 180 & 0.499$\pm$0.018 & 0.037$\pm$0.004 \\
 \hline
-RUS $r\!=\!0.1$ & 0.159 & 0.499 & 0.037 & 0.906 & 0.037 \\
-RUS $r\!=\!0.5$ & 0.158 & 0.500 & 0.039 & 0.905 & 0.037 \\
+RUS $r\!=\!0.1$ & 160 & 0.499$\pm$0.018 & 0.037$\pm$0.004 \\
+RUS $r\!=\!0.5$ & 150 & 0.500$\pm$0.020 & 0.039$\pm$0.005 \\
 \hline
-SMOTE $r\!=\!0.1$ & 0.159 & 0.500 & 0.037 & 0.911 & 0.037 \\
-SMOTE $r\!=\!0.5$ & 0.159 & 0.501 & 0.038 & 0.885 & 0.037 \\
+SMOTE $r\!=\!0.1$ & 180 & 0.500$\pm$0.021 & 0.037$\pm$0.003 \\
+SMOTE $r\!=\!0.5$ & 154 & 0.501$\pm$0.024 & 0.038$\pm$0.005 \\
 \hline
-SW-SMOTE $r\!=\!0.1$ & 0.159 & 0.499 & 0.037 & 0.896 & 0.037 \\
-SW-SMOTE $r\!=\!0.5$ & 0.159 & 0.500 & 0.038 & 0.911 & 0.037 \\
+SW-SMOTE $r\!=\!0.1$ & 180 & 0.499$\pm$0.019 & 0.037$\pm$0.004 \\
+SW-SMOTE $r\!=\!0.5$ & 180 & 0.500$\pm$0.019 & 0.038$\pm$0.004 \\
 \hline
 \end{tabular}
 \end{table}
@@ -450,14 +450,14 @@ Method & Best Rebalancing & F2 & AUROC & AUPRC & Recall & Prec. & Pathology \\
 \hline
 \Impl{SvmW}~\cite{zhao2012} & RUS $r\!=\!0.5$ & 0.347 & 0.556 & 0.119 & 0.955 & 0.100 & Wavelet features insufficient for fine class sep. \\
 \hline
-\Impl{SvmA}~\cite{arefnezhad2019} & (any; all equiv.) & $\approx$0.159 & $\approx$0.499 & $\approx$0.037 & 0.931 & 0.037 & PSO-ANFIS degeneration to trivial predictor \\
+\Impl{SvmA}~\cite{arefnezhad2019} & (any; all equiv.) & -- & $\approx$0.499 & $\approx$0.037 & -- & -- & PSO-ANFIS degeneration to trivial predictor \\
 \hline
 \end{tabular}
 \end{table*}
 
 \begin{figure}[!t]
 \centering
-\todo{generate: bar chart with four method groups (RF, Lstm, SvmW, SvmA), three bars per group (F2, AUROC, AUPRC), each method at its best-rebalancing condition; annotate Lstm F2 as ``positive-class bias'' and SvmA AUROC with ``degenerate''}
+\todo{generate: grouped bar chart with four method groups (RF, Lstm, SvmW, SvmA); bars: AUROC and AUPRC for all methods; F2 bar for RF/Lstm/SvmW only (SvmA F2 omitted -- threshold-dependent metric not available as post-fix data); annotate Lstm F2 as ``positive-class bias'', SvmA AUROC as ``degenerate ($\approx$0.50)''}
 \caption{Method comparison at best-rebalancing condition, within-domain training.
 AUROC provides the primary performance signal immune to threshold effects.
 \Impl{Lstm} best condition (SW-SMOTE $r{=}0.3$, in-domain): AUROC = 0.821, F2 = 0.923 (F2 driven by positive-class bias, not discrimination); \Impl{SvmA}: AUROC $\approx$ 0.50 (degenerate). RF remains the dominant method by AUROC and AUPRC.}
