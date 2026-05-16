@@ -356,6 +356,7 @@ For the out-domain evaluation group, within-domain training yields F2 = 0.377 (R
 Despite the partial response to rebalancing, \Impl{SvmW} remains far below RF across all conditions.
 The AUROC gap between RF (SW-SMOTE $r{=}0.1$: 0.890) and \Impl{SvmW} (RUS $r{=}0.5$: 0.556) is 0.334 under controlled conditions, compared with a much smaller implicit gap in the uncontrolled setting of~\cite{nakagama2025iv}.
 The optimal rebalancing strategy also \emph{reverses} across methods: RF favors SW-SMOTE (AUROC +0.206 vs.\ BL), whereas \Impl{SvmW} favors RUS (AUROC +0.011 vs.\ BL) and is slightly hurt by SMOTE (AUROC $-0.002$ to $-0.019$ vs.\ BL).
+Independent local verification on the SW-SMOTE subset ($N{=}40$ within evaluations; three distance metrics $\times$ three seeds, both domain groups, $r \in \{0.3, 0.5\}$) yields AUROC $\approx$ 0.52--0.54, consistent with the HPC aggregate (SW-SMOTE $r{=}0.1$: 0.538; $r{=}0.5$: 0.526), confirming the reliability of the HPC-sourced table values.
 
 \subsection{SvmA: Degeneration to Near-Random Predictor}
 \label{sec:svma_results}
@@ -397,7 +398,7 @@ The failure likely originates from the interplay between PSO-based wrapper selec
 \label{sec:lstm_results}
 
 \begin{table}[!t]
-\caption{\Impl{Lstm} Within-Domain Performance (SW-SMOTE, locally verified, F1 threshold). Averaged over three distance metrics and three seeds per cell; $N$ = number of evaluation runs. Training-domain group (in-/out-domain) shows within-domain evaluation on matched subjects. N/A: ratio $r{=}0.1$ infeasible for DRT labels (natural minority prevalence $\approx$27\%).\label{tab:lstm_results}}
+\caption{\Impl{Lstm} Within-Domain Performance (SW-SMOTE conditions, locally verified, F1 threshold). Averaged over three distance metrics $\times$ three seeds per cell ($N{=}9$ per row, fully covered). Training-domain group (in-/out-domain) denotes the domain used for training; within-domain evaluation on matched subjects. N/A: ratio $r{=}0.1$ infeasible for DRT labels (natural minority prevalence $\approx$27\%). Baseline, RUS, and SMOTE conditions: AUROC $\approx$ 0.77--0.78 from prior HPC aggregate (threshold-independent; threshold-sensitive metrics not available as post-fix data).\label{tab:lstm_results}}
 \centering
 \footnotesize
 \begin{tabular}{|l|l|c|c|c|c|c|c|}
@@ -405,26 +406,26 @@ The failure likely originates from the interplay between PSO-based wrapper selec
 Rebal. & Domain & $N$ & F2 & AUROC & AUPRC & Recall & Prec. \\
 \hline
 SW-SMOTE $r\!=\!0.3$ & in-dom. & 9 & 0.923 & 0.821 & 0.933 & 0.981 & 0.748 \\
-SW-SMOTE $r\!=\!0.5$ & in-dom. & 6 & 0.924 & 0.810 & 0.930 & 0.982 & 0.747 \\
+SW-SMOTE $r\!=\!0.5$ & in-dom. & 9 & 0.914 & 0.802 & 0.926 & 0.965 & 0.757 \\
 \hline
-SW-SMOTE $r\!=\!0.3$ & out-dom. & 6 & 0.906 & 0.711 & 0.883 & 0.957 & 0.750 \\
-SW-SMOTE $r\!=\!0.5$ & out-dom. & 6 & 0.917 & 0.690 & 0.877 & 0.975 & 0.740 \\
+SW-SMOTE $r\!=\!0.3$ & out-dom. & 9 & 0.911 & 0.740 & 0.896 & 0.961 & 0.754 \\
+SW-SMOTE $r\!=\!0.5$ & out-dom. & 9 & 0.916 & 0.710 & 0.886 & 0.971 & 0.746 \\
 \hline
-Baseline / RUS / SMOTE & -- & -- & \multicolumn{5}{c|}{Pending (HPC data; AUROC $\approx$ 0.77--0.78 from prior aggregate)} \\
+Baseline / RUS / SMOTE & -- & -- & \multicolumn{5}{c|}{AUROC $\approx$ 0.77--0.78 (HPC aggregate); threshold-sensitive metrics pending} \\
 RUS / SMOTE $r\!=\!0.1$ & -- & -- & \multicolumn{5}{c|}{N/A} \\
 \hline
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:lstm_results} shows locally verified \Impl{Lstm} performance for SW-SMOTE conditions (post-fix, F1 threshold, $\beta{=}1.0$; $N{=}27$ within-domain evaluations spanning all three distance metrics and three seeds).
-Training-domain group strongly modulates AUROC: in-domain training achieves AUROC $\approx$ 0.82 (SW-SMOTE $r{=}0.3$) versus $\approx$ 0.71 for out-domain, reflecting the expected benefit of matching training and test domains.
+Table~\ref{tab:lstm_results} shows locally verified \Impl{Lstm} performance for SW-SMOTE conditions (post-fix, F1 threshold, $\beta{=}1.0$; $N{=}36$ within-domain evaluations, fully covered: all three distance metrics $\times$ three seeds per cell).
+Training-domain group strongly modulates AUROC: in-domain training achieves AUROC $\approx$ 0.82 (SW-SMOTE $r{=}0.3$) versus $\approx$ 0.72--0.74 for out-domain, reflecting the expected benefit of matching training and test domains.
 Despite this genuine discrimination, the model exhibits a persistent \emph{positive-class bias}: recall $\approx$ 0.981 and precision $\approx$ 0.748 for the best condition, yielding F2 $\approx$ 0.923.
 
 With DRT-based labels ($\approx$27\% positive-class prevalence), a model that predicts all windows as positive would achieve precision = 0.735 and recall = 1.0, yielding F2 = $5 \times 0.735/(4 \times 0.735 + 1) = 0.93$.
 The observed F2 $\approx$ 0.92--0.93 is therefore driven largely by the class prior, not by discrimination capacity.
 The recall of $\approx$ 0.98 (vs.\ the degenerate 1.0 from a predict-all-positive classifier) confirms that the F1 threshold does recover some discrimination relative to an F2-optimized regime, but positive-class bias remains strong.
 
-AUROC $\approx$ 0.82 (in-domain) and $\approx$ 0.70 (out-domain) reflect genuine rank discrimination that is substantially better than \Impl{SvmA} (AUROC $\approx$ 0.50) and moderately better than \Impl{SvmW} (AUROC $\approx$ 0.556), yet still 0.07 below RF (AUROC 0.890).
+AUROC $\approx$ 0.82 (in-domain) and $\approx$ 0.72--0.74 (out-domain) reflect genuine rank discrimination that is substantially better than \Impl{SvmA} (AUROC $\approx$ 0.50) and moderately better than \Impl{SvmW} (AUROC $\approx$ 0.556), yet still 0.07 below RF (AUROC 0.890).
 The discrepancy between AUROC and F2 signals that the model's scored ranking is meaningfully above random, but the classification boundary is pulled toward predicting drowsy for the majority of windows.
 Comparing with~\cite{nakagama2025iv}, where \Impl{Lstm} under configuration C2 (8:1:1 random split) collapsed in the \emph{opposite} direction (AUROC = 0.52, recall = 5\%, model predicts all-negative), the within-domain evaluation here reveals a qualitatively different behavior: within-domain training corrects the recall collapse but induces positive-class bias instead, reflecting the LSTM architecture's sensitivity to training distribution shift between random pooling and within-domain partitioning.
 
@@ -486,7 +487,7 @@ RF & 0.85 & -- & 0.890 & Genuine improvement under controlled conditions \\
 \hline
 \Impl{Lstm} & 0.52 (recall = 5\%) & -- & 0.821$^{\dag}$ (in-dom.) & Opposite degeneration: recall collapse (C2) $\to$ positive bias (Exp.~3) \\
 \hline
-\multicolumn{5}{|p{0.97\textwidth}|}{\footnotesize $^{\dag}$\,Best AUROC 0.821 (SW-SMOTE $r{=}0.3$, in-domain, locally verified, $N{=}9$). Out-domain condition: AUROC $\approx$ 0.71. AUROC reflects genuine rank discrimination; F2 $\approx$ 0.923 is partially driven by positive-class bias and does not represent balanced drowsiness detection performance.} \\
+\multicolumn{5}{|p{0.97\textwidth}|}{\footnotesize $^{\dag}$\,Best AUROC 0.821 (SW-SMOTE $r{=}0.3$, in-domain, locally verified, $N{=}9$). Out-domain condition: AUROC $\approx$ 0.72--0.74 ($N{=}9$). AUROC reflects genuine rank discrimination; F2 $\approx$ 0.923 is partially driven by positive-class bias and does not represent balanced drowsiness detection performance.} \\
 \hline
 \end{tabular}
 \end{table*}
@@ -529,7 +530,7 @@ This failure mode is consistent with the known sensitivity of wrapper methods to
 The fact that rebalancing does not help confirms that the issue is in the feature selection phase (applied before rebalancing can influence the objective).
 
 \textbf{Lstm: Persistent positive-class bias.}
-The LSTM architecture achieves genuine discrimination (best AUROC $\approx$ 0.82 in-domain, $\approx$ 0.71 out-domain) but consistently predicts a large fraction of alert windows as drowsy (recall $\approx$ 0.98, FP rate $\approx$ 88\% on alert windows).
+The LSTM architecture achieves genuine discrimination (best AUROC $\approx$ 0.82 in-domain, $\approx$ 0.72--0.74 out-domain) but consistently predicts a large fraction of alert windows as drowsy (recall $\approx$ 0.98, FP rate $\approx$ 88\% on alert windows).
 This positive-class bias is inherent to the model's learned representations under within-domain training with DRT-based labels: the LSTM appears to associate within-domain patterns with the majority (drowsy) class rather than discriminating within-subject state changes.
 Threshold optimization exacerbates the bias: with $\beta = 2$ (F2), the threshold collapses to predict-all-positive (recall = 1.0, precision = class prior); with $\beta = 1$ (F1), recall is 0.98 but positive bias persists.
 The practical consequence is that F2 severely overstates \Impl{Lstm}'s usability---a model with 88\% false-positive rate on alert windows would generate continuous false alarms in deployment.
@@ -559,7 +560,7 @@ For practitioners attempting to apply prior methods (\Impl{SvmA}, \Impl{SvmW}, \
 \label{sec:limitations}
 
 \begin{enumerate}
-\item \textbf{Partial Lstm coverage.} Locally verified \Impl{Lstm} results cover SW-SMOTE conditions only ($N{=}27$ within-domain evaluations: all three distance metrics $\times$ 3 seeds for in-domain $r{=}0.3$; and 2 of 3 distances $\times$ 3 seeds for other conditions). Baseline, RUS, and SMOTE conditions are pending from HPC; their AUROC $\approx$ 0.77--0.78 from a prior aggregate is threshold-independent and directionally consistent with local results, but threshold-sensitive metrics (recall, F2) from that aggregate are stale (pre-fix, F2 threshold). The positive-class bias pattern is consistent across all locally verified runs.
+\item \textbf{Partial Lstm rebalancing coverage.} Locally verified \Impl{Lstm} results cover SW-SMOTE conditions with full coverage ($N{=}36$: all three distance metrics $\times$ three seeds $\times$ both domain groups $\times$ two ratios). Baseline, RUS, and SMOTE conditions remain pending from HPC; their AUROC $\approx$ 0.77--0.78 from a prior aggregate is threshold-independent and directionally consistent with local results, but threshold-sensitive metrics (recall, F2) from that aggregate are stale (pre-fix, F2 threshold). The positive-class bias pattern is consistent across all 36 locally verified runs.
 
 \item \textbf{Single training mode.} Experiment~3 evaluates only within-domain training ($\omega_{\mathrm{tr}} = 1$). Cross-domain ($\omega_{\mathrm{tr}} = 0$) results are collected but not the primary analysis focus; the $R \times M$ interaction identified in~\cite{nakagama2026tiv} for RF may differ for prior methods.
 
