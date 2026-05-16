@@ -223,15 +223,21 @@ def main():
                     help="Process pending jobs in reverse order. Use this on an "
                          "auxiliary launcher started while a primary launcher is "
                          "still running to minimise tag collisions.")
+    ap.add_argument("--skip", type=int, default=0,
+                    help="Skip the first N pending jobs (after --reverse). Use to "
+                         "avoid collisions when another launcher is already "
+                         "processing the first N tags from the same end.")
     args = ap.parse_args()
 
     all_jobs = [j for j in build_jobs() if j.model in args.models]
     pending = [j for j in all_jobs if not j.already_done()]
     if args.reverse:
         pending.reverse()
+    if args.skip > 0:
+        pending = pending[args.skip:]
     done = len(all_jobs) - len(pending)
-    logging.info("Total=%d  Done=%d  Pending=%d  Reverse=%s  Parallelism=%s",
-                 len(all_jobs), done, len(pending), args.reverse,
+    logging.info("Total=%d  Done=%d  Pending=%d  Reverse=%s  Skip=%d  Parallelism=%s",
+                 len(all_jobs), done, len(pending), args.reverse, args.skip,
                  {m: PARALLELISM.get(m, 1) for m in args.models})
 
     if args.limit:

@@ -104,24 +104,23 @@ After each batch check, the following confirms healthy completion:
 | All-DONE rc | `rc1=0 rc2=0` for every entry |
 | Within JSONs | Lstm 36, SvmW 40 (incl. 4 pre-existing HPC outputs), SvmA 0 |
 | Cross JSONs | Lstm 36, SvmW 40, SvmA 0 (mirrors within counts) |
-| Active python procs | 12 (1 primary + 1 aux launcher + **10 SvmA workers**) |
-| CPU | **~20 %** (only 10 single-thread SvmA workers active; the freed Lstm + SvmW slots are now idle) |
+| Active python procs | 19 (3 launchers + **16 SvmA workers**, see aux2 note below) |
+| CPU | **~82 %** after aux2 launch (was ~20 % before) |
 | Memory | 26 GB free / 64 GB |
-| SvmA CPU-time per worker | 46 400 s (primary, 12.9 h CPU on 18.9 h wall ≈ 68 % single-core duty) / 30 000 s (aux, 8.3 h CPU on 13.6 h wall) |
+| SvmA CPU-time per worker (pre-aux2) | 46 400 s (primary, 12.9 h CPU on 18.9 h wall ≈ 68 % single-core duty) / 30 000 s (aux1, 8.3 h CPU on 13.6 h wall) |
+| **Aux2 launcher** | **PID 13460, started 08:05:03 on 5/17 with `--reverse --skip 2 --models SvmA` (6 workers)** |
 
-### ETA (refined 2026-05-17 07:56)
+### ETA (refined 2026-05-17 08:05 after aux2 launch)
 
 | Model | Remaining | Workers | Per-job | Subtotal |
 |---|---|---|---|---|
 | SvmW | 0 | — | — | ✅ done |
-| SvmA | 36 (10 in flight, 26 pending) | 10 | 18–24 h projected from CPU-time profile | Wave 1 finishes ~late 5/17; wave 2 + 3 → finish **5/19 morning – afternoon** with current 10-worker config |
+| SvmA | 36 (16 in flight, 20 pending) | 16 (primary 8 + aux1 2 + aux2 6) | 18–24 h projected | Wave 1 (in-flight 16) finishes 5/17 late afternoon – 5/18 morning; wave 2 (final 20 jobs / 16 workers = 1.25 wave) → finish **5/18 evening – 5/19 morning** |
 
-**Revised total ETA: 2026-05-19 06:00–18:00** (slip of ~+1.5 days vs the
-previous "5/17 14:00–22:00" estimate because each SvmA job is now
-projected at ~18–24 h, not 6–15 h — see optimisation section below for
-why more workers can shorten this). The PSO+SMOTE inner loop produces no
-intermediate log lines so the first observed DONE will tighten this
-window significantly.
+**Revised total ETA: 2026-05-18 18:00 – 2026-05-19 09:00** (improvement of
+~12–18 h vs the pre-aux2 estimate of 5/19 06:00–18:00). The first
+observed SvmA DONE (expected within hours from primary's 8 mmd workers
+that have been running 19 + h) will tighten this window significantly.
 
 ### Per-job time observations (from launcher log)
 
@@ -135,47 +134,45 @@ window significantly.
 
 ## Optimisation status
 
-**Updated 2026-05-17 07:56** — the situation has flipped from CPU-bound
-to **idle-bound**. With Lstm (36) and SvmW (36) both complete, only the
-10 SvmA workers remain, each pinned to a single core (BLAS=1 by design
-for PSO determinism). CPU utilisation is now ~20 % and ~10 cores' worth
-of headroom is going unused.
+**Updated 2026-05-17 08:05** — the idle headroom that opened after Lstm
++ SvmW completed is now being used by a **second auxiliary launcher**
+(`aux2`, PID 13460) running 6 additional SvmA workers. Total SvmA
+in-flight = 16 (primary 8 + aux1 2 + aux2 6); CPU rose from ~20 % back
+to ~82 %, memory still has 26 GB free.
 
-### Loss-free speed-ups still available
+### Loss-free speed-ups — status
 
-| Option | Effect | Recommendation |
-|---|---|---|
-| **Spawn 2nd aux launcher with `SVMA=6 SVMW=0 LSTM=0 --reverse`** | Adds up to 6 more SvmA workers; each picks an unstarted tag from the opposite end of the pending list. Cuts SvmA remaining-work wall time from ~3 waves × 18-24 h to ~2 waves. **Saves ~18–24 h of wall time.** | ✅ **Recommended** — CPU has the headroom; SvmA workers are independent processes; SMOTE memory footprint is ~340 MB/worker so total RAM for 16 workers ≈ 5.5 GB (well within 26 GB free). |
-| Reduce SvmW Optuna trials 100 → 50 | N/A — SvmW already complete. | ❌ Moot. |
-| Use RTX 3060 GPU for Lstm | N/A — Lstm already complete. | ❌ Moot. |
-| Switch SvmA BLAS threads 1 → 2 | Each worker uses 2 cores instead of 1; throughput per worker rises ~1.3× but only if BLAS is on the hot path. PSO inner loop is mostly Python-level (numpy reduces dominated by N≈30k samples). Marginal gain (~10–20 %), risks PSO non-determinism if any BLAS path is randomised. | ⚠️ Skip — adding workers is cleaner. |
-| Kill an in-flight SvmA mid-PSO to redistribute | Loses ~13–19 h of accumulated CPU work. | ❌ Never. |
+| Option | Status |
+|---|---|
+| Spawn 2nd aux launcher with `SVMA=6 --reverse --skip 2` | ✅ **Applied 2026-05-17 08:05** (aux2 PID 13460). The `--skip 2` keeps aux2's reverse-end picks from colliding with aux1's first 2 reverse-end workers. |
+| Switch SvmA BLAS threads 1 → 2 | ⚠️ Skipped — adding workers was cleaner and risks PSO non-determinism. |
+| Reduce SvmW Optuna trials 100 → 50 | ❌ Moot (SvmW already complete). |
+| Use RTX 3060 GPU for Lstm | ❌ Moot (Lstm already complete) + no TF 2.13 cp311 GPU wheel. |
+| Kill an in-flight SvmA mid-PSO | ❌ Never — would lose 13–19 h of accumulated CPU work per killed worker. |
 
-### Hardware-level limits
+### Hardware-level limits at 16-worker steady state
 
-- **Cores:** i9-12900HK has 14 physical cores (6P+8E = 20 threads). 10 in
-  use, 4–10 headroom depending on whether we count E-core threads as full
-  slots. Spawning 6 more SvmA workers brings total to 16 ≈ matches
-  physical-core count, leaving 4 threads for OS/launchers.
-- **Memory:** 26 GB free, ~340 MB per SvmA worker → 16 workers ≈ 5.5 GB,
-  no pressure.
+- **Cores:** i9-12900HK has 14 physical cores (6P+8E = 20 threads). 16
+  SvmA workers (each single-thread BLAS) + 3 launcher threads ≈ matches
+  physical-core count. CPU at ~82 % leaves headroom for OS scheduling.
+- **Memory:** 26 GB free; 16 workers × ~340 MB ≈ 5.5 GB → no pressure.
 - **Disk I/O:** SvmA writes only on DONE; not a bottleneck.
 - **GPU:** RTX 3060 unusable (no TF 2.13 cp311 GPU build; DirectML cp311
   wheel does not exist). All remaining work is CPU-only by necessity.
 
-### Why this was not done earlier
-
-At 18:55 on 5/16, all 18 worker slots were CPU-saturated, so spawning
-more would have caused oversubscription. The window only opened once
-Lstm (4 workers) and SvmW (8 workers) drained — i.e. **now**.
-
-If the user authorises the additional aux launcher, the command is:
+### Aux2 launcher startup command (for reference)
 
 ```powershell
 $env:LOCAL_PARALLEL_SVMA = "6"; $env:LOCAL_PARALLEL_SVMW = "0"; $env:LOCAL_PARALLEL_LSTM = "0"
-python scripts/python/train/local_exp3_launcher.py --reverse --models SvmA `
-  *> logs/exp3_local/aux2_launcher.log
+Start-Process -FilePath python -ArgumentList `
+  'scripts/python/train/local_exp3_launcher.py','--reverse','--skip','2','--models','SvmA' `
+  -RedirectStandardOutput 'logs/exp3_local/aux2_launcher.log' `
+  -RedirectStandardError 'logs/exp3_local/aux2_launcher.err.log' -WindowStyle Hidden
 ```
+
+The `--skip 2` flag (added in this commit) skips the first 2 entries of
+the reversed pending list so aux2 does not collide with aux1 PID 14412,
+which already holds those 2 tags.
 
 ## Relationship to HPC runs
 
