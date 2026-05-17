@@ -584,8 +584,36 @@ def load_model_and_scaler(model_name: str, mode: str, tag: str, fold: int, jobid
             _ensure_keras_imports()
             # Use the dynamically resolved model_path from the search above
             if model_path.endswith(".keras"):
-                clf = _keras_load_model(model_path, custom_objects={"AttentionLayer": _AttentionLayer})
-                logging.info(f"[EVAL] Loaded Keras model (.keras): {model_path}")
+                try:
+                    clf = _keras_load_model(model_path, custom_objects={"AttentionLayer": _AttentionLayer})
+                    logging.info(f"[EVAL] Loaded Keras model (.keras): {model_path}")
+                except Exception as _e:
+                    # Keras 3 expects zip-format .keras; models saved with TF ≤2.13
+                    # use HDF5 under a .keras extension.  Copy to a .h5 temp file so
+                    # Keras selects the H5 loading path.
+                    import h5py as _h5py
+                    import shutil as _shutil
+                    import tempfile as _tempfile
+                    if _h5py.is_hdf5(model_path):
+                        logging.warning(
+                            f"[EVAL] .keras file is HDF5 (TF ≤2.13 legacy); "
+                            f"retrying via .h5 temp copy: {model_path}"
+                        )
+                        with _tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as _tmp:
+                            _tmp_path = _tmp.name
+                        try:
+                            _shutil.copy2(model_path, _tmp_path)
+                            clf = _keras_load_model(
+                                _tmp_path,
+                                custom_objects={"AttentionLayer": _AttentionLayer},
+                                compile=False,
+                            )
+                            logging.info(f"[EVAL] Loaded legacy H5 model: {model_path}")
+                        finally:
+                            import os as _os
+                            _os.unlink(_tmp_path)
+                    else:
+                        raise _e
             elif model_path.endswith(".h5"):
                 clf = _keras_load_model(model_path, custom_objects={"AttentionLayer": _AttentionLayer})
                 logging.info(f"[EVAL] Loaded Keras model (.h5): {model_path}")
