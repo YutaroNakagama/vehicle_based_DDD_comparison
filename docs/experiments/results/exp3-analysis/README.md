@@ -8,7 +8,7 @@ experiment (SvmW / SvmA / Lstm × distance × domain × 15 seeds, with both
 |---|---|
 | [operations_log.md](operations_log.md) | HPC re-submission history, every known issue and its resolution, current submitter / auto-resubmit pipeline, per-queue QOS caps, throughput observations. **Read first when something looks wrong.** |
 | [optimization_methods.md](optimization_methods.md) | Per-model hyperparameter optimization scheme (SvmW Optuna, SvmA PSO, Lstm fixed architecture). Records the n_trials choice for the 15-seed expansion. |
-| [local_execution.md](local_execution.md) | **Local-PC mini-replication (2026-05-16)** — 108-job subset (SW-SMOTE + domain_train only) launched via [`scripts/python/train/local_exp3_launcher.py`](../../../../scripts/python/train/local_exp3_launcher.py). Covers scope, parallelism, env vars, log paths, and current progress snapshot. |
+| [local_execution.md](local_execution.md) | **Local-PC runs (Phase 1: 2026-05-16, Phase 2: 2026-05-17)** — Phase 1: 108-job CPU subset (SvmW + SvmA + Lstm, 3 seeds) via [`local_exp3_launcher.py`](../../../../scripts/python/train/local_exp3_launcher.py). Phase 2: WSL2/CUDA Lstm 15-seed expansion (180 jobs) via [`local_exp3_lstm_wsl2_launcher.py`](../../../../scripts/python/train/local_exp3_lstm_wsl2_launcher.py) on RTX 3060 + TF 2.21 + CUDA 12. |
 
 ## Quick Reference
 

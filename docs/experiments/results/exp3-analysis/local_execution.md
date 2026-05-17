@@ -182,3 +182,94 @@ same `prior_<model>_imbalv3_knn_<dist>_<dom>_domain_train_split2_subjectwise_rat
 tag pattern, so the existing collection script
 [`scripts/python/domain_analysis/collect_evaluation_metrics.py`](../../../../scripts/python/domain_analysis/collect_evaluation_metrics.py)
 picks them up automatically with no extra glob changes.
+
+---
+
+# Phase 2 — WSL2/CUDA Lstm Seed Expansion (2026-05-17)
+
+After Phase 1 completed Lstm (3 seeds × 12 combos = 36 jobs), the remaining
+12 seeds were added to bring Lstm to the full 15-seed canonical set. Since
+TF dropped native Windows GPU support after 2.10, this phase runs inside
+**WSL2 Ubuntu** with **TF 2.21.0 + CUDA 12 (pip bundles)** for ~20× speedup
+vs DirectML (260 ms/step solo → ~450 ms/step with 8 concurrent workers).
+
+## Scope (180 jobs total, 139 remaining at launch)
+
+| Axis | Values | Count |
+|---|---|---|
+| Model | `Lstm` only | 1 |
+| Distance | `mmd`, `wasserstein`, `dtw` | 3 |
+| Domain | `in_domain`, `out_domain` | 2 |
+| Target ratio | `0.3`, `0.5` | 2 |
+| Seed | All 15 canonical seeds | 15 |
+| Mode | `domain_train` only | 1 |
+
+= **3 × 2 × 2 × 15 = 180 jobs**; 41 already done from Phase 1 → **139 pending**.
+
+## Launcher
+
+- Script: [`scripts/python/train/local_exp3_lstm_wsl2_launcher.py`](../../../../scripts/python/train/local_exp3_lstm_wsl2_launcher.py)
+- Runs from **WSL2 Ubuntu** via:
+  ```
+  wsl -d Ubuntu -- bash -c '/home/ynakagama/.venv_tf_gpu/bin/python \
+      /mnt/c/git/work/vehicle_ddd_eval/vehicle_based_DDD_comparison/\
+      scripts/python/train/local_exp3_lstm_wsl2_launcher.py \
+      > /home/ynakagama/launcher.log 2>&1'
+  ```
+  Run as a PowerShell background task (`run_in_background=true`) — WSL2 processes
+  die if the invoking shell closes, so the background task keeps the session alive.
+- Skip logic: `already_done()` checks for `*_within.json` existence only (set-based
+  O(1) lookup via `build_done_set()` single `rglob` scan at startup).
+- Logs: per-job stdout/stderr under `logs/exp3_lstm_wsl2/<tag>.log`;
+  launcher's own log at `/home/ynakagama/launcher.log` (WSL2 native FS).
+
+## GPU / Environment
+
+| Setting | Value |
+|---|---|
+| GPU | NVIDIA RTX 3060 Laptop (6144 MiB VRAM) |
+| CUDA | 12.x (bundled via `tensorflow[and-cuda]` pip wheels) |
+| TF version | 2.21.0 |
+| Python | 3.10 (WSL2 Ubuntu, venv `/home/ynakagama/.venv_tf_gpu`) |
+| Workers | 8 (N_WORKERS = 8) |
+| `CUDA_VISIBLE_DEVICES` | `0` |
+| `TF_FORCE_GPU_ALLOW_GROWTH` | `true` |
+| `OMP_NUM_THREADS` | `2` per worker |
+
+GPU utilization: **59–85 %**; VRAM: **~4340 / 6144 MiB (70 %)** at 8-worker steady
+state. Adding workers beyond 10 risks VRAM OOM; 8 is the recommended setting.
+
+## Throughput observed
+
+- Phase 1 CPU baseline (solo): 2075–3168 s (35–53 min) per job.
+- Phase 2 CUDA (8 workers): step speed ~450 ms/step; estimated **~75 min per
+  job** wall-clock at 8-worker concurrency (vs ~45 min for a solo CUDA run).
+  Each Lstm job involves per-subject model training (6 subjects × up to 50
+  epochs with early stopping), so total training is ~50 min + ~10 min eval × 2.
+
+## Progress snapshot (2026-05-18 00:00)
+
+| Metric | Value |
+|---|---|
+| Started | 2026-05-17 23:34 JST |
+| Overall | **41 / 180 (22.8 %)** within JSONs |
+| Cross JSONs | **39 / 180** (2 missing — see Known Issue below) |
+| Workers active | 8 (train.py processes, GPU at 85 %) |
+| Jobs completed since CUDA launch | 0 (first batch of 8 in progress) |
+| **Projected ETA** | **2026-05-18 ~22:00–24:00 JST** (~22 h from launch) |
+
+## Known Issue — 2 missing cross JSONs
+
+Jobs `mmd_in_domain / ratio0.3 / s777` and `mmd_in_domain / ratio0.3 / s1000`
+completed training and within eval in the DirectML phase but their cross eval
+never ran (DirectML launcher was killed mid-flight). The within JSONs prevent
+the WSL2 launcher from re-queueing them.
+
+**Status**: `.keras` model files confirmed present under `models/Lstm/`. Cross
+eval re-run dispatched manually on 2026-05-18 00:00 as independent background
+tasks using the original `--jobid` values:
+
+| Seed | Job ID | Cross eval log |
+|---|---|---|
+| s777 | `177899922307238916` | `/home/ynakagama/cross_eval_s777.log` |
+| s1000 | `177899922310338916` | `/home/ynakagama/cross_eval_s1000.log` |
