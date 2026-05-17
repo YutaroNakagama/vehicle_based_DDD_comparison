@@ -242,34 +242,49 @@ state. Adding workers beyond 10 risks VRAM OOM; 8 is the recommended setting.
 ## Throughput observed
 
 - Phase 1 CPU baseline (solo): 2075–3168 s (35–53 min) per job.
-- Phase 2 CUDA (8 workers): step speed ~450 ms/step; estimated **~75 min per
-  job** wall-clock at 8-worker concurrency (vs ~45 min for a solo CUDA run).
-  Each Lstm job involves per-subject model training (6 subjects × up to 50
-  epochs with early stopping), so total training is ~50 min + ~10 min eval × 2.
+- Phase 2 CUDA (8 workers): **actual observed** 1402–3762 s (23–63 min) per job,
+  avg ~47 min. The GPU is not always active — SMOTE oversampling and data loading
+  are CPU-bound gaps between epochs. Solo CUDA speed would be ~260 ms/step.
 
-## Progress snapshot (2026-05-18 00:00)
+## Progress snapshot (2026-05-18 06:32)
 
 | Metric | Value |
 |---|---|
 | Started | 2026-05-17 23:34 JST |
-| Overall | **41 / 180 (22.8 %)** within JSONs |
-| Cross JSONs | **39 / 180** (2 missing — see Known Issue below) |
-| Workers active | 8 (train.py processes, GPU at 85 %) |
-| Jobs completed since CUDA launch | 0 (first batch of 8 in progress) |
-| **Projected ETA** | **2026-05-18 ~22:00–24:00 JST** (~22 h from launch) |
+| Elapsed | ~7 h |
+| Within JSONs | **94 / 180 (52.2 %)** |
+| Cross JSONs | **94 / 180 (52.2 %)** |
+| Jobs completed (CUDA launcher) | **58** — all `rc1=0 rc2=0` |
+| Failures / anomalies | **0** |
+| Workers active | 8 (`wasserstein_in_domain_ratio0.5` seeds) |
+| GPU | 0–85 % (0 % in preprocessing gaps), 60–67 °C |
+| WSL2 RAM | 11 / 31 GB used |
+| Remaining jobs | ~84 (excl. 2 mmd_in_domain forced re-run — see below) |
+| **Projected ETA (main launcher)** | **2026-05-18 ~16:30–17:00 JST** |
+| **Projected ETA (all incl. forced re-run)** | **2026-05-18 ~18:00 JST** |
 
-## Known Issue — 2 missing cross JSONs
+### Verified artifacts (58 completed jobs)
+
+Every DONE entry in `/home/ynakagama/launcher.log` carries `rc1=0 rc2=0`.
+For each completed tag, both `_within.json` and `_cross.json` exist under
+`results/outputs/evaluation/Lstm/<jobid>/<jobid>[1]/`.
+
+## Known Issue — 2 missing cross JSONs (mmd_in_domain ratio0.3)
 
 Jobs `mmd_in_domain / ratio0.3 / s777` and `mmd_in_domain / ratio0.3 / s1000`
 completed training and within eval in the DirectML phase but their cross eval
-never ran (DirectML launcher was killed mid-flight). The within JSONs prevent
-the WSL2 launcher from re-queueing them.
+never ran (DirectML launcher killed mid-flight). The within JSONs caused the
+WSL2 launcher to skip them at startup.
 
-**Status**: `.keras` model files confirmed present under `models/Lstm/`. Cross
-eval re-run dispatched manually on 2026-05-18 00:00 as independent background
-tasks using the original `--jobid` values:
+**History of fix attempts:**
+1. Direct cross eval re-run via `evaluate.py --jobid <original>` — failed: HDF5
+   format `.keras` files (TF 2.13) not loadable by Keras 3 (`time_major` arg
+   removed in Keras 3's RNN deserialization).
+2. `loaders.py` patched with H5 fallback + RNN/LSTMCell in custom_objects —
+   still fails: `time_major=False` kwarg breaks `RNN.__init__` in Keras 3.
+3. **Final fix**: forced full re-train via
+   [`scripts/python/train/run_forced_lstm_jobs.py`](../../../../scripts/python/train/run_forced_lstm_jobs.py)
+   launched 2026-05-18 06:32 JST as WSL2 background task.
 
-| Seed | Job ID | Cross eval log |
-|---|---|---|
-| s777 | `177899922307238916` | `/home/ynakagama/cross_eval_s777.log` |
-| s1000 | `177899922310338916` | `/home/ynakagama/cross_eval_s1000.log` |
+**Status**: forced re-run in progress (~80 min expected).
+Log: `/home/ynakagama/forced_rerun.log`
