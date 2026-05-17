@@ -13,7 +13,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense, Flatten, Bidirectional, LSTM, Layer, Input
+from tensorflow.keras.layers import Dense, Flatten, Bidirectional, LSTM, LSTMCell, RNN, Layer, Input
 from tensorflow.keras.callbacks import EarlyStopping
 import tensorflow as tf
 
@@ -170,7 +170,12 @@ def build_lstm_model(input_shape: tuple) -> Model:
         Compiled LSTM model with attention mechanism.
     """
     inputs = Input(shape=input_shape)
-    x = Bidirectional(LSTM(36, return_sequences=True))(inputs)
+    fw_cell = LSTMCell(36)
+    bw_cell = LSTMCell(36)
+    x = Bidirectional(
+        RNN(fw_cell, return_sequences=True),
+        backward_layer=RNN(bw_cell, return_sequences=True, go_backwards=True),
+    )(inputs)
     x = AttentionLayer()(x)  # (batch, features)
     x = Dense(20, activation='relu')(x)
     # Flatten is technically not needed here, but keep for consistency
