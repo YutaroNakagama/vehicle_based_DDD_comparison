@@ -599,13 +599,22 @@ def load_model_and_scaler(model_name: str, mode: str, tag: str, fold: int, jobid
                             f"[EVAL] .keras file is HDF5 (TF ≤2.13 legacy); "
                             f"retrying via .h5 temp copy: {model_path}"
                         )
+                        # RNN and LSTMCell must be registered explicitly so
+                        # Keras 3's deserialization can resolve them from the
+                        # H5 config (Keras 3 no longer auto-registers them).
+                        from tensorflow.keras.layers import RNN as _RNN, LSTMCell as _LSTMCell
+                        _legacy_custom = {
+                            "AttentionLayer": _AttentionLayer,
+                            "RNN": _RNN,
+                            "LSTMCell": _LSTMCell,
+                        }
                         with _tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as _tmp:
                             _tmp_path = _tmp.name
                         try:
                             _shutil.copy2(model_path, _tmp_path)
                             clf = _keras_load_model(
                                 _tmp_path,
-                                custom_objects={"AttentionLayer": _AttentionLayer},
+                                custom_objects=_legacy_custom,
                                 compile=False,
                             )
                             logging.info(f"[EVAL] Loaded legacy H5 model: {model_path}")
