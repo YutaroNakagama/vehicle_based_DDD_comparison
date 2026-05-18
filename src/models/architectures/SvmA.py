@@ -30,6 +30,7 @@ from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, r
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.preprocessing import MinMaxScaler
 from pyswarm import pso
+import multiprocessing as _mp
 
 from src.config import MODEL_PKL_PATH
 from src.models.sampling.oversampling import apply_oversampling
@@ -310,6 +311,162 @@ def select_features(
     return features_df.loc[:, mask]
 
 
+# ---------------------------------------------------------------------------
+# Parallel PSO support
+# ---------------------------------------------------------------------------
+
+_pso_global_obj = None  # set in each worker process by _pso_worker_init
+
+
+def _pso_worker_init(obj):
+    """Pool initializer: stores the SVMObjective in each worker's global."""
+    global _pso_global_obj
+    _pso_global_obj = obj
+
+
+def _pso_eval_worker(mf_params):
+    """Top-level worker function (picklable) for pool.map()."""
+    return _pso_global_obj(mf_params)
+
+
+class SVMObjective:
+    """Picklable PSO objective for ANFIS-SVM optimization.
+
+    Stores all state as numpy arrays so it can be pickled once into each
+    worker process via Pool initializer, avoiding repeated serialization of
+    large training arrays across PSO iterations.
+    """
+
+    def __init__(self, anfis, indices_values, X_train_arr, y_train_arr, X_val_arr, y_val_arr):
+        self.anfis = anfis
+        self.indices_values = indices_values
+        self.X_train_arr = X_train_arr
+        self.y_train_arr = y_train_arr
+        self.X_val_arr = X_val_arr
+        self.y_val_arr = y_val_arr
+
+    def __call__(self, mf_params):
+        """Returns (fitness, n_selected, accuracy, mse)."""
+        importance = self.anfis.compute_importance_degree(self.indices_values, mf_params)
+        mask = importance > 0.5
+        n_selected = int(mask.sum())
+
+        if n_selected == 0:
+            return 1.0, 0, 0.0, 1.0
+
+        X_tr = self.X_train_arr[:, mask]
+        X_va = self.X_val_arr[:, mask]
+
+        svm = SVC(kernel='rbf', C=1.0, gamma='scale')
+        svm.fit(X_tr, self.y_train_arr)
+        y_pred = svm.predict(X_va)
+        mse = float(0.5 * np.mean((y_pred - self.y_val_arr) ** 2))
+        acc_val = float(accuracy_score(self.y_val_arr, y_pred))
+
+        return mse, n_selected, acc_val, mse
+
+
+def pso_parallel(
+    func,
+    lb, ub,
+    swarmsize=100,
+    omega=0.5,
+    phip=0.5,
+    phig=0.5,
+    maxiter=100,
+    minstep=1e-8,
+    minfunc=1e-8,
+    n_processes=1,
+):
+    """PSO with optional parallel particle evaluation per iteration.
+
+    When n_processes>1, a multiprocessing.Pool (spawn context) is created once
+    with func as the initializer payload, avoiding re-pickling of large arrays
+    on each iteration. Each call to func must return (fitness, n_sel, acc, mse).
+
+    Parameters mirror pyswarm.pso. Returns (best_position, best_fitness, history).
+    """
+    lb = np.array(lb, dtype=float)
+    ub = np.array(ub, dtype=float)
+    D = len(lb)
+
+    x = np.random.uniform(lb, ub, (swarmsize, D))
+    v = np.random.uniform(-(ub - lb), ub - lb, (swarmsize, D))
+
+    pool = None
+    if n_processes > 1:
+        ctx = _mp.get_context('spawn')
+        pool = ctx.Pool(n_processes, initializer=_pso_worker_init, initargs=(func,))
+        logging.info("[PSO] Parallel pool: %d processes", n_processes)
+
+    def eval_swarm(positions):
+        if pool is not None:
+            return pool.map(_pso_eval_worker, positions)
+        return [func(pos) for pos in positions]
+
+    try:
+        results = eval_swarm([x[i] for i in range(swarmsize)])
+        fp = np.array([r[0] for r in results])
+
+        p = x.copy()
+        p_best = fp.copy()
+        g_idx = np.argmin(fp)
+        g = p[g_idx].copy()
+        g_best = fp[g_idx]
+
+        pso_history = []
+        eval_count = 0
+        for r in results:
+            eval_count += 1
+            fit, n_sel, acc, mse = r
+            entry = {'evaluation': eval_count, 'n_selected': n_sel, 'accuracy': acc, 'fitness': fit}
+            if n_sel > 0:
+                entry['mse'] = mse
+            pso_history.append(entry)
+
+        for it in range(maxiter):
+            r1 = np.random.uniform(0, 1, (swarmsize, D))
+            r2 = np.random.uniform(0, 1, (swarmsize, D))
+            v = omega * v + phip * r1 * (p - x) + phig * r2 * (g - x)
+            x = np.clip(x + v, lb, ub)
+
+            results = eval_swarm([x[i] for i in range(swarmsize)])
+            fx = np.array([r[0] for r in results])
+
+            for r in results:
+                eval_count += 1
+                fit, n_sel, acc, mse = r
+                entry = {'evaluation': eval_count, 'n_selected': n_sel, 'accuracy': acc, 'fitness': fit}
+                if n_sel > 0:
+                    entry['mse'] = mse
+                pso_history.append(entry)
+
+            improved = fx < p_best
+            p[improved] = x[improved]
+            p_best[improved] = fx[improved]
+
+            new_g_idx = np.argmin(p_best)
+            new_g_best = p_best[new_g_idx]
+            if new_g_best < g_best:
+                delta = abs(g_best - new_g_best)
+                g = p[new_g_idx].copy()
+                g_best = new_g_best
+                if delta < minfunc and it > 0:
+                    logging.info("[PSO] Converged (minfunc) at iter %d", it)
+                    break
+
+            if np.max(np.abs(v)) < minstep:
+                logging.info("[PSO] Converged (minstep) at iter %d", it)
+                break
+
+        return g, g_best, pso_history
+
+    finally:
+        if pool is not None:
+            pool.terminate()
+            pool.join()
+
+
 def _grid_search_svm(
     X_train: pd.DataFrame, y_train: pd.Series,
     X_val: pd.DataFrame, y_val: pd.Series,
@@ -343,6 +500,7 @@ def optimize_svm_anfis(
     X_train: pd.DataFrame, y_train: pd.Series,
     X_val: pd.DataFrame, y_val: pd.Series,
     indices_df: pd.DataFrame,
+    n_pso_processes: int = 1,
 ) -> tuple:
     """Optimise ANFIS MF parameters via PSO, then grid-search SVM params.
 
@@ -361,6 +519,9 @@ def optimize_svm_anfis(
         Training / validation labels.
     indices_df : DataFrame
         Per-feature filter indices (n_features × 4).
+    n_pso_processes : int
+        Number of parallel worker processes for PSO particle evaluation.
+        1 = sequential (default). Set via SVMA_PSO_PROCESSES env var.
 
     Returns
     -------
@@ -370,49 +531,25 @@ def optimize_svm_anfis(
     anfis = ANFIS()
     indices_values = indices_df.values  # (n_features, 4)
 
-    pso_history = []
-    eval_count = [0]
+    y_train_arr = y_train.values if hasattr(y_train, 'values') else np.asarray(y_train)
+    y_val_arr = y_val.values if hasattr(y_val, 'values') else np.asarray(y_val)
 
-    def objective(mf_params):
-        eval_count[0] += 1
-        importance = anfis.compute_importance_degree(indices_values, mf_params)
-        mask = importance > 0.5
-        n_selected = int(mask.sum())
-
-        if n_selected == 0:
-            pso_history.append({
-                'evaluation': eval_count[0],
-                'n_selected': 0, 'accuracy': 0.0, 'fitness': 1.0,
-            })
-            return 1.0  # penalty
-
-        X_tr = X_train.iloc[:, mask]
-        X_va = X_val.iloc[:, mask]
-
-        # Fixed SVM during PSO (paper: PSO trains ANFIS only)
-        # Paper Eq.(11): E = 0.5 * Σ(ŷ - y)² (MSE objective)
-        svm = SVC(kernel='rbf', C=1.0, gamma='scale')
-        svm.fit(X_tr, y_train)
-        y_pred = svm.predict(X_va)
-        y_val_arr = y_val.values if hasattr(y_val, 'values') else np.asarray(y_val)
-        mse = 0.5 * np.mean((y_pred - y_val_arr) ** 2)
-        acc_val = accuracy_score(y_val, y_pred)
-        fitness = mse  # minimise MSE (paper Eq.11)
-
-        pso_history.append({
-            'evaluation': eval_count[0],
-            'n_selected': n_selected,
-            'accuracy': float(acc_val),
-            'mse': float(mse),
-            'fitness': float(fitness),
-        })
-        return fitness
+    obj = SVMObjective(
+        anfis=anfis,
+        indices_values=indices_values,
+        X_train_arr=X_train.values,
+        y_train_arr=y_train_arr,
+        X_val_arr=X_val.values,
+        y_val_arr=y_val_arr,
+    )
 
     # PSO: 24 MF parameters (Table 3 of Arefnezhad et al. 2019)
-    optimal_mf_params, _ = pso(
-        objective, ANFIS.LB, ANFIS.UB,
+    # Paper Eq.(11): E = 0.5 * Σ(ŷ - y)² (MSE objective, minimised)
+    logging.info("[PSO] Starting PSO swarmsize=50 maxiter=100 n_processes=%d", n_pso_processes)
+    optimal_mf_params, _, pso_history = pso_parallel(
+        obj, ANFIS.LB, ANFIS.UB,
         swarmsize=50, omega=0.95, phip=2.0, phig=2.0,
-        maxiter=100,
+        maxiter=100, n_processes=n_pso_processes,
     )
 
     # Stage 2 – grid-search SVM (C, gamma) on selected features
@@ -565,8 +702,10 @@ def SvmA_train(
             f"class dist: {np.bincount(y_train.values.astype(int) if hasattr(y_train, 'values') else y_train.astype(int))}"
         )
 
+    n_pso_processes = int(os.environ.get("SVMA_PSO_PROCESSES", "1"))
     optimal_mf_params, best_C, best_gamma, pso_history, anfis = optimize_svm_anfis(
         X_train_normed, y_train, X_val_normed, y_val, indices_df,
+        n_pso_processes=n_pso_processes,
     )
 
     # Save PSO optimization history + MF parameters for reproducibility
