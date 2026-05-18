@@ -449,3 +449,83 @@ across all metrics. Rankings are unambiguous at the chosen seed count.
 - `results/analysis/exp3_prior_research/figures/seed_convergence_Lstm_swsmote.pdf`
 - `results/analysis/exp3_prior_research/figures/seed_convergence_Lstm_swsmote.png`
 - `results/analysis/exp3_prior_research/figures/seed_convergence_Lstm_swsmote.csv`
+
+---
+
+# Phase 4 — SvmW + SvmA 12-seed Expansion (2026-05-19)
+
+Goal: reach 12 seeds for all SW-SMOTE conditions across SvmW and SvmA, matching
+the 12-seed priority target (3 Phase 1 seeds already done → 9 new seeds needed).
+
+**New seeds for both models:**
+`[0, 7, 99, 256, 512, 777, 1000, 1337, 2024]` (9 seeds)
+
+Combined with Phase 1 seeds `[42, 123, 2025]` → **12 seeds total**.
+
+## SvmW Phase 2
+
+| Metric | Value |
+|---|---|
+| Script | `scripts/python/train/local_exp3_svmw_phase2_launcher.py` |
+| Jobs | 108 (9 seeds × 3 dist × 2 domain × 2 ratio) |
+| Workers | 8 |
+| Per-job | ~2.5–3.5 h (Optuna 100 trials, same as Phase 1) |
+| Launched | **2026-05-19 07:33 JST** |
+| Logs | `logs/exp3_svmw_phase2/` |
+| **ETA** | **~2026-05-21 01:30 JST** (14 batches × 3 h = 42 h from 07:33) |
+
+**Status (launch +0 min):** 8 workers started immediately:
+`mmd_in_domain_ratio0.3_s{0,7,99,256,512,777,1000,1337}` picked up by workers 0–7.
+
+## SvmA Phase 2 — Parallel PSO
+
+SvmA Phase 2 uses a new `pso_parallel()` implementation that evaluates PSO particles
+in parallel using `multiprocessing.Pool` (spawn), reducing per-job wall-clock from
+~21 h (sequential PSO) to ~7–9 h (4× PSO speedup, non-PSO phases unchanged).
+
+### Key code change: `src/models/architectures/SvmA.py`
+
+| Component | Description |
+|---|---|
+| `SVMObjective` class | Picklable replacement for the PSO closure; stores training arrays as numpy for efficient pickling |
+| `pso_parallel()` | Custom PSO matching pyswarm parameters; uses `Pool(n_processes)` initializer pattern to send large arrays once per worker, then only ~192-byte particle positions per iteration |
+| `_pso_worker_init` / `_pso_eval_worker` | Module-level functions (required for spawn pickling on Windows) |
+| `SVMA_PSO_PROCESSES` env var | Controls PSO parallelism (default 1 = sequential, backward-compatible) |
+
+**Resource design (i9-12900HK, 20 logical threads):**
+
+| Process group | Cores used |
+|---|---|
+| SvmA Phase 1 (8 sequential workers) | ~8 |
+| SvmA Phase 2 (3 workers × 4 PSO processes) | 12 |
+| Total | ~20 — fully saturated during PSO phase |
+
+| Metric | Value |
+|---|---|
+| Script | `scripts/python/train/local_exp3_svma_phase2_launcher.py` |
+| Jobs | 108 (9 seeds × 3 dist × 2 domain × 2 ratio) |
+| Workers | 3 (`LOCAL_PARALLEL_SVMA=3`) |
+| PSO processes | 4 per worker (`SVMA_PSO_PROCESSES=4`) |
+| Estimated per-job | ~7–9 h (vs 21 h sequential) |
+| Launched | **2026-05-19 07:33 JST** |
+| Logs | `logs/exp3_svma_phase2/` |
+| **ETA** | **~2026-06-01** (36 batches × 8 h ≈ 12 days; will accelerate when Phase 1 SvmA completes ~2026-05-23 and workers can be increased to 5) |
+
+**Status (launch +0 min):** 3 workers started:
+- SvmA-0: `mmd_in_domain_ratio0.3_s0`
+- SvmA-1: `mmd_in_domain_ratio0.3_s7`
+- SvmA-2: `mmd_in_domain_ratio0.3_s99`
+
+PSO worker pool (4 processes per job) spawns after data loading + normalization (~2–3 h).
+
+### Phase 1 SvmA status at Phase 2 launch
+
+| Metric | Value |
+|---|---|
+| Started | 2026-05-18 07:27 JST |
+| Elapsed | ~24 h |
+| Done | **0 / 36** (first batch of 8 jobs still in PSO) |
+| CPU time accrued | ~47,000 s / worker ≈ 13.2 h CPU (55% duty) |
+| PSO progress (est.) | ~73% through PSO phase (~5 h CPU remaining = ~9 h wall) |
+| **First DONE expected** | ~2026-05-19 16:30 JST |
+| **All 36 done ETA** | ~2026-05-23 04:30 JST (4.5 batches × 24 h/batch from 07:27) |
