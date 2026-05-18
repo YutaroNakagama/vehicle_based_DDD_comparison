@@ -341,13 +341,111 @@ Start-Process -FilePath python `
   -RedirectStandardError "logs/svma_launcher_err.log" -WindowStyle Hidden
 ```
 
-**Status (2026-05-18 20:21):** 8 workers running, PSO in progress on first 8 mmd
-jobs (started 07:27, ~13 h elapsed, PSO typically 18–24 h/job).
+**Status (2026-05-19 00:46 JST):** 8 workers running, PSO in progress on first 8 mmd
+jobs (started 07:27 2026-05-18, ~17 h elapsed, PSO typically 18–24 h/job).
+CPU time accrued: ~30,000 s per worker (≈ 8.3 h CPU on 17 h wall ≈ 49% single-core duty).
+First completions expected 2026-05-19 01:00–07:00 JST.
 
 | Metric | Value |
 |---|---|
 | Jobs | 36 (imbalv3 SW-SMOTE only, seeds 42 / 123 / 2025) |
 | Workers | 8 |
-| Done | 0 (first wave still in PSO) |
+| Done | 0 (first wave still in PSO; completion imminent) |
 | Logs | `logs/svma_launcher_err.log` (launcher), `logs/exp3_local/prior_SvmA_*.log` (per-job) |
 | **ETA** | **~2026-05-22 10:00 JST** (4.5 batches × 21 h/batch; from 07:27) |
+
+---
+
+# Phase 3 — Lstm WSL2/CUDA Non-SW-SMOTE Conditions (2026-05-19)
+
+After Phase 2 completed all 180 SW-SMOTE (imbalv3) Lstm jobs, the remaining 3 conditions
+(baseline, smote_plain r=0.5, undersample_rus r=0.5) were added to cover the full Lstm
+condition grid. These conditions were not available in the local Phase 1 (CPU-only,
+DirectML-limited) run.
+
+## Scope (270 jobs)
+
+| Axis | Values | Count |
+|---|---|---|
+| Model | `Lstm` only | 1 |
+| Condition | `baseline`, `smote_plain r=0.5`, `undersample_rus r=0.5` | 3 |
+| Distance | `mmd`, `wasserstein`, `dtw` | 3 |
+| Domain | `in_domain`, `out_domain` | 2 |
+| Seed | All 15 canonical seeds | 15 |
+| Mode | `domain_train` only | 1 |
+
+= **3 × 3 × 2 × 15 = 270 jobs**. `ratio=0.1` is N/A for Lstm (natural minority ≈27% >
+target 10%; imblearn raises ValueError). See Issue #15 in operations_log.md.
+
+## Launcher
+
+- Script: [`scripts/python/train/local_exp3_lstm_wsl2_other_launcher.py`](../../../../scripts/python/train/local_exp3_lstm_wsl2_other_launcher.py)
+- Runs from **WSL2 Ubuntu** via:
+  ```bash
+  nohup /home/ynakagama/.venv_tf_gpu/bin/python \
+      scripts/python/train/local_exp3_lstm_wsl2_other_launcher.py \
+      > /home/ynakagama/launcher_other.log 2>&1 &
+  ```
+- Tag naming:
+  - `baseline`: `prior_Lstm_baseline_knn_{dist}_{dom}_domain_train_split2_s{seed}`
+  - `smote_plain`: `prior_Lstm_smote_plain_knn_{dist}_{dom}_domain_train_split2_ratio0.5_s{seed}`
+  - `undersample_rus`: `prior_Lstm_undersample_rus_knn_{dist}_{dom}_domain_train_split2_ratio0.5_s{seed}`
+- Same GPU/environment settings as Phase 2 (CUDA_VISIBLE_DEVICES=0, TF_FORCE_GPU_ALLOW_GROWTH=true,
+  N_WORKERS=8, OMP_NUM_THREADS=2).
+- Logs: per-job under `logs/exp3_lstm_wsl2/<tag>.log`; launcher at `/home/ynakagama/launcher_other.log`.
+
+## Launch notes (2026-05-19 00:09 JST)
+
+Two launcher instances were accidentally started (PIDs 11 and 59). PID 59 and its 8 worker
+processes were killed immediately after detection. PID 11 (the surviving instance) retained
+its 8 workers (PIDs 23–30) and continued cleanly — the `already_done()` gate prevents
+duplicate job execution once any within.json exists.
+
+## Progress snapshot (2026-05-19 00:52 JST, ~43 min after launch)
+
+| Metric | Value |
+|---|---|
+| Started | 2026-05-19 00:09 JST |
+| Jobs total | 270 |
+| Done | 0 (first 8 workers still on Fold 1 of first jobs) |
+| Active workers | 8 (PID 11 launcher, workers PIDs 23–30) |
+| Current jobs | `baseline_knn_mmd_in_domain_s{0,7,42,99,123,256,512,777}` |
+| GPU | **84 %**, 2086 / 6144 MiB — training confirmed active |
+| Training confirmed | s0 Fold 1 Epoch 1 in progress (AUROC 0.727 at step 32/32) |
+| Data loading gap | 24 min (00:12→00:36); sequence-generation gap 16 min (00:36→00:52) |
+| **Projected ETA** | **~2026-05-19 09:00–11:00 JST** (270 / 8 workers × ~47 min/job ≈ 26 h from 00:09; GPU sharing slightly slower than Phase 2) |
+
+---
+
+# σ_rank Seed-Count Stability Analysis (2026-05-19)
+
+To validate that 15 seeds is sufficient for stable condition rankings (matching the
+TIV2026 methodology), a σ_rank convergence analysis was run on the 162 Lstm SW-SMOTE
+Phase 2 within JSONs.
+
+**Script:** `scripts/python/analysis/domain/seed_rank_stability_exp3.py`
+
+**Conditions:** 4 (in_domain × r=0.3, in_domain × r=0.5, out_domain × r=0.3, out_domain × r=0.5),
+averaged over 3 distance metrics.
+
+**Results:**
+
+| k | AUROC σ_rank (mean/max) | AUPRC σ_rank (mean/max) | F2 σ_rank (mean/max) |
+|---|---|---|---|
+| 1 | 0.249 / 0.249 | 0.325 / 0.400 | 0.000 / 0.000 |
+| 2 | 0.068 / 0.137 | 0.147 / 0.294 | 0.000 / 0.000 |
+| 3 | 0.000 / 0.000 | 0.089 / 0.179 | 0.000 / 0.000 |
+| 6 | 0.000 / 0.000 | 0.000 / 0.000 | 0.000 / 0.000 |
+| 15 | 0.000 / 0.000 | 0.000 / 0.000 | 0.000 / 0.000 |
+
+- AUROC: stable (σ<0.2) from **k=2**; σ=0.000 from k=3
+- AUPRC: stable (σ<0.2) from **k=2**; σ=0.000 from k=6
+- F2: stable (σ<0.2) from **k=1**
+
+**Conclusion:** 15 seeds is far more than necessary — even k=6 gives perfect rank stability
+across all metrics. Rankings are unambiguous at the chosen seed count.
+
+**Outputs:**
+- `results/analysis/exp3_prior_research/figures/seed_convergence_Lstm_swsmote.pdf`
+- `results/analysis/exp3_prior_research/figures/seed_convergence_Lstm_swsmote.png`
+- `results/analysis/exp3_prior_research/figures/seed_convergence_Lstm_swsmote.csv`
