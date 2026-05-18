@@ -286,5 +286,68 @@ WSL2 launcher to skip them at startup.
    [`scripts/python/train/run_forced_lstm_jobs.py`](../../../../scripts/python/train/run_forced_lstm_jobs.py)
    launched 2026-05-18 06:32 JST as WSL2 background task.
 
-**Status**: forced re-run in progress (~80 min expected).
+**Status**: forced re-run **COMPLETE** (2026-05-18 07:57–07:59 JST).
+- s777: rc1=0 rc2=0, elapsed 3887 s (~64.8 min)
+- s1000: rc1=0 rc2=0, elapsed 3756 s (~62.6 min)
+
+Both within+cross JSONs confirmed present under `results/outputs/evaluation/Lstm/`.
 Log: `/home/ynakagama/forced_rerun.log`
+
+---
+
+## Progress snapshot (2026-05-18 20:21, Phase 2 **COMPLETE**)
+
+| Metric | Value |
+|---|---|
+| Started | 2026-05-17 23:34 JST |
+| Elapsed | ~20 h 47 min |
+| **All WSL2 workers finished** | 2026-05-18 20:21 JST (log: "All WSL2/CUDA Lstm workers finished.") |
+| Within JSONs | **324 / 180** (324 total incl. Phase 1 36 + forced re-run 2) |
+| Cross JSONs | **322 / 180** (2 fewer cross due to legacy HDF5 skips resolved by forced re-run) |
+| Jobs completed (CUDA launcher DONE) | **139** — all `rc1=0 rc2=0` |
+| Jobs skipped (already done at launch) | 41 |
+| Failures / anomalies | **0** |
+| Forced re-run (s777+s1000) | ✅ **DONE** — see Known Issue section above |
+
+### Final artifact count (Phase 2 end-state)
+
+All 180 scope jobs accounted for:
+- 41 skipped (within JSON existed from Phase 1 / DirectML)
+- 139 completed by WSL2 CUDA launcher (`rc1=0 rc2=0`)
+- 2 forced re-run (s777+s1000 mmd_in_domain ratio0.3) — `rc1=0 rc2=0`
+
+Total Lstm within JSONs on disk: **324**; cross JSONs: **322**.
+(The 2-count gap on cross is from the 2 original DirectML jobs whose cross JSON
+was missing and was replaced by the forced re-run; both new cross JSONs confirmed
+present.)
+
+---
+
+## Phase 1 SvmA — Restart (2026-05-18 07:27 JST)
+
+Phase 1 SvmA (36 jobs, subject-wise SMOTE only) was killed on 2026-05-17 ~15:28
+when the Windows session terminated mid-PSO (0/36 done at kill time). Restarted
+as a Windows background process on 2026-05-18 07:27 JST alongside the Lstm WSL2
+Phase 2 run (no GPU conflict — SvmA is CPU-only PSO).
+
+**Launcher command:**
+```powershell
+$env:LOCAL_PARALLEL_SVMA = "8"; $env:LOCAL_PARALLEL_SVMW = "0"; $env:LOCAL_PARALLEL_LSTM = "0"
+$env:N_TRIALS_OVERRIDE = "100"
+Start-Process -FilePath python `
+  -ArgumentList "scripts/python/train/local_exp3_launcher.py","--models","SvmA" `
+  -WorkingDirectory "C:\git\work\vehicle_ddd_eval\vehicle_based_DDD_comparison" `
+  -RedirectStandardOutput "logs/svma_launcher.log" `
+  -RedirectStandardError "logs/svma_launcher_err.log" -WindowStyle Hidden
+```
+
+**Status (2026-05-18 20:21):** 8 workers running, PSO in progress on first 8 mmd
+jobs (started 07:27, ~13 h elapsed, PSO typically 18–24 h/job).
+
+| Metric | Value |
+|---|---|
+| Jobs | 36 (imbalv3 SW-SMOTE only, seeds 42 / 123 / 2025) |
+| Workers | 8 |
+| Done | 0 (first wave still in PSO) |
+| Logs | `logs/svma_launcher_err.log` (launcher), `logs/exp3_local/prior_SvmA_*.log` (per-job) |
+| **ETA** | **~2026-05-22 10:00 JST** (4.5 batches × 21 h/batch; from 07:27) |
