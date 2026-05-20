@@ -545,11 +545,13 @@ def optimize_svm_anfis(
 
     # PSO: 24 MF parameters (Table 3 of Arefnezhad et al. 2019)
     # Paper Eq.(11): E = 0.5 * Σ(ŷ - y)² (MSE objective, minimised)
-    logging.info("[PSO] Starting PSO swarmsize=50 maxiter=100 n_processes=%d", n_pso_processes)
+    _pso_swarmsize = int(os.environ.get("SVMA_PSO_SWARMSIZE", "50"))
+    _pso_maxiter   = int(os.environ.get("SVMA_PSO_MAXITER",   "100"))
+    logging.info("[PSO] Starting PSO swarmsize=%d maxiter=%d n_processes=%d", _pso_swarmsize, _pso_maxiter, n_pso_processes)
     optimal_mf_params, _, pso_history = pso_parallel(
         obj, ANFIS.LB, ANFIS.UB,
-        swarmsize=50, omega=0.95, phip=2.0, phig=2.0,
-        maxiter=100, n_processes=n_pso_processes,
+        swarmsize=_pso_swarmsize, omega=0.95, phip=2.0, phig=2.0,
+        maxiter=_pso_maxiter, n_processes=n_pso_processes,
     )
 
     # Stage 2 – grid-search SVM (C, gamma) on selected features
