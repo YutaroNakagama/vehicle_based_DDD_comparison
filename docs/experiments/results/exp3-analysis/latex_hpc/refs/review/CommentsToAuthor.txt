@@ -1,0 +1,33 @@
+Comments to author (Associate Editor)
+=====================================
+
+The topic of the paper is interesting and relevant in the
+field of IV. However, the paper needs many major changes to
+meet the quality of the conference. The structure is mostly
+unclear and the results are not clearly presented.
+
+First, the authors mention that the aim of the paper is to
+develop a DDD methodology. But then they write that they
+create a framework to compare Related Work methods. They
+also write that they implement three existing methods and
+another concise method: the authors mention the four
+methods "SVMA", "SVMW", "LSTM" and "RF". However, they do
+not explain the abbreviation, nor do they cite the related
+work. The description of their own method "RF" is
+unfortunately only 7 lines long, which makes it difficult
+to compare with the other methods.
+
+It would be desirable to devote a lot more space to the
+author's method and possibly leave out some references
+instead (there is already a lot of space left blank
+anyway). 
+
+A future version of the paper should include a detailed
+explanation of the real innovation and a clear explanation
+of the scientific contribution.
+
+
+----------------------------------------
+Comments on Video demonstration:
+
+[None found]

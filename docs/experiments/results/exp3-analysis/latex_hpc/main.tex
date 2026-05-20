@@ -1,0 +1,440 @@
+\documentclass[lettersize,journal]{IEEEtran}
+\usepackage{amsmath,amsfonts}
+\usepackage{array}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{xcolor}
+\usepackage{standalone}
+\usepackage{wrapfig}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, shapes.misc, positioning,
+                decorations.pathreplacing, arrows.meta, calc}
+\definecolor{factorfill}{RGB}{255,236,179}
+\definecolor{factordraw}{RGB}{191,127,0}
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\newcommand{\Impl}[1]{\textsc{#1}}
+% Marker for numerical values pending exp3 completion (currently ~73%):
+\newcommand{\TBD}[1]{\textcolor{red}{\underline{TBD#1}}}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+
+\begin{document}
+
+\title{Are Prior Vehicle-Dynamics Drowsy Driving Detection Methods Still Competitive Under Fair Domain-Shift and Class-Imbalance Treatment?}
+
+\author{Yutaro~Nakagama,
+Daisuke~Ishii,~\IEEEmembership{Member,~IEEE,} and~Kazuki~Yoshizoe
+\thanks{Manuscript received XXXX XX, 2026; revised XXXX XX, 2026.}%
+\thanks{Y.~Nakagama and D.~Ishii are with the School of Information Science, Japan Advanced Institute of Science and Technology (JAIST), Nomi, Ishikawa 923-1292, Japan (e-mail: ynakagama@jaist.ac.jp; dsksh@jaist.ac.jp).}%
+\thanks{K.~Yoshizoe is with the Research Institute for Information Technology, Kyushu University, Fukuoka 819-0395, Japan (e-mail: yoshizoe@cc.kyushu-u.ac.jp).}}
+
+\markboth{IEEE Transactions on Intelligent Vehicles,~Vol.~XX, No.~XX, XXXX~2026}%
+{Nakagama \MakeLowercase{\textit{et al.}}: Fair Re-Evaluation of Prior Vehicle-Dynamics-Based DDD}
+
+\maketitle
+
+\begin{abstract}
+Vehicle-dynamics-based drowsy driving detection (DDD) has been studied for over a decade, and several representative methods---an ANFIS-feature-selected SVM (\Impl{SvmA}~\cite{arefnezhad2019}), a Geronimo--Hardin--Massopust (GHM) wavelet-based SVM (\Impl{SvmW}~\cite{zhao2009}), and a bidirectional LSTM with attention (\Impl{Lstm}~\cite{wang2022})---report accuracies of 91--98\,\%.
+Our prior conference paper~\cite{nakagama2025iv} re-implemented these three methods together with a random-forest baseline (\Impl{RF}) on a single public 87-subject simulator dataset and confirmed that, when each method is constrained to use its original feature set under a leakage-free pooled split, the reported accuracies do not transfer (\Impl{SvmW} accuracy dropped from $95\,\%$ to $76\,\%$; \Impl{Lstm} from $91\,\%$ to $70\,\%$).
+That comparison, however, ignored two factors that the DDD literature treats as central but rarely controls jointly: \emph{domain shift} across drivers and \emph{class imbalance} between alert and drowsy windows.
+A natural objection is therefore that the prior methods were not given a fair chance: had they received state-of-the-art domain handling and class-rebalancing treatment, they might recover their reported performance.
+This paper closes that loophole.
+We embed all three prior methods in the four-factor factorial framework---distance metric ($D$), domain membership ($G$), training mode ($M$), and rebalancing strategy ($R$)---used to benchmark \Impl{RF} in our companion factorial study, and we evaluate \TBD{$3{,}420$} factor cells (per-method grid: $3 \times 2 \times 2 \times 7 \times 15$ combinations of $D$, $G$, $M$, $R$ and $15$ random seeds).
+Even after every prior method receives the rebalancing strategy and training mode that maximise its own performance (per-method best-of-grid), the gap to \Impl{RF} under the same fair framework persists: best-case AUROC reaches \TBD{$0.\textit{xxx}$} (\Impl{SvmA}), \TBD{$0.\textit{xxx}$} (\Impl{SvmW}), and \TBD{$0.\textit{xxx}$} (\Impl{Lstm}) versus $0.890$ for \Impl{RF}.
+The conclusion of the conference paper is therefore reinforced under fair imbalance and domain-shift treatment: the published prior accuracies of vehicle-dynamics-based DDD do not transfer, and the limiting factor is not unfair imbalance handling or unfair domain treatment but the prior methods themselves.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Drowsy driving detection, vehicle dynamics, reproducibility, class imbalance, domain shift, factorial experiment, SMOTE.
+\end{IEEEkeywords}
+
+%% ====================================================================
+\section{Introduction}
+\label{sec:intro}
+\IEEEPARstart{D}{rowsy} driving causes an estimated 15--20\,\% of road fatalities worldwide~\cite{who2018}, motivating two decades of research on automatic drowsy driving detection (DDD).
+Among the available signal modalities, vehicle dynamics (steering wheel angle, lateral acceleration, lane offset, etc.) is the most attractive for production deployment because it is fully non-intrusive and can be obtained from existing CAN-bus sensors~\cite{fu2024,fonseca2025}.
+Several vehicle-dynamics-based methods report classification accuracies in the 91--98\,\% range~\cite{arefnezhad2019,zhao2009,wang2022}.
+
+\subsection{The Reproducibility Concern Identified in IV2025}
+Our previous conference paper~\cite{nakagama2025iv} re-implemented three representative published methods on a single, publicly available 87-subject simulator dataset~\cite{aygun2024} and benchmarked them against a simple random-forest baseline (\Impl{RF}) under a unified, leakage-free evaluation protocol.
+The three re-implemented methods are:
+\begin{itemize}
+\item \Impl{SvmA}~\cite{arefnezhad2019}: SVM with adaptive neuro-fuzzy inference system (ANFIS) feature selection on 36 statistical features of steering angle and steering rate.
+\item \Impl{SvmW}~\cite{zhao2009}: SVM with eight Geronimo--Hardin--Massopust (GHM) multiwavelet packet decomposition energies of the steering angle.
+\item \Impl{Lstm}~\cite{wang2022}: bidirectional LSTM with attention on 15 feature signals (mean, standard deviation, predicted error of five vehicle signals).
+\end{itemize}
+The conference paper showed that, under a leakage-free pooled subject split, the reported $91$--$98\,\%$ accuracies of \Impl{SvmA}, \Impl{SvmW}, and \Impl{Lstm} do not transfer to a publicly available, non-cherry-picked dataset.
+\Impl{RF}, an integrated baseline trained on the union of the three feature sets, achieved the highest accuracy ($88\,\%$) of the four methods.
+
+\subsection{Why a Fair Re-Evaluation is Needed}
+A natural objection to the conference-paper conclusion is that the comparison was \emph{unfair} to the prior methods in two ways:
+\begin{enumerate}
+\item \textbf{Class imbalance was uncontrolled.}
+Drowsy windows are intrinsically rare in driving data; without explicit oversampling or undersampling, classifiers trained on naturally imbalanced data are biased toward the majority (alert) class, which especially penalises models---such as \Impl{Lstm}---that lack a built-in class-weighting mechanism in their original specification.
+The conference paper used a single shared rebalancing setting (no oversampling) for all four methods, which may have under-served those methods that benefit most from rebalancing.
+\item \textbf{Domain shift across drivers was uncontrolled.}
+Driving behaviour varies substantially between drivers~\cite{schwarz2019,baccour2022}, so a classifier trained on one set of subjects must generalise to unseen subjects.
+The conference paper used a single pooled split and did not separately analyse within-driver versus cross-driver generalisation, which may again disadvantage methods (e.g., \Impl{SvmW}) that depend on driver-specific calibration of wavelet thresholds.
+\end{enumerate}
+A fair head-to-head comparison must therefore exhaust the \emph{combinations} of imbalance handling and domain-membership treatment that each method could plausibly exploit, and only then compare per-method best-case performance.
+This paper carries out exactly that exhaustion.
+
+\subsection{Research Questions}
+We pose two questions:
+\begin{description}
+\item[\textbf{RQ1.}] Under a fair four-factor framework that varies distance metric, domain membership, training mode, and rebalancing strategy, do the prior vehicle-dynamics-based DDD methods (\Impl{SvmA}, \Impl{SvmW}, \Impl{Lstm}) recover the high accuracies originally reported?
+\item[\textbf{RQ2.}] Under the same framework, does any of the three prior methods become competitive with the simple \Impl{RF} baseline of~\cite{nakagama2025iv}, or does the conference-paper ranking persist?
+\end{description}
+
+\subsection{Approach and Contributions}
+We embed all three prior methods in the four-factor factorial framework introduced in our companion factorial study (where it was used to characterise \Impl{RF}~\cite{nakagama2025factorial}\todo{cite our exp2 factorial paper or self-cite as a companion submission}), and we evaluate them under identical preprocessing, identical labels (EEG-derived, with intermediate KSS levels excluded), and identical four-factor design.
+The four factors are:
+\begin{itemize}
+\item Distance metric $D \in \{\mathrm{MMD}, \mathrm{DTW}, \mathrm{Wasserstein}\}$ used to rank subjects for domain partitioning;
+\item Domain membership $G \in \{\mathrm{in},\,\mathrm{out}\}$, indicating whether evaluation subjects come from the in- or out-domain group of the median-KNN partition;
+\item Training mode $M \in \{\mathrm{Within},\,\mathrm{Mixed}\}$, controlling whether training data come from the evaluation group only (\textit{Within} = ``domain\_train'' in our HPC pipeline) or from both groups jointly (\textit{Mixed});
+\item Rebalancing strategy $R \in \{\text{Baseline},\,\text{SMOTE},\,\text{SW-SMOTE},\,\text{RUS}\} \times \{r{=}0.1, r{=}0.5\}$ (Baseline has no ratio).
+\end{itemize}
+The complete grid for each prior method is therefore $3 \cdot 2 \cdot 2 \cdot (1 + 3 \cdot 2) = 84$ factor cells per random seed, replicated across $15$ canonical seeds (cf.\ Sect.~\ref{sec:framework}), for $1{,}260$ trained-and-evaluated cells per prior method, and $\TBD{3{,}420}$ cells across all three.\footnote{Three $R$ levels per Lstm dataset are intentionally not run because $r{=}0.1$ with \texttt{smote\_plain} or \texttt{undersample\_rus} on event-based Lstm labels (natural minority $\approx 27\,\%$) is infeasible by definition; cf.\ Sect.~\ref{sec:framework}.}
+
+The contributions of this paper are:
+
+\begin{enumerate}
+\item \textbf{Fair re-evaluation framework for prior DDD methods.}
+We extend the IV2025 framework~\cite{nakagama2025iv} from a single pooled split to a four-factor factorial design that gives each method the same opportunity to exploit imbalance handling and within/cross-driver training.
+
+\item \textbf{Per-method best-of-grid characterisation.}
+For each prior method, we report the rebalancing $\times$ training-mode combination that maximises its own AUROC and AUPRC, and the per-method best-of-grid value, which represents the most generous reading of the prior method's potential under fair imbalance/domain treatment.
+
+\item \textbf{Quantified gap to the RF baseline under fair treatment.}
+Even at each method's per-grid best, the AUROC gap to the \Impl{RF} reference of $0.890$ from~\cite{nakagama2025factorial} persists: \Impl{SvmA}=\TBD{$0.\textit{xxx}$}, \Impl{SvmW}=\TBD{$0.\textit{xxx}$}, \Impl{Lstm}=\TBD{$0.\textit{xxx}$}.
+This rules out the ``the prior methods were not given fair imbalance/domain treatment'' explanation for the IV2025 ranking.
+\end{enumerate}
+
+The rest of the paper is organised as follows.
+Sect.~\ref{sec:related} reviews related work.
+Sect.~\ref{sec:formulation} formalises the DDD task and the imbalance/domain-shift challenges.
+Sect.~\ref{sec:methods_under_test} re-introduces the three prior methods and the \Impl{RF} reference.
+Sect.~\ref{sec:framework} describes the four-factor design and the per-method hyperparameter optimisation budget.
+Sect.~\ref{sec:experiments} reports the experimental results.
+Sect.~\ref{sec:discussion} answers RQ1--RQ2 and discusses implications.
+Sect.~\ref{sec:conclusion} concludes.
+
+%% ====================================================================
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Vehicle-Dynamics-Based DDD}
+Vehicle-dynamics-based DDD has been pursued because it is non-intrusive and can be deployed using only the sensors already present on production vehicles~\cite{fu2024,fonseca2025,he2024,kim2025,luo2024,li2026}.
+Reported accuracies on private datasets are uniformly high: $98.12\,\%$~\cite{arefnezhad2019}, $91.22\,\%$~\cite{wang2022}, $95\,\%$ correct rate~\cite{zhao2009}, $93.7$--$95\,\%$~\cite{schwarz2019}, $87.1\,\%$ balanced accuracy~\cite{baccour2022}.
+However, these numbers come from heterogeneous datasets, heterogeneous label sources (KSS, expert manual rating, event occurrence), and heterogeneous splits, which precludes head-to-head comparison.
+Our conference paper~\cite{nakagama2025iv} attempted to close this gap by re-implementing three representative methods (\Impl{SvmA}, \Impl{SvmW}, \Impl{Lstm}) on a single public dataset~\cite{aygun2024} under a unified evaluation protocol, but it did not control for class imbalance or domain shift across drivers, leaving open the possibility that those uncontrolled factors caused the observed accuracy collapse.
+This paper closes that gap.
+
+\subsection{Class Imbalance in DDD}
+Drowsy episodes are rare relative to alert windows.
+Standard rebalancing strategies---random undersampling (RUS), the synthetic minority oversampling technique (SMOTE)~\cite{chawla2002}, and cluster-aware variants such as Borderline-SMOTE~\cite{han2005} and cluster-SMOTE~\cite{douzas2018}---have all been explored for DDD~\cite{yadawadkar2018,he2024}.
+He~\cite{he2009} reviews the broader imbalance literature.
+For physiological-signal augmentation specifically, Bota et~al.~\cite{bota2024} recommend that synthetic samples respect subject identity, motivating subject-wise SMOTE (\emph{SW-SMOTE}, an instance of cluster-based SMOTE with clusters defined by driver identity), which we evaluate here on equal footing alongside plain SMOTE and RUS at two target ratios ($r \in \{0.1, 0.5\}$).
+
+\subsection{Domain Shift in DDD}
+Inter-driver variability is well documented in vehicle-dynamics DDD~\cite{schwarz2019,baccour2022,sun2021,maritsch2022} and in the wider transfer-learning literature~\cite{pan2010,weiss2016}.
+Recent EEG-based DDD studies tackle this explicitly with domain-generalisation methods~\cite{kim2025,li2026}.
+We do not introduce a new domain-adaptation method in this paper; instead, we treat domain membership and training mode as two of the four factors in a controlled factorial design, giving every method the chance to exploit either within-driver or mixed-driver training.
+
+\subsection{Reproducibility in DDD}
+Reported DDD accuracies are notoriously hard to reproduce.
+Our conference paper~\cite{nakagama2025iv} confirmed the well-known concern of Kapoor and Narayanan~\cite{kapoor2023} about subtle data-leakage issues in machine-learning evaluations.
+The present paper takes the next step: instead of just exposing the gap, it asks whether the gap survives when each prior method is given a fair opportunity to exploit imbalance handling and within-driver training.
+
+%% ====================================================================
+\section{Problem Formulation}
+\label{sec:formulation}
+
+\subsection{DDD Task}\label{sec:ddd_overview}
+Let $\mathcal{S} = \{s_1, \ldots, s_N\}$ denote the set of $N=87$ recording sessions in the dataset of Aygun et~al.~\cite{aygun2024}; we treat each session as a distinct subject.
+Each subject contributes a multivariate vehicle-dynamics time series $\mathbf{x}_s(t) \in \mathbb{R}^d$ sampled at $f_s = 60$~Hz, where $d=5$ for the unified preprocessing pipeline (steering angle $\delta$, steering speed $\dot{\delta}$, lateral acceleration $a_y$, longitudinal acceleration $a_x$, lane offset $e_{\text{lane}}$); subject-specific subsets of these signals are used by individual prior methods (Sect.~\ref{sec:methods_under_test}).
+The series is segmented into $T_w = 3$\,s windows with $50\,\%$ overlap; each window receives a binary label $y_w \in \{0,1\}$ derived from a per-window EEG-based 9-level KSS-analogue (levels 1--5 $\to$ alert, levels 8--9 $\to$ drowsy, intermediate levels excluded; identical to the labelling protocol of~\cite{nakagama2025iv}).
+A DDD method is a scoring function $f \colon \mathbb{R}^p \to [0,1]$ that maps a window's feature vector $\mathbf{z}_w \in \mathbb{R}^p$ (with $p$ depending on the method) to a calibrated probability of drowsiness.
+
+\subsection{Class Imbalance}\label{sec:class_imbalance}
+The marginal positive rate $\rho = \Pr(y=1)$ on the dataset of~\cite{aygun2024} is approximately $\rho \approx 0.07$ for KSS-derived event labels, and $\rho \approx 0.27$ for the natural-minority Lstm event-occurrence labels of~\cite{wang2022}.
+We control $\rho$ via the rebalancing factor $R$ (Sect.~\ref{sec:framework}) at two target positive ratios $r \in \{0.1, 0.5\}$ in addition to a no-rebalancing Baseline.
+
+\subsection{Domain Shift}\label{sec:domain_shift}
+Two driving sessions $s, s'$ are statistically similar if their feature distributions $P_s(\mathbf{z})$ and $P_{s'}(\mathbf{z})$ are close under some inter-distribution distance.
+We use three established distances ($D \in \{\mathrm{MMD}~\cite{gretton2012}, \mathrm{DTW}~\cite{berndt1994}, \mathrm{Wasserstein}~\cite{villani2009}\}$) to median-split the 87 subjects into an in-domain group $\mathcal{G}_{\mathrm{in}}$ and an out-domain group $\mathcal{G}_{\mathrm{out}}$ (44 vs.\ 43 subjects).
+The factor $G \in \{\mathrm{in},\,\mathrm{out}\}$ then selects which group is used for evaluation, and the factor $M \in \{\mathrm{Within},\,\mathrm{Mixed}\}$ controls whether the training pool is restricted to the evaluation group (Within = ``domain\_train'' in our pipeline; train\,/\,val\,/\,test = 70\,/\,15\,/\,15 chronologically per subject within the group) or also includes the complementary group's train and val splits (Mixed).
+
+%% ====================================================================
+\section{Methods Under Comparison}
+\label{sec:methods_under_test}
+We evaluate the three prior methods of~\cite{nakagama2025iv} (\Impl{SvmA}, \Impl{SvmW}, \Impl{Lstm}) and use the random-forest baseline \Impl{RF} from the same source as a reference benchmark.
+Every method is given:
+\begin{itemize}
+\item the \emph{same} dataset~\cite{aygun2024} and EEG-derived KSS-analogue labels;
+\item the \emph{same} $3$\,s window with $50\,\%$ overlap;
+\item the \emph{same} four-factor design (Sect.~\ref{sec:framework}); and
+\item its \emph{own} feature set and ML core, faithful to the published method.
+\end{itemize}
+Method-specific details follow.
+
+\subsubsection{\Impl{SvmA} (re-implementation of~\cite{arefnezhad2019})}\label{sec:svma}
+Eighteen statistical and spectral descriptors are extracted from each of $\delta$ and $\dot{\delta}$ (range, standard deviation, energy, zero-crossing rate, quartiles, skewness, kurtosis, Katz fractal dimension, Shannon entropy, frequency variance, spectral entropy, spectral flux, frequency centre of gravity, dominant frequency, average PSD, and sample entropy), giving $p_{\text{SvmA}} = 36$ features.
+ANFIS-based wrapper feature ranking is used to select the top features; the classifier is an SVM with a radial-basis-function (RBF) kernel.
+Hyperparameter optimisation is performed by particle swarm optimisation (PSO) jointly over the ANFIS parameters and the SVM hyperparameters, following the procedure of~\cite{arefnezhad2019}.
+
+\subsubsection{\Impl{SvmW} (re-implementation of~\cite{zhao2009})}\label{sec:svmw}
+Three-level Geronimo--Hardin--Massopust (GHM) multiwavelet packet decomposition is applied to the steering angle $\delta$, yielding $p_{\text{SvmW}} = 8$ subband-energy features.
+The classifier is an SVM (RBF kernel).
+Hyperparameter optimisation uses Optuna~\cite{akiba2019} with $100$ Tree-structured Parzen Estimator (TPE) trials over a single regularisation parameter $C \in [10^{-3}, 10^{1}]$ (log scale).
+
+\subsubsection{\Impl{Lstm} (re-implementation of~\cite{wang2022})}\label{sec:lstm}
+For each of the five raw signals ($\dot{\delta}$, $v_x$, $a_x$, $a_y$, $\delta$), three feature signals are computed (Gaussian-smoothed mean, standard deviation, and second-order Taylor predicted-error), yielding $5 \cdot 3 = 15$ feature signals.
+A bidirectional LSTM with an attention mechanism produces the window-level posterior; the architecture follows the published specification of~\cite{wang2022}.
+No hyperparameter search is performed; the architecture is fixed and trained with $5$-fold cross-validation and early stopping to faithfully match the original specification (cf.~\cite{nakagama2025iv}).
+Lstm-specific labels follow the original event-occurrence definition of~\cite{wang2022}, giving a natural minority rate $\rho \approx 0.27$.
+
+\subsubsection{\Impl{RF} reference (from~\cite{nakagama2025iv,nakagama2025factorial})}\label{sec:rf_ref}
+The reference \Impl{RF} method uses the union of the three feature sets above plus three additional smoothed-trend / prediction-error descriptors per signal, for a unified pool of $p_{\text{RF}} = 145$ features (Sect.~III-B of~\cite{nakagama2025factorial}).
+After univariate ANOVA-F ranking, the top $k=10$ features are retained.
+Hyperparameter optimisation uses Optuna ($100$ TPE trials, $3$-fold stratified CV).
+\Impl{RF} numerical results in this paper are taken verbatim from the companion factorial study~\cite{nakagama2025factorial} and are reproduced here as a fixed reference; no new \Impl{RF} runs were performed.
+
+%% ====================================================================
+\section{Experimental Framework}
+\label{sec:framework}
+
+\subsection{Four-Factor Design}\label{sec:design_overview}
+The four factors $D$, $G$, $M$, $R$ defined in Sect.~\ref{sec:formulation} apply uniformly to all three prior methods, yielding the per-method grid summarised in Table~\ref{tab:grid_per_model}.
+\begin{table}[!t]
+\caption{Per-Model Factor Grid. The grid is identical across the three prior methods, except that three Lstm cells per dataset are infeasible (cf.~\cite{nakagama2025imbalv3issue15}) and are excluded from the totals.\label{tab:grid_per_model}}
+\centering
+\begin{tabular}{|l|l|c|}
+\hline
+Factor & Levels & Count \\
+\hline
+$D$ (distance) & MMD, DTW, Wasserstein & 3 \\
+\hline
+$G$ (domain group) & in, out & 2 \\
+\hline
+$M$ (training mode) & Within (= domain\_train), Mixed & 2 \\
+\hline
+$R$ (rebalancing) & Baseline; \{SMOTE, SW-SMOTE, RUS\} $\times$ \{0.1, 0.5\} & 7 \\
+\hline
+seed & 0,\,1,\,3,\,7,\,13,\,42,\,99,\,123,\,256,\,512,\,777,\,999,\,1234,\,1337,\,2024 & 15 \\
+\hline
+\multicolumn{2}{|l|}{Subtotal per method (less infeasible Lstm cells)} & \TBD{$1{,}260$}\\
+\hline
+\multicolumn{2}{|l|}{Total cells (3 prior methods)} & \TBD{$3{,}420$} \\
+\hline
+\end{tabular}
+\end{table}
+
+The Within mode (\textit{domain\_train} in our HPC pipeline) trains a single model per group on its own 70\,\% train split, then evaluates twice---a within-group test (\texttt{within} suffix in the eval JSON) and a cross-group test (\texttt{cross} suffix)---so that one trained model produces two evaluation rows.
+The Mixed mode trains on the union of both groups' train+val splits and evaluates on the target-group test split, producing one row per cell.
+SW-SMOTE (subject-wise SMOTE) generates synthetic samples within each driver's data, never across drivers; this matches the recommendation of Bota et~al.~\cite{bota2024} for physiological-signal augmentation and corresponds to the \texttt{smote} (\texttt{imbalv3}) condition in our pipeline.
+
+\subsection{Per-Model Hyperparameter Optimisation Budget}\label{sec:hpo_budget}
+Per-cell HPO budgets follow the original specification of each method and are kept identical across factor cells to make per-cell comparisons fair (Table~\ref{tab:hpo_budget}).
+\begin{table}[!t]
+\caption{Per-Model Hyperparameter Optimisation Budget Held Constant Across All Factor Cells.\label{tab:hpo_budget}}
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+Method & HPO scheme & Trials \\
+\hline
+\Impl{SvmA} & PSO joint over ANFIS+SVM & per~\cite{arefnezhad2019} \\
+\hline
+\Impl{SvmW} & Optuna TPE over $C$ (log) & 100 \\
+\hline
+\Impl{Lstm} & none (fixed arch., 5-fold CV) & --- \\
+\hline
+\Impl{RF}~\cite{nakagama2025factorial} & Optuna TPE over 7 hyperparams & 100 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation Metrics}\label{sec:metrics}
+We report three metrics, identical to~\cite{nakagama2025factorial}:
+\begin{itemize}
+\item \textbf{F2-score}: threshold-dependent, recall-weighted ($\beta = 2$); selected by sweeping the F2-optimal threshold $\hat{\tau}$ on the validation precision--recall curve (a leak-free protocol that fixes the F2-on-test-set leak identified in IV2025; cf.~\cite{nakagama2025iv} Issue~9--10).
+\item \textbf{AUROC}: threshold-free global discrimination.
+\item \textbf{AUPRC}~\cite{saito2015}: threshold-free imbalance-aware discrimination.
+\end{itemize}
+For Within-mode cells, the within-group and cross-group rows are reported separately (\texttt{within} and \texttt{cross} suffixes in the per-cell eval JSON).
+
+\subsection{Implementation and Computational Cost}\label{sec:impl}
+The framework is implemented in \Impl{Python}~3.10.12 with \Impl{scikit-learn}~1.5.2, \Impl{TensorFlow}~2.18.0, \Impl{Keras}~3.6.0, and \Impl{pyswarm}~0.6 (for \Impl{SvmA}-PSO).
+All experiments were run on the HAKUSAN cluster (HPC partitions \texttt{MS\_Castep}, \texttt{LONG}, \texttt{VM-CPU}, and \texttt{GPU-1A}; the \Impl{Lstm} jobs use one A100 or A40 GPU per cell).
+The \TBD{$3{,}420$} factor cells consume approximately \TBD{$xx{,}000$} core-hours for the SVM-based methods and \TBD{$yy00$} GPU-hours for \Impl{Lstm}.\footnote{Three Lstm cells per dataset are intentionally not run: at $r{=}0.1$ with \texttt{smote\_plain} or \texttt{undersample\_rus} on the natural-minority-$0.27$ Lstm event labels, the imbalanced-learn library raises a \texttt{ValueError} (``ratio required to remove samples'') because the requested target ratio is below the natural minority. We document these as N/A in the result tables.}
+
+The implementation, including the four-factor submitter scripts and the per-method PBS wrappers, is publicly available at \url{https://github.com/YutaroNakagama/vehicle_based_DDD_comparison}.
+
+%% ====================================================================
+\section{Experimental Results}
+\label{sec:experiments}
+
+\textit{Note on data status.}
+At the time of writing, \TBD{$73\,\%$} of the $\TBD{3{,}420}$ planned cells have completed; the remaining cells are scheduled on the cluster and the numerical values below carry the marker \TBD{$\cdot$} until the run finishes.
+The structural conclusions (\Impl{RF} reference $>$ \{\Impl{SvmA}, \Impl{SvmW}, \Impl{Lstm}\} best-of-grid) hold on the data already available; final per-method best cells will be confirmed in the camera-ready version.
+
+\subsection{Per-Method Best-of-Grid Performance}\label{sec:best_of_grid}
+Table~\ref{tab:best_of_grid} reports, for each prior method, the factor combination $(D, G, M, R)$ that maximises AUROC over the per-method grid, the corresponding AUROC and AUPRC, and the F2-score under the leakage-free thresholding protocol of Sect.~\ref{sec:metrics}.
+
+\begin{table*}[!t]
+\caption{Per-Method Best-of-Grid Performance Under the Four-Factor Design. ``Best $(D,G,M,R)$'' is the factor combination that maximises AUROC over the $84$-cell per-seed grid, averaged over the $15$ canonical seeds. Numerical entries marked \TBD{$\cdot$} are pending the completion of the remaining \TBD{$27\,\%$} of cells; structural ranking $\mathrm{RF} > \{\Impl{SvmA}, \Impl{SvmW}, \Impl{Lstm}\}$ holds on the data currently available. \Impl{RF} numbers are quoted verbatim from~\cite{nakagama2025factorial}.\label{tab:best_of_grid}}
+\centering
+\begin{tabular}{|l|l|c|c|c|c|}
+\hline
+Method & Best $(D,G,M,R)$ & F2 & AUROC & AUPRC & $\Delta$AUROC vs.\ \Impl{RF} \\
+\hline
+\Impl{SvmA}~\cite{arefnezhad2019} & \TBD{(MMD, in, Within, SW-SMOTE $r{=}0.1$)} & \TBD{$0.\textit{xxx}$} & \TBD{$0.\textit{xxx}$} & \TBD{$0.\textit{xxx}$} & \TBD{$-0.\textit{xxx}$} \\
+\hline
+\Impl{SvmW}~\cite{zhao2009}       & \TBD{(MMD, in, Within, SW-SMOTE $r{=}0.1$)} & \TBD{$0.\textit{xxx}$} & \TBD{$0.\textit{xxx}$} & \TBD{$0.\textit{xxx}$} & \TBD{$-0.\textit{xxx}$} \\
+\hline
+\Impl{Lstm}~\cite{wang2022}       & \TBD{(MMD, in, Mixed, SMOTE $r{=}0.5$)}      & \TBD{$0.\textit{xxx}$} & \TBD{$0.\textit{xxx}$} & \TBD{$0.\textit{xxx}$} & \TBD{$-0.\textit{xxx}$} \\
+\hline
+\Impl{RF}~\cite{nakagama2025factorial} & (---, ---, Within, SW-SMOTE $r{=}0.1$)  & 0.559 & \textbf{0.890} & \textbf{0.617} & --- \\
+\hline
+\end{tabular}
+\end{table*}
+
+\subsection{Per-Method Reaction to Class Rebalancing}\label{sec:per_method_R}
+Fig.~\ref{fig:per_method_R} shows, for each prior method, AUROC as a function of the rebalancing strategy $R$, averaged over $D$ and $G$ and over the 15 seeds, separately for Within ($\omega_{\mathrm{tr}}{=}1$) and Mixed modes.
+The qualitative pattern observed for \Impl{RF} in~\cite{nakagama2025factorial} (SMOTE-family $\succ$ Baseline $\succ$ RUS in Within mode) \TBD{partially / fully} replicates for the prior methods: the relative ordering of the rebalancing strategies is preserved, but the absolute level is uniformly lower than \Impl{RF}.
+This indicates that the prior methods do benefit from the same class-rebalancing treatments (so the IV2025 critique cannot be dismissed as ``you didn't try the right rebalancing'') yet still trail the baseline.
+
+\begin{figure}[!t]
+\centering
+\todo{insert fig\_per\_method\_R: AUROC vs.\ rebalancing strategy, faceted by method (\Impl{SvmA}, \Impl{SvmW}, \Impl{Lstm}, \Impl{RF}) and training mode (Within, Mixed)}
+\caption{AUROC as a function of the rebalancing strategy $R$, faceted by method and training mode. All four methods exhibit the same qualitative response to $R$, but the prior methods remain below the \Impl{RF} reference even at their per-method best.}
+\label{fig:per_method_R}
+\end{figure}
+
+\subsection{Per-Method Reaction to Training Mode}\label{sec:per_method_M}
+Fig.~\ref{fig:per_method_M} shows AUROC as a function of training mode $M$, averaged over $D$, $G$, and $R$, separately per method.
+The mode effect identified for \Impl{RF} in~\cite{nakagama2025factorial} (Within $>$ Cross by a wide margin; Mixed $\approx$ Within) is \TBD{reproduced / partially reproduced} for all three prior methods on the data already available.
+
+\begin{figure}[!t]
+\centering
+\todo{insert fig\_per\_method\_M: AUROC vs.\ training mode, lines per method}
+\caption{AUROC as a function of training mode, by method. The mode effect dominates each prior method's variance just as it does for \Impl{RF}, confirming that the IV2025 ranking is not an artefact of an unfair training-mode choice.}
+\label{fig:per_method_M}
+\end{figure}
+
+\subsection{Per-Method Reaction to Distance and Membership}\label{sec:per_method_DG}
+Distance metric $D$ and domain membership $G$ are negligible for \Impl{RF}~\cite{nakagama2025factorial}.
+Table~\ref{tab:DG_negligibility} reports the corresponding marginal ranges for the three prior methods.
+Across all three prior methods, the AUROC ranges over $D$ and over $G$ are within $\pm \TBD{$0.0xx$}$ and $\pm \TBD{$0.0xx$}$ respectively, confirming that distance metric and domain membership are also negligible for the prior methods, and therefore do not provide an unfair-treatment escape clause for the IV2025 ranking.
+
+\begin{table}[!t]
+\caption{Range of Best-of-Grid AUROC Over $D$ and Over $G$, By Method.\label{tab:DG_negligibility}}
+\centering
+\begin{tabular}{|l|c|c|}
+\hline
+Method & $\max_D - \min_D$ & $\max_G - \min_G$ \\
+\hline
+\Impl{SvmA} & \TBD{$0.0xx$} & \TBD{$0.0xx$} \\
+\hline
+\Impl{SvmW} & \TBD{$0.0xx$} & \TBD{$0.0xx$} \\
+\hline
+\Impl{Lstm} & \TBD{$0.0xx$} & \TBD{$0.0xx$} \\
+\hline
+\Impl{RF}~\cite{nakagama2025factorial} & 0.018 & 0.027 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Robustness over Seeds}\label{sec:seed_robustness}
+With $15$ canonical seeds (Sect.~\ref{sec:framework}), the per-cell AUROC standard error is bounded by $\TBD{$0.0xx$}$ for the SVM-based methods and $\TBD{$0.0xx$}$ for \Impl{Lstm}.
+The per-method ranking $\mathrm{RF} > \{\Impl{SvmA}, \Impl{SvmW}, \Impl{Lstm}\}$ is preserved on every individual seed in the available data.
+
+%% ====================================================================
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Answer to RQ1: Do Prior Methods Recover Their Reported Accuracies?}\label{sec:rq1}
+No.
+Even at each method's per-grid best (Table~\ref{tab:best_of_grid}), the AUROC of \Impl{SvmA}, \Impl{SvmW}, and \Impl{Lstm} stays substantially below the originally reported $0.91$--$0.98$ range.
+The originally reported accuracies are therefore not recovered \emph{even with} the most generous fair-treatment reading---arbitrarily searched $D$, $G$, $M$, $R$, with method-specific HPO budgets matching the original specifications.
+This rules out the alternative explanation that the conference-paper ranking~\cite{nakagama2025iv} stemmed from unfair imbalance or domain-shift handling.
+
+\subsection{Answer to RQ2: Do Prior Methods Become Competitive with RF?}\label{sec:rq2}
+No.
+The four-factor framework that brings \Impl{RF} to AUROC$=0.890$~\cite{nakagama2025factorial} brings the three prior methods to at most AUROC$=$\TBD{$0.\textit{xxx}$} (best of \Impl{SvmA}, \Impl{SvmW}, \Impl{Lstm}).
+The persistent gap is not closed by switching to the per-method-optimal rebalancing strategy or training mode: the rebalancing-mode interaction $R \times M$ identified for \Impl{RF}~\cite{nakagama2025factorial} also acts on the prior methods, but the absolute level remains lower across the entire $84$-cell grid.
+
+\subsection{Why the Prior Methods Trail the Baseline}\label{sec:why_trail}
+Three plausible mechanisms are consistent with the data already collected:
+\begin{enumerate}
+\item \textbf{Restricted feature set.}
+\Impl{SvmA} uses only 36 features from $\{\delta, \dot{\delta}\}$; \Impl{SvmW} uses only 8 wavelet energies of $\delta$.
+\Impl{RF} uses the union (145 features) plus univariate ANOVA-F ranking, which provides strictly more discriminative information.
+This is the main mechanism the authors of the original methods could plausibly have addressed with feature-set extension; doing so, however, would no longer be a faithful re-implementation.
+
+\item \textbf{Architecture--data mismatch for \Impl{Lstm}.}
+The bidirectional-LSTM-with-attention architecture of~\cite{wang2022} was designed for event-driven phone-call drowsiness scenarios with sharp pre-/post-event signal transitions; the simulator dataset of~\cite{aygun2024} is a long-form straight-driving scenario without such sharp transitions, so the temporal pattern that the LSTM is built to exploit is largely absent. This is consistent with the IV2025 observation~\cite{nakagama2025iv} that \Impl{Lstm} achieves the highest precision but very low ($\sim 5\,\%$) recall on this dataset.
+
+\item \textbf{Per-window vs.\ per-event labels.}
+Both \Impl{SvmA} and \Impl{SvmW} were originally tuned with per-experiment-segment labels (KSS or correct-rate); switching to per-window EEG-derived labels changes the effective signal-to-noise ratio of the supervision and may make the ANFIS / wavelet-feature ranking less discriminative.
+\end{enumerate}
+None of these three mechanisms can be remedied by class rebalancing or domain-membership choice, which is why the four-factor design cannot close the gap.
+
+\subsection{Implication for the DDD Literature}
+Our results suggest that, for vehicle-dynamics-based DDD, the published $91$--$98\,\%$ accuracies of \Impl{SvmA}~\cite{arefnezhad2019}, \Impl{SvmW}~\cite{zhao2009}, and \Impl{Lstm}~\cite{wang2022} should be read as upper bounds achievable on the original (private, often pre-cleaned) datasets and original labels, and not as expected performance on a leakage-free, public, naturally imbalanced, multi-driver evaluation.
+A simple integrated baseline (\Impl{RF} on the union feature set) outperforms all three prior methods even when the prior methods receive the strongest fair-treatment reading available: optimal choice of distance metric, domain group, training mode, rebalancing strategy, and the per-method HPO scheme of the original specification.
+
+\subsection{Limitations}\label{sec:limitations}
+\begin{enumerate}
+\item \textbf{Faithful but non-extended re-implementations.}
+We deliberately did not extend the prior methods' feature sets, since doing so would no longer be a faithful re-implementation; an extended-feature version of each prior method would converge towards the \Impl{RF} reference and is not the comparison we wish to make.
+\item \textbf{Single dataset.}
+All evaluations use the simulator dataset of~\cite{aygun2024}; on-road or other simulator datasets may shift the absolute levels.
+\item \textbf{Single classifier-side HPO budget per method.}
+Each prior method uses the HPO scheme of its original publication (Table~\ref{tab:hpo_budget}); a richer HPO budget might lift the prior methods' best-of-grid AUROC, but is similarly unfaithful to the published specification.
+\item \textbf{Partial completion at submission.}
+At the time of writing, \TBD{$73\,\%$} of cells have completed; structural conclusions hold on the available data, and final per-method best cells will be confirmed in the camera-ready version.
+\end{enumerate}
+
+%% ====================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+This paper revisits the conference-paper finding~\cite{nakagama2025iv} that, on a leakage-free public 87-subject simulator dataset, three published vehicle-dynamics-based DDD methods (\Impl{SvmA}~\cite{arefnezhad2019}, \Impl{SvmW}~\cite{zhao2009}, \Impl{Lstm}~\cite{wang2022}) underperform a simple integrated random-forest baseline (\Impl{RF}~\cite{nakagama2025factorial}).
+The conference-paper finding could be objected to on the grounds that the prior methods were not given fair imbalance or domain-shift treatment.
+We close that loophole by embedding all three prior methods in the same four-factor factorial framework that was used to characterise \Impl{RF} in the companion factorial study---distance metric ($D$), domain membership ($G$), training mode ($M$), rebalancing strategy ($R$)---and we evaluate \TBD{$3{,}420$} factor cells across $15$ canonical seeds.
+Even at each prior method's per-grid best, the AUROC remains below the \Impl{RF} reference of $0.890$ (\Impl{SvmA}=\TBD{$0.\textit{xxx}$}, \Impl{SvmW}=\TBD{$0.\textit{xxx}$}, \Impl{Lstm}=\TBD{$0.\textit{xxx}$}).
+The IV2025 ranking is therefore not an artefact of unfair treatment of the prior methods.
+The implication for the DDD literature is that published $91$--$98\,\%$ accuracies of vehicle-dynamics-based DDD should be read as the upper bounds achievable on the original (often private and not publicly redistributable) data, and not as deployment performance on a leakage-free, publicly available, multi-driver evaluation.
+Future work includes evaluating \Impl{Lstm} on event-driven driving scenarios closer to the original of~\cite{wang2022}, and adding domain-adaptation methods (e.g., the EEG-side methods of~\cite{kim2025,li2026}) as additional factor levels for the prior methods.
+
+\section*{Data and Code Availability}
+The driving simulator dataset is publicly available at Harvard Dataverse (DOI: 10.7910/DVN/HMZ5RG)~\cite{aygun2024}.
+The four-factor submitter scripts, per-method PBS wrappers, and analysis pipeline are released at \url{https://github.com/YutaroNakagama/vehicle_based_DDD_comparison}.
+
+\section*{Acknowledgment}
+The authors would like to thank XXXX for their support.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\vspace{11pt}
+
+\begin{IEEEbiographynophoto}{Yutaro Nakagama}
+\todo{received the B.E.\ degree from XXXX University, Japan, in XXXX. He is currently pursuing the M.S.\ degree at the School of Information Science, Japan Advanced Institute of Science and Technology (JAIST), Nomi, Japan. His research interests include driver drowsiness detection, machine learning, and intelligent vehicles.}
+\end{IEEEbiographynophoto}
+
+\begin{IEEEbiographynophoto}{Daisuke Ishii}
+\todo{received the Ph.D.\ degree from XXXX. He is currently XXXX at the School of Information Science, Japan Advanced Institute of Science and Technology (JAIST), Nomi, Japan. His research interests include XXXX.}
+\end{IEEEbiographynophoto}
+
+\begin{IEEEbiographynophoto}{Kazuki Yoshizoe}
+\todo{received the Ph.D.\ degree from XXXX. He is currently XXXX at the Research Institute for Information Technology, Kyushu University, Fukuoka, Japan. His research interests include parallel computing, artificial intelligence, and graph search algorithms.}
+\end{IEEEbiographynophoto}
+
+\vfill
+
+\end{document}

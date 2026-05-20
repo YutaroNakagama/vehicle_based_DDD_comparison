@@ -87,3 +87,7 @@ docs/experiments/results/exp2-analysis/latex/*.blg
 docs/experiments/results/exp2-analysis/latex/*.log
 docs/experiments/results/exp2-analysis/latex/*.tex.bak
 docs/experiments/results/exp2-analysis/latex/refs/
+docs/experiments/results/exp3-analysis/latex_hpc/*.blg
+docs/experiments/results/exp3-analysis/latex_hpc/*.log
+docs/experiments/results/exp3-analysis/latex_hpc/*.tex.bak
+docs/experiments/results/exp3-analysis/latex_hpc/*.tex.bak_*
