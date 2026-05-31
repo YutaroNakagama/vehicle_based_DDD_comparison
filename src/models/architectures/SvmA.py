@@ -25,12 +25,22 @@ import pandas as pd
 import joblib
 import logging
 from scipy import stats
-from sklearn.svm import SVC
+from sklearn.svm import SVC as _SklearnSVC
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, f1_score
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.preprocessing import MinMaxScaler
 from pyswarm import pso
 import multiprocessing as _mp
+
+_USE_CUML = os.environ.get("SVMA_USE_CUML", "0") == "1"
+if _USE_CUML:
+    import cuml
+    from cuml.svm import SVC as _CumlSVC
+    cuml.set_global_output_type("numpy")
+    SVC = _CumlSVC
+    logging.getLogger().info("[SvmA] cuML GPU SVC enabled (SVMA_USE_CUML=1)")
+else:
+    SVC = _SklearnSVC
 
 from src.config import MODEL_PKL_PATH
 from src.models.sampling.oversampling import apply_oversampling
