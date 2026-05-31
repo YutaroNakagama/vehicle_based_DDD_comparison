@@ -529,3 +529,93 @@ PSO worker pool (4 processes per job) spawns after data loading + normalization 
 | PSO progress (est.) | ~73% through PSO phase (~5 h CPU remaining = ~9 h wall) |
 | **First DONE expected** | ~2026-05-19 16:30 JST |
 | **All 36 done ETA** | ~2026-05-23 04:30 JST (4.5 batches × 24 h/batch from 07:27) |
+
+---
+
+# Phase 5 — Post-Reboot SvmA Relaunch (2026-05-22 → in flight at 2026-05-24)
+
+## Why a relaunch was needed
+
+Between Phase 4 launch (2026-05-19 07:33 JST) and 2026-05-22, the original
+Phase 1 SvmA pool (8 workers, started 2026-05-18 07:27 JST) **never produced
+a single `_within.json`** despite >100 h of accumulated CPU time. Multiple
+restart cycles were attempted to diagnose:
+
+| Date | Action | Outcome |
+|---|---|---|
+| 2026-05-20 ~03:30 JST | Restart Phase 1 SvmA with 12 workers (`svma_phase1_12w.{log,err}`) | 0 / 36 DONE; per-job logs only contain `STARTED`, no PSO completion |
+| 2026-05-20 ~22:00 JST | SvmA smoke-test single-job run (`svma_smoketest.{log,err}`) | Reproduced same hang in PSO body — diagnosed as **PSO `n_processes=1` serial scan over swarmsize=50 × maxiter=100 = 5000 SVM fits** at ~20–30 s each → 28–42 h pure PSO wall, exceeding the 24 h baseline expectation. No bug — just under-estimated runtime. |
+| 2026-05-21 22:46 JST | Relaunch with 20 workers (`launcher_svma_20w.{log,err}`) — full 36-job Phase 1 reverse-skip-0 run | All 20 STARTed simultaneously; CPU saturated at ~100 % |
+| 2026-05-22 23:26 JST | **PC reboot** (Windows Update / power event) — all SvmA workers + Phase 2/3/4 WSL2 Lstm + SvmW Phase 2 launchers terminated mid-PSO. CPU-time baseline snapshotted in `cpu_baseline.json` / `cpu_baseline_ts.txt`. |
+| 2026-05-23 11:03:53 JST | **Post-reboot relaunch** — `launcher_svma_20w_post.{log,err}` re-spawns 20 SvmA workers from scratch (launcher logs marker `RELAUNCH at 2026-05-23 11:03:52 (post-reboot)`). |
+| 2026-05-23 12:27 JST | `auto_recover_2026-05-23_12-26-20.log` — auto-recovery script attempted to re-launch WSL2 Lstm Phase 2/3 and SvmW Phase 2, detected WSL2 distro unreachable (`Wsl/Service/0x8007274c`) and SvmA already running; skipped both. **WSL2 batches not restarted.** |
+| 2026-05-23 15:53 JST | `paused_pids_2026-05-23_15-53-37.txt` — 21 SvmA PIDs paused briefly (free system load), then resumed. |
+
+## Current state (2026-05-24 20:43 JST, ~33.7 h after relaunch)
+
+| Metric | Value |
+|---|---|
+| Active python procs | **21** (1 launcher PID 3976 + 20 SvmA workers, all started 2026-05-23 11:03:53) |
+| Per-worker CPU time | **~99 600 s ≈ 27.7 h CPU** (≈ 82 % single-core duty over 33.7 h wall) |
+| Per-worker RAM | 119–372 MB (variation = different distance/domain conditions) |
+| Per-job logs | All workers log line: `[PSO] Starting PSO swarmsize=50 maxiter=100 n_processes=1` at 2026-05-23 11:04:58 → **no log lines since** (PSO body is silent by design — pyswarm has no per-iter callback hook). |
+| Within JSONs (Phase 1 SvmA) | **0 / 36** |
+| Cross JSONs (Phase 1 SvmA) | **0 / 36** |
+| Last `_within.json` save in `models/SvmA/<jobid>/` | 2026-05-23 11:04:45 — **early checkpoint** (scaler + selected_features only; the benign `Model object is None — skipping save` log from Verification recipe step 4). |
+| Failures | 0 (no `FAIL` / `Train FAILED` in launcher.err) |
+
+**Health assessment:** workers are **alive and computing** (steady CPU
+accrual, no zombie processes, no error in logs). Silent logs are
+**expected** for PSO body; 33.7 h elapsed is consistent with the smoke-test
+diagnosis (28–42 h PSO wall when swarmsize=50 × maxiter=100 serial). First
+DONE projected within the next few hours; all 36 expected ~2026-05-26 if
+no further interruption.
+
+**Do not kill** these processes — each carries ~27.7 h of accumulated
+PSO work that would be lost on restart.
+
+## WSL2 Lstm batches (Phase 2 + Phase 3): final on-disk count
+
+| Tree | Within JSONs on disk |
+|---|---|
+| `results/outputs/evaluation/Lstm/` | **434** |
+| `results/outputs/evaluation/SvmW/` | **148** |
+| `results/outputs/evaluation/SvmA/` | **0 (directory does not exist)** |
+
+Lstm scope (Phase 1 36 + Phase 2 180 SW-SMOTE + Phase 3 270 non-SW-SMOTE
+= 486 expected) is at **434 / 486 ≈ 89 %**. The 52 missing jobs are the
+non-SW-SMOTE conditions that were still in flight in WSL2 at the
+2026-05-22 reboot and never re-launched (auto-recover failed because the
+WSL2 distro was unreachable post-reboot). A manual WSL2 re-launch is
+**deferred** until the Phase 1 SvmA pool completes — sharing 20 CPU
+threads + WSL2 GPU work risks contention.
+
+SvmW = 148 ≈ Phase 1 (36) + Phase 2 (108) + 4 pre-existing HPC outputs.
+Phase 2 SvmW is **complete**; no further action.
+
+## Expected artifacts not yet on disk
+
+| Item | Why missing | Action |
+|---|---|---|
+| SvmA Phase 1 within/cross JSONs (0 / 36) | All 20 workers still in PSO body (silent phase) | Wait — first DONE within hours; full pool done ~2026-05-26 |
+| SvmA Phase 2 within/cross JSONs (0 / 108) | Launcher PID killed at 2026-05-22 reboot; not yet re-launched | Re-launch `local_exp3_svma_phase2_launcher.py` after Phase 1 finishes |
+| Lstm Phase 3 within/cross JSONs (52 / 270 missing) | WSL2 distro unreachable since 2026-05-22 reboot | Restart WSL2 + re-run `local_exp3_lstm_wsl2_other_launcher.py` |
+
+## Lessons captured (added to operations_log.md Issue list)
+
+1. **PSO body is silent** — `pyswarm` does not emit per-iter logs. Long
+   silent stretches (~28–42 h for swarmsize=50 × maxiter=100 serial)
+   look like a hang but are normal. Use CPU-time accrual on the PID
+   (`Get-Process | Select Id,CPU`) — not log timestamps — to assess
+   health.
+2. **`SVMA_PSO_PROCESSES > 1` is the right knob** — Phase 4 used 4 PSO
+   processes per worker which reduces per-job wall ~4× (~7–9 h vs
+   ~28–42 h). Phase 1 / Phase 5 launchers still default to 1 for
+   backward compatibility; **future Phase 1 SvmA replays should set
+   `SVMA_PSO_PROCESSES=4`** (or use the Phase 2 parallel-PSO launcher).
+3. **WSL2 distro is not crash-safe** — after host reboot, WSL2 service
+   sometimes returns `0x8007274c` and refuses to start the distro
+   silently from a Windows Scheduled Task. The auto-recover script
+   should explicitly `wsl --shutdown` + `wsl -d Ubuntu -- echo ok`
+   probe before launching jobs; if the probe fails, alert the user
+   instead of skipping.
