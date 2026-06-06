@@ -1,0 +1,3 @@
+[submodule "docs/papers/TIV2026"]
+	path = docs/papers/TIV2026
+	url = git@github.com:YutaroNakagama/TIV2026.git
