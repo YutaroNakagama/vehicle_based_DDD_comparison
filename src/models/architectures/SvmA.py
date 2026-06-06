@@ -42,6 +42,12 @@ if _USE_CUML:
 else:
     SVC = _SklearnSVC
 
+# Kernel cache (MiB). 200 is libsvm/cuml default; raise to ~4096 on cuML to keep
+# the RBF kernel matrix mostly resident in VRAM and cut SMO recomputation.
+_SVMA_CACHE_SIZE_MIB = int(
+    os.environ.get("SVMA_CACHE_SIZE_MIB", "4096" if _USE_CUML else "200")
+)
+
 from src.config import MODEL_PKL_PATH
 from src.models.sampling.oversampling import apply_oversampling
 
@@ -367,7 +373,7 @@ class SVMObjective:
         X_tr = self.X_train_arr[:, mask]
         X_va = self.X_val_arr[:, mask]
 
-        svm = SVC(kernel='rbf', C=1.0, gamma='scale')
+        svm = SVC(kernel='rbf', C=1.0, gamma='scale', cache_size=_SVMA_CACHE_SIZE_MIB)
         svm.fit(X_tr, self.y_train_arr)
         y_pred = svm.predict(X_va)
         mse = float(0.5 * np.mean((y_pred - self.y_val_arr) ** 2))
@@ -492,7 +498,7 @@ def _grid_search_svm(
     best_C, best_gamma = 1.0, 0.1
     for C in [0.1, 1.0, 10.0, 100.0]:
         for gamma in [0.001, 0.01, 0.1, 1.0]:
-            svm = SVC(kernel='rbf', C=C, gamma=gamma)
+            svm = SVC(kernel='rbf', C=C, gamma=gamma, cache_size=_SVMA_CACHE_SIZE_MIB)
             svm.fit(X_train, y_train)
             y_pred = svm.predict(X_val)
             f1_val = f1_score(y_val, y_pred, average='binary', zero_division=0)
@@ -753,7 +759,7 @@ def SvmA_train(
         X_train_sel = X_train_normed.copy()
         X_val_sel = X_val_normed.copy()
 
-    svm_final = SVC(kernel='rbf', C=best_C, gamma=best_gamma, probability=True)
+    svm_final = SVC(kernel='rbf', C=best_C, gamma=best_gamma, probability=True, cache_size=_SVMA_CACHE_SIZE_MIB)
     svm_final.fit(X_train_sel, y_train)
 
     model_dir = f"{MODEL_PKL_PATH}/{model}"
