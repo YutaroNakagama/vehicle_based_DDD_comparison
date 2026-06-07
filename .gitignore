@@ -11,6 +11,14 @@ results/**
 !results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/*.pdf
 !results/README.md
 
+# ===== Experiment results docs (confidential, not tracked) =====
+# Everything under docs/experiments/results/ is excluded; only the TIV2026
+# submodule reference (which lives in its own private repo) is kept.
+docs/experiments/results/**
+!docs/experiments/results/exp2-analysis/
+!docs/experiments/results/exp2-analysis/paper/
+!docs/experiments/results/exp2-analysis/paper/TIV2026
+
 # ===== Reports (only final figures/tables tracked) =====
 reports/figures/**
 !reports/figures/README.md
