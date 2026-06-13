@@ -2,6 +2,22 @@
 
 This file lists the experiment conditions used in "Experiment 3: Prior research model replication (domain_train unified version)."
 
+> ## ⚠️ Paper-source scope (LOCAL runs) — read first
+>
+> **The sections below document the original HPC experiment design. HPC results are reference-only; the paper's numbers come from LOCAL runs, whose scope was deliberately NARROWED:**
+>
+> | Parameter | HPC design (below) | **Local paper-source runs** |
+> |---|---|---|
+> | Distance metric | mmd, dtw, wasserstein (3) | **wasserstein only** — exp2 Sobol found the distance metric negligible (total-order index ~1–2%); Wasserstein was the marginal best. mmd/dtw eval JSONs may exist but are unused. |
+> | Target ratios | 0.1, 0.5 | **0.3, 0.5** — ratio 0.1 is infeasible for Lstm (event-based labels, natural minority ≈27% > 10% → imblearn cannot downsample; operations_log Issue #15). 0.3/0.5 is the lowest feasible set common to all 3 models. |
+> | Seeds | 15 (0,1,3,7,13,42,99,123,256,512,777,999,1234,1337,2024) | **12: 0, 7, 42, 99, 123, 256, 512, 777, 1000, 1337, 2024, 2025** |
+> | Rebalancing | baseline, smote_plain, smote(sw_smote), undersample | **subject-wise SMOTE (`imbalv3` / sw_smote)** is the primary reported condition |
+> | SvmA compute | CPU sklearn (HPC) | **cuML GPU** (RTX 3060) via `scripts/python/train/local_exp3_svma_cuml_launcher.py` |
+>
+> **Local tag convention:** `prior_{MODEL}_imbalv3_knn_{distance}_{domain}_domain_train_split2_subjectwise_ratio{0.3|0.5}_s{seed}` (note `imbalv3` + `subjectwise` + `ratio`, absent from the HPC convention in the "Tag Naming Convention" section below).
+>
+> **SvmA result caveat:** the faithful Arefnezhad-2019 replication yields **AUROC ≈ 0.5 (near-chance)** under cross-subject domain shift (steering-only ANFIS-SVM does not transfer). This is a genuine negative result, verified robust to the tuning/selection criterion (an AUROC-based variant also gave ≈0.5), not a tuning artifact — consistent with SvmW (~0.51–0.56, also weak) vs Lstm (0.69–0.83).
+
 > **Revision history:** Migrated from the old split2 version (source_only/target_only modes, 504 jobs) to the domain_train unified version (252 jobs).
 > The old version trained the same model twice for each domain using source_only and target_only,
 > whereas domain_train trains each domain only once with 70/15/15 split and evaluates twice (within-domain / cross-domain).
