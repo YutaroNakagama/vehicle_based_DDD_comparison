@@ -8,6 +8,7 @@ This file lists the experiment conditions used in "Experiment 3: Prior research 
 >
 > | Parameter | HPC design (below) | **Local paper-source runs** |
 > |---|---|---|
+> | Models | SvmW, SvmA, Lstm (3) | **RF, SvmW, SvmA, Lstm (4)** — RF (plain `RandomForestClassifier`, distinct from exp2's BalancedRF) added as a 4th baseline under the same domain_train + SW-SMOTE setup; Optuna 100 trials. Launcher `scripts/python/train/local_exp3_rf_launcher.py`. |
 > | Distance metric | mmd, dtw, wasserstein (3) | **wasserstein only** — exp2 Sobol found the distance metric negligible (total-order index ~1–2%); Wasserstein was the marginal best. mmd/dtw eval JSONs may exist but are unused. |
 > | Target ratios | 0.1, 0.5 | **0.3, 0.5** — ratio 0.1 is infeasible for Lstm (event-based labels, natural minority ≈27% > 10% → imblearn cannot downsample; operations_log Issue #15). 0.3/0.5 is the lowest feasible set common to all 3 models. |
 > | Seeds | 15 (0,1,3,7,13,42,99,123,256,512,777,999,1234,1337,2024) | **12: 0, 7, 42, 99, 123, 256, 512, 777, 1000, 1337, 2024, 2025** |
@@ -17,6 +18,8 @@ This file lists the experiment conditions used in "Experiment 3: Prior research 
 > **Local tag convention:** `prior_{MODEL}_imbalv3_knn_{distance}_{domain}_domain_train_split2_subjectwise_ratio{0.3|0.5}_s{seed}` (note `imbalv3` + `subjectwise` + `ratio`, absent from the HPC convention in the "Tag Naming Convention" section below).
 >
 > **SvmA result caveat:** the faithful Arefnezhad-2019 replication yields **AUROC ≈ 0.5 (near-chance)** under cross-subject domain shift (steering-only ANFIS-SVM does not transfer). This is a genuine negative result, verified robust to the tuning/selection criterion (an AUROC-based variant also gave ≈0.5), not a tuning artifact — consistent with SvmW (~0.51–0.56, also weak) vs Lstm (0.69–0.83).
+>
+> **Run status (2026-06-20):** RF, SvmW, Lstm = **48/48 wasserstein cells COMPLETE**; SvmA = **37/48** (cuML GPU, in progress, **ETA ~2026-06-22**). Integrity verified: no abnormal termination (0 empty/NaN/missing-AUC), scope matches (12 canonical seeds × in/out × ratio 0.3/0.5, no stray seeds). Result pattern — RF ≈0.52, SvmA ≈0.49–0.50, SvmW ≈0.51–0.56 (classical baselines ≈chance) vs **Lstm 0.69–0.83** (only model that transfers cross-subject).
 
 > **Revision history:** Migrated from the old split2 version (source_only/target_only modes, 504 jobs) to the domain_train unified version (252 jobs).
 > The old version trained the same model twice for each domain using source_only and target_only,
