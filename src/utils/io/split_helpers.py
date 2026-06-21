@@ -369,10 +369,18 @@ def split_data_domain_train(
         data, model_name=model_name
     )
 
+    # WITHIN-SUBJECT temporal split (Arefnezhad/IV2015 intended protocol).
+    # Timestamp is RELATIVE (each subject restarts at 0 → ~1300 s), so sorting the
+    # pooled domain data by Timestamp alone interleaves all subjects by time: the
+    # early portion of EVERY subject goes to train and the late portion of EVERY
+    # subject goes to test. The same subjects therefore appear in train and test
+    # (split chronologically per subject) — the personalized within-subject
+    # evaluation that exp2 used. (Was ("subject_id","Timestamp"), which instead
+    # grouped by subject and produced a subject-held-out / cross-subject split.)
     idx_tr, idx_va, idx_te = time_stratified_three_way_split(
         df_lab,
         label_col="label",
-        sort_keys=("subject_id", "Timestamp"),
+        sort_keys=("Timestamp",),
         train_ratio=train_ratio,
         val_ratio=val_ratio,
         test_ratio=test_ratio,
