@@ -5,6 +5,25 @@
 
 ---
 
+## ✅ Verification result (2026-06-21) — RESOLVED
+
+**Answer: NO.** exp2 RF ≈ 0.89 is **not** a reproducible vehicle→drowsiness signal — it is an
+**evaluation-protocol artifact** (`target_only` within-subject temporal split **+** SMOTE oversampling).
+The honest, cross-subject vehicle AUROC is **≈ 0.49–0.53 (chance)**, which matches **exp3 RF = 0.52**.
+
+- **Test A** (compute node `lcpcc-010`) on HPC `data/processed/common/`: **VEHICLE (steering) AUROC = 0.486**, EEG (Channel_*) = 0.588.
+- **Stored HPC eval JSONs** (no re-run): the 0.89–0.90 is recorded **only** for `target_only` + SMOTE; the *same* data/features give **baseline 0.633** and **source_only (cross-domain) 0.527**.
+- **Decision (§5, branch 1): correct exp2's RF = 0.890; keep exp3 RF ≈ 0.52 as the honest result.**
+
+> **Caveat:** the EEG self-check scored **0.588, not ~0.9+**, so HPC `data/processed/common` still
+> carries the **pre-fix (mis-aligned) KSS labels**. This does **not** change the verdict — the verdict
+> rests on the *stored exp2 artifacts* (§7.2), which are independent of any fresh re-run — but the
+> label-fix regeneration is still required before publishing the corrected exp3 numbers (§7.3).
+
+Full evidence, commands, and tables in **§7** below.
+
+---
+
 ## 0. TL;DR — the ONE decisive test
 
 Run **Test A** (standalone sklearn, no `train.py`/TensorFlow needed) on the HPC `data/processed/common/`.
@@ -32,10 +51,12 @@ Two bugs were found and **fixed locally** (uncommitted working-tree edits in `sr
 - ❌ **EEG feature leak** — exp2 RF `selected_features_*.pkl` checked on HPC: **0/40 contain `Channel_*`**; all are 10 steering features (`Steering_DominantFreq`, `SteeringSpeed_*`, …). exp2 did NOT use EEG.
 - ❌ **Random-split fallback leak** — `grep "Class collapsed|fallback to random" logs/` = **0 firings**.
 - ❌ **Mode (target_only vs domain_train)** — locally these give an *identical* split and AUROC≈0.49–0.52. So the 0.89↔0.52 gap is **HPC-data vs local-data**, NOT the eval mode.
+  - ⚠️ **Refined by §7.2 (2026-06-21):** this holds only for the *local clean* split. The **stored exp2** `target_only` ran `subject_time_split` (**within-subject** — same subjects in train+test) **+ SMOTE**, and on the *same* HPC data a clean subject-held-out split scores **0.486** (Test A). So the true driver of 0.89 is the **protocol (within-subject split) + oversampling**, demonstrable *within* HPC data — not an HPC-vs-local data difference.
 
 ### What we know about exp2's 0.89 (HPC stored eval JSONs)
 `imbalv3 / wasserstein / in_domain`, by mode (median AUROC): **target_only = 0.900**, mixed = 0.839, source_only = 0.625.
 → Only the within-same-domain mode (`target_only`) is high. This *pattern* (target_only≫source_only) is what a clean subject-held-out split should NOT produce if the signal were real and stable; it is consistent with some within-domain leak/optimism on HPC data — hence Test A on the actual HPC data.
+→ **Confirmed (§7.2):** the high number requires `target_only` **and** SMOTE — baseline `target_only` = **0.633**, `source_only` = **0.508–0.527** on identical data/features.
 
 ---
 
@@ -157,4 +178,81 @@ grep -rh "Class collapsed\|fallback to random" logs/ 2>/dev/null | wc -l
 
 ---
 
-**Report back:** paste the Test A output (LABEL line + the two AUROCs). That single result selects the branch in §5 and ends the investigation.
+## 7. Verification results & evidence (2026-06-21)
+
+Executed on the HAKUSAN compute node `lcpcc-010` (PBS `SINGLE` queue, `conda python310`:
+pandas 2.3.1 / numpy 2.1.3 / sklearn 1.6.1).
+Artifacts: [`scripts/hpc/logs/testA_verify/`](../../scripts/hpc/logs/testA_verify) —
+`testA.py`, `testA.pbs`, `testA.out`, `label_diag.py`.
+
+### 7.1 Test A — standalone sklearn RF on HPC `data/processed/common/`
+
+The stored data has **no binary label column**: `KSS_Theta_Alpha_Beta` is the raw 9-level KSS scale
+(values 1–9), as are `KSS_Theta_Alpha_Beta_percent` and `theta_alpha_over_beta_label`. Test A was
+corrected to derive the label **exactly as production does**
+([`split_helpers.py::_prepare_df_with_label_and_features`](../../src/utils/io/split_helpers.py#L28)
+→ [`config.py` `KSS_BIN_LABELS` / `KSS_LABEL_MAP`](../../src/config.py#L186)):
+keep KSS ∈ {1,2,3,4,5,8,9} (drop 6,7), map 1–5 → 0 (alert), 8–9 → 1 (drowsy).
+
+```text
+rows: 70841 (87 subjects)        →  after KSS filter: 61765
+LABEL positive_rate: 0.0393      (drowsy 2426 / alert 59339)
+features: 52 steering(vehicle),  40 EEG(Channel_*)
+clean subject-held-out split (70/30 by subject):
+    VEHICLE (steering) AUROC = 0.4864
+    EEG (Channel_*)    AUROC = 0.588
+```
+
+- **VEHICLE ≈ 0.49 → chance.** Steering/vehicle features carry no transferable drowsiness signal under an honest subject-held-out split.
+- **EEG ≈ 0.59 (not ~0.9+) → the EEG self-check FAILS.** Because KSS is *derived from* EEG (θ+α)/β, a healthy pipeline must score ~0.9+ on EEG. 0.59 indicates the HPC `common` data still holds the **pre-fix, position-mis-aligned KSS labels** (the `kss.py` `remove_outliers`/`adjust_scores_length` bug) → §0 table **row 3** for the *fresh-run* path.
+
+### 7.2 Provenance of the 0.89 — from stored HPC artifacts (decisive evidence)
+
+The exp2 numbers need **no** re-run: they are recorded in **8,236 RF eval JSONs** under
+[`results/outputs/evaluation/RF/<jobid>/<jobid>[1]/eval_results_RF_*.json`](../../results/outputs/evaluation/RF).
+Each JSON stores `roc_auc`, `subject_list` (all 87), `mode`, `tag`, `timestamp`.
+
+**The 0.89–0.90 is recorded only for `target_only` + SMOTE.** Median stored `roc_auc`
+(`wasserstein` / `in_domain` / `split2`; identical 87 subjects; identical steering features):
+
+| mode | imbalance | n | median AUROC | max |
+|---|---|---:|---:|---:|
+| **target_only** | **imbalv3 (SMOTE)** | 60 | **0.907** | 0.930 |
+| target_only | smote_plain | 62 | 0.876 | 0.933 |
+| target_only | **baseline (none)** | 38 | **0.633** | 0.857 |
+| target_only | undersample | 61 | 0.590 | 0.884 |
+| mixed | imbalv3 (SMOTE) | 59 | 0.873 | 0.910 |
+| **source_only** | **imbalv3 (SMOTE)** | 65 | **0.527** | 0.620 |
+| source_only | baseline | 37 | 0.508 | 0.550 |
+
+Feature check on the 0.907 run (job `14880278`): its `selected_features_*.pkl` =
+**10 features, all steering, 0 EEG** (`Steering_DominantFreq`, `SteeringSpeed_DominantFreq`,
+`Steering_ZeroCrossingRate`, …) → the high score is **not** an EEG leak.
+
+**Mechanism (confirmed in code):**
+- `target_only` is hard-wired to `subject_time_split`
+  ([`model_pipeline.py` L166](../../src/models/model_pipeline.py#L166)) →
+  [`time_stratified_three_way_split` *per subject*](../../src/utils/io/split_helpers.py#L138):
+  **the same subjects appear in train and test** (split only by time) → within-subject leakage (baseline already 0.633 vs a true held-out 0.49).
+- SMOTE is then applied to the training data
+  ([`model_pipeline.py` Stage 4.5, L209](../../src/models/model_pipeline.py#L209)), compounding the optimism (0.633 → 0.907).
+- `source_only` trains on **disjoint** subjects → genuine cross-subject generalization → **≈ chance (0.51–0.53)**.
+
+A real signal would not collapse from 0.91 (within-subject) to 0.53 (cross-subject) on identical
+data/features, nor require SMOTE to appear. The asymmetry **target_only ≫ source_only** and
+**SMOTE ≫ baseline** is the fingerprint of a protocol artifact.
+
+### 7.3 Conclusion & next actions
+
+- **Verdict:** exp2 RF = 0.890 is an artifact of `target_only` (within-subject temporal split) + SMOTE.
+  Honest cross-subject vehicle→drowsiness RF AUROC ≈ **0.50–0.53** = exp3's 0.52.
+  → **§5 branch 1: correct exp2's 0.890; keep exp3 RF ≈ 0.52 as the honest result.**
+  Established from **stored artifacts alone** — independent of the EEG self-check / current label state.
+- **Still required before publishing the corrected numbers:** regenerate HPC `data/processed/common`
+  with the fixed `kss.py` (so the EEG self-check rises to ~0.9+), then re-run Test A as a clean
+  confirmation and re-run exp3 RF/SvmW/SvmA on the fixed labels (Lstm unaffected — uses `event_label`).
+
+---
+
+**Report back:** ✅ **Answered (2026-06-21).** Test A VEHICLE = 0.486 / EEG = 0.588, plus the
+stored-artifact provenance (§7.2), select **§5 branch 1** — correct exp2's 0.89; exp3 RF ≈ 0.52 is honest.
