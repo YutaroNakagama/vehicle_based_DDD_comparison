@@ -428,9 +428,24 @@ def time_freq_domain_process(subject: str, model_name: str, use_jittering: bool 
     steering = np.nan_to_num(sim_data[29, :])
     steering_speed = np.gradient(steering) * SAMPLE_RATE_SIMLSL
 
-    # Arefnezhad et al. 2019: only steering wheel angle + velocity
-    signals = [steering, steering_speed]
-    prefixes = ["Steering_", "SteeringSpeed_"]
+    if model_name == "common":
+        # RF/BalancedRF baseline: full vehicle-dynamics statistical/spectral set
+        # (pre-2026-02-15 behaviour). The steering-only restriction below is
+        # SvmA-specific (Arefnezhad et al. 2019) and must NOT starve the RF
+        # feature pool, which spans all five signals (see RF feature range
+        # Steering_Range..LaneOffset_AAA in src/utils/io/loaders.py).
+        signals = [
+            steering,
+            steering_speed,
+            np.nan_to_num(sim_data[19, :]),   # lateral acceleration
+            np.nan_to_num(sim_data[27, :]),   # lane offset
+            np.nan_to_num(sim_data[18, :]),   # longitudinal acceleration
+        ]
+        prefixes = ["Steering_", "SteeringSpeed_", "Lateral_", "LaneOffset_", "LongAcc_"]
+    else:
+        # Arefnezhad et al. 2019: only steering wheel angle + velocity
+        signals = [steering, steering_speed]
+        prefixes = ["Steering_", "SteeringSpeed_"]
 
     if use_jittering:
         signals = [jittering(sig, sigma=0.03) for sig in signals]

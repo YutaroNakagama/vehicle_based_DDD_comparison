@@ -57,6 +57,42 @@ def convert_theta_alpha_to_kss_percentile(theta_alpha_ratios: np.ndarray) -> np.
     kss_scores = np.digitize(theta_alpha_ratios, bins=percentiles) + 1
     return kss_scores.tolist()
 
+
+def bin_kss_linear_aligned(full_ratios: np.ndarray, fit_ratios: np.ndarray) -> list:
+    """Linear min-max KSS bins (1-9) computed robustly but ROW-ALIGNED.
+
+    Thresholds are fit on the outlier-cleaned *fit_ratios* (so extreme values
+    do not dominate the min/max range), but the bins are applied to the FULL
+    *full_ratios* series. This keeps the output one-to-one with the input rows.
+
+    This replaces the earlier ``remove_outliers -> convert -> adjust_length``
+    pattern, which dropped outlier rows, binned the *compressed* series, then
+    re-attached scores by position -> every row after the first dropped outlier
+    was shifted, corrupting ~half the labels.
+    """
+    full = np.asarray(full_ratios, dtype=float)
+    fit = np.asarray(fit_ratios, dtype=float)
+    fit = fit[np.isfinite(fit)]
+    if fit.size == 0:
+        return np.ones(len(full), dtype=int).tolist()
+    lo, hi = float(np.min(fit)), float(np.max(fit))
+    if not np.isfinite(lo) or not np.isfinite(hi) or hi <= lo:
+        return np.ones(len(full), dtype=int).tolist()
+    thresholds = np.linspace(lo, hi, 10)[1:-1]
+    return (np.digitize(np.nan_to_num(full, nan=lo), bins=thresholds) + 1).tolist()
+
+
+def bin_kss_percentile_aligned(full_ratios: np.ndarray, fit_ratios: np.ndarray) -> list:
+    """Percentile KSS bins (1-9), thresholds fit on cleaned *fit_ratios*,
+    applied to the FULL *full_ratios* (row-aligned). See bin_kss_linear_aligned."""
+    full = np.asarray(full_ratios, dtype=float)
+    fit = np.asarray(fit_ratios, dtype=float)
+    fit = fit[np.isfinite(fit)]
+    if fit.size == 0:
+        return np.ones(len(full), dtype=int).tolist()
+    percentiles = np.percentile(fit, np.arange(0, 100, 100 / 9))[1:-1]
+    return (np.digitize(np.nan_to_num(full, nan=float(np.min(fit))), bins=percentiles) + 1).tolist()
+
 def remove_outliers(data: np.ndarray, threshold: float = 3) -> np.ndarray:
     """Remove outliers from a 1D array based on a standard deviation threshold.
 
@@ -138,13 +174,12 @@ def kss_process(subject: str, model_name: str) -> None:
             beta_mean = beta_columns.mean(axis=1).replace(0, 1e-10)
 
             theta_alpha_beta_ratio = (theta_mean + alpha_mean) / beta_mean
-            clean_ratios = remove_outliers(theta_alpha_beta_ratio)
-            kss_scores = convert_theta_alpha_to_kss(clean_ratios)
-            kss_scores = adjust_scores_length(kss_scores, len(data))
-            kss_scores_percent = convert_theta_alpha_to_kss_percentile(clean_ratios)
-            kss_scores_percent = adjust_scores_length(kss_scores_percent, len(data))
+            ratio_arr = np.asarray(theta_alpha_beta_ratio, dtype=float)
+            fit_ratios = remove_outliers(ratio_arr)   # thresholds only; rows NOT dropped
+            kss_scores = bin_kss_linear_aligned(ratio_arr, fit_ratios)
+            kss_scores_percent = bin_kss_percentile_aligned(ratio_arr, fit_ratios)
 
-            # Save KSS score based on full-channel (θ+α)/β
+            # Save KSS score based on full-channel (θ+α)/β (row-aligned, no shift)
             data['KSS_Theta_Alpha_Beta'] = kss_scores
             data['KSS_Theta_Alpha_Beta_percent'] = kss_scores_percent
 
@@ -163,10 +198,9 @@ def kss_process(subject: str, model_name: str) -> None:
             over_beta = (theta_avg + alpha_avg) / beta_avg
             data["theta_alpha_over_beta"] = over_beta
 
-            # 9-level label derived from the index
-            clean_over_beta = remove_outliers(over_beta)
-            label_over_beta = convert_theta_alpha_to_kss(clean_over_beta)
-            label_over_beta = adjust_scores_length(label_over_beta, len(data))
+            # 9-level label derived from the index (row-aligned, no shift)
+            over_beta_arr = np.asarray(over_beta, dtype=float)
+            label_over_beta = bin_kss_linear_aligned(over_beta_arr, remove_outliers(over_beta_arr))
             data["theta_alpha_over_beta_label"] = label_over_beta
         else:
             logging.warning(f"Missing FC1/FC2 EEG band columns for {subject}")
