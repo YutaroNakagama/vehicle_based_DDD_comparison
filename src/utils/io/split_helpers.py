@@ -369,18 +369,20 @@ def split_data_domain_train(
         data, model_name=model_name
     )
 
-    # WITHIN-SUBJECT temporal split (Arefnezhad/IV2015 intended protocol).
-    # Timestamp is RELATIVE (each subject restarts at 0 → ~1300 s), so sorting the
-    # pooled domain data by Timestamp alone interleaves all subjects by time: the
-    # early portion of EVERY subject goes to train and the late portion of EVERY
-    # subject goes to test. The same subjects therefore appear in train and test
-    # (split chronologically per subject) — the personalized within-subject
-    # evaluation that exp2 used. (Was ("subject_id","Timestamp"), which instead
-    # grouped by subject and produced a subject-held-out / cross-subject split.)
+    # Split IDENTICAL to exp2's canonical split_data() subject_time_split path.
+    # Both exp2 (scripts/hpc/jobs/domain_analysis/pbs_domain_comparison_split2.sh)
+    # and exp3 (scripts/hpc/jobs/train/pbs_array_*.sh) pass --time_stratify_labels,
+    # which sorts the pooled domain data by ("subject_id","Timestamp") and cuts by
+    # position -> first ~70% of SUBJECTS = train, last ~15% = test = subject-held-out
+    # (cross-subject). This is exp2's official protocol; exp3's domain_train already
+    # matched it. Verified 2026-06-21: under FIXED kss labels, RF within ≈ 0.52
+    # (chance) for this split — exp2's stored 0.89 was a kss-label artifact, not the
+    # split. (A within-subject ("Timestamp"-only) variant was tried in e599295 and
+    # REVERTED here: it is NOT exp2's protocol and also gives ≈0.50 on fixed labels.)
     idx_tr, idx_va, idx_te = time_stratified_three_way_split(
         df_lab,
         label_col="label",
-        sort_keys=("Timestamp",),
+        sort_keys=("subject_id", "Timestamp"),
         train_ratio=train_ratio,
         val_ratio=val_ratio,
         test_ratio=test_ratio,
