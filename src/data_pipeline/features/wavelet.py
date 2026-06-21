@@ -213,14 +213,28 @@ def wavelet_process(subject: str, model_name: str, use_jittering: bool = False) 
 
     window_size, step_size = get_simlsl_window_params(model_name)
 
-    # Zhao et al. 2009: decompose steering wheel angle only.
     # The paper decomposes entire driving sessions; we use sliding windows
     # (10 s, 50 % overlap) as an adaptation for continuous recordings.
     steering = np.nan_to_num(sim_data[29, :])
 
-    signals = {
-        'SteeringWheel': steering,
-    }
+    if model_name == "common":
+        # RF/BalancedRF baseline: full vehicle-dynamics wavelet set (pre-2026-02-15
+        # behaviour). The steering-only restriction below is SvmW-specific
+        # (Zhao et al. 2009) and must NOT starve the RF feature pool, whose
+        # range ends at LaneOffset_AAA (see src/utils/io/loaders.py).
+        steering_speed = np.gradient(steering) * SAMPLE_RATE_SIMLSL
+        signals = {
+            'SteeringWheel': steering,
+            'SteeringSpeed': steering_speed,
+            'LongitudinalAccel': np.nan_to_num(sim_data[18, :]),
+            'LateralAccel': np.nan_to_num(sim_data[19, :]),
+            'LaneOffset': np.nan_to_num(sim_data[27, :]),
+        }
+    else:
+        # Zhao et al. 2009: decompose steering wheel angle only.
+        signals = {
+            'SteeringWheel': steering,
+        }
 
     if use_jittering:
         signals = {key: jittering(sig) for key, sig in signals.items()}
