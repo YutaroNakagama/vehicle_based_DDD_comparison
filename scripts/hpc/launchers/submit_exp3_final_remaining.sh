@@ -20,8 +20,12 @@ JOB_CPU="$PROJECT_ROOT/scripts/hpc/jobs/train/pbs_prior_research_unified.sh"
 JOB_GPU="$PROJECT_ROOT/scripts/hpc/jobs/train/pbs_prior_research_unified_gpu.sh"
 cd "$PROJECT_ROOT"
 
-DRY_RUN=false
+# DRY_RUN can be set via env or --dry-run arg
+DRY_RUN="${DRY_RUN:-false}"
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
+
+# MISSING_LIST can be overridden via env (default: legacy /tmp path)
+MISSING_LIST="${MISSING_LIST:-/tmp/exp3_all_missing.txt}"
 
 GPU_QUEUES=("GPU-1" "GPU-1A" "GPU-S" "GPU-L" "GPU-LA" "VM-GPU-L")
 CPU_QUEUES=("SINGLE" "SMALL" "LONG" "LONG-L" "LARGE" "DEF" "XLARGE" "X2LARGE" "VM-CPU" "VM-LM")
@@ -30,7 +34,7 @@ CPU_IDX=0
 
 # ---- Build active-queue name set for dedup ----
 echo "[INFO] Fetching current queue names for dedup..."
-ACTIVE_NAMES=$(qstat -u s2240011 2>/dev/null | awk 'NR>5 && $10 != "C" {print $4}' | sort -u)
+ACTIVE_NAMES=$(squeue -h -u s2240011 -o '%j' 2>/dev/null | sort -u)
 ACTIVE_COUNT=$(echo "$ACTIVE_NAMES" | grep -c . || true)
 echo "[INFO] Active job names loaded: $ACTIVE_COUNT"
 
@@ -46,7 +50,7 @@ short_dom()  { case "$1" in in_domain) echo i;; out_domain) echo o;; esac; }
 short_cond() {
     case "$1" in
         baseline)        echo ba;;
-        imbalv3)         echo iv;;   # 'iv' to distinguish from smote_plain 'sm'
+        imbalv3|smote)   echo iv;;   # 'iv' to distinguish from smote_plain 'sm'
         smote_plain)     echo sm;;
         undersample_rus) echo un;;
     esac
@@ -55,9 +59,19 @@ short_cond() {
 cond_env() {
     case "$1" in
         baseline)        echo baseline;;
-        imbalv3)         echo smote;;
+        imbalv3|smote)   echo smote;;
         smote_plain)     echo smote_plain;;
         undersample_rus) echo undersample;;
+    esac
+}
+
+# Distinct 2-letter prefix per model: SvmA->Sa, SvmW->Sw, Lstm->Ls
+model_prefix() {
+    case "$1" in
+        SvmA) echo Sa;;
+        SvmW) echo Sw;;
+        Lstm) echo Ls;;
+        *)    echo "${1:0:2}";;
     esac
 }
 
@@ -67,7 +81,14 @@ submit_one() {
     local DM=$(short_dom  "$DOM")
     local CS=$(short_cond "$COND")
     local COND_VAL=$(cond_env "$COND")
-    local JOB_NAME="${MODEL:0:2}_${CS}_${DL}${DM}_dt_r${RATIO}_s${SEED}"
+    local MP=$(model_prefix "$MODEL")
+    # Baseline has no ratio in JOB_NAME (RATIO="-")
+    local JOB_NAME
+    if [[ "$COND" == "baseline" ]]; then
+        JOB_NAME="${MP}_${CS}_${DL}${DM}_dt_s${SEED}"
+    else
+        JOB_NAME="${MP}_${CS}_${DL}${DM}_dt_r${RATIO}_s${SEED}"
+    fi
 
     if in_queue "$JOB_NAME"; then
         echo "[SKIP] $JOB_NAME (already in queue)"
@@ -120,7 +141,10 @@ echo ""
 N_SUBMITTED=0
 N_SKIPPED=0
 
-while IFS=' ' read -r MODEL COND DIST DOM RATIO SEED; do
+echo "[INFO] MISSING_LIST=$MISSING_LIST"
+[[ ! -f "$MISSING_LIST" ]] && { echo "[FATAL] $MISSING_LIST not found"; exit 1; }
+
+while IFS=$' \t' read -r MODEL COND DIST DOM RATIO SEED; do
     [[ -z "$MODEL" || "$MODEL" == "#"* ]] && continue
     before_gpu=$GPU_IDX
     before_cpu=$CPU_IDX
@@ -130,7 +154,7 @@ while IFS=' ' read -r MODEL COND DIST DOM RATIO SEED; do
     else
         ((N_SKIPPED++))
     fi
-done < /tmp/exp3_all_missing.txt
+done < "$MISSING_LIST"
 
 echo ""
 echo "[DONE] Submitted=$N_SUBMITTED  Skipped=$N_SKIPPED  Total=$(( N_SUBMITTED + N_SKIPPED ))"

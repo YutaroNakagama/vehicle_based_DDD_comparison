@@ -19,13 +19,21 @@ DRY_RUN=false
 # TINY (separate QOS, max_run=5) and MS_Amorphous (separate QOS, unlimited)
 # which share the same backing 256-core MS_* node pool but provide extra
 # scheduler lanes when other queues fill up.
-CPU_QUEUES=("SINGLE" "SMALL" "LONG" "LONG-L" "LARGE" "DEF" "XLARGE" "X2LARGE" "VM-CPU" "VM-LM" "TINY" "MS_Amorphous")
+# Material-science queues (MS_*, MatStudio) intentionally excluded —
+# admin (uid 25935) repeatedly scancels jobs landing there. 2026-05-11.
+# VM-LM removed 2026-05-14: 17/17 jobs landing there fail at submit time
+# (Elapsed=00:00:00, ExitCode 1:0, no .e/.o files written) — VM-LM
+# prologue rejects this job script. Daemon was wasting QOS submit slots
+# in an infinite re-submit loop on the same cells.
+CPU_QUEUES=("VM-CPU" "VM-CPU" "SINGLE" "SMALL" "LONG" "LONG-L" "LARGE" "DEF" "XLARGE" "X2LARGE" "TINY")
 CPU_IDX=0
 # Long-walltime pool for SMOTE conditions (24h+ runtime).  All entries below
 # allow >=48h walltime: LONG/LONG-L are dedicated long queues; MS_*/MatStudio
 # share the lcpcc-002/005/047 nodes (256 cores each) and have no per-job
 # walltime cap as observed during exp3.
-LONG_QUEUES=("LONG" "LONG-L" "MS_Castep" "MS_Compass" "MS_Dftbplus" "MS_Dmol3" "MS_Forcite" "MatStudio" "MS_Amorphous" "TINY")
+# MS_*/MatStudio removed 2026-05-11 (admin scancels them). Only LONG-family
+# queues with >=48h walltime remain.
+LONG_QUEUES=("LONG" "LONG-L" "TINY")
 LONG_IDX=0
 
 ALL_SEEDS=(0 1 3 7 13 42 99 123 256 512 777 999 1234 1337 2024)
@@ -46,7 +54,7 @@ short_cond() {
 }
 
 echo "[INFO] Building dedup set from current queue..."
-ACTIVE_NAMES=$(qstat -u s2240011 2>/dev/null | awk 'NR>5 && $10 != "C" {print $4}' | sort -u)
+ACTIVE_NAMES=$(squeue -h -u s2240011 -o '%j' 2>/dev/null | sort -u)
 in_queue() { echo "$ACTIVE_NAMES" | grep -qx "$1"; }
 
 existing_completed() {

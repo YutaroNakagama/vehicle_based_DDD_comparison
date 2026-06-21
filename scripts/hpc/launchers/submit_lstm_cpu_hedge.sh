@@ -17,8 +17,11 @@ set -uo pipefail
 
 PROJECT_ROOT="/home/s2240011/git/ddd/vehicle_based_DDD_comparison"
 JOB_SCRIPT="$PROJECT_ROOT/scripts/hpc/jobs/train/pbs_prior_research_unified.sh"
-# Prefer the Lstm-only refreshed list when present; fall back to legacy.
-if [[ -s "/tmp/exp3_lstm_dt_missing.txt" ]]; then
+# Prefer caller-supplied MISSING_LIST env var; otherwise prefer the Lstm-only
+# refreshed list when present; fall back to legacy.
+if [[ -n "${MISSING_LIST:-}" && -s "${MISSING_LIST}" ]]; then
+    : # use caller-provided MISSING_LIST as-is
+elif [[ -s "/tmp/exp3_lstm_dt_missing.txt" ]]; then
     MISSING_LIST="/tmp/exp3_lstm_dt_missing.txt"
 else
     MISSING_LIST="/tmp/exp3_all_missing.txt"
@@ -28,36 +31,41 @@ cd "$PROJECT_ROOT"
 DRY_RUN=false
 [[ "${1:-}" == "--dry-run" ]] && { DRY_RUN=true; LIMIT="${2:-30}"; } || LIMIT="${1:-30}"
 
-# Unlimited MS_*/MatStudio queues first (no per-QOS cap; SvmA daemon already
-# saturates SINGLE/SMALL/LONG/etc.). Capped pools come after as fallback.
-CPU_QUEUES=("MS_Castep" "MS_Compass" "MS_Dftbplus" "MS_Dmol3" "MS_Forcite" "MatStudio" "MS_Amorphous" \
-            "LONG-L" "LONG" "VM-LM" "DEF" "SINGLE" "SMALL" "LARGE" "XLARGE" "X2LARGE" "VM-CPU" "TINY")
+# VM-CPU/VM-LM are on a SEPARATE node pool (spcc-cld-*, 44 nodes, ~1344 CPUs)
+# with its own QOS — currently nearly empty while the lcpcc pool (shared by
+# MS_*/MatStudio/SINGLE/SMALL/LONG/etc.) is saturated at QOSGrpJobsLimit.
+# Front-load VM-* so each pass hits the open pool first.
+CPU_QUEUES=("VM-CPU" "VM-LM" "VM-CPU" "VM-LM" \
+            \
+            "LONG-L" "LONG" "DEF" "SINGLE" "SMALL" "LARGE" "XLARGE" "X2LARGE" "TINY")
 CPU_IDX=0
 
 short_dist() { case "$1" in dtw) echo d;; mmd) echo m;; wasserstein) echo w;; esac; }
 short_dom()  { case "$1" in in_domain) echo i;; out_domain) echo o;; esac; }
 short_cond() {
     case "$1" in
-        baseline) echo ba;; imbalv3) echo iv;;
+        baseline) echo ba;; imbalv3|smote) echo iv;;
         smote_plain) echo sm;; undersample_rus) echo un;;
     esac
 }
 cond_env() {
     case "$1" in
-        baseline) echo baseline;; imbalv3) echo smote;;
+        baseline) echo baseline;; imbalv3|smote) echo smote;;
         smote_plain) echo smote_plain;; undersample_rus) echo undersample;;
     esac
 }
 
 echo "[INFO] Building dedup set from current queue..."
-ACTIVE_NAMES=$(qstat -u s2240011 2>/dev/null | awk 'NR>5 && $10 != "C" {print $4}' | sort -u)
+ACTIVE_NAMES=$(squeue -h -u s2240011 -o '%j' 2>/dev/null | sort -u)
 in_queue() { echo "$ACTIVE_NAMES" | grep -qx "$1"; }
 
 # Build matching GPU job-name set (we'll skip Lstm tags whose Ls_* name is already queued)
 gpu_name_for_tag() {
     local MODEL="$1" COND="$2" DIST="$3" DOM="$4" RATIO="$5" SEED="$6"
     local DL=$(short_dist "$DIST"); local DM=$(short_dom "$DOM"); local CS=$(short_cond "$COND")
-    echo "${MODEL:0:2}_${CS}_${DL}${DM}_dt_r${RATIO}_s${SEED}"
+    local RTAG=""
+    [[ -n "$RATIO" ]] && RTAG="_r${RATIO}"
+    echo "${MODEL:0:2}_${CS}_${DL}${DM}_dt${RTAG}_s${SEED}"
 }
 
 submit_one() {
@@ -74,8 +82,10 @@ submit_one() {
 
     local DL=$(short_dist "$DIST"); local DM=$(short_dom "$DOM"); local CS=$(short_cond "$COND")
     local COND_VAL=$(cond_env "$COND")
-    local CPU_NAME="Lc_${CS}_${DL}${DM}_dt_r${RATIO}_s${SEED}"      # CPU hedge name
-    local GPU_NAME="Ls_${CS}_${DL}${DM}_dt_r${RATIO}_s${SEED}"      # existing GPU name
+    local RTAG=""
+    [[ -n "$RATIO" ]] && RTAG="_r${RATIO}"
+    local CPU_NAME="Lc_${CS}_${DL}${DM}_dt${RTAG}_s${SEED}"      # CPU hedge name
+    local GPU_NAME="Ls_${CS}_${DL}${DM}_dt${RTAG}_s${SEED}"      # existing GPU name
 
     # Skip if either CPU-hedge or GPU version is already queued
     if in_queue "$CPU_NAME" || in_queue "$GPU_NAME"; then
@@ -104,8 +114,14 @@ submit_one() {
 }
 
 N_SUB=0; N_SKIP=0
-while IFS=' ' read -r MODEL COND DIST DOM RATIO SEED; do
+while IFS=$'\t ' read -r MODEL COND DIST DOM RATIO SEED; do
     [[ -z "$MODEL" || "$MODEL" == "#"* || "$MODEL" != "Lstm" ]] && continue
+    # Normalize RATIO: missing-list files use '-' or '1.0' as a sentinel
+    # for baseline (which has no ratio). Convert to empty string so the
+    # job name omits the _r tag and matches the canonical spec.
+    if [[ "$COND" == "baseline" || "$RATIO" == "-" || "$RATIO" == "1.0" ]]; then
+        RATIO=""
+    fi
     if submit_one "$COND" "$DIST" "$DOM" "$RATIO" "$SEED"; then
         ((N_SUB++))
     else

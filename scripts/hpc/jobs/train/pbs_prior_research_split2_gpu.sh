@@ -214,7 +214,10 @@ EXIT_CODE=$?
 # the auto-resubmit daemon doesn't believe the job succeeded.
 MODEL_DIR="models/${MODEL}/${PBS_JOBID}/${PBS_JOBID}[1]"
 if [[ "$EXIT_CODE" -eq 0 && "$MODEL" == "Lstm" ]]; then
-    if ! ls "${MODEL_DIR}"/*.keras >/dev/null 2>&1; then
+    # Use find: bash glob treats '[1]' as char class, breaking ls.
+    if [[ -d "${MODEL_DIR}" ]] && find "${MODEL_DIR}" -maxdepth 1 -name '*.keras' -print -quit | grep -q .; then
+        : # artifact present, OK
+    else
         echo "[ERROR] No .keras model saved under ${MODEL_DIR} — promoting to exit 1 (likely XLA/libdevice failure)"
         EXIT_CODE=1
     fi

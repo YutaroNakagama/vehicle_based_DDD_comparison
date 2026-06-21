@@ -34,7 +34,7 @@ declare -A COND_ENV=(
 
 # Build set of active job-name signatures for filtering
 # Format: SHORT_MODEL_SHORT_COND_DISTLETTERDOMLETTER_dt_r{R}_s{S}
-ACTIVE_NAMES=$(qstat -u s2240011 2>/dev/null | awk 'NR>5 {print $4}' | sort -u)
+ACTIVE_NAMES=$(squeue -h -u s2240011 -o '%j' 2>/dev/null | sort -u)
 
 # Build comprehensive active set by querying qstat -f for full names
 ACTIVE_SET=""

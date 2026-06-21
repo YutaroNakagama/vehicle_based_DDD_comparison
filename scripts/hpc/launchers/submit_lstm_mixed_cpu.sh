@@ -19,20 +19,33 @@ cd "$PROJECT_ROOT"
 DRY_RUN=false
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
 
-# Unlimited MS_*/MatStudio queues first (no per-QOS cap; SvmA daemon already
-# saturates SINGLE/SMALL/LONG/etc.). Capped pools come after as fallback.
-CPU_QUEUES=("MS_Castep" "MS_Compass" "MS_Dftbplus" "MS_Dmol3" "MS_Forcite" "MatStudio" "MS_Amorphous" \
-            "LONG-L" "LONG" "VM-LM" "DEF" "SINGLE" "SMALL" "LARGE" "XLARGE" "X2LARGE" "VM-CPU" "TINY")
+# 2026-05-10: VM-CPU is full per its tight QOS (vm-cpu maxsubmitpu=10), and
+# MS_Castep/Compass/Dftbplus/Forcite/MatStudio are saturated by ongoing baseline
+# /undersample submissions. Front-load partitions with verified open capacity:
+# DEF (33), SINGLE (31), SMALL (19), VM-LM (15), MS_Amorphous (free), LARGE (4)
+# come first. MS_Forcite/MatStudio/etc. retained as overflow.
+# Material-science queues (MS_*, MatStudio) intentionally excluded —
+# admin (uid 25935) repeatedly scancels jobs landing there. 2026-05-11.
+CPU_QUEUES=("DEF" "SINGLE" "SMALL" "VM-LM" "LARGE" \
+            "DEF" "SINGLE" "SMALL" "VM-LM" \
+            "XLARGE" "X2LARGE" "TINY")
 CPU_IDX=0
 
 ALL_SEEDS=(0 1 3 7 13 42 99 123 256 512 777 999 1234 1337 2024)
 DISTANCES=(mmd dtw wasserstein)
 DOMAINS=(in_domain out_domain)
 # CPU is competitive with GPU for baseline/undersample (~24min vs ~25min on GPU)
-# but ~15-30x slower for SMOTE/SMOTE_plain (6-12h CPU vs 25min GPU). Keep SMOTE
-# variants on GPU via submit_lstm_mixed_seeds.sh; only baseline + undersample CPU.
+# but ~15-30x slower for SMOTE/SMOTE_plain (6-12h CPU vs 25min GPU). Originally
+# kept SMOTE on GPU only, but as of 2026-05-10 the GPU queues are saturated
+# (Ls_*_mx jobs all PENDING for days) while VM-CPU is wide open (42 idle nodes,
+# 1344 free cores). Add SMOTE variants here as a CPU hedge — VM-CPU/VM-LM are
+# front-loaded above, and the Lm_ job-name prefix differs from the GPU's Ls_,
+# so a CPU instance + GPU instance can race for the same cell. Whichever
+# finishes first leaves a stale duplicate that the next audit will scancel.
+# (smote_plain ratio=0.1 omitted per Issue #15 — silent imblearn ValueError.)
 declare -a COND_VARIANTS=(
     "baseline:" "undersample:0.1" "undersample:0.5"
+    "smote:0.1" "smote:0.5" "smote_plain:0.5"
 )
 
 short_dist() { case "$1" in dtw) echo d;; mmd) echo m;; wasserstein) echo w;; esac; }
@@ -45,7 +58,7 @@ short_cond() {
 }
 
 echo "[INFO] Building dedup set from current queue..."
-ACTIVE_NAMES=$(qstat -u s2240011 2>/dev/null | awk 'NR>5 && $10 != "C" {print $4}' | sort -u)
+ACTIVE_NAMES=$(squeue -h -u s2240011 -o '%j' 2>/dev/null | sort -u)
 in_queue() { echo "$ACTIVE_NAMES" | grep -qx "$1"; }
 
 existing_completed() {

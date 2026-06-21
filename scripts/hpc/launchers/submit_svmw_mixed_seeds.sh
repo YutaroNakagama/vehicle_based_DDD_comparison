@@ -21,10 +21,10 @@ DRY_RUN=false
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
 
 # CPU queues only — SvmW doesn't use GPU
-CPU_QUEUES=("SINGLE" "SMALL" "LONG" "LONG-L" "LARGE" "DEF" "XLARGE" "X2LARGE" "VM-CPU" "VM-LM")
+CPU_QUEUES=("VM-CPU" "VM-LM" "VM-CPU" "VM-LM" "SINGLE" "SMALL" "LONG" "LONG-L" "LARGE" "DEF" "XLARGE" "X2LARGE")
 CPU_IDX=0
 
-MISSING_SEEDS=(0 1 3 7 13 99 256 512 777 999 1234 1337 2024)
+MISSING_SEEDS=(0 1 3 7 13 42 99 123 256 512 777 999 1234 1337 2024)
 DISTANCES=(mmd dtw wasserstein)
 DOMAINS=(in_domain out_domain)
 
@@ -53,7 +53,7 @@ short_cond() {
 
 # Build the dedup set of already-queued names (col 4 = Job_Name in qstat -u output)
 echo "[INFO] Building dedup set from current queue..."
-ACTIVE_NAMES=$(qstat -u s2240011 2>/dev/null | awk 'NR>5 && $10 != "C" {print $4}' | sort -u)
+ACTIVE_NAMES=$(squeue -h -u s2240011 -o '%j' 2>/dev/null | sort -u)
 
 in_queue() { echo "$ACTIVE_NAMES" | grep -qx "$1"; }
 

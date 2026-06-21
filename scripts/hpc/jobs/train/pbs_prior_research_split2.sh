@@ -187,7 +187,12 @@ EXIT_CODE=$?
 # the auto-resubmit daemon doesn't believe the job succeeded.
 MODEL_DIR="models/${MODEL}/${PBS_JOBID}/${PBS_JOBID}[1]"
 if [[ "$EXIT_CODE" -eq 0 ]]; then
-    if ! ls "${MODEL_DIR}"/*.keras "${MODEL_DIR}"/*.pkl >/dev/null 2>&1; then
+    # Use find (not ls+glob): bash treats the literal '[1]' in the path as a
+    # glob character class, so `ls "$MODEL_DIR"/*.pkl` always reports 'no
+    # such file' even when artifacts exist. find takes the path verbatim.
+    if [[ -d "${MODEL_DIR}" ]] && find "${MODEL_DIR}" -maxdepth 1 \( -name '*.keras' -o -name '*.pkl' \) -print -quit | grep -q .; then
+        : # artifact present, OK
+    else
         echo "[ERROR] No model artifact (*.keras / *.pkl) saved under ${MODEL_DIR} — promoting to exit 1 (silent failure: see [SAVE] Model object is None or [TRAIN] Exception during training in stderr)"
         EXIT_CODE=1
     fi

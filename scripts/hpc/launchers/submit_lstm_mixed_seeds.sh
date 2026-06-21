@@ -37,7 +37,7 @@ short_cond() {
 }
 
 echo "[INFO] Building dedup set from current queue..."
-ACTIVE_NAMES=$(qstat -u s2240011 2>/dev/null | awk 'NR>5 && $10 != "C" {print $4}' | sort -u)
+ACTIVE_NAMES=$(squeue -h -u s2240011 -o '%j' 2>/dev/null | sort -u)
 in_queue() { echo "$ACTIVE_NAMES" | grep -qx "$1"; }
 
 existing_completed() {
