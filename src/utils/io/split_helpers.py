@@ -369,27 +369,22 @@ def split_data_domain_train(
         data, model_name=model_name
     )
 
-    # Split IDENTICAL to exp2's canonical split_data() subject_time_split path.
-    # Both exp2 (scripts/hpc/jobs/domain_analysis/pbs_domain_comparison_split2.sh)
-    # and exp3 (scripts/hpc/jobs/train/pbs_array_*.sh) pass --time_stratify_labels,
-    # which sorts the pooled domain data by ("subject_id","Timestamp") and cuts by
-    # position -> first ~70% of SUBJECTS = train, last ~15% = test = subject-held-out
-    # (cross-subject). This is exp2's official protocol; exp3's domain_train already
-    # matched it. Verified 2026-06-21: under FIXED kss labels, RF within ≈ 0.52
-    # (chance) for this split — exp2's stored 0.89 was a kss-label artifact, not the
-    # split. (A within-subject ("Timestamp"-only) variant was tried in e599295 and
-    # REVERTED here: it is NOT exp2's protocol and also gives ≈0.50 on fixed labels.)
-    idx_tr, idx_va, idx_te = time_stratified_three_way_split(
-        df_lab,
-        label_col="label",
-        sort_keys=("subject_id", "Timestamp"),
-        train_ratio=train_ratio,
-        val_ratio=val_ratio,
-        test_ratio=test_ratio,
-        tolerance=time_stratify_tolerance,
-        window_prop=time_stratify_window,
-        min_chunk=time_stratify_min_chunk,
-    )
+    # WITHIN-SUBJECT temporal split = exp2's official protocol
+    # (data_time_split_by_subject, split.py): for EACH subject, sort by time and take
+    # the first `train_ratio` rows -> train, next `val_ratio` -> val, remainder -> test.
+    # The SAME subjects therefore appear in train and test (each split chronologically
+    # per subject) — the personalized within-subject evaluation exp2 uses. (Replaces
+    # the time_stratified_three_way_split / ("subject_id","Timestamp") positional cut,
+    # which was subject-held-out / cross-subject and is NOT exp2's protocol.)
+    idx_tr, idx_va, idx_te = [], [], []
+    for _subj, _grp in df_lab.groupby("subject_id"):
+        _grp = _grp.sort_values("Timestamp")
+        _n = len(_grp)
+        _ntr = int(_n * train_ratio)
+        _nva = int(_n * val_ratio)
+        idx_tr.extend(_grp.index[:_ntr])
+        idx_va.extend(_grp.index[_ntr:_ntr + _nva])
+        idx_te.extend(_grp.index[_ntr + _nva:])
 
     drop_cols = [] if keep_subject_id else ["subject_id"]
     X_train = df_lab.loc[idx_tr, feature_columns].drop(columns=drop_cols, errors="ignore")
