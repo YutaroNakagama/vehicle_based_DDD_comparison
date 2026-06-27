@@ -168,11 +168,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True, choices=["RF", "SvmW", "SvmA", "Lstm"])
     ap.add_argument("--workers", type=int, default=None)
+    ap.add_argument("--limit", type=int, default=None,
+                    help="Run at most N pending cells then exit (for round-robin GPU interleaving).")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
     cells = build_cells(args.model)
     pending = [c for c in cells if not c.already_done()]
+    if args.limit:
+        pending = pending[: args.limit]
     n_workers = args.workers or DEFAULT_WORKERS.get(args.model, 1)
     logging.info("B1 %s | python=%s | total=%d done=%d pending=%d workers=%d",
                  args.model, PYTHON, len(cells), len(cells) - len(pending), len(pending), n_workers)

@@ -41,9 +41,10 @@ start_win(){ # $1=model $2=launcher $3=workers $4=ntrials $5=logdir $6=pidfile
   nohup "$WINPY" "scripts/python/train/$2" --model "$1" --workers "$3" >> "$5/_run_$1.log" 2>&1 &
   echo $! > "$6"; echo "$(ts) [wd] launched $1 ($2, win, pid $!)" >> "$WLOG"
 }
-start_wsl(){ # $1=model $2=venvpy $3=launcher $4=workers $5=extraenv $6=logdir $7=pidfile
-  nohup wsl -e bash -lc "cd $WREPO && CUDA_VISIBLE_DEVICES=0 $5 PYTHONPATH=. TF_CPP_MIN_LOG_LEVEL=3 $2 scripts/python/train/$3 --model $1 --workers $4" >> "$6/_run_$1.log" 2>&1 &
-  echo $! > "$7"; echo "$(ts) [wd] launched $1 ($3, wsl, pid $!)" >> "$WLOG"
+start_wsl(){ # $1=model $2=venvpy $3=launcher $4=workers $5=extraenv $6=logdir $7=pidfile $8=limit(optional)
+  local LIM=""; [ -n "$8" ] && LIM="--limit $8"
+  nohup wsl -e bash -lc "cd $WREPO && CUDA_VISIBLE_DEVICES=0 $5 PYTHONPATH=. TF_CPP_MIN_LOG_LEVEL=3 $2 scripts/python/train/$3 --model $1 --workers $4 $LIM" >> "$6/_run_$1.log" 2>&1 &
+  echo $! > "$7"; echo "$(ts) [wd] launched $1 ($3, wsl, limit=${8:-all}, pid $!)" >> "$WLOG"
 }
 
 B1=(RF $(b1_done RF) SvmW $(b1_done SvmW) Lstm $(b1_done Lstm) SvmA $(b1_done SvmA))
@@ -61,12 +62,18 @@ B1N=22; IVN=6; SVMA_B1N=12; SVMA_IVN=6
 # Re-enabled (fix: SvmW/SvmA dirs populated from common -> pooled eval works).
 [ "$(iv_done SvmW)" -lt $IVN ] && ! alive "$IVLOG/.SvmW.pid" && start_win SvmW iv2025_baseline_launcher.py 3 50 "$IVLOG" "$IVLOG/.SvmW.pid"
 
-# --- GPU jobs (serialized, one at a time, priority B1 then IV25) ---
+# --- GPU jobs: B1 SvmA (last cell) -> IV25 Lstm (BATCH, fast) -> IV25 SvmA (sequential) ---
+# User priority: finish IV25 Lstm (pooled) first — it is fast (~1.2h/cell, runs a few
+# concurrently), so all 6 complete in ~2-3h. IV25 SvmA is the multi-day long pole and
+# runs sequentially after (per-cell JSONs still appear incrementally for live estimates).
+# (6GB GPU: SvmA cuML ~5GB saturates it, so no SvmA concurrency.)
 if ! gpu_busy; then
-  if   [ "$(b1_done Lstm)" -lt $B1N ]; then start_wsl Lstm "$LSTMPY" b1_compare_launcher.py 4 "" "$B1LOG" "$B1LOG/.Lstm.pid"
-  elif [ "$(b1_done SvmA)" -lt $SVMA_B1N ]; then start_wsl SvmA "$SVMAPY" b1_compare_launcher.py 1 "SVMA_USE_CUML=1 SVMA_PSO_PROCESSES=1" "$B1LOG" "$B1LOG/.SvmA.pid"
-  elif [ "$(iv_done Lstm)" -lt $IVN ]; then start_wsl Lstm "$LSTMPY" iv2025_baseline_launcher.py 3 "" "$IVLOG" "$IVLOG/.Lstm.pid"
-  elif [ "$(iv_done SvmA)" -lt $SVMA_IVN ]; then start_wsl SvmA "$SVMAPY" iv2025_baseline_launcher.py 1 "SVMA_USE_CUML=1 SVMA_PSO_PROCESSES=1" "$IVLOG" "$IVLOG/.SvmA.pid"
+  if [ "$(b1_done SvmA)" -lt $SVMA_B1N ]; then
+    start_wsl SvmA "$SVMAPY" b1_compare_launcher.py 1 "SVMA_USE_CUML=1 SVMA_PSO_PROCESSES=1" "$B1LOG" "$B1LOG/.SvmA.pid" 1
+  elif [ "$(iv_done Lstm)" -lt $IVN ]; then
+    start_wsl Lstm "$LSTMPY" iv2025_baseline_launcher.py 3 "" "$IVLOG" "$IVLOG/.Lstm.pid"
+  elif [ "$(iv_done SvmA)" -lt $SVMA_IVN ]; then
+    start_wsl SvmA "$SVMAPY" iv2025_baseline_launcher.py 1 "SVMA_USE_CUML=1 SVMA_PSO_PROCESSES=1" "$IVLOG" "$IVLOG/.SvmA.pid"
   fi
 fi
 
