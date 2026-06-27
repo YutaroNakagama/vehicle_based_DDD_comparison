@@ -380,7 +380,12 @@ class SVMObjective:
         X_tr = self.X_train_arr[:, mask]
         X_va = self.X_val_arr[:, mask]
 
-        svm = SVC(kernel='rbf', C=1.0, gamma='scale', cache_size=_SVMA_CACHE_SIZE_MIB)
+        # cuML's gamma='scale' = 1/(n_feat * X.var()); a candidate subset of only
+        # constant features -> X.var()=0 -> cuML raises ZeroDivisionError (sklearn
+        # silently coerces). Fall back to an explicit 1/n_feat for such degenerate
+        # subsets so PSO scores them instead of crashing training.
+        gamma = 'scale' if float(np.var(X_tr)) > 0.0 else 1.0 / max(1, X_tr.shape[1])
+        svm = SVC(kernel='rbf', C=1.0, gamma=gamma, cache_size=_SVMA_CACHE_SIZE_MIB)
         svm.fit(X_tr, self.y_train_arr)
         y_pred = svm.predict(X_va)
         mse = float(0.5 * np.mean((y_pred - self.y_val_arr) ** 2))
