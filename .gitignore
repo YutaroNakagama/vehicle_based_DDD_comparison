@@ -21,6 +21,7 @@ docs/experiments/results/**
 # exp3: track only the factor-analysis writeup (results data/figures stay confidential)
 !docs/experiments/results/exp3-analysis/
 !docs/experiments/results/exp3-analysis/domain_imbalance_factor_analysis.md
+!docs/experiments/results/exp3-analysis/verification_tasks.md
 # exp3 paper: tracked as a private submodule (mirrors exp2 TIV2026)
 !docs/experiments/results/exp3-analysis/TIV2026_exp3
 
