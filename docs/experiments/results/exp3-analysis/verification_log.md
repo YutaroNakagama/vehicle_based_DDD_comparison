@@ -91,8 +91,9 @@ n=66,993(87被験者, pos 3.62%)、**被験者分離 split**(GroupShuffleSplit)�
 **c1 の Within(target_only) vs Cross(source_only) が、フルパイプラインでの split 依存性テストそのもの。**
 Cross-domain は train と eval が別ドメイン=別被験者群(=被験者分離)。各手法で **Within ≫ Cross→chance** なら
 「within-domain 構造に依存」を確定できる。
-- **RF 速報**: Within-out **0.790** vs Cross-in **0.523** / Cross-out **0.512** → RF ですら within の信号は
-  cross-domain に転移しない。SvmW も c1 Cross 完走で同型か判定する(0.79 が within 限定構造かを確定)。
+- **RF(9/9完了・異常なし)**: Within-out **0.790**(0.758/0.790/0.822) vs Cross-in **0.520**(0.513–0.526)
+  / Cross-out **0.512**(0.508–0.517)→ RF ですら within の信号は cross-domain で chance に崩落(全seed一貫、
+  非縮退、ログ失敗なし)。SvmW/Lstm/SvmA も c1 Cross 完走で同型か判定する(0.79 等が within 限定構造かを確定)。
 - よって T2 の結論は **c1 SvmW Cross の完走待ち**(probe は素特徴に簡単な信号が無いことだけを示した)。
 
 ---
@@ -101,7 +102,10 @@ Cross-domain は train と eval が別ドメイン=別被験者群(=被験者分
 - **T4(半分)**: 上記 RF-on-SvmA忠実特徴 = 0.496 → SvmA の null は分類器・特徴選択に依らない(特徴の壁)。
   残りの SVM-on-RF特徴 ≈ 0.78(分類器は壁でない)は別途。
 - **T5**: IV2025 before(local pooled)Lstm = 0.512(n=6、公表 0.52 と整合)。
-  Lstm cross-domain は **c1 の source_only Lstm** で測定中(within ≫ cross なら「向上は domain 由来」を確定)。
+  **c1 Lstm 完了(9/9, 異常なし)**: Within-out **0.753** ≈ Cross-in **0.720** ≈ Cross-out **0.743**
+  → **within ≈ cross(domain 不変)**。「向上は domain 由来」は反証寄り(cross でも維持)。
+  Lstm は event_label(均衡・DRT タスク構造)ゆえ domain ロバストと解釈。**RF(KSS, cross→chance 0.51)
+  と対照的** = cross-domain 転移可否は target/label で決まる(RQ2 と整合)。
 - **T6(road-curve 除去): 主結論には moot(論理的に不要)。** road-geometry が steering を汚染すると
   「道路追従」由来の見かけ信号を **加える** 方向に働く。しかし T1 で SvmA は忠実特徴 + 複数分類器でも
   chance(univ 0.515 / RF 0.496)であり、**汚染除去は信号を下げることはあっても上げない** → 「信号なし」結論は
