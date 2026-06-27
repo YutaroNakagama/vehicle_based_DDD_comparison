@@ -26,7 +26,7 @@ in/out で比較し、RF の優位性(特に cross-domain 頑健性)を示す。
 | T3 | RF の SMOTE 単独効果 (pooled+SMOTE) | ⬜ 未 | — |
 | **T4** | SvmA の 分類器×特徴 deconfound | 🟡 半分完了 | RF-on-SvmA特徴 = 0.496 → **特徴が壁(分類器非依存)** |
 | T5 | Lstm の domain 帰属 | 🟡 進行 | IV25 before(local)=0.512 ✅ / cross は c1 で測定中 |
-| T6 | road-curve 除去の faithfulness | ⬜ 未 | — |
+| T6 | road-curve 除去の faithfulness | ✅ 論理的に moot | SvmA が chance ゆえ除去は結論不変(下記) |
 
 ---
 
@@ -77,16 +77,37 @@ n=66,993(87被験者, pos 3.62%)、**被験者分離 split**(GroupShuffleSplit)�
 
 判定: **A ≫ B(B≈chance)→ 0.79 は split 依存**。A≈B かつ両者上昇 → 真の潜在信号。
 
-### 結果
-*(probe 実行中。完了後に追記。)*
+### 結果 (2026-06-27)
+| split | RBF-SVM +SMOTE | RF |
+|---|---|---|
+| A 被験者内 temporal | 0.489 | 0.478 |
+| B 被験者分離 (3seed平均) | 0.505 | 0.493 |
+
+**素の SMOTE+SVM/RF は両 split とも chance(~0.48–0.51)で、B1 の 0.79 をどちらの split でも再現しない。**
+→ 0.79 は **8特徴そのもの**ではなく **フルパイプライン(Optuna 調整 SVM + 特定 SMOTE 設定)** から生じる。
+この probe は 0.79 を再現できないため、probe 単体では split 依存性を分離できない(inconclusive)。
+
+### 再フレーム: split 依存性の決定版は c1 自身
+**c1 の Within(target_only) vs Cross(source_only) が、フルパイプラインでの split 依存性テストそのもの。**
+Cross-domain は train と eval が別ドメイン=別被験者群(=被験者分離)。各手法で **Within ≫ Cross→chance** なら
+「within-domain 構造に依存」を確定できる。
+- **RF 速報**: Within-out **0.790** vs Cross-in **0.523** / Cross-out **0.512** → RF ですら within の信号は
+  cross-domain に転移しない。SvmW も c1 Cross 完走で同型か判定する(0.79 が within 限定構造かを確定)。
+- よって T2 の結論は **c1 SvmW Cross の完走待ち**(probe は素特徴に簡単な信号が無いことだけを示した)。
 
 ---
 
-## T4/T5 メモ
+## T4/T5/T6 メモ
 - **T4(半分)**: 上記 RF-on-SvmA忠実特徴 = 0.496 → SvmA の null は分類器・特徴選択に依らない(特徴の壁)。
   残りの SVM-on-RF特徴 ≈ 0.78(分類器は壁でない)は別途。
 - **T5**: IV2025 before(local pooled)Lstm = 0.512(n=6、公表 0.52 と整合)。
   Lstm cross-domain は **c1 の source_only Lstm** で測定中(within ≫ cross なら「向上は domain 由来」を確定)。
+- **T6(road-curve 除去): 主結論には moot(論理的に不要)。** road-geometry が steering を汚染すると
+  「道路追従」由来の見かけ信号を **加える** 方向に働く。しかし T1 で SvmA は忠実特徴 + 複数分類器でも
+  chance(univ 0.515 / RF 0.496)であり、**汚染除去は信号を下げることはあっても上げない** → 「信号なし」結論は
+  除去前後で不変。除去が効くのは「SvmA が signal を示し、それが drowsiness でなく road-following の疑い」が
+  ある場合のみで、本データはその状況にない。よって T1 の null を覆さない。Aygun コースが曲線を含むかの
+  メタデータ確認は補足として残すが、優先度は低い。
 
 ## 残タスク
 - T2 完了 → 結果追記。
