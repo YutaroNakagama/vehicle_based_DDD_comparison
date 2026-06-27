@@ -313,7 +313,7 @@ def train_pipeline(
     except KeyboardInterrupt:
         logging.error("[TRAIN] Interrupted (KeyboardInterrupt). Will persist current checkpoint.")
     except Exception as e:
-        logging.error(f"[TRAIN] Exception during training: {e}. Will persist current checkpoint.")
+        logging.error(f"[TRAIN] Exception during training: {e}. Will persist current checkpoint.", exc_info=True)
     finally:
         # --- Sync selected_features with model-specific feature list ---
         # Some models (Lstm, SvmA) perform additional feature selection
