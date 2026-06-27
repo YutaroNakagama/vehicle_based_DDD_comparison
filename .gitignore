@@ -18,6 +18,9 @@ docs/experiments/results/**
 !docs/experiments/results/exp2-analysis/
 !docs/experiments/results/exp2-analysis/paper/
 !docs/experiments/results/exp2-analysis/paper/TIV2026
+# exp3: track only the factor-analysis writeup (results data/figures stay confidential)
+!docs/experiments/results/exp3-analysis/
+!docs/experiments/results/exp3-analysis/domain_imbalance_factor_analysis.md
 
 # ===== Reports (only final figures/tables tracked) =====
 reports/figures/**
