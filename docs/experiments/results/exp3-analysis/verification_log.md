@@ -114,6 +114,18 @@ Cross-domain は train と eval が別ドメイン=別被験者群(=被験者分
   ある場合のみで、本データはその状況にない。よって T1 の null を覆さない。Aygun コースが曲線を含むかの
   メタデータ確認は補足として残すが、優先度は低い。
 
+## c1 実行上の不具合と修正: SvmA cuML ZeroDivisionError (2026-06-27)
+- **症状**: c1 SvmA 全セルが ~3分で「Model object is None → Model could not be loaded」で
+  JSON を生成せず、pending のまま再実行ループ(GPU 浪費)。ログ rc は 0 のため一見成功に見えた。
+- **真因**(traceback): `SvmA.py` PSO 目的関数の cuML `SVC(gamma='scale')` が、**定数のみの特徴部分集合
+  (X.var()=0)** で `_get_gamma` の `1/(n_feat·var)` を実行 → `ZeroDivisionError`。sklearn は黙って
+  処理するが cuML は例外。**T1 の 18 特徴化で露呈**(旧 14 特徴では全定数部分集合に当たらなかった)。
+- **修正**(commit `1243f26`): 分散 0 の部分集合では `gamma = 1/n_features` にフォールバック
+  ([`SvmA.py:383`](../../../../src/models/architectures/SvmA.py#L383))。学習例外の traceback もログ化
+  ([`model_pipeline.py:316`](../../../../src/models/model_pipeline.py#L316))。
+- **検証**: 修正版でクラッシュ地点(~64s)を越え PSO が 210s+ 継続・例外 0 を確認。c1 SvmA を単一ジョブで再開。
+- **注**: T1 で SvmA は信号なし確定済みのため、c1 SvmA の AUROC は chance 想定(within/cross 表を埋める用途)。
+
 ## 残タスク
 - T2 完了 → 結果追記。
 - T3(pooled+SMOTE の RF 1セル)、T6(Aygun コース曲率の確認)。
