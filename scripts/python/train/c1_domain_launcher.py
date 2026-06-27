@@ -77,11 +77,11 @@ class Cell:
         return any(base.rglob(f"*{self.tag}.json")) or any(base.rglob(f"*{self.tag}_*.json"))
 
 
-def build_cells(model: str) -> List[Cell]:
+def build_cells(model: str, seeds: List[int] = None) -> List[Cell]:
     conds = list(CONDITIONS)
     if model == "SvmA":  # T1 fix invalidates B1's SvmA Within-in -> re-run it here too
         conds = [WITHIN_IN] + conds
-    return [Cell(model, m, d, s) for (m, d) in conds for s in SEEDS]
+    return [Cell(model, m, d, s) for (m, d) in conds for s in (seeds or SEEDS)]
 
 
 def run_cell(cell: Cell) -> int:
@@ -134,9 +134,12 @@ def main():
     ap.add_argument("--model", required=True, choices=["RF", "SvmW", "SvmA", "Lstm"])
     ap.add_argument("--workers", type=int, default=None)
     ap.add_argument("--limit", type=int, default=None, help="Run at most N pending cells then exit.")
+    ap.add_argument("--seeds", type=str, default=None,
+                    help="Comma-separated seed override (e.g. seed-increase run). Default: 42,123,2025.")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
-    cells = build_cells(args.model)
+    seeds = [int(s) for s in args.seeds.split(",")] if args.seeds else None
+    cells = build_cells(args.model, seeds)
     pending = [c for c in cells if not c.already_done()]
     if args.limit:
         pending = pending[: args.limit]
