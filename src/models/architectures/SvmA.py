@@ -59,15 +59,22 @@ SVMA_KSS_BIN_LABELS = [1, 2, 3, 4, 5, 6, 8, 9]
 SVMA_KSS_LABEL_MAP = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 8: 1, 9: 1}
 
 # ---------------------------------------------------------------------------
-# Paper feature set (Arefnezhad et al. 2019, Table 1)
-# 14 features per signal × 2 signals (Steering_, SteeringSpeed_) = 28 total
+# Paper feature set (Arefnezhad et al. 2019, Table 1) — FAITHFUL 18 features.
+# 18 features per signal × 2 signals (Steering_, SteeringSpeed_) = 36 total.
+# Fix (2026-06-27, verification_tasks T1): the prior 14-suffix set omitted the
+# paper's main features (Sample Entropy = 2 of Arefnezhad's final-5; Katz Fractal
+# Dim, Shannon Entropy, Spectral Flux, Frequency Variability, Q1/Q2/Q3) and added
+# 4 non-paper ones (Mean, Variance, Max, Min). All 18 columns exist in the data
+# (Frequency Variability = "FreqVar"). This makes the SvmA reproduction faithful so
+# the "SvmA features carry no signal" conclusion is not a feature-filter artifact.
 # ---------------------------------------------------------------------------
 SVMA_PAPER_FEATURE_SUFFIXES = [
-    'Mean', 'Variance', 'StdDev', 'Max', 'Min', 'Range', 'Energy',
-    'Skewness', 'Kurtosis', 'ZeroCrossingRate',
+    'StdDev', 'Range', 'Energy', 'Skewness', 'Kurtosis', 'ZeroCrossingRate',
     'DominantFreq', 'FreqCOG', 'SpectralEntropy', 'AvgPSD',
+    'SampleEntropy', 'KatzFractalDim', 'ShannonEntropy', 'SpectralFlux', 'FreqVar',
+    'Quartile25', 'Median', 'Quartile75',
 ]
-"""list : The 14 feature types used in Arefnezhad et al. (2019)."""
+"""list : The 18 feature types used in Arefnezhad et al. (2019), per signal."""
 
 from src.utils.io.savers import save_artifacts
 
