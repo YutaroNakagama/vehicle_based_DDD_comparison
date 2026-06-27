@@ -91,7 +91,8 @@ n=66,993(87被験者, pos 3.62%)、**被験者分離 split**(GroupShuffleSplit)�
 **c1 の Within(target_only) vs Cross(source_only) が、フルパイプラインでの split 依存性テストそのもの。**
 Cross-domain は train と eval が別ドメイン=別被験者群(=被験者分離)。各手法で **Within ≫ Cross→chance** なら
 「within-domain 構造に依存」を確定できる。
-- **RF(9/9完了・異常なし)**: Within-out **0.790**(0.758/0.790/0.822) vs Cross-in **0.520**(0.513–0.526)
+- **RF(9/9完了・異常なし)**: Within-out **0.790**(0.758/0.790/0.822) — **TIV2026 の RF after=0.781 と整合 ✓**
+  (B1 within-in も 0.781)。vs Cross-in **0.520**(0.513–0.526)
   / Cross-out **0.512**(0.508–0.517)→ RF ですら within の信号は cross-domain で chance に崩落(全seed一貫、
   非縮退、ログ失敗なし)。SvmW/Lstm/SvmA も c1 Cross 完走で同型か判定する(0.79 等が within 限定構造かを確定)。
 - よって T2 の結論は **c1 SvmW Cross の完走待ち**(probe は素特徴に簡単な信号が無いことだけを示した)。
