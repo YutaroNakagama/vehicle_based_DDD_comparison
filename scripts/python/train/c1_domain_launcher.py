@@ -44,11 +44,15 @@ LOG_DIR.mkdir(parents=True, exist_ok=True)
 DISTANCE = "wasserstein"
 RATIO = "0.5"
 SEEDS = [42, 123, 2025]
-# (mode, domain). These 3 are new vs B1; Within-in (target_only, in_domain) is reused
-# from B1 for RF/SvmW/Lstm (their features are unaffected by the SvmA fix). SvmA ALSO
-# re-runs Within-in here because the T1 feature-faithfulness fix (SvmA.py, 2026-06-27:
-# 14 -> faithful 18 Arefnezhad features) invalidates B1's SvmA cells.
-CONDITIONS = [("target_only", "out_domain"), ("source_only", "in_domain"), ("source_only", "out_domain")]
+# (mode, domain). The 6-case grid (advisor 2026-06-28) = {Within, Cross, Mixed} x {in,out}:
+#   target_only = Within (train target domain), source_only = Cross (train other domain),
+#   mixed = Mixed (train ALL subjects), all evaluated on the target domain (in/out).
+# Within-in (target_only, in_domain) is reused from B1 for RF/SvmW/Lstm (features
+# unaffected by the SvmA fix); SvmA ALSO re-runs Within-in here because the T1
+# feature-faithfulness fix (SvmA.py, 2026-06-27) invalidates B1's SvmA cells.
+CONDITIONS = [("target_only", "out_domain"),
+              ("source_only", "in_domain"), ("source_only", "out_domain"),
+              ("mixed", "in_domain"), ("mixed", "out_domain")]
 WITHIN_IN = ("target_only", "in_domain")
 DEFAULT_WORKERS = {"RF": 4, "SvmW": 4, "SvmA": 1, "Lstm": 3}
 
