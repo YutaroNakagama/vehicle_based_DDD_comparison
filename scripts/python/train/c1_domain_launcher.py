@@ -47,13 +47,16 @@ RATIO = "0.5"
 # verification_log.md): the required n for a fixed 95% CI half-width scales with the
 # seed-to-seed AUROC std. RF's within-domain AUROC is seed-UNSTABLE (std ~0.08-0.10,
 # range 0.62-0.95, both domains) -> 20 seeds; Lstm/SvmW moderate -> 15; SvmA is
-# low-variance (pinned near chance) AND GPU-expensive -> 8 seeds is math-sufficient
-# (CI +/-0.016) while keeping the faithful Arefnezhad pipeline UNCHANGED (no PSO
-# speed hacks). Already-run seeds are listed first so resume skips them.
+# low-variance but GPU-expensive. Journal-quality decision (2026-06-28): uniform 15
+# for Lstm/SvmW/SvmA (>= the 12 floor, reviewer-defensible per-method uniformity),
+# RF=20 for its high within-domain variance (power analysis). SvmA=15 is made feasible
+# by SVMA_PSO_MAXITER=30 (the PSO best plateaus by iter ~2 per saved pso_history -> 100
+# is wasteful; 30 is a 15x margin reproducing the same optimum; the Arefnezhad PSO/ANFIS/
+# SVM method itself is otherwise UNCHANGED). Already-run seeds listed first (resume skips).
 SEED_MASTER = [42, 123, 2025, 0, 1, 7, 13, 256, 512, 1337, 2024,
                3, 5, 9, 11, 17, 23, 99, 777, 2718]
 SEEDS_BY_MODEL = {"RF": SEED_MASTER[:20], "Lstm": SEED_MASTER[:15],
-                  "SvmW": SEED_MASTER[:15], "SvmA": SEED_MASTER[:8]}
+                  "SvmW": SEED_MASTER[:15], "SvmA": SEED_MASTER[:15]}
 # The full 6-case grid (advisor 2026-06-28) = {Within, Cross, Mixed} x {in,out},
 # uniform imbalv3 tags for ALL models (within-in re-run in c1, not reused from B1):
 #   target_only = Within (train target domain), source_only = Cross (train other

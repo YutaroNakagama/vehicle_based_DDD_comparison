@@ -143,12 +143,14 @@ Cross-domain は train と eval が別ドメイン=別被験者群(=被験者分
 3 seed が 0.76–0.82 と狭かったのは偶然。→ within-domain RF を精密に出すには多seedが必須（±0.02には100超で非現実的）。
 他手法（within std≈0.02、cross/mixed≈chance）は **12 seed で CI±0.013 と十分**。
 
-**結論**:
-- 目標精度 **95% CI half-width ≈ 0.05**（RFの内在分散上、±0.02は非現実的）。
-- **RF: 20 seed**（cheap CPU; ±0.047）、**Lstm/SvmW: 12–15 seed**（±0.011以下）。
-- **SvmA: 数学的には ~8 で十分**（低分散）だが、12 seed×6条件×~6h = **~18 GPU日**（非現実）。
-  → SvmA は (a) PSO 高速化で12, (b) 妥当な8, (c) 12を~2.5週 のいずれか要判断。
-- seed増しは全6条件を同一 imbalv3 タグで揃える（within-in も再実行）と集計がクリーン。
+**結論（国際ジャーナル品質の最終決定, 2026-06-28）**:
+判断基準 = ①原手法への忠実性 ②統計的厳密性 ③再現性 ④査読耐性（恣意性回避）。
+- 目標精度 **95% CI half-width ≈ 0.05**（RFの内在分散上 ±0.02 は100超で非現実的）。
+- **Seed: RF=20, Lstm/SvmW/SvmA=15**（全て floor 12 超）。Lstm/SvmW/SvmA は**一律15で査読耐性**（条件別の不均一seedは恣意的に見えるため不採用）。RF のみ高分散ゆえ20（power analysis 明記）。
+- **SvmA = `SVMA_PSO_MAXITER=30`**（収束根拠: 保存済 `pso_history`（5050評価）で best fitness が**iter ~2 で 0.0172 に収束し iter100 まで不変**＝maxiter=100は~50倍冗長）。30は15倍マージンで**同一最適解を再現**＝ANFIS/PSO/RBF-SVM の手法自体は不変（忠実）。これで SvmA=15 が ~5.6 GPU日で実行可能。
+  - *要・経験的検証*: GPU 解放後に within-in s42 を maxiter=30 で再走し、既存 maxiter=100 値(0.523)と一致を確認予定。
+- **SvmW: SVM に max_iter を入れない（忠実維持）**。病的トライアル（非収束で~10h）は Optuna 探索内のみで、**最終モデルは収束済 best params を使用**＝結果は忠実。探索が遅いだけなので手法を変えない方が査読上安全（~6.5日許容）。
+- 全6条件を同一 imbalv3 タグ・同一seedで統一（within-in も c1 で実行）。
 
 ## 残タスク
 - T2 完了 → 結果追記。

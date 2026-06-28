@@ -43,7 +43,7 @@ echo "$(ts) [c1] pending: RF=$PRF SvmW=$PSW Lstm=$PLS SvmA=$PSA" >> "$WLOG"
 # GPU jobs (one at a time): Lstm (fast) first, then SvmA
 if ! gpu_busy; then
   if   [ "$PLS" -gt 0 ]; then start_wsl Lstm "$LSTMPY" 3 ""
-  elif [ "$PSA" -gt 0 ]; then start_wsl SvmA "$SVMAPY" 1 "SVMA_USE_CUML=1 SVMA_PSO_PROCESSES=1"
+  elif [ "$PSA" -gt 0 ]; then start_wsl SvmA "$SVMAPY" 1 "SVMA_USE_CUML=1 SVMA_PSO_PROCESSES=1 SVMA_PSO_MAXITER=30"
   fi
 fi
 
