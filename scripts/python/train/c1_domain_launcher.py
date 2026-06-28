@@ -79,13 +79,25 @@ class Cell:
     def target_file(self) -> Path:
         return RANK / f"{DISTANCE}_{self.domain}.txt"
 
-    def already_done(self) -> bool:
-        base = EVAL_DIR / self.model
-        if not base.exists():
-            return False
-        # eval name = eval_results_<M>_<mode>_<tag>.json ; tag ends with _s<seed> (no
-        # seed-prefix collision among 42/123/2025). Anchor on the tag to be safe.
-        return any(base.rglob(f"*{self.tag}.json")) or any(base.rglob(f"*{self.tag}_*.json"))
+    @property
+    def eval_name(self) -> str:
+        # evaluate.py writes eval_results_<M>_<mode>_<tag>.json (subject_wise_split path).
+        return f"eval_results_{self.model}_{self.mode}_{self.tag}.json"
+
+    def already_done(self, names: set = None) -> bool:
+        if names is not None:                       # fast path: O(1) set membership
+            return self.eval_name in names
+        base = EVAL_DIR / self.model                # fallback: single rglob
+        return base.exists() and any(base.rglob(self.eval_name))
+
+
+def done_names(model: str) -> set:
+    """One directory scan -> set of eval JSON basenames (avoids per-cell rglob over
+    ~1600 files, which made the watchdog's dry-run time out)."""
+    base = EVAL_DIR / model
+    if not base.exists():
+        return set()
+    return {fp.name for fp in base.rglob("eval_results_*.json")}
 
 
 def build_cells(model: str, seeds: List[int] = None) -> List[Cell]:
@@ -121,14 +133,14 @@ def run_cell(cell: Cell) -> int:
     return 0
 
 
-def worker(name: str, q: "queue.Queue[Cell]") -> None:
+def worker(name: str, q: "queue.Queue[Cell]", names: set) -> None:
     while True:
         try:
             cell = q.get_nowait()
         except queue.Empty:
             return
         try:
-            if cell.already_done():
+            if cell.already_done(names):
                 logging.info("SKIP %s (done)", cell.tag)
             else:
                 logging.info("START %s", cell.tag); run_cell(cell)
@@ -149,13 +161,13 @@ def main():
     args = ap.parse_args()
     seeds = [int(s) for s in args.seeds.split(",")] if args.seeds else None
     cells = build_cells(args.model, seeds)
-    pending = [c for c in cells if not c.already_done()]
+    names = done_names(args.model)
+    pending = [c for c in cells if not c.already_done(names)]
     if args.limit:
         pending = pending[: args.limit]
     n_workers = args.workers or DEFAULT_WORKERS.get(args.model, 1)
     logging.info("c1dom %s | total=%d done=%d pending=%d workers=%d",
-                 args.model, len(cells), len(cells) - len([c for c in cells if not c.already_done()]),
-                 len(pending), n_workers)
+                 args.model, len(cells), len(cells) - len(pending), len(pending), n_workers)
     if args.dry_run:
         for c in pending:
             print(c.tag)
@@ -163,7 +175,7 @@ def main():
     q: "queue.Queue[Cell]" = queue.Queue()
     for c in pending:
         q.put(c)
-    threads = [threading.Thread(target=worker, args=(f"{args.model}-{i}", q), name=f"{args.model}-{i}")
+    threads = [threading.Thread(target=worker, args=(f"{args.model}-{i}", q, names), name=f"{args.model}-{i}")
                for i in range(n_workers)]
     for t in threads:
         t.start()
