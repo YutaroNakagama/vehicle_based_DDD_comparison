@@ -126,6 +126,30 @@ Cross-domain は train と eval が別ドメイン=別被験者群(=被験者分
 - **検証**: 修正版でクラッシュ地点(~64s)を越え PSO が 210s+ 継続・例外 0 を確認。c1 SvmA を単一ジョブで再開。
 - **注**: T1 で SvmA は信号なし確定済みのため、c1 SvmA の AUROC は chance 想定(within/cross 表を埋める用途)。
 
+## Seed 数の数学的妥当性 (2026-06-28)
+必要 seed 数 n は **95% CI half-width** 基準: n s.t. `t_{n-1,.975}·s/√n ≤ h`（s=seed間AUROC標準偏差）。
+観測された s（RFは11 seed、他は3 seedの推定）と必要nは条件で大きく異なる:
+
+| 条件 | s (std) | n@±0.02 | n@±0.03 | n@±0.05 |
+|---|---|---|---|---|
+| **RF Within-out** | **0.105** | 108 | 50 | 19 |
+| **RF Within-in** (B1) | **0.078** | 60 | 28 | 11 |
+| SvmA Within-in | 0.021 | 7 | 5 | 3 |
+| Lstm Within-out | 0.019 | 6 | 4 | 3 |
+| SvmW Within-out | 0.007 | 3 | 3 | 3 |
+| Cross/Mixed (chance) | ~0.005 | 3 | 3 | 3 |
+
+**重要所見**: **RF の within-domain AUROC は seed 不安定（std≈0.08–0.10, 範囲 0.62–0.95、両domain共通）**。
+3 seed が 0.76–0.82 と狭かったのは偶然。→ within-domain RF を精密に出すには多seedが必須（±0.02には100超で非現実的）。
+他手法（within std≈0.02、cross/mixed≈chance）は **12 seed で CI±0.013 と十分**。
+
+**結論**:
+- 目標精度 **95% CI half-width ≈ 0.05**（RFの内在分散上、±0.02は非現実的）。
+- **RF: 20 seed**（cheap CPU; ±0.047）、**Lstm/SvmW: 12–15 seed**（±0.011以下）。
+- **SvmA: 数学的には ~8 で十分**（低分散）だが、12 seed×6条件×~6h = **~18 GPU日**（非現実）。
+  → SvmA は (a) PSO 高速化で12, (b) 妥当な8, (c) 12を~2.5週 のいずれか要判断。
+- seed増しは全6条件を同一 imbalv3 タグで揃える（within-in も再実行）と集計がクリーン。
+
 ## 残タスク
 - T2 完了 → 結果追記。
 - T3(pooled+SMOTE の RF 1セル)、T6(Aygun コース曲率の確認)。
