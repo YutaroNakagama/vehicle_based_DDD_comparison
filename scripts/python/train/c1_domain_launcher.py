@@ -43,17 +43,24 @@ LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 DISTANCE = "wasserstein"
 RATIO = "0.5"
-SEEDS = [42, 123, 2025]
-# (mode, domain). The 6-case grid (advisor 2026-06-28) = {Within, Cross, Mixed} x {in,out}:
-#   target_only = Within (train target domain), source_only = Cross (train other domain),
-#   mixed = Mixed (train ALL subjects), all evaluated on the target domain (in/out).
-# Within-in (target_only, in_domain) is reused from B1 for RF/SvmW/Lstm (features
-# unaffected by the SvmA fix); SvmA ALSO re-runs Within-in here because the T1
-# feature-faithfulness fix (SvmA.py, 2026-06-27) invalidates B1's SvmA cells.
-CONDITIONS = [("target_only", "out_domain"),
+# Variance-proportional seed counts (2026-06-28 seed-adequacy analysis, see
+# verification_log.md): the required n for a fixed 95% CI half-width scales with the
+# seed-to-seed AUROC std. RF's within-domain AUROC is seed-UNSTABLE (std ~0.08-0.10,
+# range 0.62-0.95, both domains) -> 20 seeds; Lstm/SvmW moderate -> 15; SvmA is
+# low-variance (pinned near chance) AND GPU-expensive -> 8 seeds is math-sufficient
+# (CI +/-0.016) while keeping the faithful Arefnezhad pipeline UNCHANGED (no PSO
+# speed hacks). Already-run seeds are listed first so resume skips them.
+SEED_MASTER = [42, 123, 2025, 0, 1, 7, 13, 256, 512, 1337, 2024,
+               3, 5, 9, 11, 17, 23, 99, 777, 2718]
+SEEDS_BY_MODEL = {"RF": SEED_MASTER[:20], "Lstm": SEED_MASTER[:15],
+                  "SvmW": SEED_MASTER[:15], "SvmA": SEED_MASTER[:8]}
+# The full 6-case grid (advisor 2026-06-28) = {Within, Cross, Mixed} x {in,out},
+# uniform imbalv3 tags for ALL models (within-in re-run in c1, not reused from B1):
+#   target_only = Within (train target domain), source_only = Cross (train other
+#   domain), mixed = Mixed (train ALL subjects); all evaluated on the target domain.
+CONDITIONS = [("target_only", "in_domain"), ("target_only", "out_domain"),
               ("source_only", "in_domain"), ("source_only", "out_domain"),
               ("mixed", "in_domain"), ("mixed", "out_domain")]
-WITHIN_IN = ("target_only", "in_domain")
 DEFAULT_WORKERS = {"RF": 4, "SvmW": 4, "SvmA": 1, "Lstm": 3}
 
 
@@ -82,10 +89,8 @@ class Cell:
 
 
 def build_cells(model: str, seeds: List[int] = None) -> List[Cell]:
-    conds = list(CONDITIONS)
-    if model == "SvmA":  # T1 fix invalidates B1's SvmA Within-in -> re-run it here too
-        conds = [WITHIN_IN] + conds
-    return [Cell(model, m, d, s) for (m, d) in conds for s in (seeds or SEEDS)]
+    use = seeds or SEEDS_BY_MODEL.get(model, SEED_MASTER[:12])
+    return [Cell(model, m, d, s) for (m, d) in CONDITIONS for s in use]
 
 
 def run_cell(cell: Cell) -> int:
