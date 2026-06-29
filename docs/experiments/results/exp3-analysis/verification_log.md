@@ -177,7 +177,9 @@ TIV2026(exp2) は seed妥当性を ①σ_rank収束 ②bootstrap 95%CI(B=2000) �
 **結論**:
 - **唯一の不足が RF Within-out**（高分散 std=0.108, 20では hw=0.051）→ **RF=24 seed に増**（req_n=21、24で hw≈0.046<0.05、CPU安価）。
 - Lstm は req_n=3 と過剰だが一律15で査読耐性。chance条件(Cross/Mixed-KSS, SvmA全条件)は低分散で req_n≤4。
-- SvmW/SvmA は完走後に全6条件で本表を再生成して最終確定（現状の完了分は全て妥当）。
+- **最終 seed 計画（2026-06-30 確定）: RF=24, Lstm=15, SvmW=8, SvmA=8**（分散比例・各条件で adequacy を満たす
+  最小構成）。SvmW/SvmA は低分散（req_n=3〜7）ゆえ15→8に削減：統計的に十分かつ SvmW の病的SVM（~13h/セル）
+  による数日のムダを回避。手法・パイプラインは不変（seed数のみ）。SvmW/SvmA 完走後に全6条件で本表を再生成し最終確定。
 - TIV2026 が AUROC で σ_rank=0.147 の残差を許容したのと同程度〜より厳しく、exp3 の seed計画は妥当。
 
 ## 残タスク
