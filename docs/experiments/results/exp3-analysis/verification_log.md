@@ -155,6 +155,31 @@ Cross-domain は train と eval が別ドメイン=別被験者群(=被験者分
   max_iter 無制限（sklearn 既定）を維持。cap で実行された5セルは削除し無制限で再実行済。探索は遅いが結果は完全に忠実。
 - 全6条件を同一 imbalv3 タグ・同一seedで統一（within-in も c1 で実行）。
 
+### 全条件 seed 妥当性（TIV2026準拠・全条件網羅, 2026-06-30 実測）
+TIV2026(exp2) は seed妥当性を ①σ_rank収束 ②bootstrap 95%CI(B=2000) ③検出力 で論じた。これを
+**exp3 の全24条件(c1 6×4) に適用**（[`exp3_seed_adequacy.py`](../../../../scripts/python/analysis/exp3_seed_adequacy.py)）。
+判定 = 識別条件は 95%CI half-width ≤ 0.05、chance条件は bootstrap CI 上限 < 0.60。
+
+| モデル | 条件 | n | mean | std | CI hw | 判定 |
+|---|---|---|---|---|---|---|
+| **RF** | Within-in | 20 | 0.752 | 0.089 | 0.042 | ✅ |
+| | **Within-out** | 20 | 0.787 | **0.108** | **0.051** | ⚠️ req_n=21 → **RF=24に増** |
+| | Cross-in/out | 20 | 0.51 | 0.005 | 0.002 | ✅ chance(上限<0.52) |
+| | Mixed-in/out | 20 | 0.74–0.76 | 0.08–0.10 | 0.037–0.048 | ✅ |
+| **Lstm** | 全6条件 | 15 | 0.72–0.78 | 0.009–0.015 | 0.005–0.009 | ✅（req_n=3, 15は十分過剰） |
+| **SvmW** | (完了分) Within-out | 3 | 0.765 | 0.007 | 0.016 | ✅／ Cross=chance ✅ |
+| **SvmA** | (完了分) Within-in | 5 | 0.540 | 0.031 | – | ✅ chance(上限0.565<0.60) |
+
+**σ_rank（6条件順位の seed安定性, TIV2026 fig相当）**:
+- **RF**: κ=16→0.123, 18→0.10, **19→0.073** → 順位（within/mixed ≫ cross）は**seedでなく条件で決まる**（収束）。
+- **Lstm**: κ=14→0.133（RFより高い）= 6条件が**統計的に近接**（0.72–0.78）ゆえ細順位は揺れる。ただし上位構造（全条件 chance に崩れず ~0.75）は安定 → **domain不変の裏付け**。
+
+**結論**:
+- **唯一の不足が RF Within-out**（高分散 std=0.108, 20では hw=0.051）→ **RF=24 seed に増**（req_n=21、24で hw≈0.046<0.05、CPU安価）。
+- Lstm は req_n=3 と過剰だが一律15で査読耐性。chance条件(Cross/Mixed-KSS, SvmA全条件)は低分散で req_n≤4。
+- SvmW/SvmA は完走後に全6条件で本表を再生成して最終確定（現状の完了分は全て妥当）。
+- TIV2026 が AUROC で σ_rank=0.147 の残差を許容したのと同程度〜より厳しく、exp3 の seed計画は妥当。
+
 ## 残タスク
 - T2 完了 → 結果追記。
 - T3(pooled+SMOTE の RF 1セル)、T6(Aygun コース曲率の確認)。
