@@ -55,12 +55,16 @@ RATIO = "0.5"
 # SVM method itself is otherwise UNCHANGED). Already-run seeds listed first (resume skips).
 SEED_MASTER = [42, 123, 2025, 0, 1, 7, 13, 256, 512, 1337, 2024,
                3, 5, 9, 11, 17, 23, 99, 777, 2718, 31, 47, 101, 333]
-# RF=24 (not 20): the comprehensive seed-adequacy analysis (exp3_seed_adequacy.py,
-# TIV2026-aligned) found RF Within-out std=0.108 needs n=21 for a 95% CI half-width
-# <=0.05; 20 gave hw 0.051. 24 clears it with margin. Lstm/SvmW/SvmA=15 (all their
-# conditions reach hw<=0.05 — Lstm req_n=3, chance conditions req_n<=4).
+# Variance-proportional seed counts (exp3_seed_adequacy.py, TIV2026-aligned):
+#   RF=24  -- high within-domain variance (Within-out std 0.108 needs n=21 for CI
+#            half-width <=0.05; 24 clears with margin).
+#   Lstm=15 -- already complete; very low variance (req_n=3) so 15 is generous.
+#   SvmW=8, SvmA=8 -- LOW variance (SvmW within std 0.007 req_n=3; SvmA chance req_n<=7),
+#            so 8 seeds already exceed adequacy; capped at 8 to avoid spending ~days of
+#            compute (esp. SvmW's pathological non-converging SVMs) on statistically
+#            unnecessary seeds. Method/pipeline UNCHANGED -- only the seed count.
 SEEDS_BY_MODEL = {"RF": SEED_MASTER[:24], "Lstm": SEED_MASTER[:15],
-                  "SvmW": SEED_MASTER[:15], "SvmA": SEED_MASTER[:15]}
+                  "SvmW": SEED_MASTER[:8], "SvmA": SEED_MASTER[:8]}
 # The full 6-case grid (advisor 2026-06-28) = {Within, Cross, Mixed} x {in,out},
 # uniform imbalv3 tags for ALL models (within-in re-run in c1, not reused from B1):
 #   target_only = Within (train target domain), source_only = Cross (train other
