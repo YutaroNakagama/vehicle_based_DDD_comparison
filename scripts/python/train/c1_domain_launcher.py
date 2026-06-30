@@ -126,8 +126,12 @@ def run_cell(cell: Cell) -> int:
     env = os.environ.copy()
     env["PYTHONPATH"] = str(REPO); env["PBS_JOBID"] = jobid; env.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
     tf = str(cell.target_file.relative_to(REPO))
+    # NO --time_stratify_labels: train uses subject_time_split with stratify=False, matching
+    # the eval (target_timewise, stratify=False) so train & eval share ONE temporal partition.
+    # (Fixes the leakage: stratify=True train vs stratify=False eval gave eval-test 86.5% inside
+    # the training set for within/mixed. Both stratify=False => identical held-out test.)
     train_cmd = [PYTHON, "scripts/python/train/train.py", "--model", cell.model, "--mode", cell.mode,
-                 "--seed", str(cell.seed), "--target_file", tf, "--tag", tag, "--time_stratify_labels",
+                 "--seed", str(cell.seed), "--target_file", tf, "--tag", tag,
                  "--use_oversampling", "--oversample_method", "smote", "--target_ratio", RATIO,
                  "--subject_wise_oversampling"]
     eval_cmd = [PYTHON, "scripts/python/evaluation/evaluate.py", "--model", cell.model, "--mode", cell.mode,

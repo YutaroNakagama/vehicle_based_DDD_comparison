@@ -8,7 +8,8 @@ Reproducing it locally lets us quantify the gain from adding domain + SW-SMOTE
 
 Config (mirrors scripts/hpc/jobs/train/pbs_array_svma_pooled.sh, baseline arm):
   Models: RF, SvmW, SvmA, Lstm  (one per invocation via --model)
-  Mode:   pooled  (RANDOM split; train & eval BOTH random => consistent held-out test)
+  Mode:   pooled  (TIME-SERIES split: subject_time_split; train & eval BOTH
+          --subject_wise_split => identical temporal held-out test)
   Imbalance: NONE (no --use_oversampling)
   Seeds:  42, 123, 2025  (match B1 for paired comparison)
   => 3 cells per model.
@@ -85,19 +86,19 @@ def run_cell(cell: Cell) -> int:
     env["PBS_JOBID"] = jobid
     env.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
 
-    # IV2025 = pooled train/val/test with a RANDOM split. Train and eval must use the
-    # SAME split so the test set is truly held out. The eval side (below) uses pooled
-    # random; train therefore must NOT pass --subject_wise_split (which would make train
-    # use subject_time_split, mismatching eval's random split -> leakage). Both random +
-    # same seed => identical partition.
+    # IV2025 = pooled TIME-SERIES split (per-subject temporal: subject_time_split).
+    # Both train AND eval must pass --subject_wise_split so they use the SAME deterministic
+    # temporal partition (the original bug: train had it, eval did NOT -> eval fell back to
+    # a random split that mismatched train's temporal test -> leakage).
     train_cmd = [
         PYTHON, "scripts/python/train/train.py",
-        "--model", cell.model, "--mode", "pooled",
+        "--model", cell.model, "--mode", "pooled", "--subject_wise_split",
         "--seed", str(cell.seed), "--tag", tag,
     ]
     eval_cmd = [
         PYTHON, "scripts/python/evaluation/evaluate.py",
-        "--model", cell.model, "--tag", tag, "--mode", "pooled", "--jobid", jobid,
+        "--model", cell.model, "--tag", tag, "--mode", "pooled",
+        "--subject_wise_split", "--jobid", jobid,
     ]
     start = time.time()
     with open(log_path, "w", encoding="utf-8") as lf:
