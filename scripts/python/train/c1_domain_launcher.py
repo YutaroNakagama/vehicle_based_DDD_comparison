@@ -113,7 +113,10 @@ def done_names(model: str) -> set:
 
 def build_cells(model: str, seeds: List[int] = None) -> List[Cell]:
     use = seeds or SEEDS_BY_MODEL.get(model, SEED_MASTER[:12])
-    return [Cell(model, m, d, s) for (m, d) in CONDITIONS for s in use]
+    # Seed-major order: run one seed across ALL 6 conditions before moving to the next
+    # seed, so every condition's trend accumulates in parallel (all 6 cases become
+    # visible early) instead of finishing one condition's seeds before the next starts.
+    return [Cell(model, m, d, s) for s in use for (m, d) in CONDITIONS]
 
 
 def run_cell(cell: Cell) -> int:
