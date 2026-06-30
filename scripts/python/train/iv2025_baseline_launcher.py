@@ -8,7 +8,7 @@ Reproducing it locally lets us quantify the gain from adding domain + SW-SMOTE
 
 Config (mirrors scripts/hpc/jobs/train/pbs_array_svma_pooled.sh, baseline arm):
   Models: RF, SvmW, SvmA, Lstm  (one per invocation via --model)
-  Mode:   pooled  + --subject_wise_split   (no domain grouping)
+  Mode:   pooled  (RANDOM split; train & eval BOTH random => consistent held-out test)
   Imbalance: NONE (no --use_oversampling)
   Seeds:  42, 123, 2025  (match B1 for paired comparison)
   => 3 cells per model.
@@ -45,9 +45,12 @@ LOG_DIR.mkdir(parents=True, exist_ok=True)
 #   give a 95% CI whose upper bound stays < 0.60 (excludes weak signal),
 #   justified by the running-mean convergence plot. 6 = TIV2026's first six.
 SEEDS = [0, 1, 7, 42, 123, 2025]
+# RF is high-variance (seed-adequacy: req_n=15 for 95% CI half-width <=0.05); chance
+# methods (SvmW/Lstm/SvmA) are low-variance so 6 seeds already exceed adequacy.
+SEEDS_RF = [0, 1, 7, 13, 42, 123, 256, 512, 1337, 2024, 2025, 3, 5, 9, 11]  # 15
 
 def _seeds(model: str):
-    return SEEDS
+    return SEEDS_RF if model == "RF" else SEEDS
 
 DEFAULT_WORKERS = {"RF": 3, "SvmW": 3, "SvmA": 1, "Lstm": 3}
 
@@ -82,9 +85,14 @@ def run_cell(cell: Cell) -> int:
     env["PBS_JOBID"] = jobid
     env.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
 
+    # IV2025 = pooled train/val/test with a RANDOM split. Train and eval must use the
+    # SAME split so the test set is truly held out. The eval side (below) uses pooled
+    # random; train therefore must NOT pass --subject_wise_split (which would make train
+    # use subject_time_split, mismatching eval's random split -> leakage). Both random +
+    # same seed => identical partition.
     train_cmd = [
         PYTHON, "scripts/python/train/train.py",
-        "--model", cell.model, "--mode", "pooled", "--subject_wise_split",
+        "--model", cell.model, "--mode", "pooled",
         "--seed", str(cell.seed), "--tag", tag,
     ]
     eval_cmd = [
