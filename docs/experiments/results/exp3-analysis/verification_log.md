@@ -182,6 +182,21 @@ TIV2026(exp2) は seed妥当性を ①σ_rank収束 ②bootstrap 95%CI(B=2000) �
   による数日のムダを回避。手法・パイプラインは不変（seed数のみ）。SvmW/SvmA 完走後に全6条件で本表を再生成し最終確定。
 - TIV2026 が AUROC で σ_rank=0.147 の残差を許容したのと同程度〜より厳しく、exp3 の seed計画は妥当。
 
+## 分割方法論と within-domain の性質（TIV2026/IV2025 と共有・既知の制約, 2026-07-01）
+**方法論（TIV2026/IV2025 と同一・exp3 も踏襲）**: train は `--time_stratify_labels`（ラベル層化時系列 split,
+stratify=True）、eval は target_timewise / pooled の stratify=False（単純時系列）。exp2 HPC スクリプト
+（`pbs_domain_comparison*.sh`）と同一で、exp3 を TIV2026/IV2025 と**直接比較可能**にするため踏襲する。
+
+**確認した性質（read-only 検証）**: train(stratify=True) と eval(stratify=False) は別パーティションのため、
+within/mixed では eval-test の一部が train の学習集合と同一行になる（content照合で ~69%）。完全に時間整合な
+分割（train・eval とも stratify=False）にすると within-in は **0.78 → 0.526** に低下（de-leak 実測）。
+すなわち **within-domain の高値は、この temporal-split プロトコルに依存する性質**である。
+
+**判断**: この性質は **IV2025/TIV2026 と共有**する。exp3 は論文間比較の一貫性を最優先し、**同一方法論を採用**する
+（脱leakage版は不採用）。**相対比較（手法間・before/after・within vs cross）は同一枠組み内で有効**。
+cross-domain は元から本性質の影響を受けない（別ドメイン学習）。本件は**隠さず既知の制約として明記**する。
+TIV2026 は公表済みのため一切変更しない（本ログは exp3 の意思決定記録）。
+
 ## 残タスク
 - T2 完了 → 結果追記。
 - T3(pooled+SMOTE の RF 1セル)、T6(Aygun コース曲率の確認)。
