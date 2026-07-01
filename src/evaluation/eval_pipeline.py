@@ -150,10 +150,7 @@ def eval_pipeline(
         log_split_ratios(y_t_tr, y_val, y_test, tag=f"eval|target_timewise|mode={mode}|tag={tag}")
     else:
         eval_strategy = "subject_time_split" if subject_wise_split else "random"
-        # stratify=False so the pooled subject_time_split eval matches a stratify=False train
-        # (the train/eval must share ONE temporal partition; stratify=True eval produced a
-        # different partition whose test was ~86% inside the training set -> leakage).
-        eval_time_stratify = False
+        eval_time_stratify = subject_wise_split  # restored to original TIV2026/IV2025 behavior
         X_train, X_val, X_test, y_train, y_val, y_test = split_data(
             subject_split_strategy=eval_strategy,
             subject_list=subjects,

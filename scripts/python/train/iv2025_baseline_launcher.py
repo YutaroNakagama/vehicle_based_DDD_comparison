@@ -8,8 +8,8 @@ Reproducing it locally lets us quantify the gain from adding domain + SW-SMOTE
 
 Config (mirrors scripts/hpc/jobs/train/pbs_array_svma_pooled.sh, baseline arm):
   Models: RF, SvmW, SvmA, Lstm  (one per invocation via --model)
-  Mode:   pooled  (TIME-SERIES split: subject_time_split; train & eval BOTH
-          --subject_wise_split => identical temporal held-out test)
+  Mode:   pooled  (original IV2025 config: train --subject_wise_split, eval without;
+          reproduced as-published to stay comparable to IV2025 / TIV2026)
   Imbalance: NONE (no --use_oversampling)
   Seeds:  42, 123, 2025  (match B1 for paired comparison)
   => 3 cells per model.
@@ -86,10 +86,9 @@ def run_cell(cell: Cell) -> int:
     env["PBS_JOBID"] = jobid
     env.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
 
-    # IV2025 = pooled TIME-SERIES split (per-subject temporal: subject_time_split).
-    # Both train AND eval must pass --subject_wise_split so they use the SAME deterministic
-    # temporal partition (the original bug: train had it, eval did NOT -> eval fell back to
-    # a random split that mismatched train's temporal test -> leakage).
+    # IV2025 baseline: reproduced with the ORIGINAL IV2025 config for comparability
+    # (train --subject_wise_split; eval --mode pooled without the flag). This matches the
+    # published IV2025 "before" values. (Kept as-published to respect IV2025/TIV2026.)
     train_cmd = [
         PYTHON, "scripts/python/train/train.py",
         "--model", cell.model, "--mode", "pooled", "--subject_wise_split",
@@ -97,8 +96,7 @@ def run_cell(cell: Cell) -> int:
     ]
     eval_cmd = [
         PYTHON, "scripts/python/evaluation/evaluate.py",
-        "--model", cell.model, "--tag", tag, "--mode", "pooled",
-        "--subject_wise_split", "--jobid", jobid,
+        "--model", cell.model, "--tag", tag, "--mode", "pooled", "--jobid", jobid,
     ]
     start = time.time()
     with open(log_path, "w", encoding="utf-8") as lf:
