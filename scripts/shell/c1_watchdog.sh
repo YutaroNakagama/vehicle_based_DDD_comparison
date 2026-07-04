@@ -38,7 +38,7 @@ echo "$(ts) [c1] pending: RF=$PRF SvmW=$PSW Lstm=$PLS SvmA=$PSA" >> "$WLOG"
 
 # CPU jobs
 [ "$PRF" -gt 0 ] && ! alive "$LOGD/.RF.pid"   && start_win RF   4 20
-[ "$PSW" -gt 0 ] && ! alive "$LOGD/.SvmW.pid" && start_win SvmW 4 50
+[ "$PSW" -gt 0 ] && ! alive "$LOGD/.SvmW.pid" && start_win SvmW 8 50
 
 # GPU jobs (one at a time): Lstm (fast) first, then SvmA
 if ! gpu_busy; then

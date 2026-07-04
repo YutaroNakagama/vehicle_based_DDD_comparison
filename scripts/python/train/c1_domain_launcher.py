@@ -72,6 +72,13 @@ SEEDS_BY_MODEL = {"RF": SEED_MASTER[:24], "Lstm": SEED_MASTER[:15],
 CONDITIONS = [("target_only", "in_domain"), ("target_only", "out_domain"),
               ("source_only", "in_domain"), ("source_only", "out_domain"),
               ("mixed", "in_domain"), ("mixed", "out_domain")]
+# Table-priority split (user request 2026-07-04): the progress-report table needs
+# {Pooled, Mixed, Within} first, so Within(target_only)+Mixed cells run for ALL seeds
+# before any Cross(source_only) cell. EXECUTION ORDER ONLY — the cell set, tags, and
+# methodology are unchanged; Cross still completes afterwards.
+TABLE_CONDITIONS = [("target_only", "in_domain"), ("target_only", "out_domain"),
+                    ("mixed", "in_domain"), ("mixed", "out_domain")]
+CROSS_CONDITIONS = [("source_only", "in_domain"), ("source_only", "out_domain")]
 DEFAULT_WORKERS = {"RF": 4, "SvmW": 4, "SvmA": 1, "Lstm": 3}
 
 
@@ -113,10 +120,11 @@ def done_names(model: str) -> set:
 
 def build_cells(model: str, seeds: List[int] = None) -> List[Cell]:
     use = seeds or SEEDS_BY_MODEL.get(model, SEED_MASTER[:12])
-    # Seed-major order: run one seed across ALL 6 conditions before moving to the next
-    # seed, so every condition's trend accumulates in parallel (all 6 cases become
-    # visible early) instead of finishing one condition's seeds before the next starts.
-    return [Cell(model, m, d, s) for s in use for (m, d) in CONDITIONS]
+    # Seed-major WITHIN each priority group: Within+Mixed (the summary-table columns)
+    # accumulate seeds in parallel and finish first; Cross runs last (see
+    # TABLE_CONDITIONS note above — order only, set/tags/methodology unchanged).
+    return ([Cell(model, m, d, s) for s in use for (m, d) in TABLE_CONDITIONS] +
+            [Cell(model, m, d, s) for s in use for (m, d) in CROSS_CONDITIONS])
 
 
 def run_cell(cell: Cell) -> int:
