@@ -268,6 +268,59 @@ Each experiment saves (model-dependent):
 
 ---
 
+## Paper (TIV2026) Reproducibility — Confirmation Items
+
+Verified against the committed launch/job scripts and source while
+preparing the TIV2026 manuscript (Exp 2, `domain_split2`, RF). Recorded
+here as **confirmation items** because the per-job HPC run logs
+(`scripts/hpc/logs/domain/`) and raw eval JSON
+(`results/outputs/evaluation/RF/`) are not synced to this checkout, so
+the values below come from the code path, not from a run transcript.
+
+### Rebalancing configuration (R3)
+
+Condition → CLI flags, from
+`scripts/hpc/jobs/domain_analysis/pbs_domain_comparison_split2.sh:146-157`:
+
+| Paper factor level | Launcher condition | CLI flags |
+|---|---|---|
+| Plain SMOTE | `smote_plain` | `--use_oversampling --oversample_method smote --target_ratio {0.1,0.5}` |
+| SW-SMOTE | `smote` | `--use_oversampling --oversample_method smote --target_ratio {0.1,0.5} --subject_wise_oversampling` |
+| RUS | `undersample` | `--use_oversampling --oversample_method undersample_rus --target_ratio {0.1,0.5}` |
+
+Verified implementation details (`src/models/sampling/oversampling.py`,
+`src/models/model_pipeline.py`, `src/models/training/pipeline.py`):
+
+- `k_neighbors = min(5, minority_count - 1)` for both SMOTE variants
+  (`oversampling.py:123`).
+- **Plain SMOTE (pooled)** is applied to the RF-selected top-10 features,
+  **unscaled**, before `StandardScaler.transform` (`pipeline.py:140-153`).
+- **SW-SMOTE (subject-wise)** runs at Stage 4.5, **before** RF feature
+  selection, on the full cleaned numeric feature matrix, **unscaled**,
+  looping per subject with `random_state + i`; a subject with
+  `minority_count < 2` is left un-resampled, and a `ValueError` from
+  `fit_resample` falls back to the original data
+  (`model_pipeline.py:209-232`, `oversampling.py:195-302`).
+
+**⚠️ Confirmation items for the paper's methods text:**
+
+1. Plain SMOTE and SW-SMOTE operate in **different feature spaces**
+   (plain = selected top-10; SW = full pre-selection set). Confirm this
+   is intended and describe it accurately in Section III-B4 / Appendix C
+   rather than implying a single shared feature space.
+2. The `launch_paper_domain_split2.sh` round uses `SEEDS=(42 123)` only;
+   the paper's 12-seed set (`OFFICIAL_SEEDS`) was accumulated across
+   multiple launch rounds. Confirm the final analyzed CSVs cover all 12
+   seeds for every cell.
+3. `balanced_rf` is launched (8th condition) but is **not** one of the
+   paper's 7 `R` levels; confirm it was excluded from the factorial
+   analysis, not silently pooled in.
+4. `requirements.txt` is currently **unpinned** (package names only), yet
+   the checklist above claims "pinned versions" — pin the actual
+   versions used (Python, scikit-learn, imbalanced-learn, Optuna) for R5.
+
+---
+
 ## Related Documents
 
 - [Developer Guide](../architecture/developer_guide.md) — Repository architecture
