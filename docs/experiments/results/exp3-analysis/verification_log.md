@@ -208,3 +208,35 @@ TIV2026 は公表済みのため一切変更しない（本ログは exp3 の意
   [`exp3_svmw_split_probe.py`](../../../../scripts/python/analysis/exp3_svmw_split_probe.py)
 - 結果 JSON: `results/analysis/exp3_verification/t1_feature_signal_probe.json`, `t2_svmw_split_probe.json`
 - c1: [`c1_domain_launcher.py`](../../../../scripts/python/train/c1_domain_launcher.py), [`c1_watchdog.sh`](../../../../scripts/shell/c1_watchdog.sh)
+
+## 2026-07-04 敵対的再検証（11エージェント workflow）— Bug#4 再発を発見・修正
+
+**方法**: 4モデル×(独立再スキャン→懐疑エージェントが refute→網羅性クリティック)。各ターゲットで生 JSON を
+独立に rglob+load し、byte単位で相互照合。
+
+**発見（実バグ1件, CONFIRMED）**: c1 **RF の Cross(source_only) 2セルが Within(target_only) の予測ベクトルと
+byte完全一致**（`y_pred_proba` md5一致）:
+- `source_only/in_domain/s42`  (AUROC 0.7734 = within-in s42 と同一)
+- `source_only/out_domain/s123` (AUROC 0.7578 = within-out s123 と同一)
+
+**根本原因（既知の "Bug #4" の再発）**: `evaluate.py` の `resolve_jobid_for_evaluation` 解決順で、優先#3の
+glob `<M>_<mode>_rank_*` が **c1 の保存モデル名（内部mode="domain_train"）に一致せず**、優先#4の
+**共有ファイル `models/<M>/latest_job.txt`**（各workerが上書きする可変ファイル）に落ちる。RF/SvmW/Lstm は
+4/4/3 worker 並列のため、あるセルの train と eval の間に別workerが `latest_job.txt` を上書きすると eval が
+**別セルのモデルをロード**。RF は高速セルで eval が密集し 2/48 で発生。
+- **IV2025 が無傷な理由**: IV2025 の eval_cmd は `--jobid` を渡す（解決順#1）→ race-free。c1 は未指定だった。
+
+**網羅スキャン**: 全4モデル×(domain,seed)×mode総当たりで roc_auc(10dp)+cm 完全一致を検出 → **一致は上記2件のみ**。
+Lstm/SvmW/SvmA は clean。影響: Cross平均 0.5288→0.5182(in)、0.5171→0.5067(out)（依然 ~0.52 崩落, 結論不変）。
+
+**修正**: `c1_domain_launcher.py` の eval_cmd に **`--jobid jobid` を追加**（IV2025 と同じ安全パターン）。解決順#1で
+セル自身のモデルを確定ロード → **worker数に依らず race-free**。方法論（分割/特徴/ラベル/SMOTE）は不変。
+- 汚染2セルの JSON を退避・削除し、修正版 launcher(workers=1)で再実行。他モデルは clean のため対象外。
+- 稼働中 SvmW(旧コードをメモリ保持)は残セルで理論上 racy だが、~15h/セルで eval が疎→衝突稀（完了8セルは
+  clean）。毎ステータス確認で同スキャンを実施し汚染検出→再実行で対応。watchdog の将来再起動は修正版を使用。
+
+**その他は独立再検証で clean**: c1 RF(Win/Mix 実判別・Cross は minority-tracking の真の near-chance)、
+c1 Lstm(domain不変は閾値非依存の AUROC で本物)、c1 SvmW(Within 実判別/Cross expected-collapse)、
+c1 SvmA(全域 chance・非縮退)、IV2025(RF 0.738 実判別＋他3手法 expected-collapse=公開結果再現)。
+- **カバレッジ注意**: Lstm/SvmA の JSON は `y_pred_proba` を持たず、RFバグを捕えたベクトル照合が不可。
+  roc_auc+cm 完全一致の代替スキャンで補完（clean）。

@@ -136,8 +136,16 @@ def run_cell(cell: Cell) -> int:
                  "--seed", str(cell.seed), "--target_file", tf, "--tag", tag, "--time_stratify_labels",
                  "--use_oversampling", "--oversample_method", "smote", "--target_ratio", RATIO,
                  "--subject_wise_oversampling"]
+    # --jobid: pin eval to THIS cell's own trained model. Without it, evaluate.py's
+    # resolve_jobid_for_evaluation falls through (its glob `<M>_<mode>_rank_*` never matches the
+    # c1 artifacts, which save under internal mode "domain_train") to the SHARED models/<M>/latest_job.txt
+    # — a mutable file overwritten by every concurrent worker. With >1 worker (RF/SvmW/Lstm run 4/4/3),
+    # a same-batch sibling can overwrite it between this cell's train and eval, so eval loads the WRONG
+    # model (known "Bug #4"). Passing the per-cell jobid takes resolver priority #1 -> race-free at any
+    # worker count. Mirrors the IV2025 launcher, which already passes --jobid and is unaffected.
     eval_cmd = [PYTHON, "scripts/python/evaluation/evaluate.py", "--model", cell.model, "--mode", cell.mode,
-                "--seed", str(cell.seed), "--target_file", tf, "--tag", tag, "--subject_wise_split"]
+                "--seed", str(cell.seed), "--target_file", tf, "--tag", tag, "--jobid", jobid,
+                "--subject_wise_split"]
     start = time.time()
     with open(log_path, "w", encoding="utf-8") as lf:
         lf.write(f"# JOBID={jobid} TAG={tag}\n# Started {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n"); lf.flush()
