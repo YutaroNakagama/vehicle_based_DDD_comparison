@@ -60,9 +60,12 @@ DEFAULT_WORKERS = {"RF": 3, "SvmW": 3, "SvmA": 1, "Lstm": 3}
 class Cell:
     model: str
     seed: int
+    smote: bool = False  # pooled + SW-SMOTE(0.5, subject-wise) arm (user request 2026-07-04)
 
     @property
     def tag(self) -> str:
+        if self.smote:
+            return f"iv25smote_{self.model}_pooled_swsmote_s{self.seed}"
         return f"iv25base_{self.model}_pooled_baseline_s{self.seed}"
 
     def already_done(self) -> bool:
@@ -73,8 +76,8 @@ class Cell:
         return any(base.rglob(f"eval_results_{self.model}_pooled_{self.tag}.json"))
 
 
-def build_cells(model: str) -> List[Cell]:
-    return [Cell(model, s) for s in _seeds(model)]
+def build_cells(model: str, smote: bool = False) -> List[Cell]:
+    return [Cell(model, s, smote) for s in _seeds(model)]
 
 
 def run_cell(cell: Cell) -> int:
@@ -94,6 +97,13 @@ def run_cell(cell: Cell) -> int:
         "--model", cell.model, "--mode", "pooled", "--subject_wise_split",
         "--seed", str(cell.seed), "--tag", tag,
     ]
+    if cell.smote:
+        # Pooled + imbalance handling: SAME SW-SMOTE recipe as c1 (ratio 0.5,
+        # subject-wise) so the "Pooled(handled)" column is directly comparable to
+        # both the IV25 baseline (identical pooled train/eval protocol) and the
+        # c1 Mixed/Within cells (identical oversampling method).
+        train_cmd += ["--use_oversampling", "--oversample_method", "smote",
+                      "--target_ratio", "0.5", "--subject_wise_oversampling"]
     eval_cmd = [
         PYTHON, "scripts/python/evaluation/evaluate.py",
         "--model", cell.model, "--tag", tag, "--mode", "pooled", "--jobid", jobid,
@@ -141,10 +151,12 @@ def main():
     ap.add_argument("--workers", type=int, default=None)
     ap.add_argument("--limit", type=int, default=None,
                     help="Run at most N pending cells then exit (for round-robin GPU interleaving).")
+    ap.add_argument("--smote", action="store_true",
+                    help="Pooled + SW-SMOTE(0.5, subject-wise) arm (tag prefix iv25smote_).")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
-    cells = build_cells(args.model)
+    cells = build_cells(args.model, args.smote)
     pending = [c for c in cells if not c.already_done()]
     if args.limit:
         pending = pending[: args.limit]
