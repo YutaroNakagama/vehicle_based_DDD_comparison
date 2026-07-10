@@ -23,9 +23,15 @@ gpu_busy(){ for pf in "$LOGD/.Lstm.pid" "$LOGD/.SvmA.pid"; do alive "$pf" && ret
 
 start_win(){ # $1=model $2=workers $3=ntrials
   cd "$REPO" || return
+  # Reap orphaned c1 workers of this model before relaunching. The launcher periodically
+  # dies with STATUS_CONTROL_C_EXIT (console-close of the schtasks/nohup shell) while its
+  # subprocess.run train.py children keep running as orphans; without this, each relaunch
+  # stacks +N more workers on the SAME pending cells -> CPU oversubscription (observed 3x /
+  # 24 workers on 20 cores) that cripples the slow mixed SvmW cells. Excludes pooled (IV25).
+  powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='python.exe'\" | Where-Object { \$_.CommandLine -match 'train.py --model $1 ' -and \$_.CommandLine -notmatch 'pooled' } | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force -ErrorAction SilentlyContinue }" >/dev/null 2>&1
   CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 N_TRIALS_OVERRIDE="$3" PYTHONPATH=. \
     nohup "$WINPY" "$LAUNCH" --model "$1" --workers "$2" >> "$LOGD/_run_$1.log" 2>&1 &
-  echo $! > "$LOGD/.$1.pid"; echo "$(ts) [c1] launched $1 (win, pid $!)" >> "$WLOG"
+  echo $! > "$LOGD/.$1.pid"; echo "$(ts) [c1] launched $1 (win, pid $!, orphans reaped)" >> "$WLOG"
 }
 start_wsl(){ # $1=model $2=venvpy $3=workers $4=extraenv $5=limit(optional)
   local LIM=""; [ -n "$5" ] && LIM="--limit $5"
