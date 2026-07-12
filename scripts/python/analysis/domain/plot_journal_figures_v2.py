@@ -191,10 +191,10 @@ def plot_effect_hierarchy(df: pd.DataFrame):
 
     # Factor display labels — order matches paper narrative
     factor_display = {
-        "mode": "Mode\n($M$)",
+        "mode": "Mode\n($m$)",
         "condition": "Rebalancing\n($R$)",
-        "distance": "Distance\n($D$)",
-        "level": "Membership\n($G$)",
+        "distance": "Distance\n($d$)",
+        "level": "Membership\n($g$)",
     }
     factor_order = ["mode", "condition", "distance", "level"]
     metric_names = ["F2-score", "AUROC", "AUPRC"]
