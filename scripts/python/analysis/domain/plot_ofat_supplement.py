@@ -113,9 +113,9 @@ PRIMARY_METRICS = [("f2", "F2-score"), ("auc", "AUROC"), ("auc_pr", "AUPRC")]
 # Factor definitions:  (column_name, level_list, label_map, display_name)
 FACTORS = {
     "condition": (CONDITIONS_7, COND_LABELS, "Rebalancing ($R$)"),
-    "distance":  (DISTANCES,    DIST_LABELS,  "Distance ($D$)"),
-    "level":     (LEVELS,       LEVEL_LABELS, "Membership ($G$)"),
-    "mode":      (MODES,        MODE_LABELS,  "Mode ($M$)"),
+    "distance":  (DISTANCES,    DIST_LABELS,  "Distance ($d$)"),
+    "level":     (LEVELS,       LEVEL_LABELS, "Membership ($g$)"),
+    "mode":      (MODES,        MODE_LABELS,  "Mode ($m$)"),
 }
 
 # Distinct colours for fixed-condition lines (cycling palette)
