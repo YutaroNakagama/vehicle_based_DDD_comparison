@@ -71,6 +71,12 @@ def main():
     # Add common and training-specific arguments
     add_common_arguments(parser)
     add_train_arguments(parser)
+    parser.add_argument(
+        "--feature_selection", choices=["rf", "mi", "anova", "none"], default="rf",
+        help="Feature-selection method (default 'rf' = top-K importance; 'none' = keep all "
+             "features). Only affects models that use RF pre-selection (RF/Lstm); SvmA/SvmW "
+             "always force 'none' internally.",
+    )
 
     args = parser.parse_args()
     setup_logging()
@@ -88,6 +94,7 @@ def main():
         seed=args.seed,
         tag=args.tag,
         subject_split_strategy=split_strategy,
+        feature_selection_method=args.feature_selection,
         time_stratify_labels=args.time_stratify_labels,
         time_stratify_tolerance=cfg.TIME_STRATIFY_TOLERANCE,
         time_stratify_window=cfg.TIME_STRATIFY_WINDOW,
