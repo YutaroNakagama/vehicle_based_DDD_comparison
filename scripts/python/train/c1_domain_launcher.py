@@ -65,6 +65,10 @@ SEED_MASTER = [42, 123, 2025, 0, 1, 7, 13, 256, 512, 1337, 2024,
 #            unnecessary seeds. Method/pipeline UNCHANGED -- only the seed count.
 SEEDS_BY_MODEL = {"RF": SEED_MASTER[:24], "Lstm": SEED_MASTER[:15],
                   "SvmW": SEED_MASTER[:8], "SvmA": SEED_MASTER[:8]}
+# Cross (source_only) is DROPPED from exp3 entirely (user 2026-07-11): cross-domain
+# transfer collapses to chance (~0.51) for every method, low information value. No new
+# Cross cells are generated for any model. Existing Cross eval JSONs stay on disk as
+# reference-only (demoted); nothing is deleted. See build_cells (Cross no longer emitted).
 # The full 6-case grid (advisor 2026-06-28) = {Within, Cross, Mixed} x {in,out},
 # uniform imbalv3 tags for ALL models (within-in re-run in c1, not reused from B1):
 #   target_only = Within (train target domain), source_only = Cross (train other
@@ -88,10 +92,12 @@ class Cell:
     mode: str
     domain: str
     seed: int
+    nofs: bool = False   # feature-selection-OFF arm (RF all-features, user 2026-07-11)
 
     @property
     def tag(self) -> str:
-        return f"imbalv3_knn_{DISTANCE}_{self.domain}_{self.mode}_split2_subjectwise_ratio{RATIO}_s{self.seed}"
+        fs = "_nofs" if self.nofs else ""
+        return f"imbalv3_knn_{DISTANCE}_{self.domain}_{self.mode}_split2_subjectwise_ratio{RATIO}{fs}_s{self.seed}"
 
     @property
     def target_file(self) -> Path:
@@ -118,13 +124,11 @@ def done_names(model: str) -> set:
     return {fp.name for fp in base.rglob("eval_results_*.json")}
 
 
-def build_cells(model: str, seeds: List[int] = None) -> List[Cell]:
+def build_cells(model: str, seeds: List[int] = None, nofs: bool = False) -> List[Cell]:
     use = seeds or SEEDS_BY_MODEL.get(model, SEED_MASTER[:12])
-    # Seed-major WITHIN each priority group: Within+Mixed (the summary-table columns)
-    # accumulate seeds in parallel and finish first; Cross runs last (see
-    # TABLE_CONDITIONS note above — order only, set/tags/methodology unchanged).
-    return ([Cell(model, m, d, s) for s in use for (m, d) in TABLE_CONDITIONS] +
-            [Cell(model, m, d, s) for s in use for (m, d) in CROSS_CONDITIONS])
+    # Cross (CROSS_CONDITIONS) is DROPPED (user 2026-07-11) — only Within(target_only)+Mixed
+    # are emitted. nofs=True switches RF to the feature-selection-off (all-features) arm.
+    return [Cell(model, m, d, s, nofs) for s in use for (m, d) in TABLE_CONDITIONS]
 
 
 def run_cell(cell: Cell) -> int:
@@ -144,6 +148,8 @@ def run_cell(cell: Cell) -> int:
                  "--seed", str(cell.seed), "--target_file", tf, "--tag", tag, "--time_stratify_labels",
                  "--use_oversampling", "--oversample_method", "smote", "--target_ratio", RATIO,
                  "--subject_wise_oversampling"]
+    if cell.nofs:  # feature-selection-off arm: keep all features (RF all-features ablation)
+        train_cmd += ["--feature_selection", "none"]
     # --jobid: pin eval to THIS cell's own trained model. Without it, evaluate.py's
     # resolve_jobid_for_evaluation falls through (its glob `<M>_<mode>_rank_*` never matches the
     # c1 artifacts, which save under internal mode "domain_train") to the SHARED models/<M>/latest_job.txt
@@ -169,6 +175,22 @@ def run_cell(cell: Cell) -> int:
     return 0
 
 
+# A cell whose per-cell log advanced within this window is assumed to be actively trained by
+# another (possibly orphaned) worker, so a top-up / second launcher instance SKIPS it to avoid
+# double-running the same cell. Threshold > the worst observed single Optuna trial (~9h on heavy
+# mixed cells), so a live cell mid-slow-trial is never mistaken for idle. Lets the watchdog add
+# only the shortfall workers (option-a top-up) without reaping healthy orphans.
+CLAIM_FRESH_SEC = 36000  # 10h
+
+
+def cell_in_progress(cell: Cell) -> bool:
+    lp = LOG_DIR / f"{cell.model}_{cell.tag}.log"
+    try:
+        return (time.time() - lp.stat().st_mtime) < CLAIM_FRESH_SEC
+    except OSError:
+        return False
+
+
 def worker(name: str, q: "queue.Queue[Cell]", names: set) -> None:
     while True:
         try:
@@ -178,6 +200,8 @@ def worker(name: str, q: "queue.Queue[Cell]", names: set) -> None:
         try:
             if cell.already_done(names):
                 logging.info("SKIP %s (done)", cell.tag)
+            elif cell_in_progress(cell):
+                logging.info("SKIP %s (in-progress: cell log fresh, another worker active)", cell.tag)
             else:
                 logging.info("START %s", cell.tag); run_cell(cell)
         except Exception:
@@ -193,10 +217,12 @@ def main():
     ap.add_argument("--limit", type=int, default=None, help="Run at most N pending cells then exit.")
     ap.add_argument("--seeds", type=str, default=None,
                     help="Comma-separated seed override (e.g. seed-increase run). Default: 42,123,2025.")
+    ap.add_argument("--no-fs", dest="no_fs", action="store_true",
+                    help="Feature-selection-OFF arm (keep all features; RF all-features ablation). Tags get _nofs.")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
     seeds = [int(s) for s in args.seeds.split(",")] if args.seeds else None
-    cells = build_cells(args.model, seeds)
+    cells = build_cells(args.model, seeds, nofs=args.no_fs)
     names = done_names(args.model)
     pending = [c for c in cells if not c.already_done(names)]
     if args.limit:

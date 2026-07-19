@@ -61,12 +61,14 @@ class Cell:
     model: str
     seed: int
     smote: bool = False  # pooled + SW-SMOTE(0.5, subject-wise) arm (user request 2026-07-04)
+    nofs: bool = False   # feature-selection-OFF arm (RF all-features, user 2026-07-11)
 
     @property
     def tag(self) -> str:
+        fs = "_nofs" if self.nofs else ""
         if self.smote:
-            return f"iv25smote_{self.model}_pooled_swsmote_s{self.seed}"
-        return f"iv25base_{self.model}_pooled_baseline_s{self.seed}"
+            return f"iv25smote_{self.model}_pooled_swsmote{fs}_s{self.seed}"
+        return f"iv25base_{self.model}_pooled_baseline{fs}_s{self.seed}"
 
     def already_done(self) -> bool:
         base = EVAL_DIR / self.model
@@ -76,8 +78,9 @@ class Cell:
         return any(base.rglob(f"eval_results_{self.model}_pooled_{self.tag}.json"))
 
 
-def build_cells(model: str, smote: bool = False) -> List[Cell]:
-    return [Cell(model, s, smote) for s in _seeds(model)]
+def build_cells(model: str, smote: bool = False, nofs: bool = False, seeds: List[int] = None) -> List[Cell]:
+    use = seeds if seeds is not None else _seeds(model)
+    return [Cell(model, s, smote, nofs) for s in use]
 
 
 def run_cell(cell: Cell) -> int:
@@ -104,6 +107,8 @@ def run_cell(cell: Cell) -> int:
         # c1 Mixed/Within cells (identical oversampling method).
         train_cmd += ["--use_oversampling", "--oversample_method", "smote",
                       "--target_ratio", "0.5", "--subject_wise_oversampling"]
+    if cell.nofs:  # feature-selection-off arm: keep all features (RF all-features ablation)
+        train_cmd += ["--feature_selection", "none"]
     eval_cmd = [
         PYTHON, "scripts/python/evaluation/evaluate.py",
         "--model", cell.model, "--tag", tag, "--mode", "pooled", "--jobid", jobid,
@@ -123,6 +128,12 @@ def run_cell(cell: Cell) -> int:
             return rc
         rc1 = _run(eval_cmd, "EVAL pooled")
         lf.write(f"\n# Finished in {time.time()-start:.1f}s rc1={rc1}\n")
+    if rc1 != 0:
+        # eval was interrupted/killed (e.g. resource starvation) BEFORE writing the result
+        # JSON — the old code logged DONE regardless, masking this. Surface it; cell stays
+        # pending (already_done is JSON-based) so it is retried on the next launch.
+        logging.error("EVAL FAILED %s rc1=%d (no result JSON; stays pending)", tag, rc1)
+        return rc1
     logging.info("DONE %s in %.1fs", tag, time.time() - start)
     return 0
 
@@ -153,10 +164,15 @@ def main():
                     help="Run at most N pending cells then exit (for round-robin GPU interleaving).")
     ap.add_argument("--smote", action="store_true",
                     help="Pooled + SW-SMOTE(0.5, subject-wise) arm (tag prefix iv25smote_).")
+    ap.add_argument("--no-fs", dest="no_fs", action="store_true",
+                    help="Feature-selection-OFF arm (keep all features; RF all-features ablation). Tags get _nofs.")
+    ap.add_argument("--seeds", type=str, default=None,
+                    help="Comma-separated seed override (default: model's built-in seed set).")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
-    cells = build_cells(args.model, args.smote)
+    seeds = [int(s) for s in args.seeds.split(",")] if args.seeds else None
+    cells = build_cells(args.model, args.smote, nofs=args.no_fs, seeds=seeds)
     pending = [c for c in cells if not c.already_done()]
     if args.limit:
         pending = pending[: args.limit]

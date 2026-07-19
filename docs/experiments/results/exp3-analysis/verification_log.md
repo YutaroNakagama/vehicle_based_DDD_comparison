@@ -240,3 +240,19 @@ c1 Lstm(domain不変は閾値非依存の AUROC で本物)、c1 SvmW(Within 実�
 c1 SvmA(全域 chance・非縮退)、IV2025(RF 0.738 実判別＋他3手法 expected-collapse=公開結果再現)。
 - **カバレッジ注意**: Lstm/SvmA の JSON は `y_pred_proba` を持たず、RFバグを捕えたベクトル照合が不可。
   roc_auc+cm 完全一致の代替スキャンで補完（clean）。
+
+## 2026-07-19 Lstm ROC 図の再生成（mean ± std, seed 集計）
+
+`mixed_in` / `mixed_out` は各 15 seed、`pooled` は 6 seed の既存 evaluation CSV を使って、
+ROC の平均曲線と $\pm 1\sigma$ 帯を重ねた図を再生成した。前回の単一 seed 図は、この集計版に置き換え済み。
+
+- 出力図: [`lstm_mixed_in_out_pooled_roc_mean_std.png`](../../../../results/analysis/exp3_verification/lstm_mixed_in_out_pooled_roc_mean_std.png)
+- 集計 JSON: [`lstm_mixed_in_out_pooled_roc_mean_std_summary.json`](../../../../results/analysis/exp3_verification/lstm_mixed_in_out_pooled_roc_mean_std_summary.json)
+- 再現スクリプト: [`plot_lstm_mixed_pooled_roc.py`](../../../../scripts/python/analysis/plot_lstm_mixed_pooled_roc.py)
+
+**要点**:
+- `mixed_in`: AUROC mean 0.785332, std 0.006985, n=15
+- `mixed_out`: AUROC mean 0.784263, std 0.006983, n=15
+- `pooled`: AUROC mean 0.505686, std 0.017565, n=6
+
+図中の凡例は `AUC=mean±std` 表記に修正し、文字化けの原因になっていた制御文字を除去した。
