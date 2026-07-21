@@ -392,6 +392,7 @@ def data_time_split_by_subject(
     kss_bin_labels=None,
     kss_label_map=None,
     model_name: str = None,
+    keep_subject_id: bool = False,
 ):
     """
     Split data by subject while preserving temporal order within each subject.
@@ -465,14 +466,19 @@ def data_time_split_by_subject(
     val = pd.concat(dfs_val).reset_index(drop=True)
     test = pd.concat(dfs_test).reset_index(drop=True)
 
-    X_train = train[feature_columns].drop(columns=[subject_col], errors="ignore")
+    # keep_subject_id: retain subject_id in X_train ONLY (for subject-wise
+    # oversampling downstream); val/test never need it and drop it as before.
+    X_train = train[feature_columns].drop(
+        columns=([] if keep_subject_id else [subject_col]), errors="ignore"
+    )
     X_val = val[feature_columns].drop(columns=[subject_col], errors="ignore")
     X_test = test[feature_columns].drop(columns=[subject_col], errors="ignore")
     y_train = train["label"]
     y_val = val["label"]
     y_test = test["label"]
 
-    X_train = _check_nonfinite(X_train, "X_train")
+    X_train = _check_nonfinite(X_train, "X_train",
+                               preserve_cols=(["subject_id"] if keep_subject_id else []))
     X_val   = _check_nonfinite(X_val, "X_val")
     X_test  = _check_nonfinite(X_test, "X_test")
 
