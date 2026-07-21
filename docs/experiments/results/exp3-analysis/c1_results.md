@@ -4,17 +4,20 @@
 > 旧 HPC キャンペーンは [operations_log.md](operations_log.md)、2026-05 のローカル
 > Phase 1–5 は [local_execution.md](local_execution.md)、方法論の意思決定・検証の
 > 詳細は [verification_log.md](verification_log.md) を参照。
-> **最終更新: 2026-07-18**（**RF 特徴量非選択版 honest pooled 確定**: 全160特徴 = 0.864±0.018 (n=5)、
-> top-10(0.748) を seed-paired +0.135 上回り分散 1/3 → 特徴選択が RF を過小評価（§3.6）。Pooled+SW-SMOTE
-> 4手法完成（SvmW 5/5=0.717）。残りは c1 SvmW within+mixed 20/32 と RF-nofs within/mixed。全て正常・想定通り）。
+> **最終更新: 2026-07-21**（状況監査: SvmW 26/32・RF-nofs 20/25 稼働中、他手法完走、全 390 セル異常なし＝下記＆ verification_log 2026-07-21 節）。**方針決定（ユーザ 07-20）**: exp3 は **IV2025/TIV2026 と同一方法論で完遂**し
+> 論文間比較性を最優先とする（verification_log 2026-07-01 の判断を踏襲）。§2 の数値はこの**同一プロトコル
+> （train/eval 分割不一致を含む既知の制約）**下の値。**§3.6 は脱リーク・ロバストネス附録**として保持し
+> （honest 分割では車両→EEG は chance の見込み）、**実装見直し・脱リーク再テストは非破壊で"構える"**（下記
+> §3.7 計画）。前日の「RF 全特徴=特徴選択が RF を過小評価」主張のみは事実誤認として撤回（記憶リーク）。）
 >
 > **要点**: 全体の一貫した所見は「**RF のみが pooled（実運用相当の非ドメイン限定評価）で機能する
 > 唯一の手法**」。RF は pooled↔mixed で ~0.74 で不動、他手法は pooled で chance に崩落し
 > ドメイン限定評価（within/mixed/cross）でのみ ~0.75 に回復する。詳細な機構は §3（Pooled と
 > Mixed の評価プロトコル差）を参照。
-> **【2026-07-18 追加・重要】** 上記 ~0.74 は RF の **top-10 特徴選択版**の値。**特徴選択を外し全160特徴を
-> 使うと honest pooled で 0.864±0.018（n=5）に上昇**（top-10 比 seed-paired +0.135、seed 分散も
-> 0.061→0.018 に激減）。→ top-10 選択は RF を**過小評価かつ高分散に見せていた**。詳細は §3.6。
+> **【2026-07-19 訂正】** 前日ここに書いた「全160特徴なら honest pooled=0.86」は**撤回**（train/eval
+> 分割不一致の記憶リークだった、§3.6）。**さらに深刻な含意**: この pooled 列の絶対 AUROC（RF ~0.74 含む）
+> 自体がリーク混入で、"RF は pooled で機能" の中心主張は honest 分割での再検証が必要（正しく分離すると
+> 車両→EEG は全手法 chance ~0.52 の見込み。[[project_exp2_rf_087_unreproducible]] と整合）。
 
 ## 1. 目的と設計
 
@@ -27,10 +30,17 @@
 - **IV2025 ベースライン（Pooled・対策なし）**: pooled・不均衡処理なし——IV2025 公表設定の
   ローカル再現（タグ `iv25base_`）。c1（after）との before/after 比較の基準。
 - **Pooled + SW-SMOTE アーム（Pooled・対策あり）**（2026-07-04 追加、タグ `iv25smote_`）: pooled
-  学習/評価は IV2025 と同一プロトコルのまま、**c1 と同一の SW-SMOTE（ratio 0.5, subject-wise）**
+  学習/評価は IV2025 と同一プロトコルのまま、**c1 と同一の SMOTE（ratio 0.5）**
   だけを加えた条件。これで「**不均衡対策の効果**」（Pooled 対策なし→あり）と「**ドメイン制限の
   効果**」（Pooled 対策あり→Mixed/Within）をそれぞれ純粋に分離できる。`iv2025_baseline_launcher.py
   --smote` で起動、eval は `--jobid` 固定（race-free）。
+  > **【2026-07-21・重要／意図した方法論からの逸脱】** この pooled アームは `--subject_wise_oversampling`
+  > を渡していても **全4手法で実際は pooled SMOTE で走っていた**（`falling back to pooled oversampling`:
+  > RF 20/20・SvmW 5/6・SvmA 6/6・**Lstm 6/6**、`Applying subject-wise`=0）。**c1 の Within/Mixed は subject-wise
+  > が正常動作**（SvmW target 16/16・mixed 16/16）。**根本原因**: iv25 launcher が pooled で `--time_stratify_labels`
+  > を渡さない→`data_time_split_by_subject`（split.py L468 が subject_id を無条件 drop、keep_subject_id 非対応）
+  > 経由→subject-wise 不能。**「不均衡対策は全て SW-SMOTE」の設計に反するため、修正（案A: `data_time_split_by_subject`
+  > に keep_subject_id 追加）＋ iv25smote pooled の SW-SMOTE 再生成が必要**（verification_log 2026-07-21 追記2、要ユーザ判断）。
 
 **距離指標と比率の選定根拠（exp2/TIV2026 由来、本実験では固定）**:
 - 距離 = **wasserstein** 固定。Sobol 感度分析（`results/analysis/.../sobol_indices.csv`）で距離の
@@ -70,6 +80,12 @@ Cross は別ドメイン学習のため本特性の影響を受けない。
 
 ## 2. 結果（2026-07-05 時点、AUROC mean ± std (n)）
 
+> **注記（2026-07-20 方針）**: 以下の Pooled/Within/Mixed の数値は **IV2025/TIV2026 と同一の評価プロトコル
+> （train は `--time_stratify_labels`・eval は stratify=False）下の値**であり、論文間比較性のためこの枠組みで
+> 完遂・報告する（既知の制約、verification_log 2026-07-01）。**この枠組みには train/eval 分割不一致に伴う
+> 行重複が含まれ、絶対 AUROC はその影響を受ける**（脱リーク時の挙動と honest 値は **§3.6 ロバストネス附録**、
+> 相対比較＝手法間/before-after は同一枠組み内で解釈）。**脱リーク再テストは §3.7 に準備**（構え）。
+
 ### Pooled 2 条件（全被験者で学習/評価）— 「対策の効果」
 
 | 手法 | Pooled 対策なし (`iv25base`) | Pooled + SW-SMOTE (`iv25smote`) | Δ(SMOTE) |
@@ -92,16 +108,16 @@ RF と SvmW の2手法**、Lstm(0.508)・SvmA(0.533) は SMOTE を足しても c
 
 | 条件 | RF | Lstm | SvmW | SvmA |
 |---|---|---|---|---|
-| Within-in | 0.746 ± 0.089 (24) | 0.779 ± 0.007 (15) | 0.805 ± 0.005 (4) | 0.576 ± 0.029 (8) |
-| Within-out | **0.778 ± 0.108 (24)** | 0.763 ± 0.012 (15) | 0.762 ± 0.009 (4) | 0.574 ± 0.074 (8) |
-| Mixed-in | 0.719 ± 0.085 (24) | 0.782 ± 0.009 (15) | 0.740 (1, 実行中) | 0.532 ± 0.024 (8) |
-| Mixed-out | 0.749 ± 0.104 (24) | 0.779 ± 0.009 (15) | 0.752 (1, 実行中) | 0.597 ± 0.025 (8) |
+| Within-in | 0.746 ± 0.089 (24) | 0.779 ± 0.007 (15) | 0.800 ± 0.012 (8) | 0.576 ± 0.029 (8) |
+| Within-out | **0.778 ± 0.108 (24)** | 0.763 ± 0.012 (15) | 0.759 ± 0.012 (8) | 0.574 ± 0.074 (8) |
+| Mixed-in | 0.719 ± 0.085 (24) | 0.782 ± 0.009 (15) | 0.738 ± 0.013 (5, 残3実行中) | 0.532 ± 0.024 (8) |
+| Mixed-out | 0.749 ± 0.104 (24) | 0.779 ± 0.009 (15) | 0.766 ± 0.017 (5, 残3実行中) | 0.597 ± 0.025 (8) |
 | Cross-in | 0.519 ± 0.006 (24) | **0.733 ± 0.015 (15)** | 0.506 ± 0.005 (2) | 0.512 ± 0.021 (8) |
 | Cross-out | 0.507 ± 0.004 (24) | **0.747 ± 0.012 (15)** | 0.514 ± 0.004 (2) | 0.504 ± 0.019 (8) |
 
 （Within/Mixed は in/out 別に独立セル。Mixed = 全 87 名で学習・対象ドメインで評価。SvmA は
-8/8 シード**完走**（全条件 chance 帯で確定）。SvmW は Within 4/8・Cross 2/8・Mixed 1/8 で残り実行中。
-RF/Lstm/SvmA は完走。）
+8/8 シード**完走**（全条件 chance 帯で確定）。**SvmW は Within 8/8 完走・Mixed 10/16（残 6 実行中）**・
+Cross 2/8（demoted）。RF/Lstm/SvmA は完走。**[2026-07-21 現況]** SvmW 26/32、RF-nofs 20/25、両者稼働中。）
 
 - **RF**: 24/24 シード完走。Within-out 0.778 は TIV2026 の within 参照値と整合。
   seed 分散が大きい（Within-out 範囲 0.568–0.954）→ 24 シードの根拠。
@@ -110,9 +126,9 @@ RF/Lstm/SvmA は完走。）
   ラベルが event_label（陽性 ~74%）で他手法（KSS）と検出対象が異なる点に注意。
   閾値は多数派側に張り付くが AUROC は閾値非依存で、定数予測では 0.5 にしかならない
   ため順位づけ性能は本物（verification_log 2026-07-04 節）。
-- **SvmW**: Within 4/8・Cross 2/8・Mixed 1/8（残り実行中）。Within 0.76–0.81 は実判別
-  （両クラス予測）、Cross ~0.51 崩落。RF と同型の「within 有効 × cross 崩落」。Mixed も
-  暫定 n=1 で 0.74–0.75（within 帯）で方向一致。
+- **SvmW**: Within 8/8 完走・Mixed 10/16（残 6 実行中）・Cross 2/8。Within 0.76–0.81 は実判別
+  （両クラス予測）、Cross ~0.51 崩落。RF と同型の「within 有効 × cross 崩落」。Mixed は
+  n=5 で in 0.738 / out 0.766（within 帯）で方向一致（暫定 n=1 の 0.74–0.75 から確定へ）。
 - **SvmA**: 8/8 シード**完走**。**全条件 chance 帯（0.50–0.60）**。T1 プローブ（特徴量に
   単変量・RF いずれでも信号なし）と整合 — 操舵統計 18 特徴はこのデータセットでは
   眠気信号を持たない（縮退ではなく真の無信号、verification_log T1 節）。全 48 セル異常なし
@@ -239,34 +255,169 @@ chance に落ちる（別ドメイン学習の転移失敗）ので、RF も例�
   SMOTE の対 RF パリティは n=2・seed 一致で RF リード、(c) Within/Mixed は全手法が共有のリーク傾向
   プロトコル上の比較、(d) `y_pred_proba` 生配列は未保存で CM 由来量に依拠。
 
-## 3.6 RF 特徴量選択の影響 — 全160特徴 vs top-10（2026-07-18 pooled 確定 n=5）
+## 3.6 ロバストネス附録: 脱リーク感度解析（2026-07-19〜20, 4エージェント敵対的監査＋実モデル脱リーク）
 
-RF 無選択版（`--feature_selection none` = EEG 除外の全 160 特徴、seed 5）を追加測定。**honest な
-Pooled+SMOTE（全 87 名ランダム分割、時系列重複を持たない列）で決定的な結果**:
+> **位置づけ（2026-07-20 方針）**: 本節は §2 の主結果（IV2025/TIV2026 と同一プロトコル）に対する**脱リーク・
+> ロバストネス附録／感度解析**。exp3 は同一枠組みで完遂・報告し、本節は「同枠組みが持つ train/eval 分割
+> 不一致の影響」を定量する（既知の制約 verification_log 2026-07-01 の深掘り）。**要点**: honest 分割
+> （train/eval 一致・被験者ホールドアウト）では車両→EEG(KSS) は全手法・全特徴数で chance ~0.52 に低下し得る。
+> ※ 本節の当初の派生主張「RF 全特徴=特徴選択が RF を過小評価」のみは事実誤認として撤回（記憶リーク由来）。
+> 正式な脱リーク再テストは **§3.7** に準備。
 
-| 条件 | RF top-10 | RF 全160特徴 |
+### 監査で確定した機構（コード＋実モデル＋実ログ、敵対的反証を通過）
+- **pooled**: train=被験者内時系列（`data_time_split_by_subject` 前半 **60%**, `TRAIN_RATIO=0.6`）／eval=
+  **ランダム 20%**（`eval_pipeline.py:152`、eval に `--subject_wise_split` を渡さない）→ 独立分割で
+  **eval テスト行の ~60% が学習セットに含まれる**。
+- **within(target_only)/mixed**: train=`time_stratified_three_way_split`(全体70%)／eval=
+  `data_time_split_by_subject`(被験者別後半20%) の**関数不一致**→ 重複 **69% / 61–78%**。
+- **honest（重複0%）は Cross(source_only, 被験者非交差) と domain_train(同一分割) のみ**。
+  matched-split の反実仮想は 0% 重複＝機構が分割不一致由来であることを証明。
+
+### 実モデルでの分解（記録JSONを小数3桁再現）
+| モデル | 記録値(leaked) | SEEN(学習済) | UNSEEN(正直) | 被験者holdout | cross-subj |
+|---|---|---|---|---|---|
+| RF top-10 | 0.765 | 0.848 | 0.650 | **0.517** | 0.495 |
+| RF top-10+SMOTE | 0.758 | 0.830 | 0.658 | **0.525** | — |
+| RF nofs(160) | 0.870 | **0.974** | 0.714 | **0.534** | 0.514 |
+
+**正しく分離すると全て chance（0.49–0.53）、特徴数は無関係**。nofs が最良に見えたのは記憶容量が大きく
+leaked 行をより完全に覚えるため。陽性対照: EEG バンドパワーは同 honest 分割で 0.62（>車両 0.53）＝
+ハーネスは本物の信号を通す（車両 chance は検証アーティファクトではない）。
+
+### honest な結論（論文の方向性）
+1. **車両動特性 → EEG眠気(KSS) は honest 評価で全手法 chance（~0.50–0.53）**（RF 選択有無・SvmW・SvmA）。
+   §2 の pooled/within/mixed の全数値は分割不一致による水増し。[[project_exp2_rf_087_unreproducible]] と整合。
+2. **唯一の実信号は Lstm（event_label=DRT イベント、別タスク）**。honest cross-subject で Within/Cross
+   ≈ 0.72–0.75 と domain 不変に生存（EEG眠気ではなく DRT 検出）。pooled Lstm 0.51 は無対策設定。
+3. **先行研究(IV2025/TIV2026/exp2 0.89)の高 AUROC は同じ train/eval 分割不一致のアーティファクト**の可能性
+   （verification_log 2026-07-01 が within/mixed について既に記録、比較性のため意図的に残していた機構）。
+4. **要確認**: 出荷 KSS ラベルの陽性対照は 0.56–0.62 止まり（`kss.py` 整合問題、spearman 0.157）。
+   車両=chance の結論は不変だが「ハーネスが信号検出」の強い対照にはラベル整合の確認が必要。
+
+### 【直接実測】within-domain 脱リーク再評価 — 論文の目玉「SvmW 回復」も leak（2026-07-19, task2）
+保存済み c1 within(target_only,in_domain) モデルを、(A)leaked eval で再現→記録値と一致で忠実性確認、
+(B)モデル自身の train と**同一 `time_stratified_three_way_split` の held-out test（disjoint）**で honest 測定:
+
+| 手法 | LEAKED再現 (=記録値) | **HONEST-matched（脱リーク）** |
 |---|---|---|
-| **Pooled+SMOTE（honest）** | 0.748 ± 0.061 (15) | **0.864 ± 0.018 (5)** |
-| Within in/out | 0.746 / 0.778 | 0.904 / 0.941 (3) |
-| Mixed in/out | 0.719 / 0.749 | 0.872 / 0.940 (2) |
+| RF within-in | 0.77（記録 0.746） | **0.47（chance）** |
+| SvmW within-in | 0.77（記録 0.805） | **0.52（chance）** |
+| SvmA within-in | — (cuml env 不在でロード不可) | Cross 0.51 + T1 無信号で chance 確定 |
 
-**確定した所見**:
-1. **top-10 特徴選択は honest pooled で RF を過小評価**: seed-paired（同一 5 seed {0,1,42,123,2025}）で
-   全特徴 0.864 vs top-10 0.729 = **+0.135**（全 seed で全特徴版が上）。top-10 の最悪 seed（s2025=0.602）
-   ほど全特徴の伸びが大（+0.278）。
-2. **top-10 の高 seed 分散はアーティファクト**: pooled の std が **0.061 → 0.018**（1/3 以下）。RF の
-   「within-domain 高 seed 分散（当初 24 seed の根拠）」は **seed 毎に選ぶ 10 特徴の当たり外れ**が主因
-   だった可能性が高い。全特徴なら安定して ~0.86–0.94。
-3. **honest pooled の手法序列（確定）**: **RF全特徴 0.864 ≫ RF top-10 0.748 ≈ SvmW 0.717 ≫
-   Lstm 0.508 ≈ SvmA 0.533**。
-4. **リークではなく実信号**: within/mixed の高値（0.90–0.94）は §3/§3.5 の時系列重複リークを含む列だが、
-   **pooled はその重複構造を持たない honest 列で、そこでも 0.86**。ゆえに全特徴の恩恵は実信号（top-10 が
-   捨てていた車両特徴が眠気信号を持つ）と解釈でき、単なるリーク増幅では説明できない。
+→ **論文(TIV2026_exp3)の中心 finding「SW-SMOTE が SvmW を within で 0.52→0.80 に回復（信号あり）／SvmA は
+不変（信号なし）」は leak アーティファクト**。honest では **SvmW も RF も within=chance**、"回復" も
+"SvmW vs SvmA の解離" も消える（両方 chance）。honest な唯一の信号は Lstm（別ラベル=DRT event、Cross 0.73–0.75）。
+（注: honest cross-subject は保存モデルが全44被験者を学習済みのため hold-out しても leak するので、被験者分離は
+**再学習が必須**＝監査の GroupShuffleSplit 0.51／Cross 列 0.51 が正しい honest cross-subject 値。）
 
-**論文への含意**: 「RF は頑健だが pooled ~0.74」という中心主張は、**「RF は top-10 選択なしで honest
-pooled=0.86 に達し他手法を大きく引き離す。top-10 選択が RF を過小評価していた」**へ更新すべき。
-Arefnezhad/Zhao/Wang の各手法は固定特徴集合ゆえこの恩恵を受けない（SvmA は特徴に信号なしで不変）。
-within/mixed-nofs（残り実行中、~07-20 完走）で全条件が揃う。
+### 【honest 全条件・確定表】de-leaked 再評価（2026-07-20, task2 完了）
+バグ排除後（下記注意）の clean な honest 値。位置指定・standalone 再学習で index 混入を排除、監査 agent3 と一致:
+
+| 評価プロトコル | leaked(記録) | **HONEST(clean)** | 判定 |
+|---|---|---|---|
+| within(target_only) RF/SvmW | 0.77 / 0.80 | **0.47–0.52** | chance |
+| pooled RF/SvmW | 0.76 / 0.71 | **0.51 / ~0.51** | chance |
+| 被験者内-時系列（personalized, 同一ドライバー後半+gap）160/10特徴 | — | **0.496 / 0.515** | chance |
+| cross-subject（新ドライバー）160/10特徴 | — | **0.518 / 0.507** | chance |
+| （honest 陽性対照）EEG バンドパワー cross-subject | — | **0.62** | 信号あり=ハーネス妥当 |
+
+→ **車両動特性→EEG眠気(KSS)は、あらゆる honest 分割（被験者内-時系列・被験者間）・特徴数（10/160）で chance
+（~0.50–0.52）**。personalized（同一ドライバー）でも信号なし。leaked の高値(0.72–0.86)は全て train/eval 行重複。
+唯一の実信号は Lstm（別ラベル=DRT event、Cross honest 0.73–0.75）。
+
+> **⚠️ 方法論的注意（今回ハマった落とし穴・要記録）**: `data_time_split_by_subject` は **index をリセットして
+> 返す**。返り値の `X_test.index` を元 df に `df.loc[]` すると**先頭（学習領域）行を誤取得**し、honest テストのつもりで
+> 学習行を評価して 0.75 と水増しされる。honest 再評価は**位置(iloc/numpy)指定**か、split 関数に元 index を保持させる
+> こと。監査の 0.52 が正、途中の 0.75 は本バグの産物（不採用）。
+
+### 脱リーク方針（次アクション、要ユーザ判断）
+train と eval で**同一分割**を使う（`evaluate.py` の eval 分割を train の held-out に一致させる／保存済み split を
+再利用）。全セル（4手法×全条件）を honest に測り直し、§2 を再構築。**論文含意**: RQ1/中心主張を「leakage-free
+評価では車両動特性は EEG眠気を chance 以上に予測せず（negative result）、先行の高値・"回復"・"解離" は
+train/eval 分割不一致のアーティファクト。唯一の実信号は DRT-event 検出(Lstm、別ラベル)」へ再構成が必要。
+旧・撤回主張の記録は以下。
+
+---
+（以下、07-19 に判明した当初の撤回メモ — 上記監査で詳細化・拡大された）
+
+**リークの機構（実測で確定）**: pooled は **train=被験者内時系列分割（各被験者の前半70%）／eval=ランダム
+15%**（[eval_pipeline.py:152](../../../../src/evaluation/eval_pipeline.py#L152)、`iv2025_baseline_launcher` が eval に
+`--subject_wise_split` を渡さない）。両分割が独立なため **eval のテスト行の 69% が train の学習セットに
+含まれる**。標準 RF での再現（common データ・KSS・同一160特徴）:
+
+| 評価 | 160特徴 | top-10 |
+|---|---|---|
+| pipeline再現（train=時系列 / eval=ランダム）**全体** | **0.925** | 0.907 |
+| ┗ **SEEN 行（学習済み）** | **1.000（完全記憶）** | 1.000 |
+| ┗ **UNSEEN 行（未学習=正直）** | **0.505（chance）** | 0.448 |
+| **正しく分離**（単一ランダム分割 train∩test=∅） | **0.524** | 0.507 |
+| **被験者ホールドアウト（cross-subject）** | **0.529** | 0.506 |
+
+**結論**:
+1. **正しく train/test を分離すると RF は全特徴でも top-10 でも chance（~0.52）** = キャンペーンの中心所見
+   「車両動特性→EEG眠気 ≈ chance」（[[project_exp2_rf_087_unreproducible]]）と一致。
+2. **160特徴が top-10 より高く出たのは記憶容量が大きく leaked 行をより完全に記憶するため**で、実信号の差
+   ではない（UNSEEN では両方 chance）。「特徴選択が RF を過小評価」は成立しない。
+3. **この分割不一致リークは nofs 特有ではなく pooled 列全体に及ぶ**。iv25base/iv25smote の pooled 値
+   （RF 0.738/0.748、SvmW 0.519/0.717 等）も同機構で水増しされている可能性が高く、**§2 の pooled 表・
+   §3 の「RF は pooled で機能」中心主張は要再検証**（honest 分割では全手法 chance の見込み）。within/mixed
+   も §3/§3.5 記載の時系列重複リークを持つため同様。
+4. **教訓**: pooled を「honest 列」と扱ったのが誤り。train と eval の分割方式が一致しない限り、絶対 AUROC は
+   リーク混入。IV2025/TIV2026 との**相対**比較（before/after）には使えるが、**絶対値を "実信号" と解釈しては
+   いけない**。正直な絶対評価には train/eval で同一の被験者ホールドアウト（cross-subject）分割が必要。
+
+## 3.7 実装見直し・脱リーク再テストの"構え"（2026-07-20, 完遂後に実行する準備）
+
+### ★先行実証（方式1）— 完了・独立2エージェントで二重検証（2026-07-20, exp3 走行継続・非破壊）
+保存済みモデルを (a) leaked eval で再現→**記録JSONを小数4桁で一致（忠実性ゲート合格）**、(b) honest 分割
+（物理行=subject_id+Timestamp で**学習行と 0% 重複を確認**）で再スコア:
+
+| model | cell | recorded(=leaked) | **honest(disjoint)** | 学習行重複 |
+|---|---|---|---|---|
+| RF | within-in | 0.773–0.800 | **0.472–0.475** | leaked 69% → honest **0%** |
+| RF | **pooled** | 0.721–0.765 | **0.517–0.525** | leaked **59.6%** → honest 0% |
+| SvmW | within-in | 0.683–0.795 | **0.516–0.526** | leaked 69% → honest 0% |
+| SvmW | pooled+SMOTE | 0.689–0.726 | **0.489–0.492** | leaked 59.6% → honest 0% |
+| （陽性対照）EEG バンドパワー | 同 honest 分割 | — | **0.56–0.58（>車両0.52）** | — |
+
+**確定**: leaked の高値は 59–69% の学習行再利用による記憶で、**物理行を 0% 重複にすると全 chance（0.47–0.53）**。
+faithfulness 完全一致＋陽性対照合格＝「分割が信号を壊しただけ」ではない。**「RF は pooled で機能する唯一の手法」
+は honest 評価で成立しない**（0.76→0.517=chance）。スクリプト: scratchpad `deleak_demo_A.py`／`adv_verify.py`。
+
+**精緻化（検証で判明・要記録）**:
+- **記録値はコード版に依存**: 一部の RF within JSON（2026-06-22 生成, `split_data_domain_train`=被験者ホールドアウト
+  commit `466e5b1`）は当時 train/eval が**一致していて既に honest（重複0%, ~0.52）**。現行コード（06-27〜, within-subject
+  commit `3e67282`）で再生成すると重複 68.6%・~0.58 に上昇。→ **§2 の数値は "生成時のコード版" によって leaked/honest が
+  混在し得る**。脱リーク再評価では全セルを現行 honest 分割で**一括再生成**して統一する必要。
+- **SvmW pooled（対策なし iv25base）は SMOTE 無しで縮退（全陽性, 0.52）＝元々 chance**。記憶で水増しされるのは
+  SMOTE 版(0.72)。SvmW baseline は leaked/honest どちらでも chance。
+
+### 計画（完遂後に本実行）
+方針: **exp3 は現行プロトコルで完遂を最優先**（§2 主結果）。脱リーク再テストは**走行中実験・共有コードに
+非破壊**で構え、完遂後に実行する。以下は準備物と手順（本節はチェックリスト、実行は保留）。
+
+**A. 実装見直し（read-only、コード変更なし）**
+1. `eval_pipeline.py:151-165`（pooled→random）／`138-149`（within/mixed→per-subject last20%）と train 側
+   （`model_pipeline.py:108-191`）の分割不一致を、mode 別に「train partition vs eval-test partition の
+   row 重複 %」で表化（監査 `overlap_audit.py` を正式スクリプト化：pooled ~60%・within ~69%・mixed 61–78%・
+   Cross/domain_train 0%）。→ 「どの列がどれだけ leak か」を数値で確定。
+2. 陽性対照（EEG→KSS）とラベル整合（`kss.py`、spearman 0.157 の懸念）を別途確認し、「ハーネスは信号を通す」
+   ことを担保（現状 cross-subject 0.62）。
+
+**B. 脱リーク再テスト（完遂後に実行、既存成果物は不変）**
+- 方式1（最小・安全）: **保存済みモデルを honest 分割の held-out で再スコア**する standalone（`honest_*.py` を
+  正式化）。⚠️ `data_time_split_by_subject` は index リセット→**位置(iloc)指定必須**（§3.6 の落とし穴）。
+  4手法×全条件で honest 表を生成。SvmA は cuml 環境が要る（Cross+T1 で代替可）。
+- 方式2（本格）: `evaluate.py` に **`--honest_split`（train と同一分割の held-out を eval に使う）フラグを新設**し、
+  **新タグ `honest_` で別途 eval を回す**（既存 leaked JSON は温存、比較用に併記）。共有コードは追加のみ・
+  デフォルト挙動不変なので走行中実験に非干渉。
+- 期待結果（監査より）: 車両→EEG(KSS) は honest で全手法 chance ~0.52、Lstm(DRT) のみ Cross honest 0.73–0.75。
+
+**C. 論文への反映（草稿 TIV2026_exp3、判断保留）**: 主結果は IV2025/TIV2026 準拠で提示し、**Limitation/
+Robustness 節に脱リーク感度解析（§3.6/§3.7-B）を明記**する構成が、比較性と誠実性を両立する最有力案。
+
+**次アクション（要ユーザ判断）**: exp3 完遂（c1 SvmW 残・RF-nofs 残）を待ってから B を実行。急ぐ場合は
+B方式1を今すぐ 1〜2 セルで実証も可（非破壊）。
 
 ## 4. 検証状況（詳細: verification_log.md）
 
@@ -333,9 +484,9 @@ iv25smote pooled ~17h（50 Optuna trial × ~20min）。SvmW の重さは非収�
   --smote --no-fs` から発行。タグに `_nofs` を付与し top-10 版と分離。対象は**対策あり列のみ**
   （Pooled+SMOTE・Mixed in/out・Within in/out、Cross なし）。eval 側は保存済み
   `selected_features` を読むため変更不要（手法・SW-SMOTE・分割は top-10 版と同一、選択のみ差）。
-  **seed は後に 5 に削減（ユーザ判断）**。**結果（2026-07-18）: pooled 5/5 完走＝0.864±0.018 で確定 →
-  §3.6（top-10 の 0.748 を +0.135 上回り分散も 1/3、"特徴選択が RF を過小評価"を確証）**。within/mixed-nofs
-  は残り実行中（~07-20 完走）。
+  **seed は後に 5 に削減（ユーザ判断）**。**⚠️ 結果の解釈は撤回（2026-07-19）**: pooled 5/5=0.864 は
+  実信号ではなく **train/eval 分割不一致の記憶リーク**（正しく分離すると chance ~0.52、§3.6）。この検証を
+  通じて **pooled 列全体のリーク**が判明したのが実質的な成果。
 - 04:30(07-05) に旧 4 並列 launcher を table-priority + 8 並列版へ自動切替（`_svmw_table_priority_switchover.sh`）。
   切替時の Bug#4 混入チェックも自動実行、汚染なしを確認。
 

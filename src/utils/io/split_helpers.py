@@ -169,7 +169,7 @@ def split_data(
             X_train, X_val, X_test, y_train, y_val, y_test = data_time_split_by_subject(
                 data, subject_col="subject_id", time_col="Timestamp",
                 kss_bin_labels=kss_bins_ts, kss_label_map=kss_map_ts,
-                model_name=model_name,
+                model_name=model_name, keep_subject_id=keep_subject_id,
             )
         # --- Fallback if any split collapses to a single class ---
         def _has_both(y: pd.Series) -> bool:
