@@ -463,3 +463,11 @@ LaTeX 健全性: `$` 偶数・`{}`204/204 balanced。ドラフトは Direction A
 - **異常終了チェック → 検出ゼロ**: 全 390+ eval JSON が roc_auc∈[0,1] で有効（NaN/inf/範囲外/破損なし）。直近完了 SvmW mixed s1 in 0.754/out 0.778、RF-nofs mixed s1 in 0.632/out 0.669 は想定帯内（現行 leak込みプロトコル）。
 - **想定値**: 全て既知のリーク署名と整合、新規異常なし。honest 再評価は別途（本 log 2026-07-22 の再監査節で確定＝全車両手法 chance）。
 - iv25smote の SW-SMOTE 再生成（案A修正済）は現行完了後(~07-24)に起動予定、非破壊で待機。
+
+## 2026-07-22（夜）【exp3 状況監査】RF-nofs 20/20 完了・SvmW 29/32、異常終了ゼロ、残 SvmW 3セル
+
+- **RF-nofs: 20/20 完了**（c1 table）。前回の要監視だった **mixed s0 in/out の CALIBRATION 停滞は解消**＝正常完了（in 08:51 / out 11:12、hung でなく低速だった）。値 in 0.906 / out 0.964（全特徴 leak 帯、記憶署名と整合）。
+- **SvmW: 29/32**。Within 16/16、mixed in 7/8（**s2025 が 19:23 完了**、値 0.745）・mixed out 6/8。**残 3セル**: mixed out **s2025**（92h 稼働、既観測最長域→~07-23）、mixed in/out **s13**（44h 稼働→~07-24〜25）。→ **SvmW 全完了 ~07-24〜25**（s13 律速）。
+- **運用**: SvmW in_mixed_s1 の churn 重複（19:23 に worker が完了済セルを再取得、eval は 07-21 09:16 済）を停止（PID 84144）。
+- **異常終了チェック → 検出ゼロ**: 全 390+ eval JSON が roc_auc∈[0,1] 有効（NaN/inf/範囲外/破損なし）。直近完了値（RF-nofs s0 0.906/0.964、SvmW s2025 0.745）は現行 leak込みプロトコルの想定帯内。
+- **次アクション**: RF-nofs 完了により残は SvmW 3セルのみ。SvmW 完了（~07-24）後、iv25smote の SW-SMOTE 再生成（案A修正済）を起動予定。
