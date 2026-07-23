@@ -471,3 +471,11 @@ LaTeX 健全性: `$` 偶数・`{}`204/204 balanced。ドラフトは Direction A
 - **運用**: SvmW in_mixed_s1 の churn 重複（19:23 に worker が完了済セルを再取得、eval は 07-21 09:16 済）を停止（PID 84144）。
 - **異常終了チェック → 検出ゼロ**: 全 390+ eval JSON が roc_auc∈[0,1] 有効（NaN/inf/範囲外/破損なし）。直近完了値（RF-nofs s0 0.906/0.964、SvmW s2025 0.745）は現行 leak込みプロトコルの想定帯内。
 - **次アクション**: RF-nofs 完了により残は SvmW 3セルのみ。SvmW 完了（~07-24）後、iv25smote の SW-SMOTE 再生成（案A修正済）を起動予定。
+
+## 2026-07-24 【exp3 c1 グリッド完全完了】全手法・全アーム完走、異常終了ゼロ、全値想定帯内
+
+- **c1 グリッド全完了**: RF(fs) 96/96・**SvmW 32/32**・SvmA 32/32・Lstm 60/60、iv25 baseline(base/smote)、RF-nofs 20/20。watchdog も 07-23 12:18:03 に "ALL COMPLETE — removing scheduled task" で自己終了。稼働プロセスなし。
+- **SvmW 最終**（07-23 完了）: Within-in 0.800±0.012 / Within-out 0.759±0.012（各8）、**Mixed-in 0.742±0.011 / Mixed-out 0.771±0.015（各8）**。最終3セル out_s2025 0.781 / in_s13 0.742 / out_s13 0.778 は帯内。
+- **異常終了チェック → 検出ゼロ**: 全 390+ eval JSON が roc_auc∈[0,1] 有効（NaN/inf/範囲外/破損なし）。全値が既知 leak 署名と整合、新規異常なし。運用: 完了直後の SvmW in_mixed_s1 churn 重複（07-22 19:23 に完了済セル再取得）を停止。
+- c1_results.md の SvmW Mixed 列を最終 n=8 値へ、進捗/ヘッダを「c1 完了」へ更新。
+- **次アクション**: exp3 c1 は完了。**iv25smote の SW-SMOTE 再生成（案A修正済、ユーザ pre-authorized "全4手法・現行完了後"）が起動可能**。ただし SvmW iv25smote は 1セル ~34–70h（履歴上最も律速）で全再生成は多日〜週規模、かつ honest では pooled/subject-wise いずれも chance（科学的結論は不変・方法論ラベル整合が目的）。→ 起動スコープ（特に SvmW を含めるか）をユーザ確認の上で実施。
