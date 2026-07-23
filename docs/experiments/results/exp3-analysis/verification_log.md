@@ -479,3 +479,17 @@ LaTeX 健全性: `$` 偶数・`{}`204/204 balanced。ドラフトは Direction A
 - **異常終了チェック → 検出ゼロ**: 全 390+ eval JSON が roc_auc∈[0,1] 有効（NaN/inf/範囲外/破損なし）。全値が既知 leak 署名と整合、新規異常なし。運用: 完了直後の SvmW in_mixed_s1 churn 重複（07-22 19:23 に完了済セル再取得）を停止。
 - c1_results.md の SvmW Mixed 列を最終 n=8 値へ、進捗/ヘッダを「c1 完了」へ更新。
 - **次アクション**: exp3 c1 は完了。**iv25smote の SW-SMOTE 再生成（案A修正済、ユーザ pre-authorized "全4手法・現行完了後"）が起動可能**。ただし SvmW iv25smote は 1セル ~34–70h（履歴上最も律速）で全再生成は多日〜週規模、かつ honest では pooled/subject-wise いずれも chance（科学的結論は不変・方法論ラベル整合が目的）。→ 起動スコープ（特に SvmW を含めるか）をユーザ確認の上で実施。
+
+## 2026-07-24 【iv25smote SW-SMOTE 再生成 起動＋進捗】subject-wise 実行を本番確認（fallback=0）、exp3 c1 は完了済
+
+ユーザ決定「全4手法を再生成」を実行。旧 pooled-SMOTE 成果物（eval JSON+CSV 74件）を `results/_archived_pooledsmote_20260724/`（MANIFEST 付）へ退避し、SW-SMOTE で再生成起動。
+
+- **最重要確認**: 今回の regen ログは **全手法で `Applying subject-wise oversampling`（fallback=0）** — RF 17・Lstm 6・SvmA 1・SvmW 5 が subject-wise 実行。**keep_subject_id 修正が本番で有効**（旧: 全 pooled fallback）。
+- **backend/起動**: RF/SvmW=Windows CPU（Start-Process 永続、RF 4+RF-nofs 2+SvmW 5 worker）、Lstm/SvmA=WSL2 GPU（`.venv_tf_gpu`/`.venv_svma_cuml`、GPU 競合回避で Lstm→SvmA 逐次、bash 背景タスク）。
+- **進捗（06:57 時点）＋ETA**:
+  - **Lstm: 6/6 完了**（各~33分、02:32–03:38）。値 0.504–0.521＝chance（旧 pooled-SMOTE の 0.50–0.53 と一致、Lstm pooled は SMOTE 種別によらず chance）。
+  - **RF: 11/20 完了**（非nofs15+nofs5、~高速）→ **~07-24 昼**。値 0.747–0.762＝leaked 帯（旧 ~0.74 と整合）。
+  - **SvmA: 1/6**（s0 を 03:38 開始、PSO swarmsize=50 maxiter=100、cuML）、5 pending、1 worker 逐次 → **~07-25〜26**。
+  - **SvmW: 0/5**（5 並列稼働、~34–70h/セル）→ **~07-26**。
+- **異常終了チェック → 検出ゼロ**: 全 eval JSON が roc_auc∈[0,1] 有効。新 regen 値（Lstm chance・RF ~0.75）は想定帯内で、旧 pooled-SMOTE 版と同帯（honest 結論=chance は不変、方法論ラベルが「pooled→subject-wise SMOTE」に是正）。
+- 注: GPU regen（SvmA 残5）は bash 背景タスクで実行中。セッション断で停止した場合は次回チェックで再起動（`scripts/shell/_regen_gpu_iv25smote.sh` を `.venv_svma_cuml` で再実行）。旧値は archive に保全済。
