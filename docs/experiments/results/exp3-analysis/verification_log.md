@@ -500,3 +500,12 @@ LaTeX 健全性: `$` 偶数・`{}`204/204 balanced。ドラフトは Direction A
 - **【ブロッカー】SvmA iv25smote は SW-SMOTE 再生成が技術的に不可能**: s0 が 07-24 03:39 の "PSO Starting" 直後で **~30h ログ無更新・GPU 0%/0%＝停止(hung)**。単一 seed 診断も ~5分でログ空・GPU 0% で再現。原因: subject-wise SMOTE が訓練を 40166→57592 に増やし、**cuML SVM/PSO(swarmsize50×maxiter100) が最初の SVM フィットで固まる**（旧 pooled-SMOTE フォールバック版は ~2.8h/seed で完走していた＝subject-wise 特有）。maxiter 削減は無効（反復前に停止）、CPU-SVM 化は 5000 フィット×57k で非現実的。
 - **対応**: hung プロセスと診断を停止し、**退避していた SvmA 旧 pooled-SMOTE 値（6 seed, 12ファイル）を archive から復元**（可逆・SvmA アーム保全）。→ **SvmA iv25smote は pooled SMOTE のまま**（honest ではいずれも chance＝科学的結論不変、方法論ラベルのみ SvmA だけ「pooled SMOTE（subject-wise は cuML 停止で不可）」と論文明記が必要）。**要ユーザ判断**（この扱いで確定 or 緩和策再試行）。
 - **異常終了チェック**: 全 eval JSON 有効。再生成の新値（RF ~0.75、Lstm chance）は旧同帯。SvmW/RF-nofs は正常進捗（停止兆候なし、SvmA 固有の cuML 問題）。
+
+### 追記（同 2026-07-25）SvmA ブロッカー解決 — 真因は `SVMA_USE_CUML=1` 未設定（sklearn CPU 落ち）、緩和策成功で再生成再開
+
+ユーザ判断「緩和策を試す」を実施。段階的診断で真因を特定し解決:
+- **診断1（max_iter 追加）**: SvmA.py の cuML/sklearn SVC は `max_iter` 無し（既定 -1＝無制限）。上限（`SVMA_SVC_MAX_ITER`, 既定100000）を3 SVC 呼び出しに追加（src/models/architectures/SvmA.py）。→ 無限ループは止まるが依然低速。
+- **診断2（GPU/CPU 実測）**: 停止セルは **GPU 0%・プロセス CPU 96%** ＝ GPU 不使用の CPU 計算。
+- **真因判明**: `SvmA.py` は **`SVMA_USE_CUML=1` env が無いと sklearn CPU SVC**（`_USE_CUML=False`）。私の GPU regen スクリプトはこの env を設定しておらず、**57k サンプル(subject-wise SMOTE)を CPU libsvm で計算＝実質非現実的**。旧版(2.8h/seed 完走)は cuML GPU 使用だった。
+- **緩和策（成功）**: `SVMA_USE_CUML=1` を付けて単一 seed 検証 → **GPU 4749 MiB・89% 使用、cuML SVC 稼働**を確認。`_regen_gpu_iv25smote.sh` の SvmA 行に `SVMA_USE_CUML=1` を追加し、**SvmA 6 seed を cuML GPU で再生成再開**（PSO maxiter=100、GPU 64% 稼働、~2.8h/seed×6＝~07-26 完了見込み）。旧値は archive 保全継続。
+- **結果**: SvmA も subject-wise SMOTE で再生成可能に。全4手法 SW-SMOTE 再生成が成立。max_iter 上限は防御的改善として保持（収束フィットは無影響、cuML/sklearn 両対応）。
