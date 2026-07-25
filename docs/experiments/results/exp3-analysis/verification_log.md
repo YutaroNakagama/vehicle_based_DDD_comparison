@@ -493,3 +493,10 @@ LaTeX 健全性: `$` 偶数・`{}`204/204 balanced。ドラフトは Direction A
   - **SvmW: 0/5**（5 並列稼働、~34–70h/セル）→ **~07-26**。
 - **異常終了チェック → 検出ゼロ**: 全 eval JSON が roc_auc∈[0,1] 有効。新 regen 値（Lstm chance・RF ~0.75）は想定帯内で、旧 pooled-SMOTE 版と同帯（honest 結論=chance は不変、方法論ラベルが「pooled→subject-wise SMOTE」に是正）。
 - 注: GPU regen（SvmA 残5）は bash 背景タスクで実行中。セッション断で停止した場合は次回チェックで再起動（`scripts/shell/_regen_gpu_iv25smote.sh` を `.venv_svma_cuml` で再実行）。旧値は archive に保全済。
+
+## 2026-07-25 【iv25smote 再生成 進捗＋SvmA ブロッカー】RF/Lstm 再生成完了、SvmW 進行中、SvmA は SW-SMOTE 不可（cuML 停止）→旧値復元
+
+- **再生成進捗（09:33）**: **RF non-nofs 15/15 完了**（0.75帯）、**Lstm 6/6 完了**（chance）、**SvmW 1/5**（s42 完了 05:03、4並列稼働、~07-26）、RF-nofs 2/5（稼働）。全て subject-wise SMOTE 実行（fallback=0）。
+- **【ブロッカー】SvmA iv25smote は SW-SMOTE 再生成が技術的に不可能**: s0 が 07-24 03:39 の "PSO Starting" 直後で **~30h ログ無更新・GPU 0%/0%＝停止(hung)**。単一 seed 診断も ~5分でログ空・GPU 0% で再現。原因: subject-wise SMOTE が訓練を 40166→57592 に増やし、**cuML SVM/PSO(swarmsize50×maxiter100) が最初の SVM フィットで固まる**（旧 pooled-SMOTE フォールバック版は ~2.8h/seed で完走していた＝subject-wise 特有）。maxiter 削減は無効（反復前に停止）、CPU-SVM 化は 5000 フィット×57k で非現実的。
+- **対応**: hung プロセスと診断を停止し、**退避していた SvmA 旧 pooled-SMOTE 値（6 seed, 12ファイル）を archive から復元**（可逆・SvmA アーム保全）。→ **SvmA iv25smote は pooled SMOTE のまま**（honest ではいずれも chance＝科学的結論不変、方法論ラベルのみ SvmA だけ「pooled SMOTE（subject-wise は cuML 停止で不可）」と論文明記が必要）。**要ユーザ判断**（この扱いで確定 or 緩和策再試行）。
+- **異常終了チェック**: 全 eval JSON 有効。再生成の新値（RF ~0.75、Lstm chance）は旧同帯。SvmW/RF-nofs は正常進捗（停止兆候なし、SvmA 固有の cuML 問題）。
