@@ -110,3 +110,4 @@ docs/experiments/results/exp3-analysis/latex_hpc/*.blg
 docs/experiments/results/exp3-analysis/latex_hpc/*.log
 docs/experiments/results/exp3-analysis/latex_hpc/*.tex.bak
 docs/experiments/results/exp3-analysis/latex_hpc/*.tex.bak_*
+docs/experiments/exp2_rf_0890_HPC_verification.md
