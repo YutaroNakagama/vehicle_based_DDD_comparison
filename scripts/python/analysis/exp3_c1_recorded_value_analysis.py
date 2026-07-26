@@ -209,19 +209,24 @@ if common and len(recs) == len(METHODS) * len(core) * len(common):
 import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
 os.makedirs(FIGDIR, exist_ok=True)
 
-# Fig 1: AUROC by method x mode
-fig, ax = plt.subplots(figsize=(11, 5)); x = np.arange(len(MODES)); w = 0.16
+# Fig 1: AUROC by method x mode. Pooled-base dropped (all remaining modes are SW-SMOTE-treated).
+# Error bars = mean +/- SD (matching the table's +/- column), clipped to [0,1] since AUROC is
+# bounded (a symmetric bar can otherwise overshoot 1 for small-n, near-ceiling cells).
+MODES_F1 = [md for md in MODES if md != "pooled_base"]
+fig, ax = plt.subplots(figsize=(10, 5)); x = np.arange(len(MODES_F1)); w = 0.16
 for i, method in enumerate(METHODS):
     m = []; lo = []; hi = []
-    for mode in MODES:
+    for mode in MODES_F1:
         r = A[method][mode]
-        if r: m.append(r["mean"]); lo.append(r["mean"] - r["t_ci"][0]); hi.append(r["t_ci"][1] - r["mean"])
+        if r:
+            mu, sd = r["mean"], r["sd"]
+            m.append(mu); lo.append(min(sd, mu)); hi.append(min(sd, 1.0 - mu))
         else: m.append(np.nan); lo.append(0); hi.append(0)
     ax.bar(x + (i - 2) * w, m, w, yerr=[lo, hi], capsize=2, label=method, color=COL[method])
-ax.axhline(0.5, ls="--", c="gray", lw=1); ax.text(len(MODES) - 0.7, 0.505, "0.5", color="gray", fontsize=8)
-ax.set_xticks(x); ax.set_xticklabels([MODE_LABEL[md] for md in MODES], rotation=18)
-ax.set_ylabel("AUROC (mean $\\pm$ 95% t-CI)"); ax.set_ylim(0.45, 1.0)
-ax.set_title("Recorded AUROC by method $\\times$ evaluation mode")
+ax.axhline(0.5, ls="--", c="gray", lw=1); ax.text(len(MODES_F1) - 0.5, 0.505, "0.5", color="gray", fontsize=8)
+ax.set_xticks(x); ax.set_xticklabels([MODE_LABEL[md] for md in MODES_F1], rotation=15)
+ax.set_ylabel("AUROC (mean $\\pm$ SD, clipped to [0,1])"); ax.set_ylim(0.45, 1.0)
+ax.set_title("Recorded AUROC by method $\\times$ evaluation mode (SW-SMOTE modes)")
 ax.legend(ncol=5, fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.14))
 fig.tight_layout(); fig.savefig(f"{FIGDIR}/fig1_auroc_method_mode.png", dpi=130, bbox_inches="tight"); plt.close(fig)
 

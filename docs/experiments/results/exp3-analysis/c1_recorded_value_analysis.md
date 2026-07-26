@@ -40,10 +40,12 @@ RF-nofs has no Pooled-base arm by design.
 
 ![Recorded AUROC by method and mode](figures/c1_recorded/fig1_auroc_method_mode.png)
 
-*Figure 1. Recorded AUROC (mean ± 95% t-CI) for each method across the six modes, with the 0.5
-reference line. Under Pooled-base only RF is elevated (SvmW/SvmA/Lstm sit near 0.5); RF-nofs is
-the highest across the domain-restricted modes but with wide CIs (n=5); SvmA is the lowest
-throughout.*
+*Figure 1. Recorded AUROC (mean ± SD, clipped to [0,1]) for each method across the five
+SW-SMOTE evaluation modes (Pooled-base omitted), with the 0.5 reference line. The error bars use
+the same SD as the "±" column of the table above; they are clipped at 1.0 because a symmetric
+bar on a bounded metric can otherwise overshoot for small-n, near-ceiling cells (e.g. RF-nofs
+Mixed-out, n=5, mean 0.891, SD 0.125). RF-nofs is the highest but with the widest dispersion;
+SvmW and Lstm are tightly grouped; SvmA is the lowest throughout.*
 
 ---
 
