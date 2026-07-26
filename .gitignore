@@ -18,9 +18,11 @@ docs/experiments/results/**
 !docs/experiments/results/exp2-analysis/
 !docs/experiments/results/exp2-analysis/paper/
 !docs/experiments/results/exp2-analysis/paper/TIV2026
-# exp3: track the analysis write-ups (*.md); results data/figures stay confidential
-!docs/experiments/results/exp3-analysis/
-!docs/experiments/results/exp3-analysis/*.md
+# exp3-analysis docs are CONFIDENTIAL (data-leakage findings, papers not yet corrected):
+# not tracked, kept local only.
+
+# exp3 leak-analysis script kept local (its output/comments document the data-leakage findings)
+scripts/python/analysis/exp3_c1_statistical_analysis.py
 !docs/experiments/results/exp3-analysis/domain_imbalance_factor_analysis.md
 !docs/experiments/results/exp3-analysis/verification_tasks.md
 !docs/experiments/results/exp3-analysis/verification_log.md
