@@ -20,13 +20,20 @@ docs/experiments/results/**
 !docs/experiments/results/exp2-analysis/paper/TIV2026
 # exp3-analysis docs are CONFIDENTIAL (data-leakage findings, papers not yet corrected):
 # not tracked, kept local only.
+# EXCEPTION — the recorded-value analysis summary is PUBLIC (no confidential findings).
+# Re-include the dir (so git can descend) then only the specific public file + figures;
+# the confidential *.md and figures/c1_stat/ have no negation, so they stay ignored.
+!docs/experiments/results/exp3-analysis/
+!docs/experiments/results/exp3-analysis/c1_recorded_value_analysis.md
+!docs/experiments/results/exp3-analysis/figures/
+!docs/experiments/results/exp3-analysis/figures/c1_recorded/
+!docs/experiments/results/exp3-analysis/figures/c1_recorded/*.png
 
 # exp3 leak-analysis script kept local (its output/comments document the data-leakage findings)
 scripts/python/analysis/exp3_c1_statistical_analysis.py
-!docs/experiments/results/exp3-analysis/domain_imbalance_factor_analysis.md
-!docs/experiments/results/exp3-analysis/verification_tasks.md
-!docs/experiments/results/exp3-analysis/verification_log.md
-!docs/experiments/results/exp3-analysis/c1_results.md
+# NOTE: the confidential exp3-analysis write-ups (verification_log.md, c1_results.md,
+# domain_imbalance_factor_analysis.md, verification_tasks.md, c1_statistical_analysis.md)
+# intentionally have NO negation here, so they remain ignored (local-only).
 # exp3 paper: tracked as a private submodule (mirrors exp2 TIV2026)
 !docs/experiments/results/exp3-analysis/TIV2026_exp3
 
