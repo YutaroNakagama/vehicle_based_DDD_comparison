@@ -187,12 +187,46 @@ pipeline relative to the near-deterministic SVM and LSTM pipelines.
 
 *Figure 4. Mean across-seed SD of AUROC over the Within/Mixed modes. RF ≫ SvmW / SvmA / Lstm.*
 
-### D4. SvmA feature informativeness (probe)
+### D4. SvmA under-performance: a learner effect, not a feature-set effect
 
-SvmA's 18 steering statistics show low informativeness even under a stronger learner: univariate
-max AUROC 0.515, multivariate RBF 0.509, and the same features fed to RF give 0.496 — which is
-why SvmA sits at the bottom of every ranking (B) and does not benefit from rebalancing (unlike
-SvmW, whose degeneracy is merely a decision-function artefact).
+SvmA records the lowest AUROC of all methods (A: 0.53–0.60 within/mixed; 0.481 Pooled-base). On a
+recorded-value basis the cause is the *learner*, not the steering feature set and not class
+imbalance.
+
+**Same features, different learner (recorded within-in-domain).** SvmA's own 36 steering features
+fed to RF reach 0.884 — essentially identical to the full 165-feature vehicle set (0.873) — whereas
+an RBF-SVM (SvmA's learner) on the same 36 features gives only 0.597, matching SvmA's recorded
+within-in AUROC (0.576, A). The steering feature set is therefore not the bottleneck under the
+recorded protocol: it yields as much recorded separability as the full set when a tree ensemble
+reads it; the RBF-SVM cannot.
+
+| Feature set → learner | Recorded AUROC |
+|---|---|
+| SvmA 36 steering → RF | 0.884 |
+| SvmA 36 steering → RBF-SVM | 0.597 |
+| all 165 vehicle → RF | 0.873 |
+
+**Imbalance treatment does not lift the SVM.** Under the recorded split, neither SW-SMOTE nor
+class weighting moves the RBF-SVM off ~0.58 (0.597 → 0.582 → 0.572), while RF stays ~0.88 across the
+same treatments — so class imbalance is not the cause of SvmA's low score either. (Domain shift is
+likewise not the driver: within-domain SvmA already sits at 0.53–0.60, A.)
+
+| Imbalance treatment (36 steering feats) | RF | RBF-SVM |
+|---|---|---|
+| raw | 0.878 | 0.597 |
+| SW-SMOTE | 0.883 | 0.582 |
+| class-weight | 0.877 | 0.572 |
+
+**SvmA's bottom rank is thus a learner limitation** (RBF-SVM on steering features), not a deficient
+feature set and not an imbalance artefact — unlike SvmW, whose Pooled degeneracy *is* a
+decision-function artefact that SW-SMOTE repairs (D2).
+
+![SvmA learner vs feature effect](figures/c1_recorded/fig6_svma_learner_vs_feature.png)
+
+*Figure 6. Recorded within-in-domain AUROC. (A) The same 36 steering features reach the full-set
+ceiling under RF (0.884 vs 0.873) but only 0.597 under the RBF-SVM that SvmA uses (≈ its recorded
+c1 value 0.576). (B) Neither SW-SMOTE nor class weighting lifts the RBF-SVM off ~0.58, while RF
+stays ~0.88. Probe = plain learners on a recorded-style split; the learner contrast is the point.*
 
 ---
 
@@ -218,12 +252,13 @@ across Within/Mixed and in/out.
 
 - **RF (fs):** the only method that separates from 0.5 under Pooled-base (B), with a small
   significant imbalance change (C); but the **least seed-stable** method (D3), and, with all
-  features (RF-nofs), a strong monotone **feature-count dependence** (D1).
-- **RF-nofs:** the highest recorded AUROC throughout, increasing with feature count (D1).
+  features (RF-nofs), a **feature-count dependence** that saturates by k≈20 (D1, D1b).
+- **RF-nofs:** the highest recorded AUROC throughout; the feature-count gain saturates by k≈20
+  (D1b).
 - **SvmW:** all-positive **degenerate** without rebalancing; SW-SMOTE **de-degenerates** it (D2),
   restoring a usable ranking.
-- **SvmA:** **low feature informativeness** (D4), hence the consistent bottom rank (B) and no
-  rebalancing benefit.
+- **SvmA:** bottom rank is a **learner limitation** (RBF-SVM), not a feature-set or imbalance
+  effect — the same steering features under RF reach the full-set ceiling (D4).
 - **Lstm:** **imbalance-inactive** (C, D2) but strongly **regime-driven** (largest Pooled→Within
   change); its within/mixed AUROC reflects the near-balanced DRT target, a different construct
   from the KSS label used by the other methods, so its absolute level is not directly comparable.
