@@ -246,19 +246,22 @@ modes (A).
 | +SW-SMOTE | 0.684 | 0.504 | 0.506 | 0.199 |
 
 **The features carry the signal.** The failure is the SVM's, not the feature set's: feeding SvmW's
-8 steering-wheel wavelet features to RF (recorded-style, within-in) gives 0.873, and once imbalance
-is handled the SVM itself reaches 0.74–0.80. SvmW's low Pooled score is therefore a *recoverable*
-decision-function degeneracy under imbalance — the mirror image of SvmA, whose low score is a
-learner ceiling that rebalancing does not lift (D4).
+8 steering-wheel wavelet features to RF (recorded-style, within-in) gives ~0.87 under *every*
+imbalance treatment — raw 0.871, SW-SMOTE 0.870, class-weight 0.873 (Fig 7B) — so a robust learner
+reads the recorded signal from them without any rebalancing, and once imbalance is handled the SVM
+itself reaches 0.74–0.80. SvmW's low Pooled score is therefore a *recoverable* decision-function
+degeneracy under imbalance — the mirror image of SvmA, whose low score is a learner ceiling that
+rebalancing does not lift (D4).
 
 ![SvmW imbalance collapse and SW-SMOTE recovery](figures/c1_recorded/fig7_svmw_imbalance_recovery.png)
 
 *Figure 7. (A) Recorded SvmW AUROC by regime: Pooled-base collapses to ~0.52 (all-positive),
-SW-SMOTE recovers it to 0.684, and with SW-SMOTE the Within/Mixed modes reach 0.74–0.80; the RF
-probe on the same 8 wavelet features (0.873, dotted) confirms the features carry recorded signal.
-(B) De-degeneration under SW-SMOTE (Pooled): specificity 0.004→0.504, predicted-positive rate
-0.997→0.506, probability SD 0.001→0.199 — an all-positive constant classifier becomes a usable
-ranking.*
+SW-SMOTE recovers it to 0.684, and with SW-SMOTE the Within/Mixed modes reach 0.74–0.80. (B) The
+same 8 steering-wheel wavelet features fed to RF reach ~0.87 under every imbalance treatment (raw
+0.871, SW-SMOTE 0.870, class-weight 0.873) — a robust learner reads the recorded signal without
+rebalancing, so SvmW's collapse is a learner–imbalance interaction, not a feature deficit. (The
+de-degeneration metrics — specificity 0.004→0.504, predicted-positive rate 0.997→0.506, probability
+SD 0.001→0.199 — are tabulated above.)*
 
 ### D6. Lstm: insensitive to imbalance, governed by the evaluation regime
 
