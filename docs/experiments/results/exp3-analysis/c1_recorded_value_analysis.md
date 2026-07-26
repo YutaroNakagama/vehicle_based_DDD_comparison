@@ -260,6 +260,38 @@ probe on the same 8 wavelet features (0.873, dotted) confirms the features carry
 0.997→0.506, probability SD 0.001→0.199 — an all-positive constant classifier becomes a usable
 ranking.*
 
+### D6. Lstm: insensitive to imbalance, governed by the evaluation regime
+
+Lstm's recorded AUROC is decoupled from class-imbalance treatment but strongly tied to the
+evaluation regime. Seed-paired (C): the imbalance contrast (Pooled-base→Pooled-SW-SMOTE) is
+Δ=+0.005 (p=1.0, inactive), whereas the domain-restriction contrast (Pooled→Within) is Δ=+0.267
+(p=0.031) — the largest of any method. Its recorded AUROC swings from ~0.51 under Pooled to
+0.74–0.78 across the domain-aware Within/Mixed modes, while SW-SMOTE moves it by essentially zero.
+
+| Lstm axis (seed-paired) | Δ AUROC | p |
+|---|---|---|
+| imbalance (base→SW-SMOTE) | +0.005 | 1.0 (inactive) |
+| domain restriction (Pooled→Within) | +0.267 | 0.031 |
+| domain shift (Within in→out) | −0.025 | 0.003 |
+
+**Caution for domain-shift robustness.** Because Lstm's strong Within/Mixed numbers are so
+regime-dependent — collapsing to ~0.51 under Pooled — they are protocol-specific and should not be
+read as evidence of robust generalisation. Two caveats sharpen this: (i) Lstm predicts the DRT
+`event_label` (a near-balanced construct, different from the KSS label the other methods use), so
+its Pooled behaviour and absolute levels are not directly comparable, and the large Pooled→Within
+swing partly reflects that target rather than domain per se; (ii) the *pure* in→out domain-shift
+effect, though statistically significant (p=0.003), is small in magnitude (−0.025) and not the
+largest among methods (SvmW −0.042, C). The defensible reading is therefore: **Lstm's recorded
+performance is governed by the evaluation protocol, not by class imbalance — so its high
+domain-aware numbers warrant caution as an indicator of domain-shift robustness.**
+
+![Lstm regime sensitivity](figures/c1_recorded/fig8_lstm_regime_sensitivity.png)
+
+*Figure 8. (A) Recorded Lstm AUROC across modes: the imbalance pair (Pooled-base vs Pooled-SW-SMOTE)
+is flat (Δ+0.005), while the jump into the domain-aware Within/Mixed regime is large (Δ+0.267); the
+in→out domain shift is small. (B) Seed-paired |ΔAUROC| by method: only Lstm is flat on the imbalance
+axis yet largest on the domain-restriction axis (RF-fs and SvmW both respond to imbalance).*
+
 ---
 
 ## E. Two-way structure (method × mode), Scheirer–Ray–Hare
@@ -293,6 +325,8 @@ across Within/Mixed and in/out.
 - **SvmA:** bottom rank is a **learner limitation** (RBF-SVM), not a feature-set or imbalance
   effect — the same steering features under RF reach the full-set ceiling (D4).
 - **Lstm:** **imbalance-inactive** (C, D2) but strongly **regime-driven** (largest Pooled→Within
-  change); its within/mixed AUROC reflects the near-balanced DRT target, a different construct
+  change, D6); its within/mixed AUROC reflects the near-balanced DRT target, a different construct
   from the KSS label used by the other methods, so its absolute level is not directly comparable.
+  Its performance is governed by the evaluation protocol rather than rebalancing — **so its high
+  domain-aware numbers warrant caution as an indicator of domain-shift robustness** (D6).
 - **Across methods (E):** the classifier dominates; mode and interaction are non-significant.
