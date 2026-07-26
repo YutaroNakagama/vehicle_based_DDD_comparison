@@ -105,11 +105,48 @@ SvmW/SvmA/RF-nofs under-powered pending the seed augmentation).
 | Pooled-SW-SMOTE* | 0.795 | 0.855 | +0.060 | 0.13 | +0.73 (large) |
 
 **Using all 165 features instead of the top-10 raises RF's recorded AUROC by ≈0.11–0.14 (large
-effect) across every domain-restricted mode** — a monotone dependence on feature count.
+effect) across every domain-restricted mode** — but a controlled dose-response (D1b) shows this
+dependence **saturates by k≈20**, so it is not an open-ended benefit of ever-more features.
 
 ![RF feature-count effect](figures/c1_recorded/fig2_rf_feature_count.png)
 
 *Figure 2. RF feature-count effect: all 165 features (RF-nofs) vs the top-10 (RF-fs) per mode.*
+
+### D1b. Feature-count dose-response — where does the gain saturate?
+
+D1 uses only the two endpoints actually run (k=10, k=165). To locate the *shape* of the
+dependence, a controlled within-in-domain probe (plain RF, RF-importance top-k, recorded
+evaluation, 3 seeds) sweeps intermediate k, comparing two selection orders: choosing the top-k
+*after* SW-SMOTE (the c1 pipeline order) vs on the natural training data.
+
+| k | SW-SMOTE→select (c1 order) | select on natural data |
+|---:|:---:|:---:|
+| 5 | 0.725 | 0.858 |
+| 10 | 0.863 | 0.892 |
+| **20** | **0.887** | 0.891 |
+| 40 | 0.896 | 0.895 |
+| 80 | 0.899 | 0.885 |
+| 120 | 0.901 | 0.886 |
+| 165 | 0.895 | 0.882 |
+
+**The dependence is not monotone to 165 — it saturates by k≈20.** Almost all of the gain falls
+between k=5 and k≈20 (+0.16 for the c1-order curve); from k=20 to k=165 the recorded AUROC is flat
+within noise (0.887→0.895). The D1 endpoint gap (+0.13, k=10→165) therefore overstates a
+"feature-count" law: the same plateau (≈0.89) is already reached at k≈20, and the low RF-fs anchor
+(0.746) reflects that the c1 selection stage — which ranks features on SW-SMOTE-oversampled data,
+*before* the model is fit — picks a suboptimal top-10. Selecting on the natural training data
+instead reaches the plateau by k=5–10.
+
+Practical reading: **≈20 vehicle-dynamics features suffice to reach RF's recorded ceiling; the
+top-10 arm underperforms mainly because of the SMOTE-before-selection order, not because 10
+features are intrinsically too few.**
+
+![RF feature-count dose-response](figures/c1_recorded/fig5_feature_dose_response.png)
+
+*Figure 5. Recorded within-in-domain AUROC vs feature count k. Both selection orders plateau by
+k≈20; the recorded c1 anchors (RF-fs k=10 = 0.746 ★, RF-nofs k=165 = 0.874 ◆) bracket the curve.
+Probe = plain RF with fixed hyperparameters and a simplified evaluation split, so absolute levels
+are not directly comparable to the tuned c1 pipeline; the saturation shape is what transfers.*
 
 ### D2. Decision spread / degeneracy (specificity, predicted-positive rate)
 
