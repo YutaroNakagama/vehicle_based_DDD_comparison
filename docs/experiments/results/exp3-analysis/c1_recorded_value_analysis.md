@@ -228,6 +228,38 @@ ceiling under RF (0.884 vs 0.873) but only 0.597 under the RBF-SVM that SvmA use
 c1 value 0.576). (B) Neither SW-SMOTE nor class weighting lifts the RBF-SVM off ~0.58, while RF
 stays ~0.88. Probe = plain learners on a recorded-style split; the learner contrast is the point.*
 
+### D5. SvmW under imbalance: a recoverable learner degeneracy, not a feature deficit
+
+SvmW behaves oppositely to SvmA. Its wavelet features carry recorded drowsiness signal, but its
+SVM cannot absorb severe class imbalance unaided.
+
+**Collapse under imbalance, recovery under SW-SMOTE.** Under Pooled-base (no resampling, natural
+3.9% minority) SvmW degenerates to an all-positive constant classifier — AUROC 0.519, specificity
+0.004, predicted-positive rate 0.997, probability SD 0.001 (D2). SW-SMOTE de-degenerates it: the
+Pooled AUROC rises to 0.684 (+0.165), specificity to 0.504 and probability SD to 0.199 — a usable
+ranking is restored. With SW-SMOTE in place, SvmW then delivers 0.74–0.80 across the Within/Mixed
+modes (A).
+
+| SvmW (Pooled) | AUROC | specificity | pred-pos rate | proba SD |
+|---|---|---|---|---|
+| base (no SMOTE) | 0.519 | 0.004 | 0.997 | 0.001 |
+| +SW-SMOTE | 0.684 | 0.504 | 0.506 | 0.199 |
+
+**The features carry the signal.** The failure is the SVM's, not the feature set's: feeding SvmW's
+8 steering-wheel wavelet features to RF (recorded-style, within-in) gives 0.873, and once imbalance
+is handled the SVM itself reaches 0.74–0.80. SvmW's low Pooled score is therefore a *recoverable*
+decision-function degeneracy under imbalance — the mirror image of SvmA, whose low score is a
+learner ceiling that rebalancing does not lift (D4).
+
+![SvmW imbalance collapse and SW-SMOTE recovery](figures/c1_recorded/fig7_svmw_imbalance_recovery.png)
+
+*Figure 7. (A) Recorded SvmW AUROC by regime: Pooled-base collapses to ~0.52 (all-positive),
+SW-SMOTE recovers it to 0.684, and with SW-SMOTE the Within/Mixed modes reach 0.74–0.80; the RF
+probe on the same 8 wavelet features (0.873, dotted) confirms the features carry recorded signal.
+(B) De-degeneration under SW-SMOTE (Pooled): specificity 0.004→0.504, predicted-positive rate
+0.997→0.506, probability SD 0.001→0.199 — an all-positive constant classifier becomes a usable
+ranking.*
+
 ---
 
 ## E. Two-way structure (method × mode), Scheirer–Ray–Hare
@@ -255,8 +287,9 @@ across Within/Mixed and in/out.
   features (RF-nofs), a **feature-count dependence** that saturates by k≈20 (D1, D1b).
 - **RF-nofs:** the highest recorded AUROC throughout; the feature-count gain saturates by k≈20
   (D1b).
-- **SvmW:** all-positive **degenerate** without rebalancing; SW-SMOTE **de-degenerates** it (D2),
-  restoring a usable ranking.
+- **SvmW:** all-positive **degenerate** without rebalancing; SW-SMOTE **de-degenerates** it (D2,
+  D5) and its wavelet features then deliver 0.74–0.80 — a *recoverable* learner degeneracy under
+  imbalance, not a feature deficit (mirror image of SvmA).
 - **SvmA:** bottom rank is a **learner limitation** (RBF-SVM), not a feature-set or imbalance
   effect — the same steering features under RF reach the full-set ceiling (D4).
 - **Lstm:** **imbalance-inactive** (C, D2) but strongly **regime-driven** (largest Pooled→Within
