@@ -30,7 +30,7 @@ FIGDIR = "docs/experiments/results/exp3-analysis/figures/c1_recorded"
 RNG = np.random.default_rng(20260726)
 
 METHODS = ["RF_fs", "RF_nofs", "SvmW", "SvmA", "Lstm"]
-MODES = ["pooled_base", "pooled_smote", "within_in", "within_out", "mixed_in", "mixed_out"]
+MODES = ["pooled_base", "pooled_smote", "mixed_in", "mixed_out"]  # within_* retired (within_retirement_plan.md)
 MODE_LABEL = {"pooled_base": "Pooled-base", "pooled_smote": "Pooled-SW-SMOTE",
               "within_in": "Within-in", "within_out": "Within-out",
               "mixed_in": "Mixed-in", "mixed_out": "Mixed-out"}
@@ -150,8 +150,8 @@ for mode in MODES:
 
 print("\n(C) WITHIN-METHOD mode contrasts (paired Wilcoxon)")
 CONTR = [("imbalance(base->SWSMOTE)", "pooled_base", "pooled_smote"),
-         ("domain_restrict(pooled->within)", "pooled_smote", "within_in"),
-         ("domain_shift(in->out) within", "within_in", "within_out")]
+         ("domain_restrict(pooled->mixed)", "pooled_smote", "mixed_in"),
+         ("domain_shift(in->out) mixed", "mixed_in", "mixed_out")]
 for method in METHODS:
     parts = []
     for name, m1, m2 in CONTR:
@@ -196,7 +196,7 @@ for mode in MODES:
         print(f"  {MODE_LABEL[mode]:16}: BF W={W:.2f} p={p:.3g}")
 
 print("\n(E) two-way SRH (balanced, Within/Mixed x in/out)")
-core = ["within_in", "within_out", "mixed_in", "mixed_out"]
+core = ["mixed_in", "mixed_out"]  # within_* retired; SRH mode factor now 2 levels (df=1)
 psets = {m: set.intersection(*[set(arr(m, md)) for md in core]) if all(arr(m, md) for md in core) else set() for m in METHODS}
 common = set.intersection(*psets.values()) if all(psets.values()) else set()
 recs = [(m, md, arr(m, md)[s]) for m in METHODS for md in core for s in common if s in arr(m, md)]
@@ -231,7 +231,7 @@ ax.legend(ncol=5, fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.14))
 fig.tight_layout(); fig.savefig(f"{FIGDIR}/fig1_auroc_method_mode.png", dpi=130, bbox_inches="tight"); plt.close(fig)
 
 # Fig 2: RF feature-count effect
-fig, ax = plt.subplots(figsize=(8.5, 4.5)); mfc = ["within_in", "within_out", "mixed_in", "mixed_out", "pooled_smote"]
+fig, ax = plt.subplots(figsize=(8.5, 4.5)); mfc = ["mixed_in", "mixed_out", "pooled_smote"]
 x = np.arange(len(mfc)); w = 0.38
 ax.bar(x - w / 2, [A["RF_fs"][md]["mean"] if A["RF_fs"][md] else np.nan for md in mfc], w, label="RF fs (top-10)", color=COL["RF_fs"])
 ax.bar(x + w / 2, [A["RF_nofs"][md]["mean"] if A["RF_nofs"][md] else np.nan for md in mfc], w, label="RF nofs (all 165)", color=COL["RF_nofs"])
@@ -248,7 +248,7 @@ ax.set_ylabel("specificity ($\\approx$0 = all-positive)"); ax.set_title("Decisio
 fig.tight_layout(); fig.savefig(f"{FIGDIR}/fig3_specificity.png", dpi=130, bbox_inches="tight"); plt.close(fig)
 
 # Fig 4: seed instability
-fig, ax = plt.subplots(figsize=(7, 4)); mv = ["within_in", "within_out", "mixed_in", "mixed_out"]; methods_v = ["RF_fs", "RF_nofs", "SvmA", "SvmW", "Lstm"]
+fig, ax = plt.subplots(figsize=(7, 4)); mv = ["mixed_in", "mixed_out"]; methods_v = ["RF_fs", "RF_nofs", "SvmA", "SvmW", "Lstm"]
 ax.bar(methods_v, [np.nanmean([SD[m][md] for md in mv if SD[m][md] is not None]) for m in methods_v], color=[COL[m] for m in methods_v])
 ax.set_ylabel("mean across-seed SD of AUROC"); ax.set_title("Across-seed variability by method (Within/Mixed)")
 fig.tight_layout(); fig.savefig(f"{FIGDIR}/fig4_seed_variability.png", dpi=130, bbox_inches="tight"); plt.close(fig)
