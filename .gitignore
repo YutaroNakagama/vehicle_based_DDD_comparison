@@ -27,7 +27,7 @@ docs/experiments/results/**
 !docs/experiments/results/exp3-analysis/c1_recorded_value_analysis.md
 # Migration plan for retiring the Within modes: cites only values already public in the
 # recorded-value summary above, plus script paths. No confidential findings.
-!docs/experiments/results/exp3-analysis/mixed_regime_migration.md
+!docs/experiments/results/exp3-analysis/within_retirement_plan.md
 !docs/experiments/results/exp3-analysis/figures/
 !docs/experiments/results/exp3-analysis/figures/c1_recorded/
 !docs/experiments/results/exp3-analysis/figures/c1_recorded/*.png
