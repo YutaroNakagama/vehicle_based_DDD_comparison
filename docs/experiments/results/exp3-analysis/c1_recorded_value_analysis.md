@@ -19,16 +19,16 @@ performance.
 - **Reproducibility:** `scripts/python/analysis/exp3_c1_recorded_value_analysis.py`. Tools:
   scipy / numpy / pandas / matplotlib (Dunn, Cliff's δ, Scheirer–Ray–Hare implemented in-script).
 
-> Note: Pooled-SW-SMOTE cells for SvmW/SvmA/RF-nofs have small provisional n (a seed
-> augmentation is in progress) and are marked with an asterisk.
+> **Status (2026-08-01).** The mixed-in Part B probes behind Figures 5–7 are complete. The
+> Pooled-SW-SMOTE and RF-nofs descriptive cells remain provisional while the final RF-nofs
+> extension completes (51/60 c1 cells at this checkpoint); regenerate the summary tables and
+> statistical tests after that final artifact set is available.
 
-> **PENDING MIGRATION — see [mixed_regime_migration.md](mixed_regime_migration.md).** The two
-> Within modes are being retired: `within` trains on the target group alone, discarding the other
-> group's data, which is not a deployable operating point. The regimes kept are Pooled and Mixed.
-> Sections A–E can be regenerated from the existing recorded values (Part A of that plan), but
-> D1b, D4 and the D5 RF probe are measured within-in-domain and require re-running under
-> mixed-in (Part B). Until Part B lands, treat the within columns and those three probes as the
-> values of a regime the analysis no longer intends to report.
+> **Migration in progress — see [mixed_regime_migration.md](mixed_regime_migration.md).** The two
+> Within modes are being retired because `within` trains only on the target group, discarding the
+> other group's data. The deployable regimes retained for reporting are Pooled and Mixed. The
+> Part B mechanism probes now use `mixed_in`; Part A will rebuild Sections A–E without the Within
+> columns once the RF-nofs seed extension is complete.
 
 ---
 
@@ -122,37 +122,24 @@ dependence **saturates by k≈20**, so it is not an open-ended benefit of ever-m
 
 ### D1b. Feature-count dose-response — where does the gain saturate?
 
-D1 uses only the two endpoints actually run (k=10, k=165). To locate the *shape* of the
-dependence, a controlled within-in-domain probe (plain RF, RF-importance top-k, recorded
-evaluation, 3 seeds) sweeps intermediate k, comparing two selection orders: choosing the top-k
-*after* SW-SMOTE (the c1 pipeline order) vs on the natural training data.
+The controlled probe is complete under **mixed-in-domain** evaluation (plain RF, RF-importance
+top-k, recorded evaluation, 3 seeds). It compares selecting top-k after SW-SMOTE (the c1 pipeline
+order) with selecting on the natural training data.
 
-| k | SW-SMOTE→select (c1 order) | select on natural data |
-|---:|:---:|:---:|
-| 5 | 0.725 | 0.858 |
-| 10 | 0.863 | 0.892 |
-| **20** | **0.887** | 0.891 |
-| 40 | 0.896 | 0.895 |
-| 80 | 0.899 | 0.885 |
-| 120 | 0.901 | 0.886 |
-| 165 | 0.895 | 0.882 |
+**The dependence is not monotone to 165 — it saturates by k≈20 in both selection orders.** The
+c1-order curve rises sharply before k=20 and stays around 0.90 thereafter; natural-data selection
+is already near that plateau by k=5–10. The recorded mixed-in anchors are RF-fs k=10 = 0.719 and
+RF-nofs k=165 = 0.829, which are not directly comparable to the simplified probe's absolute
+levels. The transferable result is the saturation shape, not the raw level.
 
-**The dependence is not monotone to 165 — it saturates by k≈20.** Almost all of the gain falls
-between k=5 and k≈20 (+0.16 for the c1-order curve); from k=20 to k=165 the recorded AUROC is flat
-within noise (0.887→0.895). The D1 endpoint gap (+0.13, k=10→165) therefore overstates a
-"feature-count" law: the same plateau (≈0.89) is already reached at k≈20, and the low RF-fs anchor
-(0.746) reflects that the c1 selection stage — which ranks features on SW-SMOTE-oversampled data,
-*before* the model is fit — picks a suboptimal top-10. Selecting on the natural training data
-instead reaches the plateau by k=5–10.
-
-Practical reading: **≈20 vehicle-dynamics features suffice to reach RF's recorded ceiling; the
-top-10 arm underperforms mainly because of the SMOTE-before-selection order, not because 10
-features are intrinsically too few.**
+Practical reading: **the mixed-in probe supports a compact feature set (approximately 20
+vehicle-dynamics features); the top-10 arm's low recorded value is primarily consistent with the
+SMOTE-before-selection order rather than with ten features being intrinsically insufficient.**
 
 ![RF feature-count dose-response](figures/c1_recorded/fig5_feature_dose_response.png)
 
-*Figure 5. Recorded within-in-domain AUROC vs feature count k. Both selection orders plateau by
-k≈20; the recorded c1 anchors (RF-fs k=10 = 0.746 ★, RF-nofs k=165 = 0.874 ◆) bracket the curve.
+*Figure 5. Recorded mixed-in-domain AUROC vs feature count k. Both selection orders plateau by
+k≈20; the recorded c1 anchors (RF-fs k=10 = 0.719 ★, RF-nofs k=165 = 0.829 ◆) bracket the curve.
 Probe = plain RF with fixed hyperparameters and a simplified evaluation split, so absolute levels
 are not directly comparable to the tuned c1 pipeline; the saturation shape is what transfers.*
 
@@ -201,29 +188,23 @@ SvmA records the lowest AUROC of all methods (A: 0.53–0.60 within/mixed; 0.481
 recorded-value basis the cause is the *learner*, not the steering feature set and not class
 imbalance.
 
-**Same features, different learner (recorded within-in-domain).** SvmA's own 36 steering features
-fed to RF reach 0.884 — essentially identical to the full 165-feature vehicle set (0.873) — whereas
-an RBF-SVM (SvmA's learner) on the same 36 features gives only 0.597, matching SvmA's recorded
-within-in AUROC (0.576, A). The steering feature set is therefore not the bottleneck under the
-recorded protocol: it yields as much recorded separability as the full set when a tree ensemble
-reads it; the RBF-SVM cannot.
+**Same features, different learner (recorded mixed-in-domain).** SvmA's own 36 steering features
+fed to RF reach 0.877, close to the full 165-feature vehicle set (0.889), whereas an RBF-SVM
+(SvmA's learner) on the same 36 features gives only 0.544, matching the recorded SvmA mixed-in
+band (0.532, A). The steering feature set is therefore not the bottleneck under the recorded
+protocol: it yields as much recorded separability as the full set when a tree ensemble reads it;
+the RBF-SVM cannot.
 
 | Feature set → learner | Recorded AUROC |
 |---|---|
-| SvmA 36 steering → RF | 0.884 |
-| SvmA 36 steering → RBF-SVM | 0.597 |
-| all 165 vehicle → RF | 0.873 |
+| SvmA 36 steering → RF | 0.877 |
+| SvmA 36 steering → RBF-SVM | 0.544 |
+| all 165 vehicle → RF | 0.889 |
 
-**Imbalance treatment does not lift the SVM.** Under the recorded split, neither SW-SMOTE nor
-class weighting moves the RBF-SVM off ~0.58 (0.597 → 0.582 → 0.572), while RF stays ~0.88 across the
-same treatments — so class imbalance is not the cause of SvmA's low score either. (Domain shift is
-likewise not the driver: within-domain SvmA already sits at 0.53–0.60, A.)
-
-| Imbalance treatment (36 steering feats) | RF | RBF-SVM |
-|---|---|---|
-| raw | 0.878 | 0.597 |
-| SW-SMOTE | 0.883 | 0.582 |
-| class-weight | 0.877 | 0.572 |
+**Imbalance treatment does not lift the SVM.** Under the mixed-in recorded split, neither
+SW-SMOTE nor class weighting moves the RBF-SVM off approximately 0.54, while RF stays around
+0.87–0.88 across the same treatments. Class imbalance is therefore not the cause of SvmA's low
+score in this regime.
 
 **SvmA's bottom rank is thus a learner limitation** (RBF-SVM on steering features), not a deficient
 feature set and not an imbalance artefact — unlike SvmW, whose Pooled degeneracy *is* a
@@ -231,10 +212,10 @@ decision-function artefact that SW-SMOTE repairs (D2).
 
 ![SvmA learner vs feature effect](figures/c1_recorded/fig6_svma_learner_vs_feature.png)
 
-*Figure 6. Recorded within-in-domain AUROC. (A) The same 36 steering features reach the full-set
-ceiling under RF (0.884 vs 0.873) but only 0.597 under the RBF-SVM that SvmA uses (≈ its recorded
-c1 value 0.576). (B) Neither SW-SMOTE nor class weighting lifts the RBF-SVM off ~0.58, while RF
-stays ~0.88. Probe = plain learners on a recorded-style split; the learner contrast is the point.*
+*Figure 6. Recorded mixed-in-domain AUROC. (A) The same 36 steering features reach the full-set
+ceiling under RF (0.877 vs 0.889) but only 0.544 under the RBF-SVM that SvmA uses (≈ its recorded
+c1 value 0.532). (B) Neither SW-SMOTE nor class weighting lifts the RBF-SVM off ~0.54, while RF
+stays ~0.87–0.88. Probe = plain learners on a recorded-style split; the learner contrast is the point.*
 
 ### D5. SvmW under imbalance: a recoverable learner degeneracy, not a feature deficit
 
@@ -254,8 +235,8 @@ modes (A).
 | +SW-SMOTE | 0.684 | 0.504 | 0.506 | 0.199 |
 
 **The features carry the signal.** The failure is the SVM's, not the feature set's: feeding SvmW's
-8 steering-wheel wavelet features to RF (recorded-style, within-in) gives ~0.87 under *every*
-imbalance treatment — raw 0.871, SW-SMOTE 0.870, class-weight 0.873 (Fig 7B) — so a robust learner
+8 steering-wheel wavelet features to RF (recorded-style, mixed-in) gives ~0.87 under *every*
+imbalance treatment — raw 0.877, SW-SMOTE 0.858, class-weight 0.871 (Fig 7B) — so a robust learner
 reads the recorded signal from them without any rebalancing, and once imbalance is handled the SVM
 itself reaches 0.74–0.80. SvmW's low Pooled score is therefore a *recoverable* decision-function
 degeneracy under imbalance — the mirror image of SvmA, whose low score is a learner ceiling that
@@ -266,7 +247,7 @@ rebalancing does not lift (D4).
 *Figure 7. (A) Recorded SvmW AUROC by regime: Pooled-base collapses to ~0.52 (all-positive),
 SW-SMOTE recovers it to 0.684, and with SW-SMOTE the Within/Mixed modes reach 0.74–0.80. (B) The
 same 8 steering-wheel wavelet features fed to RF reach ~0.87 under every imbalance treatment (raw
-0.871, SW-SMOTE 0.870, class-weight 0.873) — a robust learner reads the recorded signal without
+0.877, SW-SMOTE 0.858, class-weight 0.871) — a robust learner reads the recorded signal without
 rebalancing, so SvmW's collapse is a learner–imbalance interaction, not a feature deficit. (The
 de-degeneration metrics — specificity 0.004→0.504, predicted-positive rate 0.997→0.506, probability
 SD 0.001→0.199 — are tabulated above.)*
