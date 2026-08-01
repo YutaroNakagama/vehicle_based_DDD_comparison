@@ -1,8 +1,9 @@
 # exp3 — Migration of the Recorded-Value Analysis to the Pooled/Mixed Regimes
 
 **Status: IN PROGRESS (2026-08-01).** Part B is complete: its three mechanism probes have been
-re-run under `mixed_in` and are reflected in Figures 5–7. Part A remains pending until the active
-RF-nofs seed extension completes and the recorded-value aggregation can be regenerated. The
+re-run under **pooled** (the deployment regime, primary) and under **mixed-in** (diagnostic), and
+are reflected in Figures 5–7; both regimes reproduce every claim. Part A remains pending until the
+active RF-nofs seed extension completes and the recorded-value aggregation can be regenerated. The
 TIV2026_exp3 manuscript will be revised in one pass from that finalized public artifact set.
 
 ## 1. Decision and rationale
@@ -61,30 +62,33 @@ Note on §E: with only two modes left the "the domain sub-modes do not differ" r
 much weaker design than the current 4-mode one. Report the new df and p honestly; if the mode
 effect is no longer estimable in a useful way, say so rather than restating the old conclusion.
 
-## 3. Part B — mixed-in probe runs completed
+## 3. Part B — probe runs completed (pooled primary, mixed-in diagnostic)
 
-The three probes were re-run under **mixed-in** using the same plain-learner harness, fixed
-hyperparameters, simplified split, and seed count. Figures 5–7 now contain these mixed-in values.
+The three probes were re-run under **pooled** (the deployment regime) and, as a diagnostic, under
+**mixed-in**, using the same plain-learner harness, fixed hyperparameters, simplified split, and
+seed count. Figures 5–7 now report the pooled values; every claim reproduces under both regimes.
 
 ### B1. Feature-count dose–response (report §D1b, Fig. 5)
 
-- **Result**: both selection orders plateau by k≈20 under mixed-in. The recorded anchors are
-  RF-fs k=10 = 0.719 and RF-nofs k=165 = 0.829. The mechanism claim is retained: the low top-10
-  arm is primarily consistent with selecting features after SW-SMOTE rather than with ten
-  features being intrinsically insufficient.
+- **Result (pooled)**: both selection orders plateau by k≈20 (c1-order 0.69 at k=5 → 0.90 at k=20,
+  then ~0.91; natural near-plateau by k=5–10). Recorded pooled anchors RF-fs = 0.795, RF-nofs =
+  0.866. **Mixed-in diagnostic** reproduces the k≈20 knee (anchors 0.719 / 0.829). The mechanism
+  claim is retained: the low top-10 arm is primarily consistent with selecting features after
+  SW-SMOTE rather than with ten features being intrinsically insufficient.
 
 ### B2. SvmA learner-versus-feature-set probe (report §D4, Fig. 6)
 
-- **Result**: on the same 36 steering features, RF = 0.877 and RBF-SVM = 0.544; RF on all 165
-  vehicle features = 0.889. Across raw, SW-SMOTE, and class-weight treatments, RF remains
-  ~0.87–0.88 while RBF-SVM remains ~0.54.
+- **Result (pooled)**: on the same 36 steering features, RF = 0.893 and RBF-SVM = 0.544; RF on all
+  165 vehicle features = 0.904. Across raw / SW-SMOTE / class-weight, RF stays ~0.88–0.90 while
+  RBF-SVM stays ~0.55 (0.558 / 0.557 / 0.544). **Mixed-in diagnostic**: RF 0.877 vs RBF-SVM 0.544
+  (gap holds; 0.877/0.889 vs 0.544).
 - **Conclusion retained**: SvmA's bottom rank is a learner ceiling, not a feature-set deficit or
   imbalance artifact.
 
 ### B3. SvmW wavelet-feature probe (report §D5, Fig. 7 panel B)
 
-- **Result**: SvmW's 8 GHM steering-wavelet features fed to RF give raw 0.877, SW-SMOTE 0.858,
-  and class-weight 0.871 under mixed-in.
+- **Result (pooled)**: SvmW's 8 GHM steering-wavelet features fed to RF give raw 0.874, SW-SMOTE
+  0.878, class-weight 0.871. **Mixed-in diagnostic**: 0.877 / 0.858 / 0.871.
 - **Conclusion retained**: a learner that does not degenerate reads the recorded signal from
   these features without rebalancing, so SvmW's pooled collapse is a learner–imbalance
   interaction rather than a feature deficit.
