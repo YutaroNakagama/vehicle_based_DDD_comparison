@@ -25,6 +25,9 @@ docs/experiments/results/**
 # the confidential *.md and figures/c1_stat/ have no negation, so they stay ignored.
 !docs/experiments/results/exp3-analysis/
 !docs/experiments/results/exp3-analysis/c1_recorded_value_analysis.md
+# Migration plan for retiring the Within modes: cites only values already public in the
+# recorded-value summary above, plus script paths. No confidential findings.
+!docs/experiments/results/exp3-analysis/mixed_regime_migration.md
 !docs/experiments/results/exp3-analysis/figures/
 !docs/experiments/results/exp3-analysis/figures/c1_recorded/
 !docs/experiments/results/exp3-analysis/figures/c1_recorded/*.png

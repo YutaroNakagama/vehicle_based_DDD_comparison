@@ -22,6 +22,14 @@ performance.
 > Note: Pooled-SW-SMOTE cells for SvmW/SvmA/RF-nofs have small provisional n (a seed
 > augmentation is in progress) and are marked with an asterisk.
 
+> **PENDING MIGRATION — see [mixed_regime_migration.md](mixed_regime_migration.md).** The two
+> Within modes are being retired: `within` trains on the target group alone, discarding the other
+> group's data, which is not a deployable operating point. The regimes kept are Pooled and Mixed.
+> Sections A–E can be regenerated from the existing recorded values (Part A of that plan), but
+> D1b, D4 and the D5 RF probe are measured within-in-domain and require re-running under
+> mixed-in (Part B). Until Part B lands, treat the within columns and those three probes as the
+> values of a regime the analysis no longer intends to report.
+
 ---
 
 ## A. Descriptive statistics and interval estimates (AUROC)
