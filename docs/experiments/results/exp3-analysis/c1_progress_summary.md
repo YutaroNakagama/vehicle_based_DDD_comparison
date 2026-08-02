@@ -64,31 +64,69 @@ for SvmA).
 **RF-nofs and SvmW are ~20–30× more expensive to train than RF-fs / Lstm.** RF-nofs's cost is the
 165-feature Optuna search; SvmW's is the multiwavelet feature construction plus SVM tuning.
 
-### 2b. Inference latency (per-window prediction, CPU single-thread, model only)
+### 2b. Model-only inference latency (per-window prediction)
 
-300-tree RF and RBF-SVM on the recorded feature sets (feature extraction excluded):
+Model prediction time with the features already computed (300-tree RF and RBF-SVM on CPU
+single-thread; Lstm is the BiLSTM-36 + attention forward pass measured with TF):
 
 | Model | µs / window | windows / s |
 |---|---|---|
 | RF (top-10 features) | **24** | ~42,000 |
 | RF (165 features) | 33 | ~30,000 |
 | RBF-SVM (36 steering feats, 1750 SVs) | 110 | ~9,000 |
+| **Lstm** (BiLSTM-36 + attention, seq 100×12) | **316** | ~3,200 |
 
-RF predicts a window in tens of microseconds; the RBF-SVM is ~4–5× slower (kernel evaluation over
-~1750 support vectors) but still ~9 k windows/s. Lstm is a GPU sequence model (sub-millisecond per
-window on GPU) and is not directly comparable to these CPU timings.
+Model-only, every method predicts a window in tens-to-hundreds of microseconds — trivially
+real-time. But this excludes the feature extraction, which turns out to dominate (2c–2d).
 
-### 2c. Deployment reading
+### 2c. Feature-extraction cost per window (the dominant term)
 
-- **Inference is not a bottleneck for any method.** A KSS/DRT window spans seconds, so even the
-  slowest learner (RBF-SVM, ≈0.1 ms) runs thousands of times faster than real time. On the model
-  side, processing speed does **not** discriminate the methods at deployment.
-- **The real cost separation is at build time** (RF-nofs and SvmW ≈ 20–30× RF-fs / Lstm) and in
-  **feature extraction**: SvmW's GHM multiwavelet packet energy and SvmA's per-window statistical /
-  entropy features add preprocessing that the RF-fs top-10 and Lstm (raw sequence) largely avoid. For
-  a fielded detector this favours the cheaper RF-fs / Lstm pipelines when accuracy is comparable.
+Measured on a representative 300-sample window with the pipeline's own extractors:
+
+| Feature family | ms / window / signal | used by |
+|---|---|---|
+| statistical + entropy (22 feats: Sample/Shannon entropy, Katz FD, moments, spectral) | **8.1** | SvmA, RF |
+| GHM multiwavelet packet (8 band energies) | **3.4** | SvmW, RF |
+
+The statistical/entropy family is expensive because **Sample Entropy is O(n²)** in the window
+length. This per-window preprocessing, not the model, is the real cost.
+
+### 2d. End-to-end inference latency (feature extraction + model)
+
+Composed from the per-signal extraction cost × the signals each method actually uses, plus its
+model inference:
+
+| Method | features extracted | **end-to-end ms / window** |
+|---|---|---|
+| **RF (fs & nofs)** | full set (~5 signals statistical + 3 wavelet) | **~51** |
+| **SvmA** | 2 steering signals × statistical/entropy | **~16** |
+| **SvmW** | 1 steering-wheel signal × GHM wavelet | **~3.5** |
+| **Lstm** | light std/mean/pred-error (no entropy) + BiLSTM | **~0.8** |
+
+**This inverts the model-only ranking.** RF has the *fastest model* but the *slowest end-to-end*,
+because it must compute the whole 165-feature set — including the O(n²) entropy features — before it
+predicts, and RF-fs pays the same extraction cost as RF-nofs (feature selection happens after
+extraction). Lstm, whose features are light and whose sequence model is only 0.3 ms, is the fastest
+end-to-end.
+
+![Processing speed comparison](figures/c1_recorded/fig_processing_speed.png)
+
+*Left: build cost (training + tuning) per cell, log scale — RF-nofs / SvmW ≈ 20–30× RF-fs / Lstm.
+Right: per-window inference latency (feature extraction + model), log scale — extraction dominates,
+and RF is heaviest end-to-end despite the fastest model.*
+
+### 2e. Deployment reading
+
+- **No method is ruled out for real-time use.** A KSS/DRT window spans seconds, so even the heaviest
+  end-to-end pipeline (RF, ~51 ms) is ~200× faster than real time.
+- **But the ordering matters for constrained / embedded deployment.** RF is the heaviest to build
+  *and* the heaviest end-to-end (full-feature extraction); RF-fs's small model does **not** help,
+  since it still extracts all 165 features. SvmW and especially **Lstm are the lightest at
+  inference**. So when accuracy is comparable, processing speed favours Lstm / SvmW at inference and
+  RF-fs / Lstm at build time.
 
 **Caveats.** Training times are wall-clock from a shared, non-isolated machine (GPU/CPU contention),
-so they are order-of-magnitude, not benchmark-grade. Inference timings are model-only (exclude
-feature extraction) and CPU single-thread; Lstm is GPU. A rigorous throughput benchmark on isolated
-hardware is a possible follow-up.
+so they are order-of-magnitude. Model timings are CPU single-thread (Lstm via TF). Feature-extraction
+and end-to-end figures use a representative 300-sample window and the stated per-method signal
+counts, so they are estimates; a rigorous end-to-end benchmark on isolated hardware with the exact
+per-method signal set is a possible follow-up.
