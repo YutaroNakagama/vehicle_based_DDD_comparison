@@ -48,6 +48,15 @@ above it); SvmA sits near the 0.5 line throughout.*
 Two cost axes are reported: **training/tuning cost** (the price of building each detector) and
 **inference latency** (the deployment-relevant per-window prediction speed).
 
+> **Measurement environment (all §2 timings are hardware-specific).** Laptop workstation — **CPU**
+> Intel Core i9-12900HK (14 cores / 20 threads, up to ~5 GHz, AVX2); **64 GB** RAM; **GPU** NVIDIA
+> RTX 3060 Laptop (6 GB, driver 596.08); **OS** Windows 11 (build 22631), with the GPU training jobs
+> (Lstm / TensorFlow, SvmA / cuML) run under WSL2. **Software** Python 3.11.9, numpy 1.26.4, scipy
+> 1.16.3, scikit-learn 1.5.2, pandas 2.2.3, TensorFlow 2.13.1. Training wall-times (2a) come from
+> mixed Windows-CPU (RF, SvmW) and WSL2-GPU (Lstm, SvmA) runs on a **shared, non-isolated** machine;
+> the inference / extraction micro-benchmarks (2b–2d) are **CPU single-thread**, with the Lstm forward
+> pass on CPU (CUDA disabled). All numbers are order-of-magnitude and would differ on other hardware.
+
 ### 2a. Training + tuning wall-time per cell (measured from the c1 run logs)
 
 Each cell is one seed × mode fit including its hyperparameter search (Optuna for RF/SvmW/Lstm, PSO
@@ -106,18 +115,25 @@ latency falls back toward 2b.)
 Composed from the per-signal extraction cost × the signals each method actually uses, plus its
 model inference:
 
-| Method | features extracted | **end-to-end ms / window** |
+| Method | features extracted at deployment | **end-to-end ms / window** |
 |---|---|---|
-| **RF (fs & nofs)** | full set (~5 signals statistical + 3 wavelet) | **~51** |
-| **SvmA** | 2 steering signals × statistical/entropy | **~16** |
+| **RF (nofs)** | full 165-feature set (5 signals statistical incl SampleEntropy + 3 wavelet) | **~51** |
+| **SvmA** | 2 steering signals × statistical/entropy (incl SampleEntropy) | **~16** |
 | **SvmW** | 1 steering-wheel signal × GHM wavelet | **~3.5** |
+| **RF (fs)** | only the 10 selected smooth features (~5 signals, no O(n²) entropy) | **~1–2** |
 | **Lstm** | light std/mean/pred-error (no entropy) + BiLSTM | **~0.8** |
 
-**This inverts the model-only ranking.** RF has the *fastest model* but the *slowest end-to-end*,
-because it must compute the whole 165-feature set — including the O(n²) entropy features — before it
-predicts, and RF-fs pays the same extraction cost as RF-nofs (feature selection happens after
-extraction). Lstm, whose features are light and whose sequence model is only 0.3 ms, is the fastest
-end-to-end.
+**The model-only ranking inverts — but only for RF-nofs.** RF-nofs has the fastest model yet the
+*slowest* end-to-end, because it must compute the whole 165-feature set (including the O(n²) Sample
+Entropy) before predicting. **RF-fs, by contrast, is fast end-to-end (~1–2 ms):** at deployment its
+10 features are already fixed from training, so it extracts *only those*, and the selected set is
+dominated by light smooth statistics — mean / std / prediction-error — that avoid the O(n²) entropy
+entirely (verified on the recorded `feature_meta` artifacts, where the top-10 are all
+`*_mean` / `*_std_dev` / `*_pred_error`). The ~51 ms full-extraction cost applies to RF-fs only
+during *training*, where all 165 features are computed and then the top-10 is selected. So **RF-fs
+and Lstm are the two cheapest end-to-end.** (Cost decomposition: Sample Entropy alone is 6.8 ms —
+~84 % of the 8.1 ms statistical-feature cost — while all the cheap moments/percentiles + one FFT
+total ~0.07 ms. Should a future selection pick an entropy feature, add ~6.8 ms per such feature.)
 
 ![Processing speed comparison](figures/c1_recorded/fig_processing_speed.png)
 
@@ -135,24 +151,61 @@ provisional at n=13):
 | **RF (nofs)** | **0.87 (1st)**\* | 23.2 | ~51 |
 | **Lstm** | 0.78 (2nd) | **0.8** | **~0.8** |
 | **SvmW** | 0.76 (3rd) | 17.4 | ~3.5 |
-| **RF (fs)** | 0.73 (4th) | 0.7 | ~51 |
+| **RF (fs)** | 0.73 (4th) | **0.7** | **~1–2** |
 | **SvmA** | 0.56 (5th) | 2.6 | ~16 |
 
 - **No method is ruled out for real-time use.** A KSS/DRT window spans seconds, so even the heaviest
-  end-to-end pipeline (RF, ~51 ms) is ~200× faster than real time.
-- **Lstm is the cost-efficient (Pareto) choice** — 2nd-highest Mixed AUROC at the **lowest build cost
-  and the lowest inference latency** of all five.
-- **RF-nofs buys the top accuracy at the highest cost on both axes** (23 h to build, ~51 ms/window to
-  run).
-- **RF-fs is dominated:** despite the cheapest build, it still pays the full ~51 ms extraction (it
-  computes all 165 features before selecting the top-10) yet is only 4th in Mixed accuracy — a small
-  model does not buy a fast detector.
-- **SvmW** trades a heavy build for light inference; **SvmA** is cheap-ish to run but lowest accuracy.
-- **Net:** processing speed favours **Lstm / SvmW at inference** and **RF-fs / Lstm at build time**;
-  RF's recorded accuracy edge (especially RF-nofs) comes at the highest cost on *both* axes.
+  end-to-end pipeline (RF-nofs, ~51 ms) is ~200× faster than real time.
+- **Lstm and RF-fs are the two cheapest end-to-end** (~0.8–2 ms); both build cheaply too (~0.8 / 0.7 h).
+- **Among these two, Lstm Pareto-dominates RF-fs:** at comparable cost it is 2nd in Mixed accuracy
+  versus RF-fs's 4th. RF-fs is *not* dominated on speed — its earlier "~51 ms" was a mistake (that is
+  the training-time full extraction; a deployed RF-fs extracts only its 10 fixed smooth features).
+- **RF-nofs buys the top accuracy at the highest cost on both axes** (23 h to build, ~51 ms/window),
+  because it keeps the whole feature set (including the O(n²) entropy features) at inference.
+- **SvmW** trades a heavy build (17 h) for light inference (~3.5 ms); **SvmA** is mid-cost but lowest
+  accuracy.
+- **Net:** on cost-efficiency the field is **Lstm ≳ RF-fs ≫ SvmW > SvmA**, with **RF-nofs paying the
+  most on both axes for its accuracy lead**. Which to field depends on how much the RF-nofs accuracy
+  margin is worth against ~30× the build cost and ~25–50× the inference cost of Lstm / RF-fs.
 
 **Caveats.** Training times are wall-clock from a shared, non-isolated machine (GPU/CPU contention),
 so they are order-of-magnitude. Model timings are CPU single-thread (Lstm via TF). Feature-extraction
 and end-to-end figures use a representative 300-sample window and the stated per-method signal
 counts, so they are estimates; a rigorous end-to-end benchmark on isolated hardware with the exact
 per-method signal set is a possible follow-up.
+
+### 2f. Estimated timing on the target microcontroller (Renesas RH850) — rough extrapolation
+
+The measurements above are on a laptop-class i9 + RTX 3060. The fielded target is a **Renesas RH850**
+automotive MCU, orders of magnitude slower for this numeric workload. Taking a representative core
+(e.g. an RH850/G4MH-class ~240 MHz single core with a single-precision FPU and no wide SIMD), scalar
+floating-point throughput is roughly **100–1000× below the i9** (≈20× from clock × ≈10–50× from the
+out-of-order execution, caches, and AVX2 / BLAS vectorisation the MCU lacks). Scaling the per-window
+end-to-end latency (§2d) by that band:
+
+| Method | desktop end-to-end | **RH850 estimate (×100–1000)** |
+|---|---|---|
+| **Lstm** | ~0.8 ms | **~0.1–0.8 s** |
+| **RF (fs)** | ~1–2 ms | **~0.1–2 s** |
+| **SvmW** | ~3.5 ms | **~0.4–3.5 s** |
+| **SvmA** | ~16 ms | **~1.6–16 s** |
+| **RF (nofs)** | ~51 ms | **~5–51 s** |
+
+Reading, against a window that spans a few seconds:
+
+- **Lstm, RF-fs and SvmW are plausibly real-time on RH850**; **SvmA and especially RF-nofs likely
+  exceed the window budget** (RF-nofs must compute the full 165-feature set, including the O(n²)
+  Sample Entropy) → not real-time without heavy optimisation.
+- **Model size is a separate blocker.** The 300-tree RF and the 1750-support-vector RBF-SVM are large
+  for RH850 flash / RAM and would need pruning / SV-reduction / fixed-point quantisation; the
+  BiLSTM-36 weights (~tens of KB) are the most MCU-friendly.
+- **First optimisation target:** the O(n²) Sample Entropy dominates the statistical-feature methods on
+  an MCU — replacing it (or the whole statistical set) with cheaper features would give the largest
+  win.
+
+**Caveat — these are extrapolations, not measurements.** Actual RH850 time depends on the exact device
+(clock, FPU presence, cache), a fixed-point-vs-float C reimplementation, the compiler, and the memory
+layout. A real figure needs profiling a C port on the target silicon (or a cycle-accurate simulator);
+the values above are only an order-of-magnitude feasibility guide. If the production design targets a
+more capable automotive SoC (e.g. R-Car) for the ML stage rather than the RH850 MCU, the budget is far
+looser and all four methods become comfortably real-time.
