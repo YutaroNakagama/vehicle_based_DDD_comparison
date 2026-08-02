@@ -93,6 +93,16 @@ length. This per-window preprocessing, not the model, is the real cost.
 
 ### 2d. End-to-end inference latency (feature extraction + model)
 
+**Why feature extraction counts as inference cost, not build cost.** At *training* time the features
+are extracted once over the training set — an offline, one-off cost folded into 2a. But a fielded
+real-time detector receives raw steering / lane signals and must extract each **new** window's
+features before the model can score it, so per-window extraction *recurs at inference, once per
+prediction*. It would be a build-only cost only if every future window could be pre-extracted in
+batch, which a streaming detector cannot do. The experiment measured 2b (model-only) because the
+features were pre-computed offline into the processed CSVs; **2d is the latency a deployed detector
+actually pays per window.** (If a deployment precomputes or incrementally maintains features, its
+latency falls back toward 2b.)
+
 Composed from the per-signal extraction cost × the signals each method actually uses, plus its
 model inference:
 
@@ -115,15 +125,31 @@ end-to-end.
 Right: per-window inference latency (feature extraction + model), log scale — extraction dominates,
 and RF is heaviest end-to-end despite the fastest model.*
 
-### 2e. Deployment reading
+### 2e. Deployment reading — accuracy × speed trade-off
+
+Reading the two cost axes against Mixed-regime accuracy (the deployable regime; RF-nofs Mixed is
+provisional at n=13):
+
+| Method | Mixed AUROC (rank) | Build (h/cell) | End-to-end infer (ms/window) |
+|---|---|---|---|
+| **RF (nofs)** | **0.87 (1st)**\* | 23.2 | ~51 |
+| **Lstm** | 0.78 (2nd) | **0.8** | **~0.8** |
+| **SvmW** | 0.76 (3rd) | 17.4 | ~3.5 |
+| **RF (fs)** | 0.73 (4th) | 0.7 | ~51 |
+| **SvmA** | 0.56 (5th) | 2.6 | ~16 |
 
 - **No method is ruled out for real-time use.** A KSS/DRT window spans seconds, so even the heaviest
   end-to-end pipeline (RF, ~51 ms) is ~200× faster than real time.
-- **But the ordering matters for constrained / embedded deployment.** RF is the heaviest to build
-  *and* the heaviest end-to-end (full-feature extraction); RF-fs's small model does **not** help,
-  since it still extracts all 165 features. SvmW and especially **Lstm are the lightest at
-  inference**. So when accuracy is comparable, processing speed favours Lstm / SvmW at inference and
-  RF-fs / Lstm at build time.
+- **Lstm is the cost-efficient (Pareto) choice** — 2nd-highest Mixed AUROC at the **lowest build cost
+  and the lowest inference latency** of all five.
+- **RF-nofs buys the top accuracy at the highest cost on both axes** (23 h to build, ~51 ms/window to
+  run).
+- **RF-fs is dominated:** despite the cheapest build, it still pays the full ~51 ms extraction (it
+  computes all 165 features before selecting the top-10) yet is only 4th in Mixed accuracy — a small
+  model does not buy a fast detector.
+- **SvmW** trades a heavy build for light inference; **SvmA** is cheap-ish to run but lowest accuracy.
+- **Net:** processing speed favours **Lstm / SvmW at inference** and **RF-fs / Lstm at build time**;
+  RF's recorded accuracy edge (especially RF-nofs) comes at the highest cost on *both* axes.
 
 **Caveats.** Training times are wall-clock from a shared, non-isolated machine (GPU/CPU contention),
 so they are order-of-magnitude. Model timings are CPU single-thread (Lstm via TF). Feature-extraction
