@@ -196,9 +196,10 @@ Reading, against a window that spans a few seconds:
 - **Lstm, RF-fs and SvmW are plausibly real-time on RH850**; **SvmA and especially RF-nofs likely
   exceed the window budget** (RF-nofs must compute the full 165-feature set, including the O(n²)
   Sample Entropy) → not real-time without heavy optimisation.
-- **Model size is a separate blocker.** The 300-tree RF and the 1750-support-vector RBF-SVM are large
-  for RH850 flash / RAM and would need pruning / SV-reduction / fixed-point quantisation; the
-  BiLSTM-36 weights (~tens of KB) are the most MCU-friendly.
+- **Model size is a separate — and harder — blocker (see 2g).** The RF ensembles are hundreds of MB
+  to >1 GB (even RF-fs), far beyond RH850 flash; SvmA ~12 MB is borderline; only Lstm (0.26 MB) and
+  SvmW (~3 MB) fit comfortably. Fitting RF at all would need far fewer / shallower trees or a
+  different model class.
 - **First optimisation target:** the O(n²) Sample Entropy dominates the statistical-feature methods on
   an MCU — replacing it (or the whole statistical set) with cheaper features would give the largest
   win.
@@ -209,3 +210,28 @@ layout. A real figure needs profiling a C port on the target silicon (or a cycle
 the values above are only an order-of-magnitude feasibility guide. If the production design targets a
 more capable automotive SoC (e.g. R-Car) for the ML stage rather than the RH850 MCU, the budget is far
 looser and all four methods become comfortably real-time.
+
+### 2g. Model size (flash / RAM footprint) — the harder RH850 constraint
+
+Measured from the trained-model files on disk (c1 wasserstein runs):
+
+| Method | Model size | Notes |
+|---|---|---|
+| **Lstm** | **0.26 MB** | Keras BiLSTM-36 + attention (weights only) |
+| **SvmW** | **~3 MB** | RBF-SVM support vectors |
+| **SvmA** | **~12 MB** | ANFIS/PSO + SVM |
+| **RF (fs)** | **~50 MB – 1.7 GB (median ~220 MB)** | 300-tree ensemble, top-10 features |
+| **RF (nofs)** | **~60 MB – 1.4 GB (median ~350 MB)** | 300-tree ensemble, 165 features |
+
+- **RF ensembles are 2–4 orders of magnitude larger than the others** (hundreds of MB to >1 GB),
+  because scikit-learn stores every tree node and the node count is driven by the ~57 k subject-wise
+  SMOTE training samples × unbounded depth, **not by the feature count**. Consequently **RF-fs (top-10)
+  is essentially as large as RF-nofs** — feature selection speeds up extraction and prediction (2d)
+  but does **not** shrink the model. "RF-fs is light" is true for inference, false for footprint.
+- **RH850 flash is typically ~2–16 MB.** Only **Lstm (0.26 MB) and SvmW (~3 MB) fit comfortably**;
+  **SvmA (~12 MB) is borderline**; **RF (hundreds of MB) cannot fit without drastic reduction**
+  (far fewer / shallower trees, or a different model class). So **model size — not compute — is the
+  binding RH850 constraint**, and it favours Lstm / SvmW even more sharply than the latency does.
+- **Caveat:** these are Python pickle sizes (verbose); a compact C / fixed-point export would be
+  smaller, but an RF with millions of nodes remains fundamentally large, whereas the BiLSTM and the
+  SVM support-vector set compress to well under an MB / a few MB.
