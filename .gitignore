@@ -28,6 +28,8 @@ docs/experiments/results/**
 # Migration plan for retiring the Within modes: cites only values already public in the
 # recorded-value summary above, plus script paths. No confidential findings.
 !docs/experiments/results/exp3-analysis/within_retirement_plan.md
+# Progress tracker: recorded AUROC x method x mode + processing-speed metrics. No confidential findings.
+!docs/experiments/results/exp3-analysis/c1_progress_summary.md
 !docs/experiments/results/exp3-analysis/figures/
 !docs/experiments/results/exp3-analysis/figures/c1_recorded/
 !docs/experiments/results/exp3-analysis/figures/c1_recorded/*.png
