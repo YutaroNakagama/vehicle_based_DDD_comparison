@@ -21,11 +21,10 @@ performance.
 - **Reproducibility:** `scripts/python/analysis/exp3_c1_recorded_value_analysis.py`. Tools:
   scipy / numpy / pandas / matplotlib (Dunn, Cliff's δ, Scheirer–Ray–Hare implemented in-script).
 
-> **Status (2026-08-01).** The Part B mechanism probes (Figures 5–7) are complete under **pooled**
-> (the deployment regime), with **mixed-in retained as a diagnostic** that reproduces every claim.
-> The Pooled-SW-SMOTE and RF-nofs descriptive cells remain provisional while the final RF-nofs
-> extension completes; regenerate the summary tables and statistical tests after that final artifact
-> set is available.
+> **Status (2026-08-03).** The recorded-value campaign is **complete** — all methods × the retained
+> Pooled/Mixed modes are final (RF-nofs reached its full 15-seed extension on 2026-08-02). The Part B
+> mechanism probes (Figures 5–7) report **pooled** (the deployment regime), with **mixed-in retained
+> as a diagnostic**. Sections A–E below are the finalized numbers.
 
 > **Migration in progress — see [within_retirement_plan.md](within_retirement_plan.md).** The two
 > Within modes are being retired because `within` trains only on the target group, discarding the
@@ -42,15 +41,14 @@ Mean ± SD (n); 95% t-CI and percentile bootstrap CI are computed in the script.
 | Method | Pooled-base | Pooled-SW-SMOTE | Mixed-in | Mixed-out |
 |---|---|---|---|---|
 | **RF (fs)** | 0.738 ± 0.090 (15) | 0.795 ± 0.052 (15) | 0.719 ± 0.085 (24) | 0.749 ± 0.104 (24) |
-| **RF (nofs)** | — | 0.870 ± 0.026 (5) | 0.843 ± 0.085 (12)* | 0.908 ± 0.090 (12)* |
+| **RF (nofs)** | — | 0.870 ± 0.026 (5) | 0.846 ± 0.077 (15) | 0.912 ± 0.081 (15) |
 | **SvmW** | 0.519 ± 0.011 (6) | 0.694 ± 0.018 (6) | 0.742 ± 0.012 (8) | 0.771 ± 0.016 (8) |
 | **SvmA** | 0.481 ± 0.008 (6) | 0.538 ± 0.042 (6) | 0.530 ± 0.026 (11) | 0.597 ± 0.022 (11) |
 | **Lstm** | 0.512 ± 0.011 (6) | 0.513 ± 0.006 (6) | 0.782 ± 0.009 (15) | 0.779 ± 0.009 (15) |
 
 RF-nofs has no Pooled-base arm by design. The two Within modes are retired (see
 [within_retirement_plan.md](within_retirement_plan.md)); Pooled and Mixed are the deployable
-regimes. *RF-nofs Mixed cells (n=12) are provisional pending the RF-nofs seed extension to n=15;
-the ranking is unaffected.
+regimes. RF-nofs reached its full 15-seed extension (2026-08-02); all Mixed cells are final.
 
 ![Recorded AUROC by method and mode](figures/c1_recorded/fig1_auroc_method_mode.png)
 
@@ -58,8 +56,8 @@ the ranking is unaffected.
 evaluation modes retained after the Within retirement (Pooled-SW-SMOTE, Mixed-in, Mixed-out;
 Pooled-base omitted), with the 0.5 reference line. The error bars use the same SD as the "±" column
 of the table above; they are clipped at 1.0 because a symmetric bar on a bounded metric can
-otherwise overshoot for small-n, near-ceiling cells (e.g. RF-nofs Mixed-out, n=12, mean 0.908, SD
-0.090). RF-nofs is the highest but with the widest dispersion; in the Mixed modes the top-10 RF-fs
+otherwise overshoot for small-n, near-ceiling cells (e.g. RF-nofs Mixed-out, n=15, mean 0.912, SD
+0.081). RF-nofs is the highest but with the widest dispersion; in the Mixed modes the top-10 RF-fs
 is 4th of 5 (SvmW and Lstm both above it); SvmA is the lowest throughout.*
 
 ---
@@ -73,8 +71,8 @@ Cliff's δ (details in the script). **The method effect is highly significant in
 |---|---|---|---|---|
 | Pooled-base | 27.4 | 4.8e-06 | 0.84 | RF-fs (0.738) ≫ SvmW ≈ Lstm ≈ SvmA (0.48–0.52) |
 | Pooled-SW-SMOTE | 32.3 | 1.7e-06 | 0.86 | RF-nofs (0.870) > RF-fs (0.795) > SvmW > SvmA > Lstm |
-| Mixed-in | 43.7 | 7.4e-09 | 0.61 | RF-nofs > **Lstm > SvmW > RF-fs** > SvmA |
-| Mixed-out | 36.4 | 2.4e-07 | 0.50 | RF-nofs > **Lstm > SvmW > RF-fs** > SvmA |
+| Mixed-in | 47.1 | 1.5e-09 | 0.63 | RF-nofs > **Lstm > SvmW > RF-fs** > SvmA |
+| Mixed-out | 40.7 | 3.0e-08 | 0.54 | RF-nofs > **Lstm > SvmW > RF-fs** > SvmA |
 
 - **Under Pooled-base only RF-fs separates from the 0.5 level** (RF-fs vs each of SvmW / SvmA /
   Lstm: p_holm ≤ 0.03, **Cliff's δ = 1.0**); the other three are statistically indistinguishable.
@@ -97,7 +95,7 @@ regimes: domain restriction is Pooled→Mixed and domain shift is Mixed in→out
 | Method | Imbalance (base→SW-SMOTE) | Domain restriction (Pooled→Mixed) | Domain shift (Mixed in→out) |
 |---|---|---|---|
 | **RF-fs** | Δ=+0.060, **p=0.035** | Δ=−0.039, **p=0.005** | Δ=+0.032 **p=8e-06** |
-| **RF-nofs** | (n.a.) | Δ=+0.008, p=1.0 (n.s.) | Δ=+0.066 **p=5e-04** |
+| **RF-nofs** | (n.a.) | Δ=+0.008, p=1.0 (n.s.) | Δ=+0.066 **p=6e-05** |
 | **SvmW** | Δ=+0.179, **p=0.031** | Δ=+0.052, **p=0.031** | Δ=+0.030 **p=0.008** |
 | **SvmA** | Δ=+0.068, p=0.063 | Δ=−0.017, p=0.69 (n.s.) | Δ=+0.060 **p=0.001** |
 | **Lstm** | Δ=+0.005, **p=1.0 (inactive)** | Δ=+0.268, **p=0.031** | Δ=−0.006, p=0.25 (n.s.) |
@@ -119,14 +117,13 @@ regimes: domain restriction is Pooled→Mixed and domain shift is Mixed in→out
 | Mode | RF-fs | RF-nofs | Δ | p | Cliff's δ |
 |---|---|---|---|---|---|
 | Pooled-SW-SMOTE | 0.795 | 0.870 | +0.074 | **0.008** | +0.79 (large) |
-| Mixed-in | 0.719 | 0.843 | +0.124 | **0.001** | +0.71 (large) |
-| Mixed-out | 0.749 | 0.908 | +0.159 | **2e-04** | +0.77 (large) |
+| Mixed-in | 0.719 | 0.846 | +0.127 | **1e-04** | +0.74 (large) |
+| Mixed-out | 0.749 | 0.912 | +0.163 | **4e-05** | +0.79 (large) |
 
 **Using all 165 features instead of the top-10 raises RF's recorded AUROC by ≈0.07–0.16 (large
 effect) across the retained modes** — but a controlled dose-response (D1b) shows this dependence
 **saturates by k≈20**, so it is not an open-ended benefit of ever-more features. (RF-nofs Mixed
-cells are provisional at n=12 pending the seed extension; the large effect and its direction are
-unaffected.)
+cells are final at n=15.)
 
 ![RF feature-count effect](figures/c1_recorded/fig2_rf_feature_count.png)
 
@@ -186,14 +183,14 @@ near-balanced target and is unaffected by SMOTE; RF is never degenerate.
 |---|---|---|---|---|---|---|
 | Pooled-base | 0.090 | — | 0.011 | 0.008 | 0.011 | W=5.77, **p=0.003** |
 | Pooled-SW-SMOTE | 0.052 | 0.026 | 0.018 | 0.042 | 0.006 | W=1.94, p=0.13 (n.s.) |
-| Mixed-in | 0.085 | 0.085 | 0.012 | 0.026 | 0.009 | W=5.12, **p=0.001** |
-| Mixed-out | 0.104 | 0.090 | 0.016 | 0.022 | 0.009 | W=4.37, **p=0.003** |
+| Mixed-in | 0.085 | 0.077 | 0.012 | 0.026 | 0.009 | W=5.19, **p=0.001** |
+| Mixed-out | 0.104 | 0.081 | 0.016 | 0.022 | 0.009 | W=4.41, **p=0.003** |
 
 **RF (both variants) is markedly the least seed-stable method** — its across-seed SD (0.05–0.10)
 is up to an order of magnitude larger than SvmW's / Lstm's (≈0.01), with significant variance
 heterogeneity in every domain-restricted mode (the Pooled-SW-SMOTE heterogeneity is not
 significant). This reflects the seed sensitivity of the RF ensemble + Optuna pipeline relative to
-the near-deterministic SVM and LSTM pipelines. (RF-nofs Mixed SD is provisional at n=12.)
+the near-deterministic SVM and LSTM pipelines.
 
 ![Across-seed variability by method](figures/c1_recorded/fig4_seed_variability.png)
 

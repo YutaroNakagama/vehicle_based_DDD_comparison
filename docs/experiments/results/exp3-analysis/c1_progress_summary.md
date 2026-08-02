@@ -8,34 +8,33 @@ here for progress completeness but are **retired** from the reported analysis (s
 
 ## 1. Recorded AUROC by method × evaluation mode
 
-Mean ± SD (n). All cells complete except RF-nofs Mixed (ETA below).
+Mean ± SD (n). **All cells complete** (RF-nofs reached its full 15-seed extension on 2026-08-02).
 
 | Method | Pooled-SW-SMOTE | Within-in | Within-out | Mixed-in | Mixed-out |
 |---|---|---|---|---|---|
 | **RF (fs)** | 0.795 ± 0.052 (15) | 0.746 ± 0.089 (24) | 0.778 ± 0.108 (24) | 0.719 ± 0.085 (24) | 0.749 ± 0.104 (24) |
-| **RF (nofs)** | 0.870 ± 0.026 (5) | 0.895 ± 0.053 (15) | 0.931 ± 0.044 (15) | 0.841 ± 0.082 (13)\* | 0.906 ± 0.086 (13)\* |
+| **RF (nofs)** | 0.870 ± 0.026 (5) | 0.895 ± 0.053 (15) | 0.931 ± 0.044 (15) | 0.846 ± 0.077 (15) | 0.912 ± 0.081 (15) |
 | **SvmW** | 0.694 ± 0.018 (6) | 0.800 ± 0.012 (8) | 0.759 ± 0.013 (8) | 0.742 ± 0.012 (8) | 0.771 ± 0.016 (8) |
 | **SvmA** | 0.538 ± 0.042 (6) | 0.583 ± 0.026 (11) | 0.574 ± 0.064 (11) | 0.530 ± 0.026 (11) | 0.597 ± 0.022 (11) |
 | **Lstm** | 0.513 ± 0.006 (6) | 0.779 ± 0.007 (15) | 0.763 ± 0.012 (15) | 0.782 ± 0.009 (15) | 0.779 ± 0.009 (15) |
 
-\*RF-nofs Mixed cells are at **n=13/15**. They are already CI-adequate (required n ≈ 11–12 for a 95 %
-CI half-width ≤ 0.05); the last 2 seeds/cell only tighten the interval. Lstm targets the DRT
-`event_label` (a different construct from the KSS label the other four use), so its absolute level is
-not directly commensurable.
+Every retained cell is CI-adequate (required n ≈ 11–12 for a 95 % CI half-width ≤ 0.05; RF-nofs Mixed
+is the tightest constraint and is met at n=15). Lstm targets the DRT `event_label` (a different
+construct from the KSS label the other four use), so its absolute level is not directly commensurable.
 
-**Completion status / ETA (2026-08-02):**
+**Completion status (2026-08-03):**
 
 | Method | Status |
 |---|---|
 | RF (fs) | ✅ complete (all modes) |
+| RF (nofs) | ✅ complete (Pooled/Within/Mixed; Mixed reached 15/15 on 2026-08-02) |
 | SvmW | ✅ complete (Within/Mixed 8/8, Pooled-SW-SMOTE 6/6) |
 | SvmA | ✅ complete (Within/Mixed 11/11, Pooled-SW-SMOTE 6/6) |
 | Lstm | ✅ complete (all modes) |
-| RF (nofs) | Pooled/Within ✅; **Mixed-in 13/15, Mixed-out 13/15 — in progress** |
 
-- **Only remaining work:** RF-nofs Mixed, 2 seeds/cell. Each RF-nofs cell is ~15–38 h (165-feature
-  Optuna search, CPU, 6 workers) → **ETA ≈ 2026-08-03**. The analysis is already CI-adequate without
-  them.
+- **The exp3 c1 recorded-value campaign is complete.** No cells remain; no additional experiments are
+  needed (all retained cells CI-adequate). Remaining downstream work is the TIV2026_exp3 manuscript
+  revision from this finalized set.
 
 ![Recorded AUROC by method × evaluation mode](figures/c1_recorded/fig_progress_auroc_by_mode.png)
 
@@ -143,12 +142,11 @@ and RF is heaviest end-to-end despite the fastest model.*
 
 ### 2e. Deployment reading — accuracy × speed trade-off
 
-Reading the two cost axes against Mixed-regime accuracy (the deployable regime; RF-nofs Mixed is
-provisional at n=13):
+Reading the two cost axes against Mixed-regime accuracy (the deployable regime; all cells final):
 
 | Method | Mixed AUROC (rank) | Build (h/cell) | End-to-end infer (ms/window) |
 |---|---|---|---|
-| **RF (nofs)** | **0.87 (1st)**\* | 23.2 | ~51 |
+| **RF (nofs)** | **0.88 (1st)** | 23.2 | ~51 |
 | **Lstm** | 0.78 (2nd) | **0.8** | **~0.8** |
 | **SvmW** | 0.76 (3rd) | 17.4 | ~3.5 |
 | **RF (fs)** | 0.73 (4th) | **0.7** | **~1–2** |
