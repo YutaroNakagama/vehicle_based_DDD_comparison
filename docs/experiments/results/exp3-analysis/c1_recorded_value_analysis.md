@@ -321,6 +321,47 @@ in the Mixed regime" rather than a strong claim of equivalence. The method ranki
 
 ---
 
+## F. Seed-count convergence (per paper-target case)
+
+Following the TIV2026 / exp2 seed-validity framework (exp2 fig8): for **every reported case** the
+seeds are added one at a time (fixed augmentation order) and the running mean AUROC and its 95 %
+t-CI half-width are tracked. A case is **adequate** when
+
+- *discriminating* (running mean > 0.55): the 95 % CI half-width ≤ 0.05 **and** the running mean has
+  flattened (last-3 span ≤ 0.01); or
+- *near-0.5* (running mean ≤ 0.55): the percentile-bootstrap 95 % CI upper bound < 0.60 (excludes any
+  weak signal).
+
+**18 of the 19 reported cells are adequate** (RF-nofs has no Pooled-base arm by design). Final
+95 % CI half-width per cell (✓ = adequate; "near-0.5" = judged by the bootstrap-upper < 0.60 rule):
+
+| Method | Pooled-base | Pooled-SW-SMOTE | Mixed-in | Mixed-out |
+|---|---|---|---|---|
+| **RF (fs)** | n=15, hw 0.050 — **borderline** | n=15, hw 0.029 ✓ | n=24, hw 0.036 ✓ | n=24, hw 0.044 ✓ |
+| **RF (nofs)** | — | **n=5, hw 0.032 ✓** | n=15, hw 0.043 ✓ | n=15, hw 0.045 ✓ |
+| **SvmW** | n=6, hw 0.011 ✓(near-0.5) | n=6, hw 0.019 ✓ | n=8, hw 0.010 ✓ | n=8, hw 0.013 ✓ |
+| **SvmA** | n=6, hw 0.009 ✓(near-0.5) | n=6, hw 0.044 ✓(near-0.5) | n=11, hw 0.017 ✓(near-0.5) | n=11, hw 0.015 ✓ |
+| **Lstm** | n=6, hw 0.011 ✓(near-0.5) | n=6, hw 0.007 ✓(near-0.5) | n=15, hw 0.005 ✓ | n=15, hw 0.005 ✓ |
+
+- **RF-nofs Pooled-SW-SMOTE is adequate at n=5** (CI half-width 0.032): the small seed count is
+  offset by a low across-seed SD (0.026), so the running mean is already converged — **no extra
+  seeds are required** for this cell despite its low n.
+- **RF-fs Pooled-base is the one borderline cell** (n=15, CI half-width ≈0.050, exactly at the
+  target): its running mean is flat at ~0.74 but the band stays wide because RF is the least
+  seed-stable method (SD 0.090, §D3). It is effectively at the target — a handful more seeds would
+  push it clearly under 0.05 if a strict margin is wanted, but the point estimate is stable.
+- Every other reported cell converges with margin (CI bands narrow and means flatten with k).
+
+![Seed-count convergence](figures/c1_recorded/fig_seed_convergence.png)
+
+*Figure. Running mean AUROC ± 95 % CI vs number of seeds for every method × mode reported. Blue =
+discriminating (target CI half-width ≤ 0.05); red = near-0.5 baseline (bootstrap CI upper < 0.60). Each panel
+annotates the final n, CI half-width and verdict. Reproducibility:
+`scripts/python/analysis/exp3_c1_seed_convergence.py` (output also in
+`results/analysis/exp3_verification/c1_seed_convergence.json`).*
+
+---
+
 ## Synthesis — model-dependent structure of the recorded metrics
 
 - **RF (fs):** the only method that separates from 0.5 under Pooled-base (B), with a small
