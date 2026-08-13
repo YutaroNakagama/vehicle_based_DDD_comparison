@@ -41,16 +41,19 @@ Mean ± SD (n); 95% t-CI and percentile bootstrap CI are computed in the script.
 | Method | Pooled-base | Pooled-SW-SMOTE | Mixed-in | Mixed-out |
 |---|---|---|---|---|
 | **RF (fs)** | 0.738 ± 0.090 (15) | 0.795 ± 0.052 (15) | 0.719 ± 0.085 (24) | 0.749 ± 0.104 (24) |
-| **RF (nofs)** | 0.647 ± 0.055 (9)† | 0.870 ± 0.026 (5) | 0.846 ± 0.077 (15) | 0.912 ± 0.081 (15) |
+| **RF (nofs)** | 0.670 ± 0.089 (10)† | 0.870 ± 0.026 (5) | 0.846 ± 0.077 (15) | 0.912 ± 0.081 (15) |
 | **SvmW** | 0.519 ± 0.011 (6) | 0.694 ± 0.018 (6) | 0.742 ± 0.012 (8) | 0.771 ± 0.016 (8) |
 | **SvmA** | 0.481 ± 0.008 (6) | 0.538 ± 0.042 (6) | 0.530 ± 0.026 (11) | 0.597 ± 0.022 (11) |
 | **Lstm** | 0.512 ± 0.011 (6) | 0.513 ± 0.006 (6) | 0.782 ± 0.009 (15) | 0.779 ± 0.009 (15) |
 
-† **Interim (2026-08-13, run in progress — 9 of 15 seeds).** This cell had **never been run**: the
+† **Interim (2026-08-13, run in progress — 10 of 15 seeds).** This cell had **never been run**: the
 earlier "RF-nofs has no Pooled-base arm by design" wording described the hole rather than a recorded
 design decision, and no operations entry ever scoped the full-feature ablation to the SW-SMOTE arm. It
-was launched 2026-08-12 and is filling now; the value is already seed-adequate (SD 0.055, 95 % CI
-half-width 0.042, req_n ≈ 5) and is being extended to n=15 for symmetry with RF-fs Pooled-base. §A–§F
+was launched 2026-08-12 and is filling to n=15. **It is not yet seed-adequate:** the 10th seed (s42)
+came in at 0.875 against a 0.599–0.742 body, lifting SD from 0.055 to **0.089** and the 95 % CI
+half-width to **0.063** (> the 0.05 target; req_n ≈ 13, so the planned n=15 covers it). That dispersion
+is *expected*, not anomalous — it matches RF-fs Pooled-base almost exactly (SD 0.090, range
+0.582–0.877), i.e. the seed instability §D3 already attributes to RF. §A–§F
 and Figures 1–4 will be regenerated once the arm completes; **the numbers below that involve
 Pooled-base for RF-nofs are therefore provisional, and §D1's scope changes — see the box after the
 table.** The two Within modes are retired (see
@@ -60,26 +63,31 @@ regimes. RF-nofs reached its full 15-seed extension (2026-08-02); all Mixed cell
 > ### ⚠ The filled cell reverses the RF feature-count effect (interim, 2026-08-13)
 >
 > In every other retained mode RF-nofs outscores RF-fs. **Under Pooled-base it is the other way round:
-> 0.647 vs 0.738 (−0.091).** The full feature set helps only once the class imbalance is handled.
+> 0.670 vs 0.738.** The full feature set helps only once the class imbalance is handled.
 >
 > | arm | AUROC | AUPRC | proba SD | pred-pos @0.5 |
 > |---|---|---|---|---|
 > | RF-fs Pooled-base (n=15) | 0.738 ± 0.090 | 0.239 | 0.013 | 0.444 |
-> | **RF-nofs Pooled-base (n=9)†** | **0.647 ± 0.055** | **0.093** | 0.013 | 0.490 |
+> | **RF-nofs Pooled-base (n=10)†** | **0.670 ± 0.089** | **0.140** | 0.013 | 0.490 |
 > | RF-fs Pooled-SW-SMOTE (n=15) | 0.795 ± 0.052 | 0.306 | 0.121 | 0.035 |
 > | RF-nofs Pooled-SW-SMOTE (n=5) | 0.870 ± 0.026 | 0.521 | 0.141 | 0.051 |
+>
+> **Because both arms are this seed-noisy, the mean gap understates the effect — the seed-paired view is
+> the informative one:** on the 10 shared seeds the median difference is **−0.176** and **7 of 10 seeds
+> favour the top-10 variant** (Wilcoxon signed-rank **p = 0.049**; unpaired Mann–Whitney p = 0.063,
+> Cliff's δ = −0.45). Marginal at n=10 — the remaining 5 seeds decide it.
 >
 > Consequences for the sections below, to be applied at regeneration:
 >
 > 1. **§D1 is rescoped.** "All 165 features instead of the top-10 raises RF's AUROC by ≈0.07–0.16 across
->    the retained modes" holds **under rebalancing only**; without it the sign flips (−0.091).
+>    the retained modes" holds **under rebalancing only**; without it the sign flips (paired median −0.176).
 > 2. **§C gains its missing contrast.** RF-nofs's seed-paired imbalance effect (base→SW-SMOTE) is
 >    **≈+0.23** (median over the shared seeds) — the **largest of any method** (SvmW +0.179,
 >    SvmA +0.068, RF-fs +0.060, Lstm +0.005). "RF is imbalance-robust" is a property of the **top-10**
 >    variant, not of RF as such.
 > 3. **§D2's degeneracy reading is unaffected but sharpened.** The probability spread is identical for
 >    the two Pooled-base arms (0.013), so this is a genuine **ranking-quality** difference, not an
->    all-positive collapse of the SvmW kind. AUPRC localises it: 0.093 against a ~4.4 % base rate means
+>    all-positive collapse of the SvmW kind. AUPRC localises it: 0.140 against a ~4.4 % base rate means
 >    the 150 extra low-signal features dilute split quality for the rare class, which SW-SMOTE then
 >    repairs (0.521).
 >
@@ -114,7 +122,7 @@ Cliff's δ (details in the script). **The method effect is highly significant in
 - **Under Pooled-base only RF-fs separates from the 0.5 level** (RF-fs vs each of SvmW / SvmA /
   Lstm: p_holm ≤ 0.03, **Cliff's δ = 1.0**); the other three are statistically indistinguishable.
   † **Pending recomputation (2026-08-13):** RF-nofs, absent when this test was run, also separates from
-  0.5 at 0.647, so the Pooled-base ranking becomes **RF-fs (0.738) > RF-nofs (0.647) ≫ the ~0.48–0.52
+  0.5 at 0.670, so the Pooled-base ranking becomes **RF-fs (0.738) > RF-nofs (0.670) ≫ the ~0.48–0.52
   chance band** — two RF variants above chance, not one, and the top-10 variant ahead of the full set.
 - **RF (top-10) leads pooled only.** In both Mixed modes the top-10 RF-fs is **4th of 5**: setting
   Lstm aside as non-commensurable (DRT target), **SvmW beats RF-fs in both** (0.742 vs 0.719;
@@ -161,16 +169,18 @@ means the imbalance-robustness attributed to "RF" belongs to the top-10 variant 
 
 | Mode | RF-fs | RF-nofs | Δ | p | Cliff's δ |
 |---|---|---|---|---|---|
-| **Pooled-base** | **0.738** | **0.647** | **−0.091**† | pending | pending |
+| **Pooled-base** | **0.738** | **0.670** | **−0.176**† (paired median) | **0.049** (Wilcoxon, n=10) | −0.45 (medium) |
 | Pooled-SW-SMOTE | 0.795 | 0.870 | +0.074 | **0.008** | +0.79 (large) |
 | Mixed-in | 0.719 | 0.846 | +0.127 | **1e-04** | +0.74 (large) |
 | Mixed-out | 0.749 | 0.912 | +0.163 | **4e-05** | +0.79 (large) |
 
 **Using all 165 features instead of the top-10 raises RF's recorded AUROC by ≈0.07–0.16 (large
 effect) — but only in the rebalanced modes.** † The Pooled-base row (interim, added 2026-08-13 when the
-never-run cell was filled) **reverses the sign: −0.091.** So the feature-count benefit is *conditional on
-imbalance handling*, not a property of the feature set: at the natural 3.9 % minority rate the extra 150
-features dilute rather than help (AUPRC 0.093 vs RF-fs's 0.239). A controlled dose-response (D1b) further
+never-run cell was filled) **reverses the sign: paired median −0.176, 7/10 seeds favouring the top-10
+variant.** So the feature-count benefit is *conditional on imbalance handling*, not a property of the
+feature set: at the natural 3.9 % minority rate the extra 150 features dilute rather than help
+(AUPRC 0.140 vs RF-fs's 0.239). Note this row is seed-paired (Wilcoxon), unlike the unpaired
+Mann-Whitney rows below, because both Pooled-base arms are highly seed-noisy (SD ~0.09). A controlled dose-response (D1b) further
 shows the dependence **saturates by k≈20**, so it is not an open-ended benefit of ever-more features.
 (RF-nofs Mixed cells are final at n=15.)
 
@@ -381,15 +391,15 @@ t-CI half-width are tracked. A case is **adequate** when
 - *near-0.5* (running mean ≤ 0.55): the percentile-bootstrap 95 % CI upper bound < 0.60 (excludes any
   weak signal).
 
-**All 19 previously reported cells are adequate**, and the 20th (RF-nofs × Pooled-base — never run, not
-excluded by design; see §A) is **already adequate at the interim n=9** (SD 0.055, hw 0.042, req_n ≈ 5)
-while it fills to n=15. Final
+**All 19 previously reported cells are adequate**; the 20th (RF-nofs × Pooled-base — never run, not
+excluded by design; see §A) is **not yet adequate at the interim n=10** (SD 0.089, hw 0.063, req_n ≈ 13)
+and is filling to n=15, which covers it. Final
 95 % CI half-width per cell (✓ = adequate; "near-0.5" = judged by the bootstrap-upper < 0.60 rule):
 
 | Method | Pooled-base | Pooled-SW-SMOTE | Mixed-in | Mixed-out |
 |---|---|---|---|---|
 | **RF (fs)** | n=15, hw 0.050 — **borderline** | n=15, hw 0.029 ✓ | n=24, hw 0.036 ✓ | n=24, hw 0.044 ✓ |
-| **RF (nofs)** | n=9, hw 0.042 ✓† (→15) | **n=5, hw 0.032 ✓** | n=15, hw 0.043 ✓ | n=15, hw 0.045 ✓ |
+| **RF (nofs)** | n=10, hw 0.063 ✗† (→15) | **n=5, hw 0.032 ✓** | n=15, hw 0.043 ✓ | n=15, hw 0.045 ✓ |
 | **SvmW** | n=6, hw 0.011 ✓(near-0.5) | n=6, hw 0.019 ✓ | n=8, hw 0.010 ✓ | n=8, hw 0.013 ✓ |
 | **SvmA** | n=6, hw 0.009 ✓(near-0.5) | n=6, hw 0.044 ✓(near-0.5) | n=11, hw 0.017 ✓(near-0.5) | n=11, hw 0.015 ✓ |
 | **Lstm** | n=6, hw 0.011 ✓(near-0.5) | n=6, hw 0.007 ✓(near-0.5) | n=15, hw 0.005 ✓ | n=15, hw 0.005 ✓ |
@@ -420,8 +430,8 @@ annotates the final n, CI half-width and verdict. Reproducibility:
   significant imbalance change (C); but the **least seed-stable** method (D3), and, with all
   features (RF-nofs), a **feature-count dependence** that saturates by k≈20 (D1, D1b).
 - **RF-nofs:** the highest recorded AUROC **in the rebalanced modes**; the feature-count gain saturates
-  by k≈20 (D1b) and, on the interim Pooled-base evidence, **reverses without rebalancing** (0.647 vs
-  RF-fs's 0.738) — so its lead is conditional on imbalance handling, and its own imbalance response
+  by k≈20 (D1b) and, on the interim Pooled-base evidence, **reverses without rebalancing** (0.670 vs
+  RF-fs's 0.738; paired median −0.176, p=0.049) — so its lead is conditional on imbalance handling, and its own imbalance response
   (≈+0.23) is the largest in the study (§A box, §C, §D1).
 - **SvmW:** all-positive **degenerate** without rebalancing; SW-SMOTE **de-degenerates** it (D2,
   D5) and its wavelet features then deliver 0.74–0.77 in Mixed — a *recoverable* learner degeneracy
