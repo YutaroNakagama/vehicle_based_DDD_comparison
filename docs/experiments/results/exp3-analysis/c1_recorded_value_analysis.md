@@ -16,6 +16,12 @@ performance.
 - **Modes:** Pooled-base (no imbalance handling), Pooled-SW-SMOTE, Mixed-in, Mixed-out. (The
   Within modes are retired; `mixed` trains on all 87 recordings and evaluates on a domain subgroup,
   a deployable operating point, whereas `within` trains on the target group alone.)
+- **Cross (`source_only`) is excluded from this write-up by a recorded decision** (2026-07-11,
+  `c1_domain_launcher.py:68` — cross-domain transfer collapses to ~0.51 for every method), **reaffirmed
+  2026-08-13** after a full-grid audit. It is not part of this cross-method comparison, but note that it
+  is the *leakage-free* arm the manuscript's central claim uses, and its seed coverage is uneven:
+  RF-fs n=24, Lstm n=15, SvmA n=8, **SvmW n=2, RF-nofs n=0**. The last two are carried as explicit
+  manuscript limitations rather than closed with additional compute.
 - **Metric:** AUROC per seed (with AUPRC, confusion-matrix quantities, and predicted-probability
   spread collected for the degeneracy analysis).
 - **Reproducibility:** `scripts/python/analysis/exp3_c1_recorded_value_analysis.py`. Tools:
