@@ -46,21 +46,21 @@ Mean ± SD (n); 95% t-CI and percentile bootstrap CI are computed in the script.
 
 | Method | Pooled-base | Pooled-SW-SMOTE | Mixed-in | Mixed-out |
 |---|---|---|---|---|
-| **RF (fs)** | 0.727 ± 0.090 (21) | 0.795 ± 0.052 (15) | 0.719 ± 0.085 (24) | 0.749 ± 0.104 (24) |
-| **RF (nofs)** | **0.674 ± 0.097 (21)†** | 0.875 ± 0.026 (6) | 0.846 ± 0.077 (15) | 0.912 ± 0.081 (15) |
+| **RF (fs)** | 0.724 ± 0.085 (24) | 0.795 ± 0.052 (15) | 0.719 ± 0.085 (24) | 0.749 ± 0.104 (24) |
+| **RF (nofs)** | **0.667 ± 0.093 (24)†** | 0.875 ± 0.026 (6) | 0.846 ± 0.077 (15) | 0.912 ± 0.081 (15) |
 | **SvmW** | 0.519 ± 0.011 (6) | 0.694 ± 0.018 (6) | 0.742 ± 0.012 (8) | 0.771 ± 0.016 (8) |
 | **SvmA** | 0.481 ± 0.008 (6) | 0.538 ± 0.042 (6) | 0.530 ± 0.026 (11) | 0.597 ± 0.022 (11) |
 | **Lstm** | 0.512 ± 0.011 (6) | 0.513 ± 0.006 (6) | 0.782 ± 0.009 (15) | 0.779 ± 0.009 (15) |
 
-† **Filled 2026-08-14 (closed at n=21).** This cell had **never been run** — the earlier
+† **Filled 2026-08-15 (closed at n=24).** This cell had **never been run** — the earlier
 "RF-nofs has no Pooled-base arm by design" wording described the hole rather than a recorded design
 decision, and no operations entry ever scoped the full-feature ablation to the SW-SMOTE arm. It was
-launched 2026-08-12 and closed 2026-08-14 at **n=21** (CI half-width 0.044, running mean flat to
-0.004 — adequate on both criteria). Seeds follow the pre-registered `SEED_MASTER` order
-(`c1_domain_launcher.py:56`), so the set is not a post-hoc pick. **RF-fs Pooled-base was extended on
-the same seeds** (15 → 21) because §D1's contrast and the interaction test need both arms; that also
-retired its long-standing "borderline" CI (0.0499 → 0.041). A final 3 seeds (47, 101, 333, exhausting
-`SEED_MASTER`) are running to take both arms to n=24 — see §F.
+launched 2026-08-12 and closed 2026-08-15 at **n=24** — the full pre-registered `SEED_MASTER` set
+(`c1_domain_launcher.py:56`), which is also the canonical RF seed count used elsewhere in this grid, so
+the seed set involved no discretion at any point. CI half-width **0.039** with a flat running mean.
+**RF-fs Pooled-base was extended on the same seeds** (15 → 24) because §D1's contrast and the
+interaction test need both arms; that retired its long-standing "borderline" CI (0.0499 → **0.036**).
+**With this, all 20 cells in the grid are seed-adequate (§F).** 36 new cells, zero failures.
 
 > **Retraction (2026-08-14).** Interim commits at n=9/n=10 reported this cell as
 > 0.647/0.670 with a *significant* "reversal" of the feature-count effect (paired Wilcoxon
@@ -81,30 +81,34 @@ regimes. RF-nofs reached its full 15-seed extension (2026-08-02); all Mixed cell
 >
 > | arm | AUROC | AUPRC | proba SD | pred-pos @0.5 |
 > |---|---|---|---|---|
-> | RF-fs Pooled-base (n=21) | 0.727 ± 0.090 | 0.215 | 0.013 | 0.445 |
-> | **RF-nofs Pooled-base (n=21)** | **0.674 ± 0.097** | **0.151** | 0.013 | 0.481 |
+> | RF-fs Pooled-base (n=24) | 0.724 ± 0.085 | 0.202 | 0.013 | 0.446 |
+> | **RF-nofs Pooled-base (n=24)** | **0.667 ± 0.093** | **0.141** | 0.014 | 0.485 |
 > | RF-fs Pooled-SW-SMOTE (n=15) | 0.795 ± 0.052 | 0.306 | 0.121 | 0.035 |
 > | RF-nofs Pooled-SW-SMOTE (n=6) | 0.875 ± 0.026 | 0.561 | 0.141 | 0.049 |
 >
 > **The robust claim is the interaction, not the single-cell contrast.** Testing the Pooled-base
 > fs-vs-nofs difference against the same difference in the mixed modes (difference-of-differences over
 > the shared seeds) gives **+0.222, p = 0.0084** (vs Mixed-in) and **+0.224, p = 0.0020** (vs
-> Mixed-out). This was stable across every seed count from n=15 to n=21. So:
+> Mixed-out). This was stable across every seed count from n=15 to n=24. So:
 > **the feature-count advantage is significantly smaller under Pooled-base than in the rebalanced
 > modes** — a statement about an interaction, which the data support.
 >
 > The single-cell contrast is weaker and test-dependent, and must be reported as such:
-> Mann–Whitney (the test §D1 uses throughout) gives **p = 0.039, Cliff's δ = −0.37 (medium)**;
-> a seed-paired Wilcoxon gives p = 0.119. **The unpaired test is the appropriate one here** — the two
-> arms' seed-level outcomes are uncorrelated (Pearson r = −0.13, p = 0.56), so the SD of the paired
-> difference (0.141) *exceeds* the independent-sampling value (0.132); pairing adds noise instead of
-> removing it. Seeds share only the RNG integer: the data split is seed-independent, so a seed fixes
+> Mann–Whitney (the test §D1 uses throughout) gives **p = 0.015, Cliff's δ = −0.41 (medium)**;
+> a seed-paired Wilcoxon gives p = 0.053 (16/24 seeds favour fs). **The unpaired test is the
+> appropriate one here** — the two arms' seed-level outcomes are uncorrelated (Pearson r = −0.09,
+> p = 0.67), so the SD of the paired difference (0.132) *exceeds* the independent-sampling value
+> (0.126); pairing adds noise instead of removing it. Seeds share only the RNG integer: the data split is seed-independent, so a seed fixes
 > the RF `random_state` and the TPE trajectory, nothing the two arms hold in common.
 >
 > **Do not claim** "the full feature set is worse without rebalancing" (the single-cell effect is
 > medium at best and fails a paired test), nor "the advantage is absent" as an established negative —
-> at n=21 with SD ≈ 0.10 this cell has only ~50 % power to detect an effect the size of the
+> even at n=24 with SD ≈ 0.09 this cell has only ~60 % power to detect an effect the size of the
 > Pooled-SW-SMOTE one (+0.079), so absence of evidence is thin here. The interaction is the finding.
+>
+> Worth noting for the record: unlike the retracted interim "reversal", this contrast **strengthened
+> monotonically as seeds were added** (Mann–Whitney p = 0.159 → 0.039 → 0.021 → 0.015 at n = 15/21/23/24;
+> Cliff's δ −0.31 → −0.41), which is what a real effect looks like under a pre-registered seed set.
 >
 > **What the extra features cost, mechanistically.** AUROC in *both* Pooled-base arms is almost
 > entirely determined by one hyperparameter of the winning Optuna trial — the minimum weight fraction
@@ -135,17 +139,18 @@ Cliff's δ (details in the script). **The method effect is highly significant in
 
 | Mode | H | p | η²_H | Rank (mean AUROC) |
 |---|---|---|---|---|
-| Pooled-base | 40.4 | 3.6e-08 | 0.66 | RF-fs (0.727) > RF-nofs (0.674) ≫ SvmW ≈ Lstm ≈ SvmA (0.48–0.52) |
+| Pooled-base | 42.8 | 1.1e-08 | 0.64 | RF-fs (0.724) > RF-nofs (0.667) ≫ SvmW ≈ Lstm ≈ SvmA (0.48–0.52) |
 | Pooled-SW-SMOTE | 33.4 | 9.9e-07 | 0.86 | RF-nofs (0.875) > RF-fs (0.795) > SvmW > SvmA > Lstm |
 | Mixed-in | 47.1 | 1.5e-09 | 0.63 | RF-nofs > **Lstm > SvmW > RF-fs** > SvmA |
 | Mixed-out | 40.7 | 3.0e-08 | 0.54 | RF-nofs > **Lstm > SvmW > RF-fs** > SvmA |
 
 - **Under Pooled-base both RF variants separate from the 0.5 level, and only they do** (each vs
-  SvmW / SvmA / Lstm: p_holm ≤ 0.04, **Cliff's δ = 1.0**); the other three are statistically
-  indistinguishable from one another. **RF-fs vs RF-nofs is itself not separable in this mode**
-  (Dunn/Holm p = 0.74) — consistent with §D1's medium, test-dependent single-cell contrast.
-  Filling the RF-nofs cell lowered η²_H here from 0.84 to 0.66, because the mode now contains two
-  discriminating methods instead of one.
+  SvmW / SvmA / Lstm: RF-fs p_holm ≤ 0.0008, RF-nofs p_holm ≤ 0.03); the other three are
+  statistically indistinguishable from one another (all p_holm = 1.0). **RF-fs vs RF-nofs is itself not
+  separable in this mode** (Dunn/Holm p = 0.29) — the family-wise correction across ten pairs is
+  conservative, and §D1's direct two-sample test of the same contrast reaches p = 0.015; report the
+  contrast as medium and test-dependent either way. Filling the RF-nofs cell lowered η²_H here from
+  0.84 to 0.64, because the mode now contains two discriminating methods instead of one.
 - **RF (top-10) leads pooled only.** In both Mixed modes the top-10 RF-fs is **4th of 5**: setting
   Lstm aside as non-commensurable (DRT target), **SvmW beats RF-fs in both** (0.742 vs 0.719;
   0.771 vs 0.749). Only RF-nofs — this study's own full-feature ablation, and its most dispersed
@@ -194,23 +199,23 @@ still firmly non-significant, so the "domain restriction does not move RF-nofs" 
 
 | Mode | RF-fs | RF-nofs | Δ | p | Cliff's δ |
 |---|---|---|---|---|---|
-| **Pooled-base** | **0.727** | **0.674** | **−0.053** | **0.039** | **−0.37 (medium)** |
+| **Pooled-base** | **0.724** | **0.667** | **−0.056** | **0.015** | **−0.41 (medium)** |
 | Pooled-SW-SMOTE | 0.795 | 0.875 | +0.079 | **0.002** | +0.82 (large) |
 | Mixed-in | 0.719 | 0.846 | +0.127 | **1e-04** | +0.74 (large) |
 | Mixed-out | 0.749 | 0.912 | +0.163 | **4e-05** | +0.79 (large) |
 
 **Using all 165 features instead of the top-10 raises RF's recorded AUROC by ≈0.08–0.16 (large effect)
 in every rebalanced mode — but that advantage is conditional on the rebalancing.** The Pooled-base row
-(added 2026-08-14 when the never-run cell was filled) is the only one where it does not hold: the point
-estimate goes the other way (−0.053) at a *medium* effect size, p = 0.039. All rows use the same
+(added 2026-08-15 when the never-run cell was filled) is the only one where it does not hold: the point
+estimate goes the other way (−0.056) at a *medium* effect size, p = 0.015. All rows use the same
 unpaired Mann–Whitney test, which is the appropriate one — the arms' per-seed outcomes are uncorrelated
-(r = −0.13), so seed-pairing would add noise rather than remove it (see the §A box).
+(r = −0.09), so seed-pairing would add noise rather than remove it (see the §A box).
 
 **The defensible claim is the interaction**: the Pooled-base contrast differs significantly from the
 Mixed contrasts (difference-of-differences +0.222, p = 0.008 vs Mixed-in; +0.224, p = 0.002 vs
-Mixed-out). The single Pooled-base cell on its own is medium-sized and does not survive a paired test,
-and the cell is underpowered (~50 %) for an effect the size of the Pooled-SW-SMOTE one — so it should
-not be reported as an established null, nor as a "reversal". A controlled dose-response (D1b) further
+Mixed-out). The single Pooled-base cell on its own is medium-sized and only borderline under a paired
+test (p = 0.053), and the cell is underpowered (~60 %) for an effect the size of the Pooled-SW-SMOTE
+one — so it should not be reported as an established null, nor as a "reversal". A controlled dose-response (D1b) further
 shows the dependence **saturates by k≈20**, so it is not an open-ended benefit of ever-more features. A controlled dose-response (D1b) further
 shows the dependence **saturates by k≈20**, so it is not an open-ended benefit of ever-more features.
 (RF-nofs Mixed cells are final at n=15.)
@@ -255,15 +260,15 @@ reproduces under mixed-in, the diagnostic regime).*
 | SvmW · Pooled-SW-SMOTE | 0.199 | 0.540 | 0.472 |
 | Lstm · Pooled-base | — | 0.003 | 0.999 |
 | Lstm · Pooled-SW-SMOTE | — | 0.005 | 0.997 |
-| RF-fs · Pooled-base | 0.013 | 0.567 | 0.445 |
-| RF-nofs · Pooled-base | 0.014 | 0.525 | 0.484 |
+| RF-fs · Pooled-base | 0.013 | 0.566 | 0.446 |
+| RF-nofs · Pooled-base | 0.014 | 0.523 | 0.485 |
 | RF-nofs · Pooled-SW-SMOTE | 0.141 | 0.974 | 0.049 |
 
 Under Pooled-base **SvmW is an all-positive constant classifier** (probability spread ≈ 0,
 specificity ≈ 0). **SW-SMOTE restores a usable probability ranking for SvmW** (spread 0.20,
 specificity 0.50) — a de-degeneration. Lstm's Pooled collapse is a majority-class artefact of a
 near-balanced target and is unaffected by SMOTE; **neither RF variant is ever degenerate** — both keep
-a usable ranking under Pooled-base (specificity 0.53–0.57, spread ≈ 0.013), which is what distinguishes
+a usable ranking under Pooled-base (specificity 0.52–0.57, spread ≈ 0.013), which is what distinguishes
 them from SvmW. The RF-nofs rows added 2026-08-14 confirm this: the full-feature variant's weaker
 Pooled-base score (§D1) is **not** a degeneracy — its probability spread matches RF-fs's almost exactly.
 Both RF arms' spreads rise ~10× under SW-SMOTE (0.013 → 0.121/0.141) as the decision threshold moves off
@@ -278,7 +283,7 @@ the majority class (predicted-positive rate 0.45/0.48 → 0.035/0.049).
 
 | Mode | RF-fs | RF-nofs | SvmW | SvmA | Lstm | Brown–Forsythe |
 |---|---|---|---|---|---|---|
-| Pooled-base | 0.090 | 0.097 | 0.011 | 0.008 | 0.011 | W=4.29, **p=0.004** |
+| Pooled-base | 0.085 | 0.093 | 0.011 | 0.008 | 0.011 | W=4.83, **p=0.002** |
 | Pooled-SW-SMOTE | 0.052 | 0.026 | 0.018 | 0.042 | 0.006 | W=1.94, p=0.13 (n.s.) |
 | Mixed-in | 0.085 | 0.077 | 0.012 | 0.026 | 0.009 | W=5.19, **p=0.001** |
 | Mixed-out | 0.104 | 0.081 | 0.016 | 0.022 | 0.009 | W=4.41, **p=0.003** |
@@ -438,21 +443,19 @@ t-CI half-width are tracked. A case is **adequate** when
 - *near-0.5* (running mean ≤ 0.55): the percentile-bootstrap 95 % CI upper bound < 0.60 (excludes any
   weak signal).
 
-**19 of the 20 cells are adequate**, including the 20th cell (RF-nofs × Pooled-base) that had never
-been run: it closed 2026-08-14 at n=21 with CI half-width 0.044 **and** a flat running mean (last-3
-span 0.004). The one cell now short is **RF-fs × Pooled-base**, and only on the *flatness* sub-criterion
-(last-3 span 0.0115 vs the 0.01 threshold); its CI half-width is comfortably met at 0.041, improved from
-the 0.0499 "borderline" it carried at n=15. The cause is honest and worth stating: extending that arm
-from 15 to 21 seeds moved its running mean from 0.738 to 0.727, i.e. **the n=15 value was mildly
-optimistic**, and the mean is still drifting. A final 3 seeds (47, 101, 333) are running to take both
-arms to n=24 — the canonical RF seed count used elsewhere in this grid, and the end of the
-pre-registered `SEED_MASTER` list. Final
+**All 20 cells are adequate** — including the 20th (RF-nofs × Pooled-base) that had never been run,
+which closed 2026-08-15 at n=24 with CI half-width 0.039 and a flat running mean. **RF-fs × Pooled-base
+is adequate for the first time on both criteria** (half-width 0.036, last-3 span 0.0096): it had carried
+a 0.0499 "borderline" CI at n=15, and at the intermediate n=21 it met the interval (0.041) but failed
+flatness (0.0115). Worth stating plainly: extending that arm moved its running mean 0.738 → 0.727 →
+0.724, so **the n=15 value was mildly optimistic**. Both arms are now at the full 24-seed
+`SEED_MASTER` set, the same count RF uses in the Mixed/Within cells. Final
 95 % CI half-width per cell (✓ = adequate; "near-0.5" = judged by the bootstrap-upper < 0.60 rule):
 
 | Method | Pooled-base | Pooled-SW-SMOTE | Mixed-in | Mixed-out |
 |---|---|---|---|---|
-| **RF (fs)** | n=21, hw 0.041 — CI ✓, **flatness ✗** (→24) | n=15, hw 0.029 ✓ | n=24, hw 0.036 ✓ | n=24, hw 0.044 ✓ |
-| **RF (nofs)** | **n=21, hw 0.044 ✓** | n=6, hw 0.027 ✓ | n=15, hw 0.043 ✓ | n=15, hw 0.045 ✓ |
+| **RF (fs)** | n=24, hw 0.036 ✓ | n=15, hw 0.029 ✓ | n=24, hw 0.036 ✓ | n=24, hw 0.044 ✓ |
+| **RF (nofs)** | **n=24, hw 0.039 ✓** | n=6, hw 0.027 ✓ | n=15, hw 0.043 ✓ | n=15, hw 0.045 ✓ |
 | **SvmW** | n=6, hw 0.011 ✓(near-0.5) | n=6, hw 0.019 ✓ | n=8, hw 0.010 ✓ | n=8, hw 0.013 ✓ |
 | **SvmA** | n=6, hw 0.009 ✓(near-0.5) | n=6, hw 0.044 ✓(near-0.5) | n=11, hw 0.017 ✓(near-0.5) | n=11, hw 0.015 ✓ |
 | **Lstm** | n=6, hw 0.011 ✓(near-0.5) | n=6, hw 0.007 ✓(near-0.5) | n=15, hw 0.005 ✓ | n=15, hw 0.005 ✓ |
@@ -461,7 +464,11 @@ pre-registered `SEED_MASTER` list. Final
   offset by a low across-seed SD (0.026), so the running mean is converged — **no extra seeds are
   required** for this cell despite its low n. (It was n=5 until 2026-08-14; the 6th seed was added so
   the §C imbalance contrast could clear p<0.05, since a 5-pair Wilcoxon caps at p=0.0625.)
-- **RF-fs Pooled-base is the one cell still short**, on flatness only — see the paragraph above.
+- **RF-fs Pooled-base is adequate at n=24** on both criteria — see the paragraph above. Its flatness
+  margin is thin (0.0096 against the 0.01 threshold) and its running mean is still drifting slightly
+  downward, so the point estimate should be read as ±0.01 rather than exact. `SEED_MASTER` is exhausted
+  at 24, so any further extension would mean inventing seeds — a discretion this arm has deliberately
+  avoided throughout.
 - **Seed counts here are not tuned per cell.** Both Pooled-base arms use the pre-registered
   `SEED_MASTER` order, extended in whole waves, and the extension was decided on the CI criterion
   before the values were inspected. This matters because interim readings of the RF-nofs cell at
@@ -482,7 +489,8 @@ annotates the final n, CI half-width and verdict. Reproducibility:
 ## Synthesis — model-dependent structure of the recorded metrics
 
 - **RF (fs):** separates from 0.5 under Pooled-base (B), where it is the highest-scoring method
-  (0.727, though not separably so from RF-nofs: Dunn/Holm p=0.74), with a small
+  (0.724, though not separably so from RF-nofs under the family-wise correction: Dunn/Holm p=0.29),
+  with a small
   significant imbalance change (C); but the **least seed-stable** method (D3), and, with all
   features (RF-nofs), a **feature-count dependence** that saturates by k≈20 (D1, D1b).
 - **RF-nofs:** the highest recorded AUROC **in the rebalanced modes** (and only there); the

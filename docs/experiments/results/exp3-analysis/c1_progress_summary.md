@@ -1,6 +1,6 @@
 # exp3 c1 — Progress Summary (recorded AUROC × method × mode, and processing speed)
 
-**Last updated: 2026-08-14.** Operational progress tracker for the exp3 "c1" grid. AUROC values are
+**Last updated: 2026-08-15.** Operational progress tracker for the exp3 "c1" grid. AUROC values are
 the recorded metrics; the model-characteristic analysis is in
 [c1_recorded_value_analysis.md](c1_recorded_value_analysis.md). The two **Within** modes are shown
 here for progress completeness but are **retired** from the reported analysis (see
@@ -8,31 +8,32 @@ here for progress completeness but are **retired** from the reported analysis (s
 
 ## 1. Recorded AUROC by method × evaluation mode
 
-Mean ± SD (n). All cells complete. The **Pooled-base** column is the arm reopened on 2026-08-12 and
-closed 2026-08-14 (see the note below).
+Mean ± SD (n). All cells complete and **all 20 are seed-adequate**. The **Pooled-base** column is the
+arm reopened on 2026-08-12 and closed 2026-08-15 (see the note below).
 
 | Method | Pooled-base | Pooled-SW-SMOTE | Within-in | Within-out | Mixed-in | Mixed-out |
 |---|---|---|---|---|---|---|
-| **RF (fs)** | 0.727 ± 0.090 (21) | 0.795 ± 0.052 (15) | 0.746 ± 0.089 (24) | 0.778 ± 0.108 (24) | 0.719 ± 0.085 (24) | 0.749 ± 0.104 (24) |
-| **RF (nofs)** | **0.674 ± 0.097 (21)** | 0.875 ± 0.026 (6) | 0.895 ± 0.053 (15) | 0.931 ± 0.044 (15) | 0.846 ± 0.077 (15) | 0.912 ± 0.081 (15) |
+| **RF (fs)** | 0.724 ± 0.085 (24) | 0.795 ± 0.052 (15) | 0.746 ± 0.089 (24) | 0.778 ± 0.108 (24) | 0.719 ± 0.085 (24) | 0.749 ± 0.104 (24) |
+| **RF (nofs)** | **0.667 ± 0.093 (24)** | 0.875 ± 0.026 (6) | 0.895 ± 0.053 (15) | 0.931 ± 0.044 (15) | 0.846 ± 0.077 (15) | 0.912 ± 0.081 (15) |
 | **SvmW** | 0.519 ± 0.011 (6) | 0.694 ± 0.018 (6) | 0.800 ± 0.012 (8) | 0.759 ± 0.013 (8) | 0.742 ± 0.012 (8) | 0.771 ± 0.016 (8) |
 | **SvmA** | 0.481 ± 0.008 (6) | 0.538 ± 0.042 (6) | 0.583 ± 0.026 (11) | 0.574 ± 0.064 (11) | 0.530 ± 0.026 (11) | 0.597 ± 0.022 (11) |
 | **Lstm** | 0.512 ± 0.011 (6) | 0.513 ± 0.006 (6) | 0.779 ± 0.007 (15) | 0.763 ± 0.012 (15) | 0.782 ± 0.009 (15) | 0.779 ± 0.009 (15) |
 
-Every retained cell is CI-adequate. The two Pooled-base cells are the widest (RF is the least
-seed-stable method): RF-nofs reaches half-width 0.044 at n=21 with a flat running mean, while RF-fs
-meets the interval at 0.041 but is still drifting on the flatness sub-criterion — a final 3 seeds take
-both to n=24. See [c1_recorded_value_analysis.md](c1_recorded_value_analysis.md) §F.
+Every cell is seed-adequate (20/20). The two Pooled-base cells are the widest, RF being the least
+seed-stable method: RF-nofs half-width 0.039, RF-fs 0.036, both with flat running means at n=24 — the
+full pre-registered `SEED_MASTER` set. RF-fs Pooled-base clears both criteria here for the first time
+(it carried a 0.0499 "borderline" CI at n=15). See
+[c1_recorded_value_analysis.md](c1_recorded_value_analysis.md) §F.
 
 Lstm targets the DRT `event_label` (a different construct from the KSS label the other four use), so
 its absolute level is not directly commensurable.
 
-**Completion status (updated 2026-08-14):**
+**Completion status (updated 2026-08-15):**
 
 | Method | Status |
 |---|---|
-| RF (fs) | ✅ complete (Pooled-base extended to n=21; final 3 seeds → n=24 running) |
-| RF (nofs) | ✅ complete (Pooled-base closed at n=21 on 2026-08-14; Pooled-SW-SMOTE n=6) |
+| RF (fs) | ✅ complete (Pooled-base extended 15 → **n=24**) |
+| RF (nofs) | ✅ complete (Pooled-base filled 0 → **n=24** on 2026-08-15; Pooled-SW-SMOTE n=6) |
 | SvmW | ✅ complete (Within/Mixed 8/8, Pooled-SW-SMOTE 6/6) |
 | SvmA | ✅ complete (Within/Mixed 11/11, Pooled-SW-SMOTE 6/6) |
 | Lstm | ✅ complete (all modes) |
@@ -40,23 +41,25 @@ its absolute level is not directly commensurable.
 - **The exp3 c1 recorded-value campaign is complete** *for the cells listed above*. Remaining downstream
   work is the TIV2026_exp3 manuscript revision from this finalized set.
 
-**Reopened 2026-08-12, closed 2026-08-14 — one cell was missing all along: RF-nofs × Pooled-base
+**Reopened 2026-08-12, closed 2026-08-15 — one cell was missing all along: RF-nofs × Pooled-base
 (no rebalancing).** It had **0 runs**, not merely too few, and the "no Pooled-base arm by design" note
-in the analysis write-ups was never backed by a recorded decision. Filled over four waves to **n=21**
-(pre-registered `SEED_MASTER` order), together with a 6th Pooled-SW-SMOTE seed so the paired imbalance
-contrast could clear p<0.05, and a matching extension of RF-fs Pooled-base (15 → 21) because §D1 and the
-interaction test need both arms. 33 new cells, zero failures.
+in the analysis write-ups was never backed by a recorded decision. Filled over four waves to **n=24** —
+the complete pre-registered `SEED_MASTER` set, so seed choice carried no discretion — together with a
+6th Pooled-SW-SMOTE seed so the paired imbalance contrast could clear p<0.05, and a matching extension
+of RF-fs Pooled-base (15 → 24) because §D1 and the interaction test need both arms. **36 new cells,
+zero failures.**
 
 | final | value |
 |---|---|
-| RF-nofs Pooled-base | **0.674 ± 0.097 (n=21)**, CI half-width 0.044 ✓, running mean flat (0.004) |
-| RF-fs Pooled-base | 0.727 ± 0.090 (n=21), half-width 0.041 ✓ (was 0.0499 "borderline" at n=15) |
+| RF-nofs Pooled-base | **0.667 ± 0.093 (n=24)**, CI half-width 0.039 ✓, running mean flat |
+| RF-fs Pooled-base | 0.724 ± 0.085 (n=24), half-width 0.036 ✓ (was 0.0499 "borderline" at n=15) |
 
 **What the filled cell changes.** The full-feature advantage that holds in every rebalanced mode
 (+0.079…+0.163, all large) is **significantly smaller under Pooled-base** — difference-of-differences
 +0.222 (p=0.008) vs Mixed-in and +0.224 (p=0.002) vs Mixed-out. The single-cell contrast there is
-medium and test-dependent (Mann–Whitney p=0.039, Cliff's δ −0.37), so **the interaction is the finding,
-not a "reversal"**. RF-nofs's own imbalance response (+0.210, 6/6 seeds) is the largest of any method,
+medium and test-dependent (Mann–Whitney p=0.015, Cliff's δ −0.41; paired Wilcoxon p=0.053), so **the
+interaction is the finding, not a "reversal"** — though unlike the retracted interim claim, this
+contrast strengthened monotonically as seeds were added (p = 0.159 → 0.039 → 0.015 at n = 15/21/24). RF-nofs's own imbalance response (+0.210, 6/6 seeds) is the largest of any method,
 which relocates this study's "RF is imbalance-robust" reading to the **top-10 variant specifically**.
 
 > **Retraction.** Interim commits at n=9/n=10 reported a *significant* reversal (p=0.049 / p=0.042).
