@@ -1,6 +1,16 @@
 # exp3 — Verification Items for Replacing the Seed-Paired Mode Contrasts with Unpaired Tests
 
-**Status: PENDING (2026-08-16). To be run on the experiment PC**, where
+**Status: RUN on the experiment PC, 2026-08-16.** Results are in
+[`unpaired_contrast_verification_results.md`](unpaired_contrast_verification_results.md).
+**A2 passed, A1 FAILED** — the `target_group(in→out)` axis shows rho = +0.96 / +1.00 / +0.81 for
+RF-fs / RF-nofs / SvmW, so the blanket switch specified below is not licensed by its own
+diagnostic; a per-axis decision is required. The §C block of the analysis script has been
+replaced with the §3.3 drop-in (which reports paired and unpaired side by side). The manuscript
+pass described in §6 has **not** been done.
+
+Original brief follows.
+
+**Status when written: PENDING (2026-08-16). To be run on the experiment PC**, where
 `results/outputs/evaluation/` holds the per-seed evaluation JSONs. No models are retrained:
 every item below is a re-analysis of files already on disk.
 

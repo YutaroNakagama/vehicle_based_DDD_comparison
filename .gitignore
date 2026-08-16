@@ -33,6 +33,9 @@ docs/experiments/results/**
 # Verification items for the paired -> unpaired switch in the mode contrasts: cites only values
 # already public in the recorded-value summary above, plus script paths. No confidential findings.
 !docs/experiments/results/exp3-analysis/unpaired_contrast_verification.md
+# Results of the above verification run: the same class of values (per-cell n, seed IDs, AUROC
+# contrast statistics) as the recorded-value summary. No confidential findings.
+!docs/experiments/results/exp3-analysis/unpaired_contrast_verification_results.md
 !docs/experiments/results/exp3-analysis/figures/
 !docs/experiments/results/exp3-analysis/figures/c1_recorded/
 !docs/experiments/results/exp3-analysis/figures/c1_recorded/*.png

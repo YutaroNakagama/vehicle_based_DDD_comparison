@@ -9,7 +9,9 @@ within-domain / pooled evaluation protocol. It reports, without asserting absolu
 generalisation performance:
   (A) descriptives + 95% CIs (t and percentile bootstrap)
   (B) between-method Kruskal-Wallis per mode (+ eta^2_H, Dunn/Holm post-hoc, Cliff's delta)
-  (C) within-method mode contrasts (seed-paired Wilcoxon signed-rank + rank-biserial effect)
+  (C) within-method mode contrasts (unpaired Mann-Whitney + Hodges-Lehmann + Cliff's delta,
+      with the retired seed-paired Wilcoxon and the seed correlation kept alongside as a
+      diagnostic -- see docs/experiments/results/exp3-analysis/unpaired_contrast_verification.md)
   (D) model-characteristic quantities: RF feature-count effect (fs vs nofs); decision spread /
       specificity (all-positive collapse vs de-collapse under SW-SMOTE); across-seed stability
       (Brown-Forsythe); SvmA feature-informativeness probe
@@ -148,20 +150,40 @@ for mode in MODES:
     order = sorted(g, key=lambda m: -g[m].mean())
     print(f"  {MODE_LABEL[mode]:16}: H={H:.2f} p={p:.3g} eta2={eta2:.2f}  rank: " + " > ".join(f"{m}({g[m].mean():.3f})" for m in order))
 
-print("\n(C) WITHIN-METHOD mode contrasts (paired Wilcoxon)")
+print("\n(C) WITHIN-METHOD mode contrasts (unpaired Mann-Whitney + paired diagnostic)")
 CONTR = [("imbalance(base->SWSMOTE)", "pooled_base", "pooled_smote"),
-         ("domain_restrict(pooled->mixed)", "pooled_smote", "mixed_in"),
-         ("domain_shift(in->out) mixed", "mixed_in", "mixed_out")]
+         ("population(pooled->mixed)", "pooled_smote", "mixed_in"),
+         ("target_group(in->out)",     "mixed_in",    "mixed_out")]
+
+def hodges_lehmann(x, y):
+    """Median of all pairwise differences y_j - x_i: the Mann-Whitney-consistent estimate."""
+    return float(np.median([b - a for a in x for b in y]))
+
+print(f"  {'method':8} {'contrast':26} {'n1':>3}{'n2':>4} {'HL':>7} {'p_unpair':>9} "
+      f"{'delta':>6} | {'nc':>3} {'rho':>6} {'dmed':>7} {'p_pair':>8}")
 for method in METHODS:
-    parts = []
     for name, m1, m2 in CONTR:
-        d1, d2 = arr(method, m1), arr(method, m2); common = sorted(set(d1) & set(d2))
-        if len(common) < 3: parts.append(f"{name}=NA"); continue
-        x = np.array([d1[s] for s in common]); y = np.array([d2[s] for s in common])
-        try: W, p = stats.wilcoxon(x, y)
-        except ValueError: W, p = float('nan'), float('nan')
-        parts.append(f"{name}: dmed={np.median(y-x):+.3f} p={p:.3g}")
-    print(f"  {method:8}: " + " | ".join(parts))
+        d1, d2 = arr(method, m1), arr(method, m2)
+        x = np.array(list(d1.values()), float)
+        y = np.array(list(d2.values()), float)
+        if len(x) < 2 or len(y) < 2:
+            print(f"  {method:8} {name:26}: NA (n1={len(x)}, n2={len(y)})"); continue
+        # --- unpaired: what the paper will report ---
+        U, p = stats.mannwhitneyu(y, x, alternative="two-sided")   # 'auto' -> exact when it can
+        hl = hodges_lehmann(x, y); dl = cliffs_delta(y, x)
+        # --- diagnostic: the pairing the switch is retiring ---
+        common = sorted(set(d1) & set(d2))
+        xc = np.array([d1[s] for s in common], float)
+        yc = np.array([d2[s] for s in common], float)
+        rho = stats.spearmanr(xc, yc)[0] if len(common) >= 4 else float('nan')
+        if len(common) >= 3:
+            try: _, p_pair = stats.wilcoxon(xc, yc)
+            except ValueError: p_pair = float('nan')
+            d_pair = float(np.median(yc - xc))
+        else:
+            p_pair = d_pair = float('nan')
+        print(f"  {method:8} {name:26} {len(x):3d}{len(y):4d} {hl:+7.3f} {p:9.3g} "
+              f"{dl:+6.2f} | {len(common):3d} {rho:+6.2f} {d_pair:+7.3f} {p_pair:8.3g}")
 
 print("\n(D1) RF feature-count effect (fs vs nofs)")
 D1 = {}
