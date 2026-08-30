@@ -1,0 +1,20 @@
+# .mailmap — canonical author identities for this repository.
+#
+# Git consults this file for `git log`, `git shortlog`, `git blame` and GitHub's
+# contributor views. It changes how identities are DISPLAYED; it does not
+# rewrite any commit object, so every SHA, tag, submodule pointer and archived
+# release remains valid.
+#
+# Format:  Proper Name <proper@email> Commit Name <commit@email>
+#          Proper Name <proper@email> <commit@email>          (match by e-mail only)
+#
+# Verify with:
+#     git shortlog -sne --all
+#
+# ---------------------------------------------------------------------------
+# Corporate address used on 8 early commits (2025-02-05 .. 2025-07-17),
+# remapped to the author's academic address.
+#
+# ---------------------------------------------------------------------------
+Yutaro Nakagama <ynakagama@jaist.ac.jp> <Yutaro.Nakagama@bosch.com>
+Yutaro Nakagama <ynakagama@jaist.ac.jp> Nakagama Yutaro (VM-EPS/ESW1-JP) <Yutaro.Nakagama@bosch.com>

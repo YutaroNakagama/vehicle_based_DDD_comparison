@@ -1,0 +1,109 @@
+cff-version: 1.2.0
+message: "If you use this software or dataset, please cite it as below."
+title: "Driver Drowsiness Detection Comparison Dataset"
+abstract: >-
+  Derived analysis data, per-run training and evaluation records, and
+  intermediate artefacts from a benchmark of lightweight driver drowsiness
+  detection models built on vehicle-dynamics features, evaluated under class
+  imbalance and cross-subject domain shift. Trained model binaries are
+  deliberately excluded. All measurements derive from the openly deposited
+  multi-modal driving dataset of Aygun et al. (2024).
+type: dataset
+version: 1.0.0
+license: CC-BY-4.0
+license-url: "https://creativecommons.org/licenses/by/4.0/"
+repository-code: "https://github.com/YutaroNakagama/vehicle_based_DDD_comparison"
+
+# TODO before release: add `doi:` once the Zenodo DOI is minted, and add
+# `date-released:` with the actual release date.
+
+authors:
+  - family-names: Nakagama
+    given-names: Yutaro
+    orcid: "https://orcid.org/0000-0001-6235-7492"
+    affiliation: >-
+      School of Information Science, Japan Advanced Institute of Science and
+      Technology (JAIST), Nomi, Ishikawa, Japan
+  - family-names: Ishii
+    given-names: Daisuke
+    affiliation: >-
+      School of Information Science, Japan Advanced Institute of Science and
+      Technology (JAIST), Nomi, Ishikawa, Japan
+    # TODO: add `orcid:` — not recorded in the repository.
+  - family-names: Yoshizoe
+    given-names: Kazuki
+    affiliation: >-
+      Research Institute for Information Technology, Kyushu University,
+      Fukuoka, Japan
+    # TODO: add `orcid:` — not recorded in the repository.
+
+keywords:
+  - driver drowsiness detection
+  - vehicle dynamics
+  - class imbalance
+  - domain shift
+  - domain generalization
+  - subject-independent evaluation
+  - SMOTE
+  - Sobol sensitivity analysis
+  - random forest
+  - BiLSTM
+  - EEG band power
+  - Karolinska Sleepiness Scale
+
+references:
+  - type: data
+    title: "Multi-modal data acquisition platform for behavioral evaluation"
+    year: 2024
+    doi: "10.7910/DVN/HMZ5RG"
+    publisher:
+      name: "Harvard Dataverse"
+    license: CC0-1.0
+    notes: >-
+      Upstream source dataset from which all measurements in this work are
+      derived. Released under CC0 1.0; cite it alongside this record per
+      Harvard Dataverse community norms. See section 3.1 of LICENSE.
+    authors:
+      - family-names: Aygun
+        given-names: Ayca
+      - family-names: Blaney
+        given-names: Giles
+      - family-names: Haga
+        given-names: Zachary
+      - family-names: McWilliams
+        given-names: Thomas
+      - family-names: Mertens
+        given-names: Julia
+      - family-names: de Ruiter
+        given-names: Jan Peter
+      - family-names: Ward
+        given-names: Nathan
+      - family-names: Scheutz
+        given-names: Matthias
+
+  - type: article
+    title: >-
+      A multimodal virtual reality data acquisition platform and dataset to
+      assess systemic human cognitive states
+    year: 2026
+    journal: "Scientific Data"
+    volume: 13
+    issue: 1
+    start: 76
+    authors:
+      - family-names: Aygun
+        given-names: Ayca
+      - family-names: Blaney
+        given-names: Giles
+      - family-names: Haga
+        given-names: Zachary
+      - family-names: McWilliams
+        given-names: Thomas
+      - family-names: Mertens
+        given-names: Julia
+      - family-names: de Ruiter
+        given-names: Jan Peter
+      - family-names: Ward
+        given-names: Nathan
+      - family-names: Scheutz
+        given-names: Matthias

@@ -1,0 +1,65 @@
+{
+  "title": "Driver Drowsiness Detection Comparison Dataset",
+  "upload_type": "dataset",
+  "access_right": "open",
+  "license": "cc-by-4.0",
+  "language": "eng",
+  "version": "1.0.0",
+  "creators": [
+    {
+      "name": "Nakagama, Yutaro",
+      "affiliation": "School of Information Science, Japan Advanced Institute of Science and Technology (JAIST), Nomi, Ishikawa, Japan",
+      "orcid": "0000-0001-6235-7492"
+    },
+    {
+      "name": "Ishii, Daisuke",
+      "affiliation": "School of Information Science, Japan Advanced Institute of Science and Technology (JAIST), Nomi, Ishikawa, Japan"
+    },
+    {
+      "name": "Yoshizoe, Kazuki",
+      "affiliation": "Research Institute for Information Technology, Kyushu University, Fukuoka, Japan"
+    }
+  ],
+  "description": "<p>Derived analysis data and intermediate artefacts from a benchmark of lightweight <strong>driver drowsiness detection (DDD)</strong> models built on <strong>vehicle-dynamics features</strong>, with emphasis on <strong>class imbalance</strong> and <strong>domain shift across subjects</strong>.</p><p><strong>What this record contains.</strong> (1) <code>data/processed/</code> &mdash; per-subject-session feature tables (210 columns: 22 time/frequency-domain statistics over five vehicle signals, 8-band wavelet-packet energies, smoothing/prediction-error features, 8-channel EEG band powers, and KSS-derived drowsiness labels). (2) <code>results/outputs/training/</code> and <code>results/outputs/evaluation/</code> &mdash; per-run training and evaluation records (JSON plus a flattened CSV twin) for 1,946 training runs across four model families (RF, Lstm, SvmA, SvmW), three domain-distance metrics, two minority-class ratios and 27 random seeds. (3) <code>results/analysis/</code> &mdash; the aggregated tables and journal figures derived from those runs, including Sobol sensitivity indices.</p><p><strong>What this record deliberately does NOT contain.</strong> Trained model binaries (approximately 115 GB of scikit-learn pickles and Keras checkpoints) are excluded: they are unusable without an exact dependency-version match, carry arbitrary-code-execution risk on load, and contribute nothing that the recorded metrics do not already establish. HPC-cluster artefacts are also excluded, as project policy treats them as reference-only and not as reported results.</p><p><strong>Provenance.</strong> All measurements derive from the multi-modal driving dataset of Aygun et al. (2024), Harvard Dataverse, doi:10.7910/DVN/HMZ5RG, which is released under the CC0 1.0 Universal Public Domain Dedication. This record redistributes only <em>derived features and analysis outputs</em>, never the upstream raw recordings. Following Harvard Dataverse community norms, please cite the upstream deposit alongside this record.</p><p><strong>Reproducibility.</strong> Every artefact filename encodes its full experimental condition as an underscore-delimited tag (model, mode, experiment, ranking method, distance metric, domain direction, split, resampling granularity, target ratio, seed). That tag grammar is a convention enforced by the launcher scripts in the accompanying code repository rather than a self-describing schema, so this data is only fully interpretable together with the matching code version. The decoding rules, the complete column dictionary and the derivation chain from raw runs to published figures are documented in <code>DATADICTIONARY.md</code> inside the bundle. <code>MANIFEST.sha256</code> and <code>BUNDLE_INFO.json</code> record per-file checksums and the exact source commit.</p><p><strong>Licensing.</strong> Analysis data and outputs are released under CC BY 4.0; the accompanying source code is released under the MIT License. See <code>LICENSE</code>. The upstream deposit is CC0 1.0, so it places no licensing restriction on redistribution of these derived outputs.</p>",
+  "keywords": [
+    "driver drowsiness detection",
+    "driver monitoring",
+    "vehicle dynamics",
+    "steering behaviour",
+    "class imbalance",
+    "domain shift",
+    "domain generalization",
+    "subject-independent evaluation",
+    "SMOTE",
+    "subject-wise SMOTE",
+    "Sobol sensitivity analysis",
+    "maximum mean discrepancy",
+    "Wasserstein distance",
+    "dynamic time warping",
+    "random forest",
+    "support vector machine",
+    "BiLSTM",
+    "EEG band power",
+    "Karolinska Sleepiness Scale",
+    "AUPRC"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "10.7910/DVN/HMZ5RG",
+      "relation": "isDerivedFrom",
+      "resource_type": "dataset",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "https://github.com/YutaroNakagama/vehicle_based_DDD_comparison",
+      "relation": "isSupplementTo",
+      "resource_type": "software",
+      "scheme": "url"
+    }
+  ],
+  "references": [
+    "Aygun, A.; Blaney, G.; Haga, Z.; McWilliams, T.; Mertens, J.; de Ruiter, J. P.; Ward, N.; Scheutz, M. Multi-modal data acquisition platform for behavioral evaluation. Harvard Dataverse, 2024. DOI: 10.7910/DVN/HMZ5RG",
+    "Aygun, A.; Blaney, G.; Haga, Z.; McWilliams, T.; Mertens, J.; de Ruiter, J. P.; Ward, N.; Scheutz, M. A multimodal virtual reality data acquisition platform and dataset to assess systemic human cognitive states. Scientific Data, 13(1):76, 2026."
+  ],
+  "notes": "KNOWN CHARACTERISTICS OF THIS RELEASE (documented specifications, not defects; see DATADICTIONARY.md sections 4.3, 5.2 and 9). (A) DOMAIN PARTITION UNIT: split2 assigns the 87 records to in-/out-domain at subject-SESSION level. The 87 records come from 47 distinct subjects with one or two sessions each, so nine subjects (S0116, S0167, S0181, S0185, S0190, S0196, S0202, S0204, S0205) have one session in each group. Cross-domain ('_cross') figures therefore measure transfer across the domain grouping rather than strictly across individuals for that portion of the data. The per-group record lists ship with the bundle so the overlap can be quantified or excluded. (B) SHARED FEATURE GRID: RF, SvmA and SvmW all read one physical feature table (data/processed/common) and are differentiated by contiguous column range — RF 160 columns, SvmA 39, SvmW 8 — rather than by separate per-model tables. Identical files across the common/SvmA/SvmW directories are therefore expected. The per-model window entries in MODEL_WINDOW_CONFIG (notably SvmW 10 s/5 s) describe a codebase option; every classical-model column released here was computed on the shared 3 s window / 1.5 s step grid, and Lstm on its own 1 s/0.1 s grid. (C) EVALUATION PROTOCOL: under the 'within' and 'mixed' modes the training and evaluation splits are not drawn on coinciding temporal boundaries. The source project adopted this deliberately to keep results comparable with its earlier publications and records it as a known limitation, retaining de-leaked re-tests as a robustness appendix. 'cross' is unaffected. PROVENANCE AND CITATION: the upstream deposit doi:10.7910/DVN/HMZ5RG is released under CC0 1.0, which imposes no licensing restriction on this derived release. In line with Harvard Dataverse community norms, users of this record should cite the upstream deposit in addition to this one. REMAINING DEPOSITOR ACTIONS: (1) ORCID: iDs for Daisuke Ishii and Kazuki Yoshizoe are not recorded in the repository and still need to be added. (2) ARTICLE LINK: once the IEEE Transactions on Intelligent Vehicles submission has a DOI, add it to related_identifiers with relation 'isSupplementTo'. (3) GRANT: add a 'grants' entry if the funding acknowledged in the manuscript must be recorded."
+}
