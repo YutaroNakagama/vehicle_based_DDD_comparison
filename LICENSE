@@ -1,0 +1,164 @@
+================================================================================
+LICENSE — vehicle_based_DDD_comparison
+================================================================================
+
+This repository is released under TWO different licences, depending on the kind
+of material. Read section 0 to find out which licence applies to a given file,
+then read the corresponding section. Section 3 covers third-party material that
+is NOT covered by either licence.
+
+Copyright (c) 2025-2026 Yutaro Nakagama
+
+
+--------------------------------------------------------------------------------
+0. WHICH LICENCE APPLIES TO WHAT
+--------------------------------------------------------------------------------
+
+  SOURCE CODE  ->  MIT License (section 1)
+      src/**            Python package (pipelines, models, evaluation, analysis)
+      scripts/**        Preprocessing, training, evaluation, HPC and tooling scripts
+      tests/**          Test suite
+      config/**         Subject/group definition files
+      run_tests.sh, requirements.txt, and any other build or tooling file
+
+  DATA AND ANALYSIS OUTPUTS  ->  Creative Commons Attribution 4.0 (section 2)
+      data/**           Derived per-subject-session feature tables
+      results/**        Per-run training/evaluation records, aggregated tables,
+                        figures, and every other analysis artefact
+      DATADICTIONARY.md Documentation of the above
+
+  THIRD-PARTY MATERIAL  ->  NOT covered by either licence (section 3)
+
+Documentation under docs/** is covered by CC BY 4.0 (section 2), except for the
+third-party files listed in section 3.
+
+
+--------------------------------------------------------------------------------
+1. SOURCE CODE — MIT License
+--------------------------------------------------------------------------------
+
+Copyright (c) 2025-2026 Yutaro Nakagama
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+--------------------------------------------------------------------------------
+2. DATA AND ANALYSIS OUTPUTS — Creative Commons Attribution 4.0 International
+--------------------------------------------------------------------------------
+
+Copyright (c) 2025-2026 Yutaro Nakagama
+
+The derived data and analysis outputs described in section 0 are licensed under
+the Creative Commons Attribution 4.0 International License (CC BY 4.0).
+
+You are free to:
+  * Share  — copy and redistribute the material in any medium or format
+  * Adapt  — remix, transform, and build upon the material for any purpose,
+             including commercially
+
+Under the following term:
+  * Attribution — You must give appropriate credit, provide a link to the
+    licence, and indicate if changes were made. You may do so in any reasonable
+    manner, but not in any way that suggests the licensor endorses you or your
+    use.
+
+No additional restrictions — You may not apply legal terms or technological
+measures that legally restrict others from doing anything the licence permits.
+
+The full legal code is available at:
+    https://creativecommons.org/licenses/by/4.0/legalcode
+A human-readable summary is available at:
+    https://creativecommons.org/licenses/by/4.0/
+
+Suggested attribution:
+
+    Nakagama, Y. (2026). Driver Drowsiness Detection Comparison Dataset.
+    Zenodo. https://doi.org/<DOI-TO-BE-MINTED>
+    Licensed under CC BY 4.0. Derived from Aygun et al. (2024),
+    Harvard Dataverse, doi:10.7910/DVN/HMZ5RG.
+
+See CITATION.cff for a machine-readable citation.
+
+
+--------------------------------------------------------------------------------
+3. THIRD-PARTY MATERIAL — NOT covered by sections 1 and 2
+--------------------------------------------------------------------------------
+
+3.1 UPSTREAM SOURCE DATASET
+
+    Every measurement in this repository is derived from:
+
+        Aygun, A.; Blaney, G.; Haga, Z.; McWilliams, T.; Mertens, J.;
+        de Ruiter, J. P.; Ward, N.; Scheutz, M.
+        "Multi-modal data acquisition platform for behavioral evaluation."
+        Harvard Dataverse, 2024.  DOI: 10.7910/DVN/HMZ5RG
+
+    That deposit is released under the Creative Commons CC0 1.0 Universal
+    Public Domain Dedication:
+
+        https://creativecommons.org/publicdomain/zero/1.0/
+
+    CC0 waives copyright and related rights worldwide, so the upstream
+    measurements impose no licensing restriction on the derived features and
+    analysis outputs distributed here, and section 2's CC BY 4.0 grant applies
+    to them without qualification.
+
+    CC0 carries no legal attribution requirement. Nevertheless, in line with
+    the Harvard Dataverse community norms and ordinary scholarly practice, any
+    use of this repository's data should cite the upstream deposit as given
+    above, alongside this work (see CITATION.cff). Not citing it would be a
+    breach of academic norms, not of a licence.
+
+3.2 VENDORED UPSTREAM DOCUMENTATION
+
+    docs/reference/Data description.txt
+
+    This file is a verbatim copy of the source dataset's own documentation and
+    is the work of the dataset authors listed in section 3.1, not of this
+    repository's author. It is covered by the upstream CC0 1.0 dedication
+    rather than by section 1 or section 2, and may therefore be redistributed
+    freely; the citation expectation in section 3.1 applies to it as well.
+
+3.3 IEEE LATEX CLASS FILES
+
+    IEEEtran.cls, IEEEtran.bst, ieeeconf.cls and IEEEtran_HOWTO.pdf, wherever
+    they appear (including inside the manuscript submodules and under
+    docs/experiments/results/), are the property of the IEEE and are
+    distributed under their own terms (LaTeX Project Public License / IEEE's
+    own conditions). They are NOT covered by section 1 or section 2 and must
+    not be redistributed as part of this work.
+
+3.4 DEPENDENCIES
+
+    Third-party Python packages listed in requirements.txt are neither vendored
+    nor redistributed by this repository; each remains under its own licence
+    (predominantly BSD, MIT and Apache-2.0). Importing them imposes no
+    additional obligation on this repository's code, and no copyleft dependency
+    was identified.
+
+
+--------------------------------------------------------------------------------
+4. NO WARRANTY FOR DATA
+--------------------------------------------------------------------------------
+
+The data and analysis outputs are provided "AS IS", without warranty of any
+kind, express or implied, including but not limited to warranties of accuracy,
+fitness for a particular purpose, or non-infringement. They are research
+artefacts, not a validated safety-critical product, and must not be used as the
+basis of a driver-monitoring system deployed in a real vehicle.
