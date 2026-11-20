@@ -14,8 +14,8 @@ license: CC-BY-4.0
 license-url: "https://creativecommons.org/licenses/by/4.0/"
 repository-code: "https://github.com/YutaroNakagama/vehicle_based_DDD_comparison"
 
-# TODO before release: add `doi:` once the Zenodo DOI is minted, and add
-# `date-released:` with the actual release date.
+doi: 10.5281/zenodo.24384763
+# TODO before release: add `date-released:` with the actual publication date.
 
 authors:
   - family-names: Nakagama

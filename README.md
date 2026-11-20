@@ -17,7 +17,7 @@ non-parametric tests.
 | | |
 |---|---|
 | Code | this repository (MIT License) |
-| Derived data & per-run results | Zenodo, DOI: `10.5281/zenodo.XXXXXXX` <!-- TODO: fill after publishing --> (CC BY 4.0) |
+| Derived data & per-run results | Zenodo, DOI: `10.5281/zenodo.24384763` (reserved; resolves once the record is published) (CC BY 4.0) |
 | Upstream raw dataset | Aygun et al. (2024), Harvard Dataverse, [doi:10.7910/DVN/HMZ5RG](https://doi.org/10.7910/DVN/HMZ5RG) (CC0 1.0) |
 
 ---
@@ -65,14 +65,15 @@ Run the tests with `pytest`.
 
 ### Option A — use the published derived data (recommended)
 
-Download the bundle from Zenodo (DOI above) and extract it at the repository root:
+Download the bundle from Zenodo (DOI above), verify it, and copy its trees into the
+repository root:
 
 ```bash
-# replace XXXXXXX with the record id
 curl -L -o ddd-comparison-bundle-v1.0.0.zip \
-  "https://zenodo.org/records/XXXXXXX/files/ddd-comparison-bundle-v1.0.0.zip?download=1"
+  "https://zenodo.org/records/24384763/files/ddd-comparison-bundle-v1.0.0.zip?download=1"
 unzip ddd-comparison-bundle-v1.0.0.zip
-sha256sum -c MANIFEST.sha256       # verify every file
+(cd ddd-comparison-bundle-v1.0.0 && sha256sum -c MANIFEST.sha256)   # verify every file
+cp -r ddd-comparison-bundle-v1.0.0/data ddd-comparison-bundle-v1.0.0/results .
 ```
 
 This populates `data/processed/`, `results/outputs/` and `results/analysis/`.
@@ -138,7 +139,7 @@ If you use this code or data, please cite the paper and the Zenodo record
   year      = {2026},
   publisher = {Zenodo},
   version   = {1.0.0},
-  doi       = {10.5281/zenodo.XXXXXXX}
+  doi       = {10.5281/zenodo.24384763}
 }
 
 @misc{aygun2024dataset,
