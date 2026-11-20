@@ -1,22 +1,31 @@
+# Python >= 3.10 (developed and tested with 3.10 / 3.11)
+# Core
 numpy
 pandas
 scipy
 scikit-learn
+imbalanced-learn
 joblib
-matplotlib
-seaborn
+tqdm
+# Models
 xgboost
 lightgbm
 catboost
-imbalanced-learn
 tensorflow
-tqdm
-optuna
+tslearn
 pyswarm
 h5py
+# Hyper-parameter search
+optuna
+# Analysis / statistics / figures
+matplotlib
+seaborn
+scikit-posthocs
+umap-learn
+# Tests
+pytest
+pytest-cov
+# Documentation (optional)
 sphinx
 sphinx-rtd-theme
 sphinx-autodoc-typehints
-tslearn
-pytest
-pytest-cov
