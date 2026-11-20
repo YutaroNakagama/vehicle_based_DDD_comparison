@@ -191,10 +191,10 @@ def plot_effect_hierarchy(df: pd.DataFrame):
 
     # Factor display labels — order matches paper narrative
     factor_display = {
-        "mode": "Mode\n($m$)",
+        "mode": "Training\nmode ($M$)",
         "condition": "Rebalancing\n($R$)",
-        "distance": "Distance\n($d$)",
-        "level": "Membership\n($g$)",
+        "distance": "Distance\n($D$)",
+        "level": "Group\n($G$)",
     }
     factor_order = ["mode", "condition", "distance", "level"]
     metric_names = ["F2-score", "AUROC", "AUPRC"]
@@ -281,13 +281,13 @@ def plot_effect_hierarchy(df: pd.DataFrame):
             Patch(facecolor=colors_s1[mlabel], alpha=0.9,
                   edgecolor="black", linewidth=0.5,
                   hatch=hatches_s1[mlabel],
-                  label=f"{short_labels[mlabel]} ($S_i$)"))
+                  label=f"{short_labels[mlabel]} ($\\mathbb{{S}}_{{F}}$)"))
     for mlabel in metric_names:
         legend_elements.append(
             Patch(facecolor=colors_inter[mlabel], alpha=0.7,
                   edgecolor="black", linewidth=0.5,
                   hatch=hatches_inter[mlabel],
-                  label=f"{short_labels[mlabel]} ($S_{{Ti}}{{-}}S_i$)"))
+                  label=f"{short_labels[mlabel]} ($\\mathbb{{S}}_{{TF}}{{-}}\\mathbb{{S}}_{{F}}$)"))
     ax.set_ylim(0, 0.95)
     ax.legend(handles=legend_elements,
               loc="upper right",
