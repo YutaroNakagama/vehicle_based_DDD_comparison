@@ -138,8 +138,7 @@ See CITATION.cff for a machine-readable citation.
 3.3 IEEE LATEX CLASS FILES
 
     IEEEtran.cls, IEEEtran.bst, ieeeconf.cls and IEEEtran_HOWTO.pdf, wherever
-    they appear (including inside the manuscript submodules and under
-    docs/experiments/results/), are the property of the IEEE and are
+    they appear, are the property of the IEEE and are
     distributed under their own terms (LaTeX Project Public License / IEEE's
     own conditions). They are NOT covered by section 1 or section 2 and must
     not be redistributed as part of this work.
