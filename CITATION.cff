@@ -75,10 +75,10 @@ references:
         given-names: Julia
       - family-names: de Ruiter
         given-names: Jan Peter
-      - family-names: Ward
-        given-names: Nathan
       - family-names: Scheutz
         given-names: Matthias
+      - family-names: Ward
+        given-names: Nathan
 
   - type: article
     title: >-

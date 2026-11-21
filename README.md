@@ -158,7 +158,7 @@ If you use this code or data, please cite the paper and the Zenodo record
 
 @misc{aygun2024dataset,
   author    = {Aygun, Ayca and Blaney, Giles and Haga, Zachary and McWilliams, Thomas
-               and Mertens, Julia and de Ruiter, Jan Peter and Ward, Nathan and Scheutz, Matthias},
+               and Mertens, Julia and de Ruiter, Jan Peter and Scheutz, Matthias and Ward, Nathan},
   title     = {Multi-modal data acquisition platform for behavioral evaluation},
   year      = {2024},
   publisher = {Harvard Dataverse},

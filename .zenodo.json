@@ -56,7 +56,7 @@
     }
   ],
   "references": [
-    "Aygun, A.; Blaney, G.; Haga, Z.; McWilliams, T.; Mertens, J.; de Ruiter, J. P.; Ward, N.; Scheutz, M. Multi-modal data acquisition platform for behavioral evaluation. Harvard Dataverse, 2024. DOI: 10.7910/DVN/HMZ5RG",
+    "Aygun, A.; Blaney, G.; Haga, Z.; McWilliams, T.; Mertens, J.; de Ruiter, J. P.; Scheutz, M.; Ward, N. Multi-modal data acquisition platform for behavioral evaluation. Harvard Dataverse, 2024. DOI: 10.7910/DVN/HMZ5RG",
     "Aygun, A.; Blaney, G.; Haga, Z.; McWilliams, T.; Mertens, J.; de Ruiter, J. P.; Ward, N.; Scheutz, M. A multimodal virtual reality data acquisition platform and dataset to assess systemic human cognitive states. Scientific Data, 13(1):76, 2026."
   ],
   "notes": "The In/Out grouping (split2) is at subject-session level: the 87 subject-sessions come from 47 drivers, and a driver with two sessions can have one session in each group. The per-group lists ship with the bundle. The upstream deposit doi:10.7910/DVN/HMZ5RG is released under CC0 1.0; please cite it in addition to this record."
