@@ -2,13 +2,18 @@
 
 ## Overview
 
-This document describes the **subject ranking methods** implemented for domain analysis in driver drowsiness detection. These methods rank subjects based on their domain similarity/dissimilarity to identify:
+This document describes the **subject ranking methods** implemented for domain analysis in
+driver drowsiness detection. Each method scores every subject-session from a subject
+distance matrix (MMD, DTW or W1) and orders them from typical to atypical:
 
-- **out_domain**: Subjects with atypical patterns (outliers, far from center)
-- **mid_domain**: Subjects with intermediate patterns
-- **in_domain**: Subjects with typical patterns (near center, similar to majority)
+- **out_domain**: Subjects with atypical patterns (outliers, far from the others)
+- **in_domain**: Subjects with typical patterns (similar to the majority)
+- **mid_domain**: An intermediate group, produced by the three-group variant only
 
-This ranking is crucial for domain generalization experiments, where we evaluate how models trained on typical subjects generalize to atypical ones.
+**The paper uses the `knn` method (k = 5) with the two-group split `split2`:** the 43
+subject-sessions with the highest scores form the Out group and the other 44 the In group
+(see [Grouping used in the paper](#grouping-used-in-the-paper)). The other methods are
+implemented for comparison and were not used in the paper.
 
 ---
 
@@ -91,7 +96,7 @@ where $N_k(i)$ is the set of k nearest neighbors of subject $i$.
 - Parameter $k$ controls local vs global sensitivity
 
 **Implementation Details**:
-- Default: $k = \min(10, n-1)$
+- Default: $k = 5$ (`_rank_by_knn`), the value used in the paper
 - Higher $d_i^{knn}$ indicates subjects in sparse regions (potential outliers)
 
 **References**:
@@ -160,53 +165,32 @@ where $h(x)$ is the path length and $c(n)$ is the average path length of unsucce
 
 ---
 
-## Evaluation Results
+## Grouping used in the paper
 
-Based on our experiments with driver drowsiness detection data:
-
-| Ranking Method | AUPRC | F2 | Recall | Best Mode |
-|----------------|-------|-----|--------|-----------|
-| KNN | **0.1403** | **0.217** | **0.54** | target_only |
-| Isolation Forest | 0.1185 | 0.169 | 0.42 | target_only |
-| LOF | 0.1138 | 0.170 | 0.42 | target_only |
-| Centroid UMAP | 0.1100 | 0.163 | 0.40 | target_only |
-| Median Distance | 0.0890 | 0.125 | 0.28 | target_only |
-| Mean Distance | 0.0796 | 0.110 | 0.24 | target_only |
-
-**Key Findings**:
-- **KNN** method performs best across all metrics
-- **target_only** training mode consistently outperforms pooled and source_only
-- Density-based methods (LOF, KNN) outperform global distance methods
-
----
+The In/Out lists used by the runs are
+`results/analysis/exp2_domain_shift/distance/rankings/split2/knn/{mmd,dtw,wasserstein}_{in,out}_domain.txt`,
+distributed in the Zenodo bundle together with the distance matrices they were derived
+from (`distance/matrices/`). Scoring each subject-session by the mean of its five
+smallest distances to the others and taking the 43 highest scores as Out reproduces the
+lists exactly (`DATADICTIONARY.md`, Section 5).
 
 ## Usage
 
-### Generate Rankings
-
 ```bash
-# Generate rankings for all 6 methods
-python scripts/python/domain_analysis/generate_new_rankings.py \
-    --distance mmd \
-    --outdir results/domain_analysis/ranks29
+# Distance matrices (MMD, Wasserstein, DTW) from the feature tables
+python scripts/python/analysis/analyze.py comp-dist     --subject_list config/subjects/subject_list.txt     --data_root data/processed/common     --groups_file config/subjects/target_groups.txt
 
-# Generate rankings with visualization
-python scripts/python/domain_analysis/generate_new_rankings.py \
-    --distance mmd \
-    --outdir results/domain_analysis/ranks29 \
-    --plot
+# Three-group rankings with the methods of this document
+python -m src.analysis.clustering_projection_ranked --metric all --ranking knn
+
+# Two-group (split2) kNN lists from globally standardised features
+python scripts/python/analysis/domain/regenerate_split2_normalized.py --dry-run
 ```
 
-### Output Files
-
-Rankings are saved in:
-```
-results/domain_analysis/ranks29/{method}/
-├── {distance}_out_domain.txt    # Outlier subjects (29)
-├── {distance}_mid_domain.txt    # Intermediate subjects (29)
-├── {distance}_in_domain.txt     # Typical subjects (29)
-└── ranks29_names.txt            # Method metadata
-```
+`regenerate_split2_normalized.py` recomputes the matrices from the current feature
+tables; its lists differ from the ones used by the runs in two or three subject-sessions
+per metric (`DATADICTIONARY.md`, Section 5). Run it with `--dry-run` to compare without
+overwriting the distributed lists.
 
 ---
 
@@ -229,17 +213,14 @@ results/domain_analysis/ranks29/{method}/
 
 ## Implementation
 
-The ranking methods are implemented in:
-- `src/analysis/clustering_projection_ranked.py` — Core ranking algorithms
-- `scripts/python/domain_analysis/generate_new_rankings.py` — CLI interface
+The ranking methods are implemented in
+`src/analysis/clustering_projection_ranked.py` (`_rank_by_{method}` functions and the
+command-line entry point `main`).
 
-Each method follows a consistent interface:
+The kNN ranking, for example:
 ```python
-def rank_by_{method}(matrix: np.ndarray, subjects: List[str]) -> Tuple[List[str], List[str], List[str]]:
-    """
-    Rank subjects using {method}.
-    
-    Returns:
-        (out_domain_subjects, mid_domain_subjects, in_domain_subjects)
-    """
+def _rank_by_knn(matrix: np.ndarray, group_size: int = GROUP_SIZE, k: int = 5
+                 ) -> Tuple[np.ndarray, np.ndarray]:
+    """Return the rank label of each subject ("out_domain", "mid_domain",
+    "in_domain" or "Other") and its mean distance to its k nearest neighbours."""
 ```

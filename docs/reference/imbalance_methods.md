@@ -5,7 +5,7 @@ This document summarizes the imbalanced data handling methods implemented and ev
 ## Overview
 
 In drowsy driving detection tasks, there is a severe class imbalance where **positive cases (drowsy) account for only about 3.9%**.
-To address this problem, we implemented and compared methods in the following three categories.
+To address this problem, we implemented methods in the following categories.
 
 | Category | Methods | Data Size Change |
 |----------|---------|------------------|
@@ -13,6 +13,10 @@ To address this problem, we implemented and compared methods in the following th
 | **Undersampling** | RUS, Tomek Links | Decrease |
 | **Data Augmentation** | Jittering + Scaling | Increase |
 | **Ensemble** | BalancedRF, EasyEnsemble | No change |
+
+The paper evaluates three of them, each with target ratio 0.1 and 0.5, against a baseline
+without rebalancing: **SMOTE** (Section 1.1), **SW-SMOTE** (Section 1.5) and **RUS**
+(Section 2.1). The other methods are implemented but were not used in the paper.
 
 > For evaluation metrics details, see [Evaluation Metrics](evaluation_metrics.md).
 
@@ -59,7 +63,7 @@ while addressing within-subject class imbalance.
 - Applied via `--subject_wise_oversampling` flag combined with `--oversample_method smote`
 - `target_ratio`: 0.1 or 0.5 (minority-to-majority ratio after oversampling)
 
-**Implementation:** `src/data_pipeline/augmentation.py` with `--subject_wise_oversampling` flag
+**Implementation:** `src/models/sampling/oversampling.py` (`_apply_subjectwise_oversampling`), enabled with the `--subject_wise_oversampling` flag
 
 > **Naming convention:** In launcher scripts, this method is specified as `CONDITION=smote`.
 > The resulting evaluation files use the tag prefix `imbalv3_*` (legacy naming).
@@ -188,7 +192,7 @@ $$x_{aug} = x \cdot s, \quad s \sim \mathcal{N}(1, \sigma_s^2)$$
 > *Proceedings of the 19th ACM International Conference on Multimodal Interaction (ICMI)*, 216-220.
 > https://doi.org/10.1145/3136755.3136817
 
-**Implementation:** `src/data_pipeline/augmentation.py`
+**Implementation:** `augment_minority_class` in `src/data_pipeline/augmentation/oversampling.py` (called from `src/models/sampling/oversampling.py`)
 
 ---
 
@@ -261,8 +265,9 @@ Ensembles multiple AdaBoost classifiers. Each classifier is trained on a differe
 
 ## 6. Related Files
 
-- **Augmentation implementation:** `src/data_pipeline/augmentation.py`
-- **Training Pipeline:** `src/models/architectures/common.py`
+- **Rebalancing (all sampling methods):** `src/models/sampling/oversampling.py` (`apply_oversampling`)
+- **Augmentation implementation:** `src/data_pipeline/augmentation/`
+- **Training Pipeline:** `src/models/training/pipeline.py`, `src/models/model_pipeline.py`
 - **CLI Helper:** `src/utils/cli/train_cli_helpers.py`
-- **Visualization:** `src/analysis/imbalance_analysis.py`
+- **Visualization:** `src/analysis/imbalance/analysis.py`
 - **HPC scripts:** `scripts/hpc/jobs/imbalance/`

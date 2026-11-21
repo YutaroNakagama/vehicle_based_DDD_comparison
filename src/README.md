@@ -111,7 +111,7 @@ src/
 - **models/**: classical and neural architectures + training pipelines  
 - **utils/**: shared helpers for CLI, domain generalization, evaluation, I/O, visualization, and analysis
 
-> **Note**: Data preparation scripts (subject grouping, feature checks) are located in `scripts/python/setup/`.  
+> **Note**: Subject grouping (distance matrices and In/Out lists) is described in `docs/architecture/domain_generalization.md`.  
 
 ---
 

@@ -8,7 +8,6 @@ This directory contains shell scripts for running machine learning experiments o
 |--------|-------------|
 | `run_preprocess.sh` | Feature extraction pipeline (87 subjects in parallel) |
 | `run_domain_parallel.sh` | Domain analysis experiments (18-36 parallel jobs) |
-| `run_imbalance_experiments.sh` | Imbalance handling experiments (Baseline vs SMOTE) |
 
 ---
 
@@ -138,69 +137,6 @@ pkill -f 'train.py.*(imbalv3|baseline_domain)'
 
 ---
 
-## 2. Imbalance Experiments (`run_imbalance_experiments.sh`)
-
-Compares baseline (no oversampling) vs Subject-wise SMOTE on pooled data.
-
-### Experiments
-
-| # | Name | Description |
-|---|------|-------------|
-| 1 | Baseline | No oversampling |
-| 2 | Subject-wise SMOTE | SMOTE with ratio=0.5 |
-
-### Usage
-
-```bash
-# Default: Run both experiments (background)
-./scripts/local/run_imbalance_experiments.sh
-
-# Custom trial count
-./scripts/local/run_imbalance_experiments.sh --trials 50
-
-# Foreground execution
-./scripts/local/run_imbalance_experiments.sh --fg
-```
-
-### Options
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--trials N` | Number of Optuna trials | 10 |
-| `--seed N` | Random seed | 42 |
-| `--eval` | Run evaluation after training | |
-| `--fg` | Run in foreground | background |
-
-### Output
-
-**Logs:**
-```
-scripts/local/logs/imbalance/
-├── imbalance_experiments_YYYYMMDD_HHMMSS.log  # Main log
-├── baseline_s42.log                            # Baseline results
-├── baseline_s42_eval.log                       # Baseline evaluation
-├── subjectwise_smote_ratio0.5_s42.log          # SMOTE results
-└── subjectwise_smote_ratio0.5_s42_eval.log     # SMOTE evaluation
-```
-
-### Monitoring
-
-```bash
-# Follow logs
-tail -f scripts/local/logs/imbalance/*.log
-
-# Check progress
-watch "grep -E 'Trial|best=' scripts/local/logs/imbalance/*.log | tail -10"
-```
-
-### Stop Execution
-
-```bash
-pkill -f 'train.py.*(baseline|smote)'
-```
-
----
-
 ## Common Configuration
 
 ### Default Settings
@@ -225,7 +161,6 @@ pkill -f 'train.py.*(baseline|smote)'
 scripts/local/logs/
 ├── preprocess/  # Preprocessing logs
 ├── domain/      # Domain analysis logs
-├── imbalance/   # Imbalance experiment logs
 ├── smote/       # (legacy)
 └── training/    # (legacy)
 ```
@@ -249,12 +184,6 @@ scripts/local/logs/
 
 # Domain analysis: Baseline vs SMOTE with evaluation
 ./scripts/local/run_domain_parallel.sh --both --eval
-
-# Imbalance experiments (2 experiments)
-./scripts/local/run_imbalance_experiments.sh
-
-# Imbalance experiments with evaluation
-./scripts/local/run_imbalance_experiments.sh --eval
 
 # Check all running experiments
 ps aux | grep train.py | grep -v grep

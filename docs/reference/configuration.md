@@ -1,146 +1,105 @@
 # Configuration Reference
 
-This document describes all configurable parameters in the `src/config.py` file.
+This document describes the main parameters in `src/config.py`. Values marked "env" can be
+overridden with the environment variable given.
 
 ## Path Configuration
 
-### Base Paths
-
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATASET_PATH` | `data/raw/` | Path to raw dataset files |
-| `INTERIM_PATH` | `data/interim/` | Intermediate processed data |
-| `PROCESSED_PATH` | `data/processed/` | Final feature matrices |
-| `MODEL_PKL_PATH` | `models/` | Trained model artifacts |
-| `RESULT_PATH` | `results/` | Evaluation outputs |
-
-### File Naming
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MODEL_FILE_EXTENSION` | `.pkl` | Model artifact extension |
-| `METRICS_FILE_EXTENSION_JSON` | `.json` | JSON metrics extension |
-| `METRICS_FILE_EXTENSION_CSV` | `.csv` | CSV metrics extension |
+| `SUBJECT_LIST_PATH` | `config/subjects/subject_list.txt` (env `DDD_SUBJECT_LIST_PATH`) | The 87 subject-sessions |
+| `DATASET_PATH` | `../dataset/mdapbe/physio` (env `DDD_DATASET_PATH`) | Raw upstream data (SIMlsl, EEG) |
+| `INTRIM_CSV_PATH` | `./data/interim` | Interim per-signal CSVs |
+| `PROCESS_CSV_COMMON_PATH` | `./data/processed/common` | Feature tables used by the RF |
+| `MODEL_PKL_PATH` | `./models/` (env `DDD_MODEL_PKL_PATH`) | Trained models (not distributed) |
+| `RESULTS_OUTPUTS_TRAINING_PATH` | `./results/outputs/training` | Per-run training records |
+| `RESULTS_OUTPUTS_EVALUATION_PATH` | `./results/outputs/evaluation` | Per-run evaluation records |
+| `RESULTS_ANALYSIS_EXP2_PATH` | `./results/analysis/exp2_domain_shift` | Metric tables, distances and figures of the paper |
 
 ## Signal Processing
 
-### Sampling Rates
-
 | Variable | Value | Description |
 |----------|-------|-------------|
-| `SAMPLE_RATE_SIMLSL` | 100 Hz | Vehicle dynamics signals |
-| `SAMPLE_RATE_EEG` | 256 Hz | EEG signals |
+| `SAMPLE_RATE_SIMLSL` | 60 Hz | Vehicle-dynamics signals |
+| `SAMPLE_RATE_EEG` | 500 Hz | EEG signals (used only for the labels) |
+| `WAVELET_LEV` | 3 | Wavelet-packet decomposition level |
 
-### Window Configuration
+The paper uses the `common` window configuration of `MODEL_WINDOW_CONFIG`: windows of
+3 s with a 1.5 s step (`{"window_sec": 3, "step_sec": 1.5}`).
+
+## Labeling Scheme
 
 ```python
-MODEL_WINDOW_CONFIG = {
-    "common": {"window_sec": 60, "stride_sec": 30},
-    "SvmA": {"window_sec": 30, "stride_sec": 15},
-    "SvmW": {"window_sec": 60, "stride_sec": 30},
-    "Lstm": {"window_sec": 60, "stride_sec": 30},
-}
+KSS_BIN_LABELS = [1, 2, 3, 4, 5, 8, 9]
+KSS_LABEL_MAP  = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 8: 1, 9: 1}   # 0 = alert, 1 = drowsy
 ```
 
-## Training Parameters
+KSS levels 6 and 7 are excluded. Setting `KSS_SIMPLIFIED=1` switches to a test scheme
+(1–3 alert, 8–9 drowsy) that was not used in the paper.
 
-### Optuna Hyperparameter Tuning
+## Data Split
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `N_TRIALS` | 100 | Number of Optuna optimization trials |
-| `OPTUNA_N_STARTUP_TRIALS` | 10 | Random sampling trials before TPE |
-| `OPTUNA_N_WARMUP_STEPS` | 5 | Warmup steps for pruner |
+| `TRAIN_RATIO` / `VAL_RATIO` / `TEST_RATIO` | 0.6 / 0.2 / 0.2 (env) | Train/validation/test ratios of the time-stratified split (`--time_stratify_labels`) |
+| `TIME_STRATIFY_TOLERANCE` | 0.02 | Tolerance for the positive-class ratio in the time-stratified split |
+| `DEFAULT_RANDOM_SEED` | 42 | Seed when `--seed` is not given |
+
+## Training Parameters
+
+### Feature selection
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TOP_K_FEATURES` | 10 | Features kept by the RF importance ranking |
+
+### Optuna hyperparameter tuning
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `N_TRIALS` | 50 (env `N_TRIALS_OVERRIDE`) | Optuna trials; the paper's job script sets 100 |
+| `OPTUNA_N_STARTUP_TRIALS` | 5 | Random trials before TPE |
+| `OPTUNA_N_WARMUP_STEPS` | 1 | Pruner warm-up steps |
 | `OPTUNA_INTERVAL_STEPS` | 1 | Pruning check interval |
 
-### Cross-Validation
+### Cross-validation
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `CV_FOLDS_OPTUNA` | 3 | CV folds during optimization |
-| `CV_FOLDS_OPTUNA_DATA_LEAK` | 2 | CV folds for data leak experiments |
+| `CV_FOLDS_OPTUNA_DATA_LEAK` | 2 | CV folds of the leakage-check variant |
 | `CV_FOLDS_CALIBRATION` | 5 | CV folds for probability calibration |
 
-### Model Hyperparameters
+### Model hyperparameters
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `RF_CLASS_WEIGHT` | `{0: 1.0, 1: 3.0}` | Random Forest class weights |
-| `LIGHTGBM_N_ESTIMATORS_RANGE` | `(100, 300)` | LightGBM estimator range |
-| `LIGHTGBM_LEARNING_RATE_RANGE` | `(1e-3, 0.3)` | LightGBM learning rate range |
+| `RF_CLASS_WEIGHT` | `{0: 1.0, 1: 3.0}` | Random-forest class weights |
 
-## Evaluation Thresholds
+## Evaluation
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MIN_RECALL_THRESHOLD` | 0.70 | Minimum recall constraint for precision optimization |
-| `FBETA_SCORE_BETA` | 2.0 | Beta parameter for F-beta score (emphasizes recall) |
-| `BASELINE_AUPRC` | 0.039 | Baseline AU-PRC for imbalanced comparison |
+| `FBETA_SCORE_BETA` | 2.0 | β of the F-β score |
+| `MIN_RECALL_THRESHOLD` | 0.70 | Minimum recall for the precision-at-recall threshold |
+| `BASELINE_AUPRC` | 0.039 | AUPRC of a random classifier at the drowsy prevalence |
 
-## Sample Count Thresholds
+## Domain Analysis
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SAMPLE_COUNT_MIN_TRAIN` | 100 | Minimum training samples |
-| `SAMPLE_COUNT_MIN_VAL` | 30 | Minimum validation samples |
-| `SAMPLE_COUNT_MIN_TEST` | 30 | Minimum test samples |
+| Variable | Value | Description |
+|----------|-------|-------------|
+| `DISTANCE_METRICS` | `["mmd", "wasserstein", "dtw"]` | Subject distance metrics |
 
-## Labeling Scheme
+The In/Out subject lists of the paper are distributed in the Zenodo bundle
+(`results/analysis/exp2_domain_shift/distance/rankings/split2/knn/`); see
+`DATADICTIONARY.md`, Section 5.
 
-### KSS to Binary Conversion
+## Overriding parameters
 
-```python
-TARGET_SCHEME = {
-    "alert": [1, 2, 3, 4, 5, 6],  # Label 0: Alert
-    "drowsy": [7, 8, 9],          # Label 1: Drowsy
-}
-TARGET_SCHEME_NAME = "only10"
-```
-
-### Alternative Schemes
+Prefer the environment variables above. For other parameters, override the module
+attributes before the pipeline is imported, e.g.
 
 ```python
-# Balanced scheme
-KSS_TO_BINARY_BALANCED = {
-    "alert": [1, 2, 3, 4],
-    "drowsy": [5, 6, 7, 8, 9],
-}
-
-# Conservative scheme (high confidence drowsy)
-KSS_TO_BINARY_CONSERVATIVE = {
-    "alert": [1, 2, 3, 4, 5],
-    "drowsy": [8, 9],
-}
-```
-
-## Domain Generalization
-
-### Subject Groups
-
-```python
-SUBJECT_GROUPS = {
-    "all": "config/subjects/subject_list.txt",
-    "young": "config/subjects/young_subjects.txt",
-    "elderly": "config/subjects/elderly_subjects.txt",
-    "male": "config/subjects/male_subjects.txt",
-    "female": "config/subjects/female_subjects.txt",
-}
-```
-
-## Example: Custom Configuration
-
-```python
-# config/custom_config.py
-from src.config import *
-
-# Override for quick experiments
-N_TRIALS = 20
-CV_FOLDS_OPTUNA = 2
-
-# Higher recall emphasis for safety
-FBETA_SCORE_BETA = 3.0
-MIN_RECALL_THRESHOLD = 0.80
-
-# Aggressive class weighting
-RF_CLASS_WEIGHT = {0: 1.0, 1: 5.0}
+import src.config as cfg
+cfg.CV_FOLDS_OPTUNA = 2
 ```
