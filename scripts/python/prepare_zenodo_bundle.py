@@ -77,8 +77,9 @@ ALLOW: list[tuple[str, str, tuple[str, ...] | None]] = [
      "Per-evaluation metric tables and the tables derived from them", ("*.csv",)),
     ("results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2",
      "Figures of the paper", PAPER_FIGURES),
-    ("results/analysis/exp2_domain_shift/distance/matrices_normalized",
-     "Inter-subject distance matrices used for the In/Out grouping", None),
+    ("results/analysis/exp2_domain_shift/distance/matrices",
+     "Inter-subject distance matrices from which the In/Out lists were derived",
+     ("*_matrix.npy", "*_subjects.json")),
     ("results/analysis/exp2_domain_shift/distance/rankings/split2/knn",
      "In/Out subject lists", ("*.txt",)),
     # Small provenance files that must travel with the data.

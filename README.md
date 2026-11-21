@@ -129,7 +129,7 @@ pre-processing step.
 | Step | Script | Produces |
 |---|---|---|
 | Pre-processing | `scripts/python/preprocess/preprocess.py` | Feature tables in `data/processed/common/` |
-| Subject grouping | `scripts/python/analysis/domain/regenerate_split2_normalized.py` | Distance matrices and In/Out subject lists |
+| Subject grouping | `scripts/python/analysis/analyze.py comp-dist` (distance matrices); the In/Out lists used by the runs are in the Zenodo bundle | Distance matrices and In/Out subject lists |
 | Training | `scripts/python/train/train.py` | Per-run training records and models |
 | Evaluation | `scripts/python/evaluation/evaluate.py` | Per-run evaluation records |
 | Cluster jobs | `scripts/hpc/jobs/domain_analysis/pbs_domain_comparison_split2.sh`, `scripts/hpc/launchers/launch_paper_domain_split2.sh`, `scripts/hpc/launchers/launch_exp2_mixed.sh`, `scripts/hpc/launchers/gen_exp2_seed12_joblist.py`, `scripts/hpc/launchers/launch_exp2_seed12_fill.sh` | The 1,512 runs |

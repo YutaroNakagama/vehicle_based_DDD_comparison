@@ -69,11 +69,15 @@ upstream deposit.
 | Labels and drowsiness indices | `KSS_Theta_Alpha_Beta`, `KSS_Theta_Alpha_Beta_percent`, `theta_alpha_over_beta`, `theta_alpha_over_beta_label` | 4 |
 
 The RF reads the 145 columns `Steering_Range` … `LaneOffset_AAA`
-(`src/utils/io/loaders.py`). EEG is used only to derive the labels. The binary target is
-derived from `KSS_Theta_Alpha_Beta`: 1–5 → alert (0), 8–9 → drowsy (1); levels 6 and 7
-and rows without a label are excluded (`src/config.py`, `KSS_LABEL_MAP`). With rows that
-have a missing feature value removed, 61,750 windows remain (59,326 alert, 2,424
-drowsy).
+(`src/utils/io/loaders.py`). One file, `processed_S0116_2.csv`, was not regenerated with the
+others and lacks the 10 columns `{Signal}_KatzFractalDim` and `{Signal}_ShannonEntropy`
+(180 columns); its range `Steering_Range` … `LaneOffset_AAA` therefore has 135 columns.
+
+EEG is used only to derive the labels. The binary target is derived from
+`KSS_Theta_Alpha_Beta`: 1–5 → alert (0), 8–9 → drowsy (1); levels 6 and 7 and rows
+without a label are excluded (`src/config.py`, `KSS_LABEL_MAP`). With rows that have a
+missing value in the file's feature range removed, 61,750 windows remain (59,326 alert,
+2,424 drowsy).
 
 The electrode montage of `Channel_1` … `Channel_8` is not recorded in this repository;
 consult the upstream deposit.
@@ -153,9 +157,14 @@ analysis scripts restrict them to the 12 seeds above, which yields the same 1,51
 of the In (44) and Out (43) groups used by the runs: each subject-session is scored by its
 mean distance to its k = 5 nearest neighbours under the metric, and the 43 with the
 highest scores form the Out group. `ranks43_summary.txt` summarises the split.
-`matrices_normalized/{metric}_matrix.npy` are the 87 × 87 distance matrices (computed on
-globally standardised features) from which the lists were derived, with the subject
-order in `{metric}_subjects.json` (`regenerate_split2_normalized.py`).
+`matrices/{metric}_matrix.npy` are the 87 × 87 distance matrices from which the lists
+were derived (subject order in `{metric}_subjects.json`); scoring each subject-session by
+the mean of its five smallest distances to the others reproduces both lists exactly.
+The matrices were computed with `python scripts/python/analysis/analyze.py comp-dist`
+(`src/analysis/domain/distance.py`) before the feature tables were regenerated in
+February 2026. `regenerate_split2_normalized.py`, which recomputes the matrices from
+globally standardised features of the current tables, yields lists that differ from the
+ones used by the runs in two or three subject-sessions per metric.
 
 The grouping is at subject-session level, so a driver with two sessions can have one
 session in each group.
