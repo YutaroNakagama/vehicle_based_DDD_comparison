@@ -1,0 +1,139 @@
+# ===== Data (generated/large, not tracked) =====
+data/**
+!data/README.md
+
+# ===== Models (generated, not tracked) =====
+models/**
+!models/README.md
+
+# ===== Results (generated, not tracked) =====
+results/**
+!results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2/*.pdf
+!results/README.md
+
+# ===== Experiment working notes (not tracked) =====
+# Working notes and drafts of experiment write-ups are not tracked.
+# Manuscripts are kept outside this repository.
+docs/experiments/results/**
+
+# ===== Reports (only final figures/tables tracked) =====
+reports/figures/**
+!reports/figures/README.md
+reports/tables/**
+!reports/tables/README.md
+
+# ===== HPC logs (generated, not tracked) =====
+scripts/hpc/logs/**
+!scripts/hpc/logs/.gitignore
+!scripts/hpc/logs/README.md
+
+# ===== Python cache =====
+**/__pycache__/
+**/*.py[cod]
+.pytest_cache/
+
+# ===== Cluster outputs =====
+*.o*
+*.e*
+*.swp
+
+# ===== Execution logs =====
+continue_output*.log
+resume_output*.log
+launch_output*.log
+nohup.out
+logs/
+
+# ===== Temporary job tracking files =====
+.job_ids_*.txt
+**/.job_ids_*.txt
+
+# ===== Documentation build (Sphinx) =====
+docs/_build/
+docs/_modules/
+docs/_sources/
+docs/_static/
+docs/objects.inv
+docs/searchindex.js
+docs/**/*.html
+
+# ===== Virtual env & tooling =====
+.venv/
+.venv-*/
+.venv_*/
+echo/
+**/*.ps1
+**/tags
+catboost_info/
+
+# ===== Agent / editor private state =====
+.claude/
+memory/
+
+# ===== Misc old files =====
+# misc/rank_names_10_was.txt  # (kept here for history, file already removed)
+
+# Sphinx build artifacts (redundant safety)
+docs/build/
+
+# HPC temporary files
+scripts/hpc/**/tmp_jobs/
+scripts/hpc/logs/imbalance/*.log
+scripts/hpc/logs/imbalance/*.txt
+
+# ===== Test output files =====
+test_rf_smote.o*
+visualize_imbalv3.o*
+*.o[0-9]*
+scripts/hpc/launchers/auto_submit.log
+
+# LaTeX build artifacts
+*.blg
+*.tex.bak
+*.tex.bak_*
+
+# ===== Public-release hygiene (added for the open-source release) =====
+# Python packaging / tooling
+*.egg-info/
+.eggs/
+build/
+dist/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+# Secrets / local env
+.env
+.env.*
+*.pem
+*.key
+.netrc
+# IDE / OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+desktop.ini
+*.stackdump
+# Experiment artefacts (published on Zenodo, never in git)
+checkpoints/
+outputs/
+wandb/
+runs/
+mlruns/
+lightning_logs/
+*.pt
+*.pth
+*.ckpt
+*.h5
+*.keras
+*.pkl
+*.joblib
+*.npz
+# AI-assistant / personal notes
+CLAUDE.md
+CLAUDE.local.md
+.cursor/

@@ -1,0 +1,63 @@
+{
+  "title": "Driver Drowsiness Detection Comparison Dataset",
+  "upload_type": "dataset",
+  "access_right": "open",
+  "license": "cc-by-4.0",
+  "language": "eng",
+  "version": "1.0.0",
+  "creators": [
+    {
+      "name": "Nakagama, Yutaro",
+      "affiliation": "School of Information Science, Japan Advanced Institute of Science and Technology (JAIST), Nomi, Ishikawa, Japan",
+      "orcid": "0000-0001-6235-7492"
+    },
+    {
+      "name": "Ishii, Daisuke",
+      "affiliation": "School of Information Science, Japan Advanced Institute of Science and Technology (JAIST), Nomi, Ishikawa, Japan"
+    },
+    {
+      "name": "Yoshizoe, Kazuki",
+      "affiliation": "Research Institute for Information Technology, Kyushu University, Fukuoka, Japan"
+    }
+  ],
+  "description": "<p>Derived data and results of the paper <em>Class Imbalance and Domain Shift in Vehicle Dynamics-Based Driver Drowsiness Detection</em> (Nakagama, Ishii, Yoshizoe). The paper evaluates a random-forest driver drowsiness detector built on <strong>vehicle-dynamics features</strong> in a full factorial experiment over four design factors &mdash; rebalancing method (7 levels), training mode (Cross/Within/Mixed), inter-subject distance metric (MMD/DTW/W1) and subject group (In/Out) &mdash; replicated with 12 random seeds (126 factor cells, 1,512 evaluations).</p><p><strong>Contents.</strong> (1) <code>data/processed/common/</code> &mdash; per-subject-session feature tables (vehicle-dynamics window features, EEG band powers used to derive the labels, and the drowsiness labels) for the 87 subject-sessions. (2) <code>results/analysis/exp2_domain_shift/</code> &mdash; the metric tables of the 1,512 evaluations, the tables derived from them (performance per rebalancing method and training mode, Sobol sensitivity indices), the inter-subject distance matrices and In/Out subject lists, and the figures of the paper.</p><p>Trained model binaries are not included: they require an exact dependency-version match to load and carry arbitrary-code-execution risk on unpickling. They can be retrained with the code repository.</p><p><strong>Provenance.</strong> All measurements derive from the multi-modal driving dataset of Aygun et al. (2024), Harvard Dataverse, doi:10.7910/DVN/HMZ5RG, released under CC0 1.0. This record redistributes only derived features and analysis outputs, not the upstream raw recordings. Please cite the upstream deposit alongside this record.</p><p><strong>Documentation.</strong> <code>DATADICTIONARY.md</code> describes every file and column; <code>MANIFEST.sha256</code> and <code>BUNDLE_INFO.json</code> record per-file checksums and the source commit of the code repository.</p><p><strong>Licensing.</strong> Data and figures: CC BY 4.0. The accompanying source code is released under the MIT License (see <code>LICENSE</code>).</p>",
+  "keywords": [
+    "driver drowsiness detection",
+    "driver monitoring",
+    "vehicle dynamics",
+    "steering behaviour",
+    "class imbalance",
+    "domain shift",
+    "domain generalization",
+    "subject-independent evaluation",
+    "SMOTE",
+    "subject-wise SMOTE",
+    "Sobol sensitivity analysis",
+    "maximum mean discrepancy",
+    "Wasserstein distance",
+    "dynamic time warping",
+    "random forest",
+    "EEG band power",
+    "Karolinska Sleepiness Scale",
+    "AUPRC"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "10.7910/DVN/HMZ5RG",
+      "relation": "isDerivedFrom",
+      "resource_type": "dataset",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "https://github.com/YutaroNakagama/vehicle_based_DDD_comparison",
+      "relation": "isSupplementTo",
+      "resource_type": "software",
+      "scheme": "url"
+    }
+  ],
+  "references": [
+    "Aygun, A.; Blaney, G.; Haga, Z.; McWilliams, T.; Mertens, J.; de Ruiter, J. P.; Ward, N.; Scheutz, M. Multi-modal data acquisition platform for behavioral evaluation. Harvard Dataverse, 2024. DOI: 10.7910/DVN/HMZ5RG",
+    "Aygun, A.; Blaney, G.; Haga, Z.; McWilliams, T.; Mertens, J.; de Ruiter, J. P.; Ward, N.; Scheutz, M. A multimodal virtual reality data acquisition platform and dataset to assess systemic human cognitive states. Scientific Data, 13(1):76, 2026."
+  ],
+  "notes": "The In/Out grouping (split2) is at subject-session level: the 87 subject-sessions come from 47 drivers, and a driver with two sessions can have one session in each group. The per-group lists ship with the bundle. The upstream deposit doi:10.7910/DVN/HMZ5RG is released under CC0 1.0; please cite it in addition to this record."
+}
