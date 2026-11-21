@@ -20,13 +20,9 @@ docs/
 │   └── domain_generalization.md         Subject grouping and domain-shift pipeline
 └── experiments/                       ← Reproducibility
     ├── reproducibility.md               How the experiments were run
-    ├── conditions/                      Experiment conditions
-    │   ├── 01-imbalance-conditions.md     Experiment 1 (class imbalance, pooled training)
-    │   └── 02-domain-conditions.md        Experiment 2 (domain shift): the paper
-    └── results/                         Working analysis notes (see below)
-        ├── 01-imbalance-results.md
-        ├── 02-domain-results.md
-        └── exp2-analysis/                 Intermediate analyses of Experiment 2
+    └── conditions/                      Experiment conditions
+        ├── 01-imbalance-conditions.md     Experiment 1 (class imbalance, pooled training)
+        └── 02-domain-conditions.md        Experiment 2 (domain shift): the paper
 ```
 
 ## 🚀 Getting Started
@@ -51,7 +47,3 @@ docs/
 - **[Reproducibility Guide](experiments/reproducibility.md)** — Experiment conditions, HPC submission, result checking
 - **[Experiment 1 conditions](experiments/conditions/01-imbalance-conditions.md)** — Class imbalance, pooled training
 - **[Experiment 2 conditions](experiments/conditions/02-domain-conditions.md)** — Domain shift: the design of the paper (126 cells × 12 seeds)
-- **Working notes** — `experiments/results/` holds analysis notes written while the
-  experiments were run. They predate the final runs, and their numbers can differ from the
-  paper; the paper's numbers are reproduced by the scripts listed in the top-level
-  `README.md`.
