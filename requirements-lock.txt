@@ -1,17 +1,35 @@
-# Versions used for the experiments of the paper (JAIST HAKUSAN, conda environment "python310").
+# Versions of the environment used for the experiments of the paper
+# (JAIST HAKUSAN cluster, conda environment "python310"; taken from `conda list`).
 #
 # Python 3.10.11
 #
-# The versions below are those stated in the paper (Section "DDD Implementation"
-# and the subject-grouping section). The remaining packages of requirements.txt
-# were not recorded in the repository; their versions in the cluster environment
-# are to be added from the environment listing of the cluster.
-#
 #   pip install -r requirements-lock.txt
-#   pip install -r requirements.txt      # remaining packages, latest compatible versions
+#
+# scikit-posthocs and pytest-cov are not part of the cluster environment (they are
+# only used by auxiliary analysis scripts and by the test suite); install them
+# from requirements.txt if needed.
 
+# Core
+numpy==2.1.3
+pandas==2.3.1
+scipy==1.15.2
 scikit-learn==1.6.1
 imbalanced-learn==0.13.0
-optuna==4.4.0
-scipy==1.15.2
+joblib==1.5.1
+tqdm==4.67.1
+# Models
+xgboost==3.0.2
+lightgbm==4.6.0
+catboost==1.2.8
+tensorflow==2.19.0
 tslearn==0.6.4
+pyswarm==0.6
+h5py==3.14.0
+# Hyper-parameter search
+optuna==4.4.0
+# Analysis / figures
+matplotlib==3.10.3
+seaborn==0.13.2
+umap-learn==0.5.9.post2
+# Tests
+pytest==8.4.1

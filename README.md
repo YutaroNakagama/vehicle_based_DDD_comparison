@@ -77,12 +77,14 @@ unzip ddd-comparison-bundle-v1.0.0.zip
 cp -r ddd-comparison-bundle-v1.0.0/data ddd-comparison-bundle-v1.0.0/results .
 ```
 
-This populates `data/processed/` and `results/`.
+This populates `data/processed/common/` (feature tables), `results/outputs/evaluation/RF/`
+(the evaluation records of the 1,512 evaluations) and `results/analysis/exp2_domain_shift/`
+(metric tables, distance matrices, In/Out subject lists and figures).
 See `DATADICTIONARY.md` for the meaning of every column and file name.
 
-Trained model binaries are **not** distributed (about 115 GB of pickles and Keras
-checkpoints; loading untrusted pickles is unsafe, and the recorded metrics already
-contain everything reported in the paper). Re-train them with the steps below if needed.
+Trained models and per-run training records are **not** distributed (loading untrusted
+pickles is unsafe, and the evaluation records already contain everything reported in the
+paper). Re-train the models with the steps below if needed.
 
 ### Option B — start from the raw dataset
 

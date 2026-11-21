@@ -51,15 +51,36 @@ from pathlib import Path, PurePosixPath
 TOOL_VERSION = "1.0.0"
 BUNDLE_VERSION = "1.0.0"
 
+PAPER_FIGURES = ("fig2_effect_hierarchy.pdf", "fig8_seed_convergence.pdf", "fig_ofat_combined.pdf")
+
+# Per-run evaluation records of the paper: exactly the runs referenced by the four
+# per-evaluation metric tables (one record per factor cell and seed, 1,512 in total).
+# Where a cell was run more than once, the tables (and therefore the bundle) keep the
+# run with the latest job id, as regenerate_all_conditions_may2026.py does.
+PAPER_EVAL_DIR = "results/outputs/evaluation/RF"
+PAPER_METRIC_TABLES = {
+    "baseline_domain": "results/analysis/exp2_domain_shift/figures/csv/split2/baseline_NEW_may2026/baseline_domain_split2_metrics_NEW_may2026.csv",
+    "undersample_rus": "results/analysis/exp2_domain_shift/figures/csv/split2/undersample_rus_NEW_may2026/undersample_rus_split2_metrics_NEW_may2026.csv",
+    "smote_plain": "results/analysis/exp2_domain_shift/figures/csv/split2/smote_plain_NEW_may2026/smote_plain_split2_metrics_NEW_may2026.csv",
+    "imbalv3": "results/analysis/exp2_domain_shift/figures/csv/split2/sw_smote_NEW_may2026/sw_smote_split2_metrics_NEW_may2026.csv",
+}
+PAPER_N_EVALUATIONS = 1512
+
 # --------------------------------------------------------------------------
 # LAYER 1 — the allowlist. Nothing outside these trees is ever walked.
 # --------------------------------------------------------------------------
 # (repo-relative path, description, include-globs or None for "every file")
 ALLOW: list[tuple[str, str, tuple[str, ...] | None]] = [
-    # Per-run training/evaluation records of the factorial experiment are added
-    # here once the run directory of the paper's experiment is in place.
-    ("results/analysis/exp2_domain_shift", "Aggregated tables, Sobol indices, journal figures, subject rankings", None),
-    ("data/processed/common",      "Canonical per-subject-session feature tables (210 columns)", ("*.csv",)),
+    ("data/processed/common",
+     "Per-subject-session feature tables (the RF reads 145 vehicle-dynamics features)", ("*.csv",)),
+    ("results/analysis/exp2_domain_shift/figures/csv/split2",
+     "Per-evaluation metric tables and the tables derived from them", ("*.csv",)),
+    ("results/analysis/exp2_domain_shift/figures/svg/split2/journal_v2",
+     "Figures of the paper", PAPER_FIGURES),
+    ("results/analysis/exp2_domain_shift/distance/matrices_normalized",
+     "Inter-subject distance matrices used for the In/Out grouping", None),
+    ("results/analysis/exp2_domain_shift/distance/rankings/split2/knn",
+     "In/Out subject lists", ("*.txt",)),
     # Small provenance files that must travel with the data.
     ("DATADICTIONARY.md",          "Data dictionary", None),
     ("LICENSE",                    "Dual licence (MIT code / CC BY 4.0 data)", None),
@@ -80,17 +101,22 @@ DENY_PREFIXES: tuple[str, ...] = (
     "data/interim/",
     "data/processed/svma/",                 # dedup duplicates
     "data/processed/svmw/",
-    "data/processed/_hpc_common_pull/",     # HPC-derived: reference-only
-    "data/processed/common_fixedlabels_bak/",   # canonicity undetermined
-    "results/outputs/hpc/",                 # HPC-derived: reference-only
-    # Local re-runs that reproduce specific HPC jobs (tags like `repro_hpc88c`).
-    # They are local output and would pass the allowlist, but "HPC results are
-    # reference-only" under project policy, so shipping reproductions of them
-    # invites a reviewer to read them as reported results. Matching is done on
-    # the lowercased path, hence `rf` rather than `RF`.
+    "data/processed/_hpc_common_pull/",     # partial copies of the feature tables
+    "data/processed/common_fixedlabels_bak/",   # alternative label set, not used
+    "results/outputs/hpc/",                 # archives of cluster directories
+    # Local re-runs that reproduce individual cluster jobs (tags like `repro_hpc88c`);
+    # they are not results of the paper. Matching is done on the lowercased path,
+    # hence `rf` rather than `RF`.
     "results/outputs/evaluation/rf/reprojob",
     "results/outputs/training/rf/reprojob",
     "results/_archived",
+    # Metric tables of runs outside the paper's design, and superseded tables.
+    "results/analysis/exp2_domain_shift/figures/csv/split2/archive/",
+    "results/analysis/exp2_domain_shift/figures/csv/split2/balanced_rf/",
+    "results/analysis/exp2_domain_shift/figures/csv/split2/xgboost/",
+    "results/analysis/exp2_domain_shift/figures/csv/split2/sensitivity/sobol_indices_xgboost.csv",
+    "results/analysis/exp2_domain_shift/figures/csv/split2/sensitivity/sobol_indices_combined.csv",
+    "results/analysis/exp2_domain_shift/figures/csv/split2/baseline/baseline_domain_split2_metrics_new_may2026.csv",
     # results/analysis/exp1/ is NOT analysis data: it is a complete manuscript
     # source tree (IV2025 preprint) that also carries peer-review
     # comments and an iThenticate originality report. It sits inside an allowlisted
@@ -291,8 +317,47 @@ def collect(root: Path, only: str | None) -> tuple[list[tuple[Path, str]], list[
                     seen.add(rp)
                     files.append((fpath, rp))
 
+    if not only or PAPER_EVAL_DIR.startswith(only):
+        for fpath in paper_evaluation_records(root):
+            rp = rel_posix(fpath, root)
+            if (rule := is_denied(rp)) is not None:
+                fail(2, f"paper evaluation record denied ({rule}): {rp}")
+            if rp not in seen:
+                seen.add(rp)
+                files.append((fpath, rp))
+
     files.sort(key=lambda t: t[1])
     return files, warnings
+
+
+def paper_evaluation_records(root: Path) -> list[Path]:
+    """Locate the evaluation JSON of every row of the paper's metric tables.
+
+    Aborts unless exactly one record is found for each of the 1,512 rows.
+    """
+    import csv
+
+    base = root / PAPER_EVAL_DIR
+    if not base.is_dir():
+        fail(1, f"{PAPER_EVAL_DIR} missing: copy the run directory of the paper's experiment first")
+    found: list[Path] = []
+    for condition, table in PAPER_METRIC_TABLES.items():
+        with open(root / table, newline="", encoding="utf-8") as fh:
+            for row in csv.DictReader(fh):
+                mode = row["mode"]
+                stem = f"eval_results_RF_{mode}_{condition}_knn_{row['distance']}_{row['level']}_{mode}_split2"
+                if condition == "imbalv3":
+                    stem += "_subjectwise"
+                if condition != "baseline_domain":
+                    stem += f"_ratio{float(row['ratio']):g}"
+                name = f"{stem}_s{int(row['seed'])}.json"
+                hits = sorted((base / row["job_id"]).glob(f"*/{name}"))
+                if len(hits) != 1:
+                    fail(1, f"expected one record for {row['job_id']}/{name}, found {len(hits)}")
+                found.append(hits[0])
+    if len(found) != PAPER_N_EVALUATIONS or len(set(found)) != PAPER_N_EVALUATIONS:
+        fail(1, f"expected {PAPER_N_EVALUATIONS} distinct evaluation records, found {len(set(found))}")
+    return found
 
 
 def verify_dedup(root: Path) -> list[str]:
@@ -573,10 +638,8 @@ def main() -> int:
         },
         "excluded_by_policy": {
             "models/": "~115 GB of pickled/Keras model binaries; version-fragile and unsafe to unpickle",
-            "results/outputs/hpc/": "HPC artefacts are reference-only, not reported results",
-            "data/processed/SvmA|SvmW": "byte-identical duplicates of data/processed/common",
-            "data/processed/_hpc_common_pull/": "HPC-derived",
-            "data/processed/common_fixedlabels_bak/": "label-set canonicity undetermined",
+            "results/outputs/training/": "per-run training records are not distributed; the evaluation records hold the reported metrics",
+            "results/outputs/evaluation/ (other runs)": "only the 1,512 evaluations of the paper's metric tables are included",
             "logs/, docs/experiments/results/": "execution logs and internal write-ups",
             "results/analysis/exp1/": (
                 "IV2025 manuscript source tree, including peer-review "
