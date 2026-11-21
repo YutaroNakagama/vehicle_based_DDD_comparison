@@ -1,0 +1,17 @@
+# Versions used for the experiments of the paper (JAIST HAKUSAN, conda environment "python310").
+#
+# Python 3.10.11
+#
+# The versions below are those stated in the paper (Section "DDD Implementation"
+# and the subject-grouping section). The remaining packages of requirements.txt
+# were not recorded in the repository; their versions in the cluster environment
+# are to be added from the environment listing of the cluster.
+#
+#   pip install -r requirements-lock.txt
+#   pip install -r requirements.txt      # remaining packages, latest compatible versions
+
+scikit-learn==1.6.1
+imbalanced-learn==0.13.0
+optuna==4.4.0
+scipy==1.15.2
+tslearn==0.6.4

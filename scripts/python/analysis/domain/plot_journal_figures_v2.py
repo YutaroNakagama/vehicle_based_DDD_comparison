@@ -568,7 +568,7 @@ def plot_mode_boxplot(df: pd.DataFrame):
             vals = df[df["mode"] == m][metric].dropna()
             ax.plot(i, vals.mean(), "D", color="white", markersize=7,
                     markeredgecolor="black", markeredgewidth=1.5, zorder=5)
-            ax.text(i, vals.mean() + 0.012, f"$\mu$={vals.mean():.3f}",
+            ax.text(i, vals.mean() + 0.012, rf"$\mu$={vals.mean():.3f}",
                     ha="center", va="bottom", fontsize=6.5, fontweight="bold")
 
         ax.set_xticks(range(3))
@@ -636,7 +636,7 @@ def plot_domain_shift(df: pd.DataFrame):
         ax.set_yticks(y)
         ax.set_yticklabels([COND_LABELS[CONDITIONS_7[i % 7]]
                             for i in range(len(deltas))], fontsize=6)
-        ax.set_xlabel(f"$\Delta${mlabel} (Out $-$ In domain)")
+        ax.set_xlabel(rf"$\Delta${mlabel} (Out $-$ In domain)")
         ax.set_title(mlabel, fontweight="bold")
         ax.invert_yaxis()
 

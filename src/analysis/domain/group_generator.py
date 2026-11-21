@@ -12,7 +12,8 @@ subject groups for domain generalization experiments.
 
 Outputs are saved under:
     results/analysis/exp2_domain_shift/distance/ranks{N}/{metric}_mean_{level}.txt
-"""import argparse
+"""
+import argparse
 import json
 import sys
 import numpy as np

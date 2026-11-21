@@ -28,7 +28,7 @@ non-parametric tests.
 config/subjects/        Subject lists and target-group definitions
 src/                    Library code
   data_pipeline/          Pre-processing and feature extraction (EEG, vehicle dynamics)
-  models/                 Model definitions and training pipelines (RF, SvmA, SvmW, Lstm, ...)
+  models/                 Model definitions and training pipelines
   evaluation/             Evaluation framework
   analysis/               Subject distance metrics, correlation, summaries
   utils/                  Shared helpers
@@ -49,14 +49,15 @@ DATADICTIONARY.md       Column dictionary and file-naming grammar of the Zenodo 
 
 ## Installation
 
-Python 3.10 or 3.11.
+The experiments of the paper were run with Python 3.10.11; the versions of the main
+libraries used for them are pinned in `requirements-lock.txt`.
 
 ```bash
 git clone https://github.com/YutaroNakagama/vehicle_based_DDD_comparison.git
 cd vehicle_based_DDD_comparison
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements-lock.txt -r requirements.txt
 ```
 
 Run the tests with `pytest`.
@@ -76,7 +77,7 @@ unzip ddd-comparison-bundle-v1.0.0.zip
 cp -r ddd-comparison-bundle-v1.0.0/data ddd-comparison-bundle-v1.0.0/results .
 ```
 
-This populates `data/processed/`, `results/outputs/` and `results/analysis/`.
+This populates `data/processed/` and `results/`.
 See `DATADICTIONARY.md` for the meaning of every column and file name.
 
 Trained model binaries are **not** distributed (about 115 GB of pickles and Keras
@@ -98,34 +99,45 @@ pre-processing step.
 
    ```bash
    python scripts/python/preprocess/preprocess.py --model common
-   python scripts/python/preprocess/preprocess.py --model Lstm
    ```
 
-2. **Training and evaluation** — one run per (model, rebalancing, distance, domain,
-   training mode, ratio, seed). The full grid was executed on an HPC cluster;
-   a single run looks like
-
-   ```bash
-   python scripts/python/train/train.py --model RF ...
-   python scripts/python/evaluation/evaluate.py --model RF ...
-   ```
-
-   `scripts/hpc/` contains the PBS launchers that enumerate the grid. They are
-   specific to the cluster used for the paper: replace the placeholders `hpcuser`
+2. **Training and evaluation** — one run per factor cell and seed
+   (126 cells × 12 seeds = 1,512 runs, RF). The runs were executed on the JAIST
+   HAKUSAN cluster (PBS); each run is one job of
+   `scripts/hpc/jobs/domain_analysis/pbs_domain_comparison_split2.sh`
+   (see [docs/experiments/reproducibility.md](docs/experiments/reproducibility.md)).
+   The job scripts are specific to that cluster: replace the placeholders `hpcuser`
    (account name), `/home/hpcuser/...` (project path), `user@example.com`
    (notification address) and the queue names before use.
 
 3. **Aggregation, statistics and figures** — works directly on the CSVs tracked in
-   this repository (or on the Zenodo bundle):
+   this repository (or on the Zenodo bundle). Output goes to
+   `results/analysis/exp2_domain_shift/figures/`.
 
    ```bash
-   python scripts/python/analysis/domain/sensitivity_analysis_exp2.py   # Sobol indices
-   python scripts/python/analysis/domain/compute_paper_table_may2026.py # paper table
-   python scripts/python/analysis/domain/plot_journal_figures_v2.py     # Figs. 2-8
-   python scripts/python/analysis/domain/plot_ofat_supplement.py        # OFAT supplement
+   python scripts/python/analysis/domain/sensitivity_analysis_exp2.py
+   python scripts/python/analysis/domain/compute_paper_table_may2026.py
+   python scripts/python/analysis/domain/paper_statistics.py
+   python scripts/python/analysis/domain/plot_journal_figures_v2.py
+   python scripts/python/analysis/domain/plot_ofat_supplement.py
    ```
 
-   Output goes to `results/analysis/exp2_domain_shift/figures/`.
+### Scripts for reproducing the paper
+
+| Step | Script | Produces |
+|---|---|---|
+| Pre-processing | `scripts/python/preprocess/preprocess.py` | Feature tables in `data/processed/common/` |
+| Subject grouping | `scripts/python/analysis/domain/regenerate_split2_normalized.py` | Distance matrices and In/Out subject lists |
+| Training | `scripts/python/train/train.py` | Per-run training records and models |
+| Evaluation | `scripts/python/evaluation/evaluate.py` | Per-run evaluation records |
+| Cluster jobs | `scripts/hpc/jobs/domain_analysis/pbs_domain_comparison_split2.sh`, `scripts/hpc/launchers/launch_paper_domain_split2.sh`, `scripts/hpc/launchers/launch_exp2_mixed.sh`, `scripts/hpc/launchers/gen_exp2_seed12_joblist.py`, `scripts/hpc/launchers/launch_exp2_seed12_fill.sh` | The 1,512 runs |
+| Metric tables | `scripts/python/analysis/domain/regenerate_all_conditions_may2026.py` | `figures/csv/split2/*_NEW_may2026/*.csv`, from the evaluation records |
+| Performance table | `scripts/python/analysis/domain/compute_paper_table_may2026.py` | Performance per rebalancing method and training mode |
+| Sobol indices | `scripts/python/analysis/domain/sensitivity_analysis_exp2.py` | Total and first-order indices with bootstrap intervals (input of the Sobol-index figure) |
+| Other statistics | `scripts/python/analysis/domain/paper_statistics.py` | S<sub>{M,R}</sub> with its interval, M–R dominance ratio, Cliff's δ, Spearman's ρ (M and D), seed convergence |
+| Figures | `scripts/python/analysis/domain/plot_journal_figures_v2.py` | Sobol-index figure and seed-convergence figure |
+| Figures | `scripts/python/analysis/domain/plot_ofat_supplement.py` | Profile plots of the four factors |
+| Feature statistics | `scripts/python/analysis/domain/vehicle_feature_distance_analysis.py` | Intraclass correlation and effective dimensionality of the features (needs `data/processed/common/`) |
 
 ## Citation
 

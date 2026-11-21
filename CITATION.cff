@@ -47,7 +47,6 @@ keywords:
   - SMOTE
   - Sobol sensitivity analysis
   - random forest
-  - BiLSTM
   - EEG band power
   - Karolinska Sleepiness Scale
 
